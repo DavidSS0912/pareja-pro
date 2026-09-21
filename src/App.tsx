@@ -78,14 +78,14 @@ export default function App() {
       setAuthLoading(false);
     });
     return () => unsub();
-  }, []);
+  }, [setUser, setHouseId, setAuthLoading]);
 
   useEffect(() => {
     if (houseId) {
       const unsub = initListeners(houseId);
       return () => unsub();
     }
-  }, [houseId]);
+  }, [houseId, initListeners]);
 
   const handleJoinHouse = async (accept: boolean) => {
     if (accept && joinHouseConfirm && user) {
