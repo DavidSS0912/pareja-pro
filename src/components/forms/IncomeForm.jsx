@@ -1,0 +1,68 @@
+import React, { useState } from 'react';
+import { Button } from '../ui/Button';
+
+export function IncomeForm({ initialData, users, onSubmit, onCancel }) {
+  const [formData, setFormData] = useState(initialData || {
+    userId: users[0]?.id || 'u1',
+    amount: '',
+    type: 'Sueldo'
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit({
+      ...formData,
+      amount: Number(formData.amount)
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="block text-sm font-bold text-slate-700 mb-1">Monto (MXN)</label>
+        <input 
+          type="number" 
+          required
+          min="0"
+          step="0.01"
+          className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+          value={formData.amount} 
+          onChange={e => setFormData({...formData, amount: e.target.value})} 
+          placeholder="0.00"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-bold text-slate-700 mb-1">Aportador</label>
+          <select 
+            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+            value={formData.userId} 
+            onChange={e => setFormData({...formData, userId: e.target.value})}
+          >
+            {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-bold text-slate-700 mb-1">Tipo</label>
+          <select 
+            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+            value={formData.type} 
+            onChange={e => setFormData({...formData, type: e.target.value})}
+          >
+            <option value="Sueldo">Sueldo / Salario</option>
+            <option value="Bono">Bono / Utilidades</option>
+            <option value="Ventas">Ventas / Negocio</option>
+            <option value="Inversiones">Retornos de Inversión</option>
+            <option value="Otro">Otro Ingreso</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+        <Button variant="secondary" onClick={onCancel}>Cancelar</Button>
+        <Button type="submit">Guardar Ingreso</Button>
+      </div>
+    </form>
+  );
+}
