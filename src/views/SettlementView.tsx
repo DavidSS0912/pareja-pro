@@ -46,15 +46,15 @@ export function SettlementView({ data, calc, methods }) {
       <Card className="bg-gradient-to-br from-slate-900 to-slate-800 text-white border-0 py-16 relative overflow-hidden shadow-2xl">
         {/* Background decorative elements */}
         <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-700/50 via-transparent to-transparent pointer-events-none"></div>
-        <div className="absolute bottom-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute bottom-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="text-center relative z-10">
           <p className="text-slate-400 font-bold mb-4 tracking-widest uppercase text-sm">Balance Neto Mensual</p>
-          <div className="text-7xl font-black mb-8 tracking-tighter text-emerald-400 drop-shadow-lg">
+          <div className="text-7xl font-black mb-8 tracking-tighter text-white tabular-nums drop-shadow-lg">
             {FormatCurrency(calc.settlementAmount)}
           </div>
           
-          <div className="inline-flex items-center gap-5 bg-white/10 p-2.5 pr-8 rounded-full border border-white/10 backdrop-blur-md shadow-xl">
+          <div className="inline-flex items-center gap-5 bg-white/10 p-2.5 pr-8 rounded-xl border border-white/10">
             {calc.netSettlement > 0 ? (
                <>
                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center font-black text-xl shadow-inner border border-purple-300/30">Z</div> 

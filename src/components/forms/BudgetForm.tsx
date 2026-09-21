@@ -40,7 +40,7 @@ export function BudgetForm({ initialData, onSubmit, onCancel }) {
           <input 
             type="text" 
             required
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             value={formData.category} 
             onChange={e => setFormData({...formData, category: e.target.value})} 
             placeholder="Ej. Supermercado"
@@ -52,7 +52,7 @@ export function BudgetForm({ initialData, onSubmit, onCancel }) {
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-1">Tipo de Presupuesto</label>
           <select 
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             value={formData.type} 
             onChange={e => setFormData({...formData, type: e.target.value})}
           >
@@ -68,7 +68,7 @@ export function BudgetForm({ initialData, onSubmit, onCancel }) {
             required
             min="0"
             step="0.01"
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             value={formData.base} 
             onChange={e => setFormData({...formData, base: e.target.value})} 
           />
@@ -81,7 +81,7 @@ export function BudgetForm({ initialData, onSubmit, onCancel }) {
           <input 
             type="number" 
             step="0.01"
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             value={formData.rollover} 
             onChange={e => setFormData({...formData, rollover: e.target.value})} 
           />
@@ -92,7 +92,7 @@ export function BudgetForm({ initialData, onSubmit, onCancel }) {
             type="number" 
             min="0"
             step="0.01"
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             value={formData.spent} 
             onChange={e => setFormData({...formData, spent: e.target.value})} 
           />

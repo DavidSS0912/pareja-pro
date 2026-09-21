@@ -27,7 +27,7 @@ export function IncomeForm({ initialData, users, onSubmit, onCancel }) {
           <input 
             type="date" 
             required
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-colors"
+            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-colors"
             value={formData.date} 
             onChange={e => setFormData({...formData, date: e.target.value})} 
           />
@@ -40,13 +40,13 @@ export function IncomeForm({ initialData, users, onSubmit, onCancel }) {
             required
             min="0"
             step="0.01"
-            className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+            className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             value={formData.amount}
             onChange={e => setFormData({...formData, amount: e.target.value})}
             placeholder="0.00"
           />
           <select
-            className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+            className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             value={formData.currency}
             onChange={e => setFormData({...formData, currency: e.target.value})}
           >
@@ -63,7 +63,7 @@ export function IncomeForm({ initialData, users, onSubmit, onCancel }) {
           id="isPrivateIncome"
           checked={formData.isPrivate}
           onChange={e => setFormData({...formData, isPrivate: e.target.checked})}
-          className="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500"
+          className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
         />
         <label htmlFor="isPrivateIncome" className="text-sm font-medium text-slate-700">Ingreso Privado (No contemplado en presupuesto común)</label>
       </div>
@@ -72,7 +72,7 @@ export function IncomeForm({ initialData, users, onSubmit, onCancel }) {
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-1">Aportador</label>
           <select 
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             value={formData.userId} 
             onChange={e => setFormData({...formData, userId: e.target.value})}
           >
@@ -82,7 +82,7 @@ export function IncomeForm({ initialData, users, onSubmit, onCancel }) {
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-1">Tipo</label>
           <select 
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             value={formData.type} 
             onChange={e => setFormData({...formData, type: e.target.value})}
           >

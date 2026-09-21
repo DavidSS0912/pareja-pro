@@ -78,7 +78,7 @@ export function BudgetsView({ data, methods }) {
           }
           
           return (
-            <Card key={budget.id} className="hover:border-emerald-200 transition-colors group cursor-default relative">
+            <Card key={budget.id} className="hover:border-indigo-200 transition-colors group cursor-default relative">
               <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button onClick={() => handleOpenModal(budget)} className="p-1.5 bg-white text-slate-500 hover:text-blue-600 rounded-lg shadow-sm border border-slate-100">
                   <Edit2 size={16} />
@@ -89,7 +89,7 @@ export function BudgetsView({ data, methods }) {
               </div>
 
               <div className="flex items-center gap-4 mb-6">
-                <div className="text-4xl bg-slate-100 p-4 rounded-2xl group-hover:scale-110 group-hover:bg-emerald-50 transition-all duration-300">
+                <div className="text-4xl bg-slate-100 p-4 rounded-2xl group-hover:scale-110 group-hover:bg-indigo-50 transition-all duration-300">
                   {budget.icon}
                 </div>
                 <div className="flex-1 pr-10">

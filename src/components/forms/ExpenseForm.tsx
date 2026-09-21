@@ -29,7 +29,7 @@ export function ExpenseForm({ initialData, users, budgets = [], onSubmit, onCanc
           <input 
             type="date" 
             required
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-colors"
+            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-colors"
             value={formData.date} 
             onChange={e => setFormData({...formData, date: e.target.value})} 
           />
@@ -39,7 +39,7 @@ export function ExpenseForm({ initialData, users, budgets = [], onSubmit, onCanc
           <input 
             type="text" 
             required
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
             value={formData.desc} 
             onChange={e => setFormData({...formData, desc: e.target.value})} 
             placeholder="Ej. Walmart Quincena"
@@ -55,13 +55,13 @@ export function ExpenseForm({ initialData, users, budgets = [], onSubmit, onCanc
             required
             min="0"
             step="0.01"
-            className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+            className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
             value={formData.amount}
             onChange={e => setFormData({...formData, amount: e.target.value})}
             placeholder="0.00"
           />
           <select
-            className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+            className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             value={formData.currency}
             onChange={e => setFormData({...formData, currency: e.target.value})}
           >
@@ -77,7 +77,7 @@ export function ExpenseForm({ initialData, users, budgets = [], onSubmit, onCanc
           id="isPrivate"
           checked={formData.isPrivate}
           onChange={e => setFormData({...formData, isPrivate: e.target.checked})}
-          className="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500"
+          className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
         />
         <label htmlFor="isPrivate" className="text-sm font-medium text-slate-700">Gasto Privado (No se divide)</label>
       </div>
@@ -85,7 +85,7 @@ export function ExpenseForm({ initialData, users, budgets = [], onSubmit, onCanc
       <div>
         <label className="block text-sm font-bold text-slate-700 mb-1">Categoría</label>
         <select
-          className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+          className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
           value={formData.category}
           onChange={e => setFormData({...formData, category: e.target.value})}
         >
@@ -100,7 +100,7 @@ export function ExpenseForm({ initialData, users, budgets = [], onSubmit, onCanc
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-1">Pagado por</label>
           <select 
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             value={formData.paidBy} 
             onChange={e => setFormData({...formData, paidBy: e.target.value})}
           >
@@ -112,7 +112,7 @@ export function ExpenseForm({ initialData, users, budgets = [], onSubmit, onCanc
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-1">División</label>
             <select
-              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               value={formData.splitType}
               onChange={e => setFormData({...formData, splitType: e.target.value})}
             >

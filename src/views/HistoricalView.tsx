@@ -71,7 +71,7 @@ export function HistoricalView({ data }) {
           </div>
           <button
             onClick={handleExportCSV}
-            className="flex items-center justify-center w-full md:w-auto gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200/50"
+            className="flex items-center justify-center w-full md:w-auto gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
           >
             <Download className="w-4 h-4" />
             Exportar CSV

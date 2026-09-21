@@ -1,9 +1,13 @@
 import React from 'react';
 
-export const Card = ({ children, className = '', ...props }) => {
+export const Card = ({ children, className = '', ...props }: {
+  children: React.ReactNode;
+  className?: string;
+  [key: string]: any;
+}) => {
   return (
-    <div 
-      className={`glass rounded-[32px] p-6 sm:p-8 transition-all duration-300 hover:shadow-md ${className}`}
+    <div
+      className={`bg-white border border-[#E5E5E5] rounded-xl p-6 transition-all duration-200 ${className}`}
       {...props}
     >
       {children}

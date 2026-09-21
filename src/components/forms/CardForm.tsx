@@ -37,7 +37,7 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
           <input 
             type="text" 
             required
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             value={formData.name} 
             onChange={e => setFormData({...formData, name: e.target.value})} 
             placeholder="Ej. Nu Clásica"
@@ -46,7 +46,7 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-1">Color/Tema</label>
           <select 
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             value={formData.color} 
             onChange={e => setFormData({...formData, color: e.target.value})}
           >
@@ -64,7 +64,7 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-1">Titular</label>
           <select 
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             value={formData.ownerId} 
             onChange={e => setFormData({...formData, ownerId: e.target.value})}
           >
@@ -74,7 +74,7 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-1">Uso Compartido</label>
           <select 
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             value={formData.shared} 
             onChange={e => setFormData({...formData, shared: e.target.value})}
           >
@@ -89,7 +89,7 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
           <label className="block text-sm font-bold text-slate-700 mb-1">Límite</label>
           <input 
             type="number" required
-            className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             value={formData.limit} 
             onChange={e => setFormData({...formData, limit: e.target.value})} 
           />
@@ -98,7 +98,7 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
           <label className="block text-sm font-bold text-slate-700 mb-1">Día Corte</label>
           <input 
             type="number" required min="1" max="31"
-            className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             value={formData.cutDay} 
             onChange={e => setFormData({...formData, cutDay: e.target.value})} 
           />
@@ -107,7 +107,7 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
           <label className="block text-sm font-bold text-slate-700 mb-1">Día Pago</label>
           <input 
             type="number" required min="1" max="31"
-            className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             value={formData.payDay} 
             onChange={e => setFormData({...formData, payDay: e.target.value})} 
           />
@@ -119,7 +119,7 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
           <label className="block text-sm font-bold text-slate-700 mb-1">Saldo Actual</label>
           <input 
             type="number" step="0.01" required
-            className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             value={formData.balance} 
             onChange={e => setFormData({...formData, balance: e.target.value})} 
           />
@@ -128,7 +128,7 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
           <label className="block text-[11px] font-bold text-slate-700 mb-1 leading-tight">Pago para no int.</label>
           <input 
             type="number" step="0.01" required
-            className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             value={formData.noInterestPay} 
             onChange={e => setFormData({...formData, noInterestPay: e.target.value})} 
           />
@@ -137,7 +137,7 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
           <label className="block text-sm font-bold text-slate-700 mb-1">Tasa Int. (%)</label>
           <input 
             type="number" step="0.01" required
-            className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             value={formData.interestRate} 
             onChange={e => setFormData({...formData, interestRate: e.target.value})} 
           />

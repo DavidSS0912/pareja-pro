@@ -24,7 +24,7 @@ export function AssetForm({ initialData, users, onSubmit, onCancel }) {
         <input 
           type="text" 
           required
-          className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+          className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
           value={formData.name} 
           onChange={e => setFormData({...formData, name: e.target.value})} 
           placeholder="Ej. Cuenta Nu, Auto, CETES"
@@ -38,7 +38,7 @@ export function AssetForm({ initialData, users, onSubmit, onCancel }) {
             type="number" 
             required
             step="0.01"
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             value={formData.value} 
             onChange={e => setFormData({...formData, value: e.target.value})} 
             placeholder="0.00"
@@ -48,7 +48,7 @@ export function AssetForm({ initialData, users, onSubmit, onCancel }) {
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-1">Propietario</label>
           <select 
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             value={formData.owner} 
             onChange={e => setFormData({...formData, owner: e.target.value})}
           >
@@ -61,7 +61,7 @@ export function AssetForm({ initialData, users, onSubmit, onCancel }) {
       <div>
         <label className="block text-sm font-bold text-slate-700 mb-1">Tipo de Activo</label>
         <select 
-          className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+          className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
           value={formData.type} 
           onChange={e => setFormData({...formData, type: e.target.value})}
         >

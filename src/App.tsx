@@ -24,6 +24,7 @@ import { SettlementView } from './views/SettlementView';
 import { DebtSimulatorView } from './views/DebtSimulatorView';
 import { WealthView } from './views/WealthView';
 import { HistoricalView } from './views/HistoricalView';
+import { ToastContainer } from './components/ui/Toast';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -362,6 +363,8 @@ export default function App() {
         </div>
       )}
 
+      {/* Toast Notifications */}
+      <ToastContainer />
     </div>
   );
 }

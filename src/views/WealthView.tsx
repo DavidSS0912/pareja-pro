@@ -43,14 +43,13 @@ export function WealthView({ data, calc, methods }) {
         <p className="text-slate-500 mt-2 font-medium">Activos (Lo que tienes) menos Pasivos (Lo que debes).</p>
       </div>
 
-      <Card className="bg-gradient-to-br from-emerald-50 to-teal-100/50 border-emerald-100 text-center py-12 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-200/50 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
+      <Card className="text-center py-12 relative overflow-hidden">
         <div className="relative z-10">
-          <h3 className="text-emerald-800 font-bold uppercase tracking-widest text-sm mb-4">Riqueza Real del Hogar</h3>
-          <div className="text-6xl sm:text-7xl font-black text-emerald-600 mb-4 tracking-tighter drop-shadow-sm">
+          <h3 className="text-slate-500 font-medium uppercase tracking-widest text-xs mb-4">Riqueza Real del Hogar</h3>
+          <div className="text-6xl sm:text-7xl font-black text-slate-900 mb-4 tracking-tighter tabular-nums">
             {FormatCurrency(calc.netWorth)}
           </div>
-          <p className="text-emerald-700 font-medium bg-emerald-100/50 inline-block px-4 py-1.5 rounded-full backdrop-blur-sm border border-emerald-200/50">
+          <p className="text-green-700 font-medium bg-green-50 inline-block px-4 py-1.5 rounded-lg border border-green-200 text-sm">
             Tu patrimonio está en números positivos.
           </p>
         </div>
@@ -58,31 +57,31 @@ export function WealthView({ data, calc, methods }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <SavingsGoals goals={data.goals} />
-        <Card className="hover:border-emerald-200 transition-colors">
+        <Card className="hover:border-indigo-200 transition-colors">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="font-black text-xl flex items-center gap-3 text-emerald-600 tracking-tight">
-              <div className="bg-emerald-100 p-2 rounded-xl text-emerald-600">
-                <TrendingUp size={20} />
+            <h3 className="font-bold text-lg flex items-center gap-3 text-slate-900 tracking-tight">
+              <div className="bg-green-50 p-2 rounded-lg text-green-600">
+                <TrendingUp size={18} />
               </div>
-              Activos <span className="opacity-70">+{FormatCurrency(calc.totalAssets)}</span>
+              Activos <span className="text-green-600 tabular-nums font-medium text-base">{FormatCurrency(calc.totalAssets)}</span>
             </h3>
             <Button size="sm" onClick={() => handleOpenModal()} className="!p-2"><Plus size={16}/></Button>
           </div>
           
-          <div className="space-y-4">
+          <div className="space-y-3">
             {data.assets.map(asset => (
-              <div key={asset.id} className="flex justify-between items-center p-4 bg-slate-50/80 rounded-2xl border border-slate-100 hover:bg-emerald-50 transition-colors group">
+              <div key={asset.id} className="flex justify-between items-center p-3 bg-white rounded-lg border border-[#E5E5E5] hover:border-indigo-200 transition-colors group">
                 <div>
-                  <p className="font-bold text-slate-800">{asset.name}</p>
-                  <p className="text-xs font-medium text-slate-500 mt-1">{asset.type} • <span className="text-slate-600 font-bold">{asset.owner}</span></p>
+                  <p className="font-medium text-slate-900">{asset.name}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{asset.type} • <span className="text-slate-600 font-medium">{asset.owner}</span></p>
                 </div>
                 <div className="flex items-center gap-4">
-                  <p className="font-black text-emerald-600 text-lg tracking-tight">{FormatCurrency(asset.value)}</p>
+                  <p className="font-semibold text-green-600 tabular-nums tracking-tight">{FormatCurrency(asset.value)}</p>
                   <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => handleOpenModal(asset)} className="text-slate-400 hover:text-blue-500">
+                    <button onClick={() => handleOpenModal(asset)} className="text-slate-400 hover:text-indigo-600">
                       <Edit2 size={14} />
                     </button>
-                    <button onClick={() => handleDelete(asset.id)} className="text-slate-400 hover:text-rose-500">
+                    <button onClick={() => handleDelete(asset.id)} className="text-slate-400 hover:text-red-600">
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -92,21 +91,21 @@ export function WealthView({ data, calc, methods }) {
           </div>
         </Card>
 
-        <Card className="hover:border-rose-200 transition-colors">
-          <h3 className="font-black text-xl mb-6 flex items-center gap-3 text-rose-600 tracking-tight">
-            <div className="bg-rose-100 p-2 rounded-xl text-rose-600">
-              <TrendingDown size={20} />
+        <Card className="hover:border-red-200 transition-colors">
+          <h3 className="font-bold text-lg mb-6 flex items-center gap-3 text-slate-900 tracking-tight">
+            <div className="bg-red-50 p-2 rounded-lg text-red-600">
+              <TrendingDown size={18} />
             </div>
-            Pasivos <span className="ml-auto opacity-70">-{FormatCurrency(calc.totalLiabilities)}</span>
+            Pasivos <span className="ml-auto text-red-600 tabular-nums font-medium text-base">-{FormatCurrency(calc.totalLiabilities)}</span>
           </h3>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {data.cards.map(debt => (
-              <div key={debt.id} className="flex justify-between items-center p-4 bg-slate-50/80 rounded-2xl border border-slate-100 hover:bg-rose-50 transition-colors">
+              <div key={debt.id} className="flex justify-between items-center p-3 bg-white rounded-lg border border-[#E5E5E5] hover:border-red-200 transition-colors">
                 <div>
-                  <p className="font-bold text-slate-800">{debt.name}</p>
-                  <p className="text-xs font-medium text-slate-500 mt-1">Tarjeta de Crédito</p>
+                  <p className="font-medium text-slate-900">{debt.name}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Tarjeta de Crédito</p>
                 </div>
-                <p className="font-black text-rose-600 text-lg tracking-tight">{FormatCurrency(debt.balance)}</p>
+                <p className="font-semibold text-red-600 tabular-nums tracking-tight">{FormatCurrency(debt.balance)}</p>
               </div>
             ))}
           </div>
