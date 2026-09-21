@@ -1,9 +1,11 @@
 import React from 'react';
 import { Card } from '../components/ui/Card';
 import { FormatCurrency } from '../utils';
+import { SEED_DATA } from '../data';
 
 export function HistoricalView({ data }) {
-  const maxVal = Math.max(...data.snapshots.map(s => Math.max(s.income, s.expense)));
+  const snapshots = data.snapshots || SEED_DATA.snapshots || [];
+  const maxVal = snapshots.length > 0 ? Math.max(...snapshots.map(s => Math.max(s.income, s.expense))) : 1;
 
   return (
     <div className="space-y-6 animate-in">
@@ -14,7 +16,7 @@ export function HistoricalView({ data }) {
 
       <Card className="pt-10 pb-8">
         <div className="flex items-end gap-3 h-72 w-full border-b-2 border-slate-100 pb-3 overflow-x-auto scrollbar-hide px-4">
-          {data.snapshots.map((snap, idx) => {
+          {snapshots.map((snap, idx) => {
             const incomeHeight = (snap.income / maxVal) * 100;
             const expenseHeight = (snap.expense / maxVal) * 100;
             const isOver = snap.expense > snap.income;
@@ -51,7 +53,7 @@ export function HistoricalView({ data }) {
         </div>
         
         <div className="flex gap-3 w-full mt-4 px-4">
-          {data.snapshots.map((snap, idx) => (
+          {snapshots.map((snap, idx) => (
             <div key={idx} className="flex-1 text-center text-sm font-bold text-slate-500 min-w-[60px]">
               {snap.month}
             </div>
