@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Button } from '../ui/Button';
 
-export function ExpenseForm({ initialData, users, budgets = [], onSubmit, onCancel }) {
+export function ExpenseForm({ initialData, users, budgets = [], currentUserId, onSubmit, onCancel }) {
   const [formData, setFormData] = useState(initialData || {
     desc: '',
     amount: '',
-    paidBy: users[0]?.id || 'u1',
+    paidBy: currentUserId || users[0]?.id || '',
     splitType: '50/50',
     currency: 'MXN',
     category: 'Varios',

@@ -42,7 +42,7 @@ export function HistoricalView({ data }) {
   };
 
   const expensesByCategory = useMemo(() => {
-    const totals = {};
+    const totals: Record<string, number> = {};
     let totalExpense = 0;
     expenses.forEach(e => {
       const amt = Number(e.amount) || 0;

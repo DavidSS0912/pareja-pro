@@ -198,6 +198,7 @@ export function DashboardView({ data, calc, methods }) {
         <IncomeForm 
           initialData={editingIncome} 
           users={data.users} 
+          currentUserId={data.user?.uid || ''}
           onSubmit={handleSubmit} 
           onCancel={handleCloseModal} 
         />

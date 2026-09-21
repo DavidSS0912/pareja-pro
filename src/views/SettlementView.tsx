@@ -145,6 +145,7 @@ export function SettlementView({ data, calc, methods }) {
           initialData={editingExpense} 
           users={data.users}
           budgets={data.budgets}
+          currentUserId={data.user?.uid || ''}
           onSubmit={handleSubmit} 
           onCancel={handleCloseModal} 
         />

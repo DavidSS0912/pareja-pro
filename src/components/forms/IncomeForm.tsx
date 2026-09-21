@@ -7,14 +7,15 @@ const INPUT_CLASS =
 
 const LABEL_CLASS = 'block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5';
 
-export function IncomeForm({ initialData, users, onSubmit, onCancel }: {
+export function IncomeForm({ initialData, users, currentUserId, onSubmit, onCancel }: {
   initialData?: any;
   users: any[];
+  currentUserId: string;
   onSubmit: (data: any) => void;
   onCancel: () => void;
 }) {
   const [formData, setFormData] = useState(initialData || {
-    userId: users[0]?.id || 'u1',
+    userId: currentUserId || users[0]?.id || '',
     amount: '',
     type: 'Sueldo',
     currency: 'MXN',
