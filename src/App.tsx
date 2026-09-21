@@ -71,7 +71,7 @@ export default function App() {
               email: fbUser.email, 
               displayName: fbUser.displayName,
               name: fbUser.displayName?.split(' ')[0] || 'Usuario',
-              avatar: 'bg-emerald-500',
+              avatar: 'bg-indigo-500',
               photoURL: fbUser.photoURL || null
             });
             setHouseId(currentHouseId);
@@ -222,7 +222,7 @@ export default function App() {
   }, [filteredData]);
 
   if (authLoading) {
-    return <div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div></div>;
+    return <div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>;
   }
 
   if (!user) {
@@ -322,19 +322,19 @@ export default function App() {
 
       {/* Invite Modal */}
       {showInviteModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white p-8 rounded-[2rem] max-w-md w-full shadow-2xl relative">
-            <h2 className="text-2xl font-bold text-slate-800 mb-4">Invitar a tu casa</h2>
+        <div className="fixed inset-0 bg-slate-900/60 z-[100] flex items-center justify-center p-4">
+          <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm max-w-md w-full relative">
+            <h2 className="text-2xl font-bold text-slate-900 mb-4 font-title">Invitar a tu casa</h2>
             <p className="text-slate-500 mb-6">Comparte este enlace para que otra persona se una a tu misma cuenta y gestionen sus finanzas juntos.</p>
             {inviteLink ? (
-              <div className="bg-slate-50 p-4 rounded-2xl flex flex-col gap-3">
-                <code className="text-sm text-emerald-700 break-all">{inviteLink}</code>
-                <p className="text-xs font-bold text-emerald-600">¡Copiado al portapapeles!</p>
+              <div className="bg-slate-50 p-4 rounded-lg border border-[#E5E5E5] flex flex-col gap-3">
+                <code className="text-sm text-indigo-600 break-all">{inviteLink}</code>
+                <p className="text-xs font-bold text-indigo-600">¡Copiado al portapapeles!</p>
               </div>
             ) : (
-              <div className="flex justify-center p-4"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div></div>
+              <div className="flex justify-center p-4"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div>
             )}
-            <button onClick={() => setShowInviteModal(false)} className="mt-8 w-full bg-slate-900 text-white p-4 rounded-2xl font-bold">
+            <button onClick={() => setShowInviteModal(false)} className="mt-8 w-full bg-slate-900 hover:bg-slate-800 text-white p-3 rounded-lg font-bold transition-colors">
               Cerrar
             </button>
           </div>
@@ -343,18 +343,18 @@ export default function App() {
 
       {/* Join House Modal */}
       {joinHouseConfirm && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white p-8 rounded-[2rem] max-w-md w-full shadow-2xl relative text-center">
-            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
+        <div className="fixed inset-0 bg-slate-900/60 z-[100] flex items-center justify-center p-4">
+          <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm max-w-md w-full relative text-center">
+            <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
               <UserPlus size={32} />
             </div>
-            <h2 className="text-2xl font-bold text-slate-800 mb-4">¡Te han invitado a una casa!</h2>
+            <h2 className="text-2xl font-bold text-slate-900 mb-4 font-title">¡Te han invitado a una casa!</h2>
             <p className="text-slate-600 mb-8 font-medium">¿Deseas abandonar tu casa actual para unirte a esta nueva casa o mantenerte en tu casa actual?</p>
             <div className="flex flex-col gap-3">
-              <button onClick={() => handleJoinHouse(true)} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-4 rounded-2xl font-bold transition-colors shadow-lg shadow-emerald-200">
+              <button onClick={() => handleJoinHouse(true)} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-lg font-bold transition-colors">
                 Unirme a la nueva casa
               </button>
-              <button onClick={() => handleJoinHouse(false)} className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 p-4 rounded-2xl font-bold transition-colors">
+              <button onClick={() => handleJoinHouse(false)} className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 p-3 rounded-lg font-bold transition-colors">
                 Mantenerme en mi casa actual
               </button>
             </div>
