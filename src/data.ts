@@ -4,9 +4,9 @@ export const SEED_DATA = {
     { id: 'u2', name: 'Zoé', avatar: 'bg-purple-500' }
   ],
   incomes: [
-    { id: 'i1', userId: 'u1', amount: 35000, type: 'Sueldo' },
-    { id: 'i2', userId: 'u2', amount: 32000, type: 'Sueldo' },
-    { id: 'i3', userId: 'u1', amount: 5000, type: 'Bono' }
+    { id: 'i1', userId: 'u1', amount: 35000, type: 'Sueldo', date: '2024-06-01' },
+    { id: 'i2', userId: 'u2', amount: 32000, type: 'Sueldo', date: '2024-06-02' },
+    { id: 'i3', userId: 'u1', amount: 5000, type: 'Bono', date: '2024-06-15' }
   ],
   cards: [
     { id: 'c1', name: 'BBVA Oro', ownerId: 'u1', shared: false, limit: 50000, cutDay: 5, payDay: 25, balance: 12000, noInterestPay: 8500, interestRate: 45, color: 'bg-gradient-to-br from-blue-700 to-blue-900' },
@@ -21,11 +21,11 @@ export const SEED_DATA = {
     { id: 'b5', category: 'Fondo Emergencia', type: 'Ahorro', shared: true, base: 5000, rollover: 45000, spent: 0, icon: '🛡️' }
   ],
   expenses: [
-    { id: 'e1', desc: 'Walmart Quincena', amount: 4200, paidBy: 'u1', split: 50 },
-    { id: 'e2', desc: 'Recibo CFE', amount: 1200, paidBy: 'u2', split: 50 },
-    { id: 'e3', desc: 'Internet Telmex', amount: 600, paidBy: 'u2', split: 50 },
-    { id: 'e4', desc: 'Renta Junio', amount: 12000, paidBy: 'u1', split: 50 },
-    { id: 'e5', desc: 'Cena Aniversario', amount: 3500, paidBy: 'u1', split: 100 }
+    { id: 'e1', desc: 'Walmart Quincena', amount: 4200, paidBy: 'u1', split: 50, date: '2024-06-05' },
+    { id: 'e2', desc: 'Recibo CFE', amount: 1200, paidBy: 'u2', split: 50, date: '2024-06-12' },
+    { id: 'e3', desc: 'Internet Telmex', amount: 600, paidBy: 'u2', split: 50, date: '2024-06-15' },
+    { id: 'e4', desc: 'Renta Junio', amount: 12000, paidBy: 'u1', split: 50, date: '2024-06-01' },
+    { id: 'e5', desc: 'Cena Aniversario', amount: 3500, paidBy: 'u1', split: 100, date: '2024-05-20' }
   ],
   assets: [
     { id: 'a1', name: 'Cetes Directo', owner: 'Ambos', value: 45000, type: 'Inversión Segura' },
@@ -40,5 +40,9 @@ export const SEED_DATA = {
     { month: 'Abr', income: 67000, expense: 68000 },
     { month: 'May', income: 67000, expense: 52000 },
     { month: 'Jun', income: 72000, expense: 45000 }
+  ],
+  goals: [
+    { id: 'g1', name: 'Viaje a Japón', target: 50000, current: 15000, color: 'bg-emerald-500' },
+    { id: 'g2', name: 'Enganche Casa', target: 200000, current: 45000, color: 'bg-indigo-500' }
   ]
 };

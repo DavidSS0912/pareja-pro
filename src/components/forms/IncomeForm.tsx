@@ -7,6 +7,7 @@ export function IncomeForm({ initialData, users, onSubmit, onCancel }) {
     amount: '',
     type: 'Sueldo',
     currency: 'MXN',
+    date: new Date().toISOString().split('T')[0],
     isPrivate: false
   });
 
@@ -20,8 +21,19 @@ export function IncomeForm({ initialData, users, onSubmit, onCancel }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-bold text-slate-700 mb-1">Monto</label>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-bold text-slate-700 mb-1">Fecha</label>
+          <input 
+            type="date" 
+            required
+            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-colors"
+            value={formData.date} 
+            onChange={e => setFormData({...formData, date: e.target.value})} 
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-bold text-slate-700 mb-1">Monto</label>
         <div className="flex gap-2">
           <input
             type="number"
@@ -42,6 +54,7 @@ export function IncomeForm({ initialData, users, onSubmit, onCancel }) {
             <option value="USD">USD</option>
           </select>
         </div>
+      </div>
       </div>
 
       <div className="flex items-center gap-2">

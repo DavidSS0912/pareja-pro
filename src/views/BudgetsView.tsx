@@ -6,6 +6,12 @@ import { Modal } from '../components/ui/Modal';
 import { BudgetForm } from '../components/forms/BudgetForm';
 import { FormatCurrency } from '../utils';
 
+const EXCHANGE_RATE_USD_MXN = 20;
+const normalize = (amount, currency) => {
+  if (!amount) return 0;
+  return currency === 'USD' ? amount * EXCHANGE_RATE_USD_MXN : amount;
+};
+
 export function BudgetsView({ data, methods }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState(null);
@@ -49,8 +55,27 @@ export function BudgetsView({ data, methods }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {data.budgets.map(budget => {
+          const computedSpent = data.expenses
+            .filter(e => e.category === budget.category && !e.isPrivate)
+            .reduce((acc, curr) => acc + normalize(curr.amount, curr.currency), 0);
+          
+          // Fallback to budget.spent if no matching expenses found (for mock data compatibility)
+          const actualSpent = computedSpent > 0 ? computedSpent : budget.spent || 0;
+
           const disponible = budget.base + budget.rollover;
-          const porcentaje = Math.min((budget.spent / disponible) * 100, 100) || 0;
+          const porcentaje = Math.min((actualSpent / disponible) * 100, 100) || 0;
+          
+          let alertColor = budget.type === 'Ahorro' ? 'bg-indigo-500' : 'bg-emerald-500';
+          let alertText = 'text-emerald-600';
+          if (budget.type !== 'Ahorro') {
+            if (porcentaje >= 100) {
+              alertColor = 'bg-rose-600';
+              alertText = 'text-rose-600 font-black';
+            } else if (porcentaje >= 80) {
+              alertColor = 'bg-amber-500';
+              alertText = 'text-amber-600 font-bold';
+            }
+          }
           
           return (
             <Card key={budget.id} className="hover:border-emerald-200 transition-colors group cursor-default relative">
@@ -100,16 +125,19 @@ export function BudgetsView({ data, methods }) {
               </div>
 
               <div className="flex justify-between text-sm mb-3 font-bold">
-                <span className="text-slate-500">Gastado: {FormatCurrency(budget.spent)}</span>
-                <span className={disponible - budget.spent < 0 ? 'text-rose-600' : 'text-emerald-600'}>
-                  Restante: {FormatCurrency(disponible - budget.spent)}
+                <span className="text-slate-500">Gastado: {FormatCurrency(actualSpent)}</span>
+                <span className={disponible - actualSpent < 0 ? 'text-rose-600' : alertText}>
+                  Restante: {FormatCurrency(disponible - actualSpent)}
                 </span>
               </div>
-              <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden shadow-inner">
+              <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden shadow-inner relative">
                 <div 
-                  className={`h-full transition-all duration-1000 ease-out ${budget.type === 'Ahorro' ? 'bg-indigo-500' : 'bg-emerald-500'}`} 
+                  className={`h-full transition-all duration-1000 ease-out ${alertColor}`} 
                   style={{ width: `${porcentaje}%` }}
                 ></div>
+                {porcentaje >= 80 && budget.type !== 'Ahorro' && (
+                  <div className="absolute top-0 right-0 h-full w-full bg-rose-500/20 animate-pulse pointer-events-none"></div>
+                )}
               </div>
             </Card>
           )

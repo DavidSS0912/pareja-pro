@@ -4,6 +4,7 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { AssetForm } from '../components/forms/AssetForm';
+import { SavingsGoals } from '../components/SavingsGoals';
 import { FormatCurrency } from '../utils';
 
 export function WealthView({ data, calc, methods }) {
@@ -56,6 +57,7 @@ export function WealthView({ data, calc, methods }) {
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <SavingsGoals goals={data.goals} />
         <Card className="hover:border-emerald-200 transition-colors">
           <div className="flex justify-between items-center mb-6">
             <h3 className="font-black text-xl flex items-center gap-3 text-emerald-600 tracking-tight">

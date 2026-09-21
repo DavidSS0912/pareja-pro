@@ -18,10 +18,12 @@ export interface AppState {
   user: UserState | null;
   houseId: string | null;
   authLoading: boolean;
+  dateRange: { start: string, end: string };
 
   setUser: (user: UserState | null) => void;
   setHouseId: (houseId: string | null) => void;
   setAuthLoading: (loading: boolean) => void;
+  setDateRange: (start: string, end: string) => void;
 
   expenses: RecordItem[];
   budgets: RecordItem[];
@@ -29,6 +31,7 @@ export interface AppState {
   assets: RecordItem[];
   incomes: RecordItem[];
   users: RecordItem[];
+  goals: RecordItem[];
 
   initListeners: (houseId: string) => () => void;
 
@@ -51,16 +54,25 @@ export interface AppState {
   addIncome: (income: Omit<RecordItem, 'id'>) => Promise<void>;
   updateIncome: (id: string, income: Partial<Omit<RecordItem, 'id'>>) => Promise<void>;
   deleteIncome: (id: string) => Promise<void>;
+
+  addGoal: (goal: Omit<RecordItem, 'id'>) => Promise<void>;
+  updateGoal: (id: string, goal: Partial<Omit<RecordItem, 'id'>>) => Promise<void>;
+  deleteGoal: (id: string) => Promise<void>;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
   user: null,
   houseId: null,
   authLoading: true,
+  dateRange: {
+    start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
+    end: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0]
+  },
 
   setUser: (user) => set({ user }),
   setHouseId: (houseId) => set({ houseId }),
   setAuthLoading: (loading) => set({ authLoading: loading }),
+  setDateRange: (start, end) => set({ dateRange: { start, end } }),
 
   expenses: [],
   budgets: [],
@@ -68,9 +80,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   assets: [],
   incomes: [],
   users: [],
+  goals: [],
 
   initListeners: (houseId: string) => {
-    const collections = ['expenses', 'budgets', 'cards', 'assets', 'incomes', 'users'] as const;
+    const collections = ['expenses', 'budgets', 'cards', 'assets', 'incomes', 'users', 'goals'] as const;
     const unsubscribes = collections.map((colName) => {
       const q = query(collection(db, colName), where('houseId', '==', houseId));
       return onSnapshot(q, (snapshot) => {
@@ -121,4 +134,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
   updateIncome: async (id, income) => { await updateDoc(doc(db, 'incomes', id), income); },
   deleteIncome: async (id) => { await deleteDoc(doc(db, 'incomes', id)); },
+
+  addGoal: async (goal) => {
+    const { houseId } = get();
+    if (!houseId) return;
+    await addDoc(collection(db, 'goals'), { ...goal, houseId });
+  },
+  updateGoal: async (id, goal) => { await updateDoc(doc(db, 'goals', id), goal); },
+  deleteGoal: async (id) => { await deleteDoc(doc(db, 'goals', id)); },
 }));

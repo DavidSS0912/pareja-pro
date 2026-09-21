@@ -253,19 +253,13 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-24 md:pb-0 md:pl-72 relative">
-      {/* Background gradients for premium feel */}
-      <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-[-10%] right-[-5%] w-[40%] h-[40%] bg-teal-100/40 rounded-full blur-[100px]"></div>
-        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-emerald-100/40 rounded-full blur-[120px]"></div>
-      </div>
-
-      <nav className="fixed bottom-0 w-full bg-white/80 backdrop-blur-xl border-t border-slate-200/50 flex overflow-x-auto scrollbar-hide p-3 md:flex-col md:justify-start md:w-72 md:h-full md:left-0 md:top-0 md:border-r md:border-t-0 md:p-6 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.03)] md:shadow-[10px_0_40px_rgba(0,0,0,0.03)] transition-all">
+    <div className="min-h-screen bg-[#FAFAFA] text-slate-900 font-sans pb-24 md:pb-0 md:pl-72 relative">
+      <nav className="fixed bottom-0 w-full bg-white border-t border-[#E5E5E5] flex overflow-x-auto scrollbar-hide p-3 md:flex-col md:justify-start md:w-72 md:h-full md:left-0 md:top-0 md:border-r md:border-t-0 md:p-6 z-50 transition-all">
         <div className="hidden md:flex mb-12 items-center gap-3 px-2">
-          <div className="bg-gradient-to-br from-emerald-400 to-teal-600 p-2.5 rounded-2xl text-white shadow-lg shadow-emerald-200">
+          <div className="bg-indigo-600 p-2.5 rounded-lg text-white">
             <Wallet size={24}/>
           </div>
-          <h1 className="text-2xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-emerald-700 to-teal-700">Órbita2</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-title">Órbita2</h1>
         </div>
 
         <div className="flex md:flex-col gap-2 w-full min-w-max">
@@ -273,55 +267,52 @@ export default function App() {
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`flex flex-col md:flex-row items-center gap-1 md:gap-4 p-2.5 md:px-5 md:py-4 rounded-2xl transition-all duration-300 flex-1 md:flex-none relative overflow-hidden group ${
+              className={`flex flex-col md:flex-row items-center gap-1 md:gap-3 p-2.5 md:px-4 md:py-3 rounded-lg transition-all duration-200 flex-1 md:flex-none relative group ${
                 activeTab === item.id
-                  ? 'text-emerald-700 font-bold shadow-sm bg-emerald-50 md:bg-emerald-50 border border-emerald-100'
-                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50 border border-transparent'
+                  ? 'text-indigo-600 font-medium bg-indigo-50 border border-indigo-100'
+                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 border border-transparent'
               }`}
             >
-              {activeTab === item.id && (
-                <div className="absolute inset-0 bg-gradient-to-r from-emerald-100/0 via-emerald-100/50 to-emerald-100/0 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              )}
-              <div className={`relative z-10 transition-transform duration-300 ${activeTab === item.id ? 'scale-110' : 'group-hover:scale-110'}`}>
+              <div className={`relative z-10 transition-transform duration-200 ${activeTab === item.id ? 'scale-105' : 'group-hover:scale-105'}`}>
                 {item.icon}
               </div>
-              <span className="text-[10px] md:text-[15px] whitespace-nowrap relative z-10 tracking-tight">{item.label}</span>
+              <span className="text-[10px] md:text-sm whitespace-nowrap relative z-10 tracking-tight">{item.label}</span>
             </button>
           ))}
           
-          <div className="hidden md:block mt-auto pt-6 border-t border-slate-200/50">
-            <button onClick={() => { setShowInviteModal(true); handleInvite(); }} className="w-full flex items-center gap-4 p-4 rounded-2xl text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors font-medium">
-              <UserPlus size={20} />
-              <span>Invitar integrante</span>
+          <div className="hidden md:block mt-auto pt-6 border-t border-[#E5E5E5]">
+            <button onClick={() => { setShowInviteModal(true); handleInvite(); }} className="w-full flex items-center gap-3 p-3 rounded-lg text-indigo-600 hover:bg-indigo-50 transition-colors font-medium">
+              <UserPlus size={18} />
+              <span className="text-sm">Invitar integrante</span>
             </button>
-            <button onClick={() => signOut(auth)} className="w-full mt-2 flex items-center gap-4 p-4 rounded-2xl text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors">
-              <LogOut size={20} />
-              <span>Cerrar sesión</span>
+            <button onClick={() => signOut(auth)} className="w-full mt-2 flex items-center gap-3 p-3 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors">
+              <LogOut size={18} />
+              <span className="text-sm">Cerrar sesión</span>
             </button>
           </div>
         </div>
       </nav>
 
       <main className="p-4 md:p-10 max-w-5xl mx-auto space-y-6 relative z-10">
-        <div className="md:hidden flex items-center justify-between mb-4 bg-white/80 backdrop-blur-md p-4 rounded-3xl shadow-sm border border-slate-100">
+        <div className="md:hidden flex items-center justify-between mb-6 bg-white p-4 border-b border-[#E5E5E5] -mx-4 -mt-4">
           <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-br from-emerald-400 to-teal-600 p-2 rounded-xl text-white shadow-md shadow-emerald-200/50">
+            <div className="bg-indigo-600 p-2 rounded-lg text-white">
               <Wallet size={20}/>
             </div>
-            <h1 className="text-2xl font-black tracking-tighter text-slate-800">Órbita2</h1>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 font-title">Órbita2</h1>
           </div>
-          <button onClick={() => { setShowInviteModal(true); handleInvite(); }} className="p-2 text-emerald-700 bg-emerald-50 rounded-xl">
+          <button onClick={() => { setShowInviteModal(true); handleInvite(); }} className="p-2 text-indigo-600 bg-indigo-50 rounded-lg">
             <UserPlus size={20} />
           </button>
         </div>
 
         {activeTab !== 'historical' && (
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-            <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">Periodo:</span>
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4 bg-white p-4 rounded-xl border border-[#E5E5E5]">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Periodo:</span>
             <div className="flex items-center gap-2">
-              <input type="date" value={dateRange?.start || ''} onChange={e => setDateRange(e.target.value, dateRange?.end || '')} className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-none transition-all" />
+              <input type="date" value={dateRange?.start || ''} onChange={e => setDateRange(e.target.value, dateRange?.end || '')} className="px-3 py-1.5 bg-white border border-[#E5E5E5] rounded-md text-sm font-medium text-slate-900 focus:ring-1 focus:ring-indigo-500 outline-none transition-all tabular-nums tracking-tight" />
               <span className="text-slate-400">-</span>
-              <input type="date" value={dateRange?.end || ''} onChange={e => setDateRange(dateRange?.start || '', e.target.value)} className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-none transition-all" />
+              <input type="date" value={dateRange?.end || ''} onChange={e => setDateRange(dateRange?.start || '', e.target.value)} className="px-3 py-1.5 bg-white border border-[#E5E5E5] rounded-md text-sm font-medium text-slate-900 focus:ring-1 focus:ring-indigo-500 outline-none transition-all tabular-nums tracking-tight" />
             </div>
           </div>
         )}
