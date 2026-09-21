@@ -4,7 +4,8 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { ExpenseForm } from '../components/forms/ExpenseForm';
-import { FormatCurrency } from '../utils';
+import { FormatCurrency, exportToCSV } from '../utils';
+import { Download } from 'lucide-react';
 
 export function SettlementView({ data, calc, methods }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -74,9 +75,14 @@ export function SettlementView({ data, calc, methods }) {
       <Card>
         <div className="flex justify-between items-center mb-6">
           <h3 className="font-bold text-xl text-slate-800">Historial de Gastos</h3>
-          <Button onClick={() => handleOpenModal()} size="sm">
-            <Plus size={16} className="mr-1" /> Nuevo Gasto
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => exportToCSV(data.expenses, 'liquidacion_gastos')} size="sm" variant="secondary">
+              <Download size={16} className="mr-1" /> Exportar
+            </Button>
+            <Button onClick={() => handleOpenModal()} size="sm">
+              <Plus size={16} className="mr-1" /> Nuevo Gasto
+            </Button>
+          </div>
         </div>
         
         <div className="space-y-3">
@@ -86,12 +92,30 @@ export function SettlementView({ data, calc, methods }) {
               <div key={exp.id} className="flex justify-between items-center p-4 bg-slate-50 hover:bg-slate-100 rounded-2xl border border-slate-100 transition-colors group">
                 <div className="flex items-center gap-4">
                   <div className={`w-10 h-10 rounded-full ${payer?.avatar || 'bg-slate-300'} flex items-center justify-center text-white font-bold`}>
-                    {payer?.name?.[0]}
+                    {payer?.photoURL ? (
+                      <>
+                        <img 
+                          src={payer.photoURL} 
+                          alt={payer?.name} 
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-cover rounded-full" 
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            if (e.currentTarget.nextElementSibling) {
+                              e.currentTarget.nextElementSibling.classList.remove('hidden');
+                            }
+                          }}
+                        />
+                        <span className="hidden">{payer?.name?.[0]}</span>
+                      </>
+                    ) : (
+                      payer?.name?.[0]
+                    )}
                   </div>
                   <div>
                     <p className="font-bold text-slate-800">{exp.desc} {exp.isPrivate && <span className="text-xs ml-2 bg-slate-200 text-slate-600 px-2 py-1 rounded">Privado</span>}</p>
                     <p className="text-xs font-medium text-slate-500 mt-1">
-                      Pagado por {payer?.name} • División: {exp.isPrivate ? 'No aplica (Privado)' : (exp.splitType === 'proporcional' ? 'Proporcional' : '50/50')} • Moneda: {exp.currency || 'MXN'}
+                      Pagado por {payer?.name} • Fecha: {exp.date || 'N/A'} • División: {exp.isPrivate ? 'No aplica (Privado)' : (exp.splitType === 'proporcional' ? 'Proporcional' : '50/50')} • Moneda: {exp.currency || 'MXN'}
                     </p>
                   </div>
                 </div>
@@ -120,6 +144,7 @@ export function SettlementView({ data, calc, methods }) {
         <ExpenseForm 
           initialData={editingExpense} 
           users={data.users}
+          budgets={data.budgets}
           onSubmit={handleSubmit} 
           onCancel={handleCloseModal} 
         />

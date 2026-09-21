@@ -33,7 +33,17 @@ export default function App() {
 
   const data = useAppStore();
   const methods = data;
-  const { user, houseId, authLoading, setUser, setHouseId, setAuthLoading, initListeners } = data;
+  const { user, houseId, authLoading, setUser, setHouseId, setAuthLoading, initListeners, dateRange, setDateRange } = data;
+
+  const filteredData = useMemo(() => {
+    const start = dateRange?.start || '2000-01-01';
+    const end = dateRange?.end || '2100-12-31';
+    return {
+      ...data,
+      incomes: data.incomes.filter(i => !i.date || (i.date >= start && i.date <= end)),
+      expenses: data.expenses.filter(e => !e.date || (e.date >= start && e.date <= end))
+    };
+  }, [data, dateRange]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (fbUser) => {
@@ -47,6 +57,11 @@ export default function App() {
           let currentHouseId = '';
           if (userDoc.exists()) {
             currentHouseId = userDoc.data().houseId;
+            try {
+              await setDoc(userDocRef, { photoURL: fbUser.photoURL || null }, { merge: true });
+            } catch (err) {
+              console.error("Error updating photoURL", err);
+            }
             setHouseId(currentHouseId);
           } else {
             currentHouseId = `house_${fbUser.uid}`;
@@ -56,7 +71,8 @@ export default function App() {
               email: fbUser.email, 
               displayName: fbUser.displayName,
               name: fbUser.displayName?.split(' ')[0] || 'Usuario',
-              avatar: 'bg-emerald-500'
+              avatar: 'bg-emerald-500',
+              photoURL: fbUser.photoURL || null
             });
             setHouseId(currentHouseId);
           }
@@ -140,20 +156,20 @@ export default function App() {
     };
 
     // Solo ingresos públicos se cuentan para el presupuesto de la casa
-    const totalIncome = data.incomes.filter(i => !i.isPrivate).reduce((acc, curr) => acc + normalize(curr.amount, curr.currency), 0);
+    const totalIncome = filteredData.incomes.filter(i => !i.isPrivate).reduce((acc, curr) => acc + normalize(curr.amount, curr.currency), 0);
 
     const incomesByUser = {};
-    data.users.forEach(u => incomesByUser[u.id] = 0);
-    data.incomes.forEach(inc => {
+    filteredData.users.forEach(u => incomesByUser[u.id] = 0);
+    filteredData.incomes.forEach(inc => {
       if (inc.userId) incomesByUser[inc.userId] = (incomesByUser[inc.userId] || 0) + normalize(inc.amount, inc.currency);
     });
 
-    const totalIncomesAll = data.incomes.reduce((acc, curr) => acc + normalize(curr.amount, curr.currency), 0);
+    const totalIncomesAll = filteredData.incomes.reduce((acc, curr) => acc + normalize(curr.amount, curr.currency), 0);
 
     let zoeOwesDavid = 0;
     let davidOwesZoe = 0;
 
-    data.expenses.forEach(exp => {
+    filteredData.expenses.forEach(exp => {
       if (exp.isPrivate) return;
 
       const normalizedAmount = normalize(exp.amount, exp.currency);
@@ -162,8 +178,8 @@ export default function App() {
       let ratio2 = 0.5;
 
       if (exp.splitType === 'proporcional') {
-        const u1Id = data.users[0]?.id || 'u1';
-        const u2Id = data.users[1]?.id || 'u2';
+        const u1Id = filteredData.users[0]?.id || 'u1';
+        const u2Id = filteredData.users[1]?.id || 'u2';
         
         const inc1 = incomesByUser[u1Id] || 0;
         const inc2 = incomesByUser[u2Id] || 0;
@@ -175,24 +191,24 @@ export default function App() {
         }
       }
 
-      if (exp.paidBy === data.users[0]?.id || exp.paidBy === 'u1') {
+      if (exp.paidBy === filteredData.users[0]?.id || exp.paidBy === 'u1') {
         zoeOwesDavid += normalizedAmount * ratio2;
-      } else if (exp.paidBy === data.users[1]?.id || exp.paidBy === 'u2') {
+      } else if (exp.paidBy === filteredData.users[1]?.id || exp.paidBy === 'u2') {
         davidOwesZoe += normalizedAmount * ratio1;
       }
     });
 
     const netSettlement = zoeOwesDavid - davidOwesZoe;
 
-    const totalBudgeted = data.budgets.reduce((acc, curr) => acc + curr.base, 0);
+    const totalBudgeted = filteredData.budgets.reduce((acc, curr) => acc + curr.base, 0);
     const unallocated = totalIncome - totalBudgeted;
 
-    const needs = data.budgets.filter(b => b.type === 'Necesidad').reduce((acc, curr) => acc + curr.base, 0);
-    const wants = data.budgets.filter(b => b.type === 'Deseo').reduce((acc, curr) => acc + curr.base, 0);
-    const savings = data.budgets.filter(b => b.type === 'Ahorro').reduce((acc, curr) => acc + curr.base, 0);
+    const needs = filteredData.budgets.filter(b => b.type === 'Necesidad').reduce((acc, curr) => acc + curr.base, 0);
+    const wants = filteredData.budgets.filter(b => b.type === 'Deseo').reduce((acc, curr) => acc + curr.base, 0);
+    const savings = filteredData.budgets.filter(b => b.type === 'Ahorro').reduce((acc, curr) => acc + curr.base, 0);
 
-    const totalAssets = data.assets.reduce((acc, curr) => acc + curr.value, 0);
-    const totalLiabilities = data.cards.reduce((acc, curr) => acc + curr.balance, 0);
+    const totalAssets = filteredData.assets.reduce((acc, curr) => acc + curr.value, 0);
+    const totalLiabilities = filteredData.cards.reduce((acc, curr) => acc + curr.balance, 0);
     const netWorth = totalAssets - totalLiabilities;
 
     return {
@@ -203,7 +219,7 @@ export default function App() {
       savingsPct: totalIncome ? (savings / totalIncome) * 100 : 0,
       totalAssets, totalLiabilities, netWorth
     };
-  }, [data]);
+  }, [filteredData]);
 
   if (authLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div></div>;
@@ -215,14 +231,14 @@ export default function App() {
 
   const renderTab = () => {
     switch (activeTab) {
-      case 'dashboard': return <DashboardView data={data} calc={calc} methods={methods} />;
-      case 'budgets': return <BudgetsView data={data} methods={methods} />;
-      case 'cards': return <CardsView data={data} methods={methods} />;
-      case 'settlement': return <SettlementView data={data} calc={calc} methods={methods} />;
-      case 'debts': return <DebtSimulatorView data={data} />;
-      case 'wealth': return <WealthView data={data} calc={calc} methods={methods} />;
+      case 'dashboard': return <DashboardView data={filteredData} calc={calc} methods={methods} />;
+      case 'budgets': return <BudgetsView data={filteredData} methods={methods} />;
+      case 'cards': return <CardsView data={filteredData} methods={methods} />;
+      case 'settlement': return <SettlementView data={filteredData} calc={calc} methods={methods} />;
+      case 'debts': return <DebtSimulatorView data={filteredData} />;
+      case 'wealth': return <WealthView data={filteredData} calc={calc} methods={methods} />;
       case 'historical': return <HistoricalView data={data} />;
-      default: return <DashboardView data={data} calc={calc} methods={methods} />;
+      default: return <DashboardView data={filteredData} calc={calc} methods={methods} />;
     }
   };
 
@@ -287,7 +303,7 @@ export default function App() {
       </nav>
 
       <main className="p-4 md:p-10 max-w-5xl mx-auto space-y-6 relative z-10">
-        <div className="md:hidden flex items-center justify-between mb-8 bg-white/80 backdrop-blur-md p-4 rounded-3xl shadow-sm border border-slate-100">
+        <div className="md:hidden flex items-center justify-between mb-4 bg-white/80 backdrop-blur-md p-4 rounded-3xl shadow-sm border border-slate-100">
           <div className="flex items-center gap-3">
             <div className="bg-gradient-to-br from-emerald-400 to-teal-600 p-2 rounded-xl text-white shadow-md shadow-emerald-200/50">
               <Wallet size={20}/>
@@ -298,6 +314,17 @@ export default function App() {
             <UserPlus size={20} />
           </button>
         </div>
+
+        {activeTab !== 'historical' && (
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+            <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">Periodo:</span>
+            <div className="flex items-center gap-2">
+              <input type="date" value={dateRange?.start || ''} onChange={e => setDateRange(e.target.value, dateRange?.end || '')} className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-none transition-all" />
+              <span className="text-slate-400">-</span>
+              <input type="date" value={dateRange?.end || ''} onChange={e => setDateRange(dateRange?.start || '', e.target.value)} className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-none transition-all" />
+            </div>
+          </div>
+        )}
 
         {renderTab()}
       </main>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PieChart, TrendingUp, Plus, Trash2, Edit2 } from 'lucide-react';
+import { PieChart, TrendingUp, Plus, Trash2, Edit2, UserPlus } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
@@ -64,7 +64,47 @@ export function DashboardView({ data, calc, methods }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <h2 className="text-lg font-bold mb-6 flex items-center gap-3">
+            <div className="bg-emerald-100 p-2 rounded-xl text-emerald-600">
+              <UserPlus size={20} />
+            </div>
+            Mi Casa
+          </h2>
+          <div className="space-y-4">
+            {data.users.map(u => (
+              <div key={u.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <div className={`w-10 h-10 rounded-full ${u.avatar || 'bg-slate-300'} flex items-center justify-center text-white font-bold`}>
+                  {u.photoURL ? (
+                    <>
+                      <img 
+                        src={u.photoURL} 
+                        alt={u.name} 
+                        referrerPolicy="no-referrer"
+                        className="w-full h-full object-cover rounded-full" 
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          if (e.currentTarget.nextElementSibling) {
+                            e.currentTarget.nextElementSibling.classList.remove('hidden');
+                          }
+                        }}
+                      />
+                      <span className="hidden">{u.name?.[0]}</span>
+                    </>
+                  ) : (
+                    u.name?.[0]
+                  )}
+                </div>
+                <div>
+                  <p className="font-bold text-slate-800">{u.name}</p>
+                  <p className="text-xs text-slate-500">{u.email}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
         <Card>
           <h2 className="text-lg font-bold mb-8 flex items-center gap-3">
             <div className="bg-indigo-100 p-2 rounded-xl text-indigo-600">
@@ -108,11 +148,29 @@ export function DashboardView({ data, calc, methods }) {
                 <div key={income.id} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100 group">
                   <div className="flex items-center gap-3">
                     <div className={`w-8 h-8 rounded-full ${user?.avatar || 'bg-slate-300'} flex items-center justify-center text-white font-bold text-xs`}>
-                      {user?.name?.[0]}
+                      {user?.photoURL ? (
+                        <>
+                          <img 
+                            src={user.photoURL} 
+                            alt={user?.name} 
+                            referrerPolicy="no-referrer"
+                            className="w-full h-full object-cover rounded-full" 
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              if (e.currentTarget.nextElementSibling) {
+                                e.currentTarget.nextElementSibling.classList.remove('hidden');
+                              }
+                            }}
+                          />
+                          <span className="hidden">{user?.name?.[0]}</span>
+                        </>
+                      ) : (
+                        user?.name?.[0]
+                      )}
                     </div>
                     <div>
                       <p className="font-bold text-slate-800 text-sm">{income.type}</p>
-                      <p className="text-xs text-slate-500">{user?.name}</p>
+                      <p className="text-xs text-slate-500">{user?.name} &bull; {income.date}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
