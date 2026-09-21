@@ -12,11 +12,24 @@ export function HistoricalView({ data }) {
 
   const handleExportCSV = () => {
     if (!expenses || expenses.length === 0) return;
-    const headers = ['id', 'description', 'amount', 'category', 'date', 'paidBy', 'type'];
+    
+    const sanitize = (val) => {
+      let str = String(val ?? '');
+      // CSV Injection mitigation
+      if (/^[=+\-@\t\r]/.test(str)) {
+        str = "'" + str;
+      }
+      // Escape double quotes
+      str = str.replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const headers = ['id', 'desc', 'amount', 'currency', 'category', 'paidBy', 'splitType', 'isPrivate'];
     const csvContent = [
       headers.join(','),
-      ...expenses.map(e => headers.map(h => `"${e[h] || ''}"`).join(','))
+      ...expenses.map(e => headers.map(h => sanitize(e[h])).join(','))
     ].join('\n');
+    
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
