@@ -10,7 +10,7 @@ import {
   Flame
 } from 'lucide-react';
 
-import { useAppData } from './hooks/useAppData';
+import { useAppStore } from './store/useAppStore';
 import { DashboardView } from './views/DashboardView';
 import { BudgetsView } from './views/BudgetsView';
 import { CardsView } from './views/CardsView';
@@ -21,7 +21,7 @@ import { HistoricalView } from './views/HistoricalView';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [data, methods] = useAppData();
+  const data = useAppStore(); const methods = data;
 
   const calc = useMemo(() => {
     const totalIncome = data.incomes.reduce((acc, curr) => acc + curr.amount, 0);
@@ -63,9 +63,9 @@ export default function App() {
       case 'budgets': return <BudgetsView data={data} methods={methods} />;
       case 'cards': return <CardsView data={data} methods={methods} />;
       case 'settlement': return <SettlementView data={data} calc={calc} methods={methods} />;
-      case 'debts': return <DebtSimulatorView data={data} methods={methods} />;
+      case 'debts': return <DebtSimulatorView data={data} />;
       case 'wealth': return <WealthView data={data} calc={calc} methods={methods} />;
-      case 'historical': return <HistoricalView data={data} methods={methods} />;
+      case 'historical': return <HistoricalView data={data} />;
       default: return <DashboardView data={data} calc={calc} methods={methods} />;
     }
   };

@@ -78,8 +78,8 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
             value={formData.shared} 
             onChange={e => setFormData({...formData, shared: e.target.value})}
           >
-            <option value={false}>No (Individual)</option>
-            <option value={true}>Sí (Gastos de Hogar)</option>
+            <option value="false">No (Individual)</option>
+            <option value="true">Sí (Gastos de Hogar)</option>
           </select>
         </div>
       </div>

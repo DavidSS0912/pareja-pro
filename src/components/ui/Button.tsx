@@ -26,7 +26,7 @@ export function Button({
 
   return (
     <button 
-      type={type} 
+      type={type as any} 
       className={`${baseClasses} ${variants[variant]} ${sizes[size]} ${className}`} 
       {...props}
     >
