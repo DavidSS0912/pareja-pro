@@ -1,69 +1,122 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { SEED_DATA } from '../data';
+import { db } from '../firebase';
+import { collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, where } from 'firebase/firestore';
 
 export interface RecordItem {
   id: string;
   [key: string]: any;
 }
 
+export interface UserState {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+}
+
 export interface AppState {
+  user: UserState | null;
+  houseId: string | null;
+  authLoading: boolean;
+
+  setUser: (user: UserState | null) => void;
+  setHouseId: (houseId: string | null) => void;
+  setAuthLoading: (loading: boolean) => void;
+
   expenses: RecordItem[];
   budgets: RecordItem[];
   cards: RecordItem[];
   assets: RecordItem[];
   incomes: RecordItem[];
-  
-  addExpense: (expense: Omit<RecordItem, 'id'>) => void;
-  updateExpense: (id: string, expense: Partial<Omit<RecordItem, 'id'>>) => void;
-  deleteExpense: (id: string) => void;
 
-  addBudget: (budget: Omit<RecordItem, 'id'>) => void;
-  updateBudget: (id: string, budget: Partial<Omit<RecordItem, 'id'>>) => void;
-  deleteBudget: (id: string) => void;
+  initListeners: (houseId: string) => () => void;
 
-  addCard: (card: Omit<RecordItem, 'id'>) => void;
-  updateCard: (id: string, card: Partial<Omit<RecordItem, 'id'>>) => void;
-  deleteCard: (id: string) => void;
+  addExpense: (expense: Omit<RecordItem, 'id'>) => Promise<void>;
+  updateExpense: (id: string, expense: Partial<Omit<RecordItem, 'id'>>) => Promise<void>;
+  deleteExpense: (id: string) => Promise<void>;
 
-  addAsset: (asset: Omit<RecordItem, 'id'>) => void;
-  updateAsset: (id: string, asset: Partial<Omit<RecordItem, 'id'>>) => void;
-  deleteAsset: (id: string) => void;
+  addBudget: (budget: Omit<RecordItem, 'id'>) => Promise<void>;
+  updateBudget: (id: string, budget: Partial<Omit<RecordItem, 'id'>>) => Promise<void>;
+  deleteBudget: (id: string) => Promise<void>;
 
-  addIncome: (income: Omit<RecordItem, 'id'>) => void;
-  updateIncome: (id: string, income: Partial<Omit<RecordItem, 'id'>>) => void;
-  deleteIncome: (id: string) => void;
+  addCard: (card: Omit<RecordItem, 'id'>) => Promise<void>;
+  updateCard: (id: string, card: Partial<Omit<RecordItem, 'id'>>) => Promise<void>;
+  deleteCard: (id: string) => Promise<void>;
+
+  addAsset: (asset: Omit<RecordItem, 'id'>) => Promise<void>;
+  updateAsset: (id: string, asset: Partial<Omit<RecordItem, 'id'>>) => Promise<void>;
+  deleteAsset: (id: string) => Promise<void>;
+
+  addIncome: (income: Omit<RecordItem, 'id'>) => Promise<void>;
+  updateIncome: (id: string, income: Partial<Omit<RecordItem, 'id'>>) => Promise<void>;
+  deleteIncome: (id: string) => Promise<void>;
 }
 
-const generateId = (prefix: string) => `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+export const useAppStore = create<AppState>((set, get) => ({
+  user: null,
+  houseId: null,
+  authLoading: true,
 
-export const useAppStore = create<AppState>()(
-  persist(
-    (set) => ({
-      ...SEED_DATA, // Assuming SEED_DATA has initial arrays for all collections
+  setUser: (user) => set({ user }),
+  setHouseId: (houseId) => set({ houseId }),
+  setAuthLoading: (loading) => set({ authLoading: loading }),
 
-      addExpense: (expense) => set((state) => ({ expenses: [...state.expenses, { ...expense, id: generateId('e') }] })),
-      updateExpense: (id, expense) => set((state) => ({ expenses: state.expenses.map(e => e.id === id ? { ...e, ...expense } : e) })),
-      deleteExpense: (id) => set((state) => ({ expenses: state.expenses.filter(e => e.id !== id) })),
+  expenses: [],
+  budgets: [],
+  cards: [],
+  assets: [],
+  incomes: [],
 
-      addBudget: (budget) => set((state) => ({ budgets: [...state.budgets, { ...budget, id: generateId('b') }] })),
-      updateBudget: (id, budget) => set((state) => ({ budgets: state.budgets.map(b => b.id === id ? { ...b, ...budget } : b) })),
-      deleteBudget: (id) => set((state) => ({ budgets: state.budgets.filter(b => b.id !== id) })),
+  initListeners: (houseId: string) => {
+    const collections = ['expenses', 'budgets', 'cards', 'assets', 'incomes'] as const;
+    const unsubscribes = collections.map((colName) => {
+      const q = query(collection(db, colName), where('houseId', '==', houseId));
+      return onSnapshot(q, (snapshot) => {
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        set({ [colName]: data });
+      });
+    });
 
-      addCard: (card) => set((state) => ({ cards: [...state.cards, { ...card, id: generateId('c') }] })),
-      updateCard: (id, card) => set((state) => ({ cards: state.cards.map(c => c.id === id ? { ...c, ...card } : c) })),
-      deleteCard: (id) => set((state) => ({ cards: state.cards.filter(c => c.id !== id) })),
+    return () => unsubscribes.forEach(unsub => unsub());
+  },
 
-      addAsset: (asset) => set((state) => ({ assets: [...state.assets, { ...asset, id: generateId('a') }] })),
-      updateAsset: (id, asset) => set((state) => ({ assets: state.assets.map(a => a.id === id ? { ...a, ...asset } : a) })),
-      deleteAsset: (id) => set((state) => ({ assets: state.assets.filter(a => a.id !== id) })),
+  addExpense: async (expense) => {
+    const { houseId } = get();
+    if (!houseId) return;
+    await addDoc(collection(db, 'expenses'), { ...expense, houseId });
+  },
+  updateExpense: async (id, expense) => { await updateDoc(doc(db, 'expenses', id), expense); },
+  deleteExpense: async (id) => { await deleteDoc(doc(db, 'expenses', id)); },
 
-      addIncome: (income) => set((state) => ({ incomes: [...state.incomes, { ...income, id: generateId('i') }] })),
-      updateIncome: (id, income) => set((state) => ({ incomes: state.incomes.map(i => i.id === id ? { ...i, ...income } : i) })),
-      deleteIncome: (id) => set((state) => ({ incomes: state.incomes.filter(i => i.id !== id) })),
-    }),
-    {
-      name: 'orbita2_data',
-    }
-  )
-);
+  addBudget: async (budget) => {
+    const { houseId } = get();
+    if (!houseId) return;
+    await addDoc(collection(db, 'budgets'), { ...budget, houseId });
+  },
+  updateBudget: async (id, budget) => { await updateDoc(doc(db, 'budgets', id), budget); },
+  deleteBudget: async (id) => { await deleteDoc(doc(db, 'budgets', id)); },
+
+  addCard: async (card) => {
+    const { houseId } = get();
+    if (!houseId) return;
+    await addDoc(collection(db, 'cards'), { ...card, houseId });
+  },
+  updateCard: async (id, card) => { await updateDoc(doc(db, 'cards', id), card); },
+  deleteCard: async (id) => { await deleteDoc(doc(db, 'cards', id)); },
+
+  addAsset: async (asset) => {
+    const { houseId } = get();
+    if (!houseId) return;
+    await addDoc(collection(db, 'assets'), { ...asset, houseId });
+  },
+  updateAsset: async (id, asset) => { await updateDoc(doc(db, 'assets', id), asset); },
+  deleteAsset: async (id) => { await deleteDoc(doc(db, 'assets', id)); },
+
+  addIncome: async (income) => {
+    const { houseId } = get();
+    if (!houseId) return;
+    await addDoc(collection(db, 'incomes'), { ...income, houseId });
+  },
+  updateIncome: async (id, income) => { await updateDoc(doc(db, 'incomes', id), income); },
+  deleteIncome: async (id) => { await deleteDoc(doc(db, 'incomes', id)); },
+}));

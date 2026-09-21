@@ -1,16 +1,22 @@
-import React, { useState, useMemo } from 'react';
-import { 
-  Home, 
-  CreditCard, 
-  PieChart, 
-  ArrowRightLeft, 
+import React, { useState, useMemo, useEffect } from 'react';
+import {
+  Home,
+  CreditCard,
+  PieChart,
+  ArrowRightLeft,
   Wallet,
   BarChart3,
   Landmark,
-  Flame
+  Flame,
+  UserPlus,
+  LogOut
 } from 'lucide-react';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth, db } from './firebase';
+import { doc, getDoc, setDoc, addDoc, collection } from 'firebase/firestore';
 
 import { useAppStore } from './store/useAppStore';
+import { AuthView } from './views/AuthView';
 import { DashboardView } from './views/DashboardView';
 import { BudgetsView } from './views/BudgetsView';
 import { CardsView } from './views/CardsView';
@@ -21,11 +27,102 @@ import { HistoricalView } from './views/HistoricalView';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const data = useAppStore(); const methods = data;
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteLink, setInviteLink] = useState('');
+  const [joinHouseConfirm, setJoinHouseConfirm] = useState<string | null>(null);
+
+  const data = useAppStore();
+  const methods = data;
+  const { user, houseId, authLoading, setUser, setHouseId, setAuthLoading, initListeners } = data;
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (fbUser) => {
+      if (fbUser) {
+        setUser({ uid: fbUser.uid, email: fbUser.email, displayName: fbUser.displayName, photoURL: fbUser.photoURL });
+        
+        const userDocRef = doc(db, 'users', fbUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        
+        let currentHouseId = '';
+        if (userDoc.exists()) {
+          currentHouseId = userDoc.data().houseId;
+          setHouseId(currentHouseId);
+        } else {
+          currentHouseId = `house_${fbUser.uid}`;
+          await setDoc(doc(db, 'houses', currentHouseId), { members: [fbUser.uid] });
+          await setDoc(userDocRef, { houseId: currentHouseId, email: fbUser.email, displayName: fbUser.displayName });
+          setHouseId(currentHouseId);
+        }
+
+        // Check for invite
+        const path = window.location.pathname;
+        if (path.startsWith('/invite/')) {
+          const inviteId = path.split('/')[2];
+          const inviteRef = doc(db, 'invitations', inviteId);
+          const inviteDoc = await getDoc(inviteRef);
+          if (inviteDoc.exists() && !inviteDoc.data().accepted) {
+             const invitedHouseId = inviteDoc.data().houseId;
+             if (invitedHouseId !== currentHouseId) {
+               setJoinHouseConfirm(inviteId);
+             } else {
+               window.history.replaceState({}, document.title, "/");
+             }
+          } else {
+            window.history.replaceState({}, document.title, "/");
+          }
+        }
+      } else {
+        setUser(null);
+        setHouseId(null);
+      }
+      setAuthLoading(false);
+    });
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    if (houseId) {
+      const unsub = initListeners(houseId);
+      return () => unsub();
+    }
+  }, [houseId]);
+
+  const handleJoinHouse = async (accept: boolean) => {
+    if (accept && joinHouseConfirm && user) {
+      const inviteRef = doc(db, 'invitations', joinHouseConfirm);
+      const inviteDoc = await getDoc(inviteRef);
+      if (inviteDoc.exists()) {
+        const newHouseId = inviteDoc.data().houseId;
+        const houseRef = doc(db, 'houses', newHouseId);
+        const houseDoc = await getDoc(houseRef);
+        if (houseDoc.exists()) {
+           await setDoc(doc(db, 'houses', newHouseId), { members: [...houseDoc.data().members, user.uid] }, { merge: true });
+           await setDoc(doc(db, 'users', user.uid), { houseId: newHouseId }, { merge: true });
+           await setDoc(inviteRef, { accepted: true }, { merge: true });
+           setHouseId(newHouseId);
+        }
+      }
+    }
+    setJoinHouseConfirm(null);
+    window.history.replaceState({}, document.title, "/");
+  };
+
+  const handleInvite = async () => {
+    if (!user || !houseId) return;
+    const inviteRef = await addDoc(collection(db, 'invitations'), {
+      houseId,
+      fromUid: user.uid,
+      createdAt: new Date().toISOString(),
+      accepted: false
+    });
+    const link = `${window.location.origin}/invite/${inviteRef.id}`;
+    setInviteLink(link);
+    navigator.clipboard.writeText(link);
+  };
 
   const calc = useMemo(() => {
     const totalIncome = data.incomes.reduce((acc, curr) => acc + curr.amount, 0);
-    
+
     let zoeOwesDavid = 0;
     let davidOwesZoe = 0;
     data.expenses.forEach(exp => {
@@ -48,14 +145,22 @@ export default function App() {
     const netWorth = totalAssets - totalLiabilities;
 
     return {
-      totalIncome, unallocated, 
+      totalIncome, unallocated,
       netSettlement, settlementAmount: Math.abs(netSettlement),
-      needsPct: (needs / totalIncome) * 100,
-      wantsPct: (wants / totalIncome) * 100,
-      savingsPct: (savings / totalIncome) * 100,
+      needsPct: totalIncome ? (needs / totalIncome) * 100 : 0,
+      wantsPct: totalIncome ? (wants / totalIncome) * 100 : 0,
+      savingsPct: totalIncome ? (savings / totalIncome) * 100 : 0,
       totalAssets, totalLiabilities, netWorth
     };
   }, [data]);
+
+  if (authLoading) {
+    return <div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div></div>;
+  }
+
+  if (!user) {
+    return <AuthView />;
+  }
 
   const renderTab = () => {
     switch (activeTab) {
@@ -95,15 +200,15 @@ export default function App() {
           </div>
           <h1 className="text-2xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-emerald-700 to-teal-700">Órbita2</h1>
         </div>
-        
+
         <div className="flex md:flex-col gap-2 w-full min-w-max">
           {navItems.map(item => (
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
               className={`flex flex-col md:flex-row items-center gap-1 md:gap-4 p-2.5 md:px-5 md:py-4 rounded-2xl transition-all duration-300 flex-1 md:flex-none relative overflow-hidden group ${
-                activeTab === item.id 
-                  ? 'text-emerald-700 font-bold shadow-sm bg-emerald-50 md:bg-emerald-50 border border-emerald-100' 
+                activeTab === item.id
+                  ? 'text-emerald-700 font-bold shadow-sm bg-emerald-50 md:bg-emerald-50 border border-emerald-100'
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50 border border-transparent'
               }`}
             >
@@ -116,19 +221,78 @@ export default function App() {
               <span className="text-[10px] md:text-[15px] whitespace-nowrap relative z-10 tracking-tight">{item.label}</span>
             </button>
           ))}
+          
+          <div className="hidden md:block mt-auto pt-6 border-t border-slate-200/50">
+            <button onClick={() => { setShowInviteModal(true); handleInvite(); }} className="w-full flex items-center gap-4 p-4 rounded-2xl text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors font-medium">
+              <UserPlus size={20} />
+              <span>Invitar integrante</span>
+            </button>
+            <button onClick={() => signOut(auth)} className="w-full mt-2 flex items-center gap-4 p-4 rounded-2xl text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors">
+              <LogOut size={20} />
+              <span>Cerrar sesión</span>
+            </button>
+          </div>
         </div>
       </nav>
 
       <main className="p-4 md:p-10 max-w-5xl mx-auto space-y-6 relative z-10">
-        <div className="md:hidden flex items-center gap-3 mb-8 bg-white/80 backdrop-blur-md p-4 rounded-3xl shadow-sm border border-slate-100">
-          <div className="bg-gradient-to-br from-emerald-400 to-teal-600 p-2 rounded-xl text-white shadow-md shadow-emerald-200/50">
-            <Wallet size={20}/>
+        <div className="md:hidden flex items-center justify-between mb-8 bg-white/80 backdrop-blur-md p-4 rounded-3xl shadow-sm border border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="bg-gradient-to-br from-emerald-400 to-teal-600 p-2 rounded-xl text-white shadow-md shadow-emerald-200/50">
+              <Wallet size={20}/>
+            </div>
+            <h1 className="text-2xl font-black tracking-tighter text-slate-800">Órbita2</h1>
           </div>
-          <h1 className="text-2xl font-black tracking-tighter text-slate-800">Órbita2</h1>
+          <button onClick={() => { setShowInviteModal(true); handleInvite(); }} className="p-2 text-emerald-700 bg-emerald-50 rounded-xl">
+            <UserPlus size={20} />
+          </button>
         </div>
-        
+
         {renderTab()}
       </main>
+
+      {/* Invite Modal */}
+      {showInviteModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white p-8 rounded-[2rem] max-w-md w-full shadow-2xl relative">
+            <h2 className="text-2xl font-bold text-slate-800 mb-4">Invitar a tu casa</h2>
+            <p className="text-slate-500 mb-6">Comparte este enlace para que otra persona se una a tu misma cuenta y gestionen sus finanzas juntos.</p>
+            {inviteLink ? (
+              <div className="bg-slate-50 p-4 rounded-2xl flex flex-col gap-3">
+                <code className="text-sm text-emerald-700 break-all">{inviteLink}</code>
+                <p className="text-xs font-bold text-emerald-600">¡Copiado al portapapeles!</p>
+              </div>
+            ) : (
+              <div className="flex justify-center p-4"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div></div>
+            )}
+            <button onClick={() => setShowInviteModal(false)} className="mt-8 w-full bg-slate-900 text-white p-4 rounded-2xl font-bold">
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Join House Modal */}
+      {joinHouseConfirm && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white p-8 rounded-[2rem] max-w-md w-full shadow-2xl relative text-center">
+            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <UserPlus size={32} />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-800 mb-4">¡Te han invitado a una casa!</h2>
+            <p className="text-slate-600 mb-8 font-medium">¿Deseas abandonar tu casa actual para unirte a esta nueva casa o mantenerte en tu casa actual?</p>
+            <div className="flex flex-col gap-3">
+              <button onClick={() => handleJoinHouse(true)} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-4 rounded-2xl font-bold transition-colors shadow-lg shadow-emerald-200">
+                Unirme a la nueva casa
+              </button>
+              <button onClick={() => handleJoinHouse(false)} className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 p-4 rounded-2xl font-bold transition-colors">
+                Mantenerme en mi casa actual
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
