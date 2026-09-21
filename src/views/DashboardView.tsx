@@ -5,6 +5,7 @@ import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { IncomeForm } from '../components/forms/IncomeForm';
 import { FormatCurrency } from '../utils';
+import { PaymentCalendar } from '../components/PaymentCalendar';
 
 export function DashboardView({ data, calc, methods }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -130,6 +131,10 @@ export function DashboardView({ data, calc, methods }) {
             })}
           </div>
         </Card>
+      </div>
+
+      <div className="mt-6">
+        <PaymentCalendar expenses={data.expenses} />
       </div>
 
       <Modal 

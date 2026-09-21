@@ -5,7 +5,9 @@ export function IncomeForm({ initialData, users, onSubmit, onCancel }) {
   const [formData, setFormData] = useState(initialData || {
     userId: users[0]?.id || 'u1',
     amount: '',
-    type: 'Sueldo'
+    type: 'Sueldo',
+    currency: 'MXN',
+    isPrivate: false
   });
 
   const handleSubmit = (e) => {
@@ -19,17 +21,38 @@ export function IncomeForm({ initialData, users, onSubmit, onCancel }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-bold text-slate-700 mb-1">Monto (MXN)</label>
-        <input 
-          type="number" 
-          required
-          min="0"
-          step="0.01"
-          className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
-          value={formData.amount} 
-          onChange={e => setFormData({...formData, amount: e.target.value})} 
-          placeholder="0.00"
+        <label className="block text-sm font-bold text-slate-700 mb-1">Monto</label>
+        <div className="flex gap-2">
+          <input
+            type="number"
+            required
+            min="0"
+            step="0.01"
+            className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+            value={formData.amount}
+            onChange={e => setFormData({...formData, amount: e.target.value})}
+            placeholder="0.00"
+          />
+          <select
+            className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+            value={formData.currency}
+            onChange={e => setFormData({...formData, currency: e.target.value})}
+          >
+            <option value="MXN">MXN</option>
+            <option value="USD">USD</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          id="isPrivateIncome"
+          checked={formData.isPrivate}
+          onChange={e => setFormData({...formData, isPrivate: e.target.checked})}
+          className="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500"
         />
+        <label htmlFor="isPrivateIncome" className="text-sm font-medium text-slate-700">Ingreso Privado (No contemplado en presupuesto común)</label>
       </div>
 
       <div className="grid grid-cols-2 gap-4">

@@ -89,9 +89,9 @@ export function SettlementView({ data, calc, methods }) {
                     {payer?.name?.[0]}
                   </div>
                   <div>
-                    <p className="font-bold text-slate-800">{exp.desc}</p>
+                    <p className="font-bold text-slate-800">{exp.desc} {exp.isPrivate && <span className="text-xs ml-2 bg-slate-200 text-slate-600 px-2 py-1 rounded">Privado</span>}</p>
                     <p className="text-xs font-medium text-slate-500 mt-1">
-                      Pagado por {payer?.name} • División: {exp.split}%
+                      Pagado por {payer?.name} • División: {exp.isPrivate ? 'No aplica (Privado)' : (exp.splitType === 'proporcional' ? 'Proporcional' : '50/50')} • Moneda: {exp.currency || 'MXN'}
                     </p>
                   </div>
                 </div>

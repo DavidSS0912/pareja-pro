@@ -6,15 +6,16 @@ export function ExpenseForm({ initialData, users, onSubmit, onCancel }) {
     desc: '',
     amount: '',
     paidBy: users[0]?.id || 'u1',
-    split: 50
+    splitType: '50/50',
+    currency: 'MXN',
+    isPrivate: false
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit({
       ...formData,
-      amount: Number(formData.amount),
-      split: Number(formData.split)
+      amount: Number(formData.amount)
     });
   };
 
@@ -33,17 +34,38 @@ export function ExpenseForm({ initialData, users, onSubmit, onCancel }) {
       </div>
       
       <div>
-        <label className="block text-sm font-bold text-slate-700 mb-1">Monto (MXN)</label>
-        <input 
-          type="number" 
-          required
-          min="0"
-          step="0.01"
-          className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-          value={formData.amount} 
-          onChange={e => setFormData({...formData, amount: e.target.value})} 
-          placeholder="0.00"
+        <label className="block text-sm font-bold text-slate-700 mb-1">Monto</label>
+        <div className="flex gap-2">
+          <input
+            type="number"
+            required
+            min="0"
+            step="0.01"
+            className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+            value={formData.amount}
+            onChange={e => setFormData({...formData, amount: e.target.value})}
+            placeholder="0.00"
+          />
+          <select
+            className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+            value={formData.currency}
+            onChange={e => setFormData({...formData, currency: e.target.value})}
+          >
+            <option value="MXN">MXN</option>
+            <option value="USD">USD</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          id="isPrivate"
+          checked={formData.isPrivate}
+          onChange={e => setFormData({...formData, isPrivate: e.target.checked})}
+          className="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500"
         />
+        <label htmlFor="isPrivate" className="text-sm font-medium text-slate-700">Gasto Privado (No se divide)</label>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -58,17 +80,19 @@ export function ExpenseForm({ initialData, users, onSubmit, onCancel }) {
           </select>
         </div>
         
-        <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1">División (%)</label>
-          <select 
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-            value={formData.split} 
-            onChange={e => setFormData({...formData, split: e.target.value})}
-          >
-            <option value={50}>Mitades (50/50)</option>
-            <option value={100}>Gasto Individual</option>
-          </select>
-        </div>
+        {!formData.isPrivate && (
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-1">División</label>
+            <select
+              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              value={formData.splitType}
+              onChange={e => setFormData({...formData, splitType: e.target.value})}
+            >
+              <option value="50/50">Mitades (50/50)</option>
+              <option value="proporcional">Proporcional (Ingresos)</option>
+            </select>
+          </div>
+        )}
       </div>
 
       <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">

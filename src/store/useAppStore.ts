@@ -28,6 +28,7 @@ export interface AppState {
   cards: RecordItem[];
   assets: RecordItem[];
   incomes: RecordItem[];
+  users: RecordItem[];
 
   initListeners: (houseId: string) => () => void;
 
@@ -66,9 +67,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   cards: [],
   assets: [],
   incomes: [],
+  users: [],
 
   initListeners: (houseId: string) => {
-    const collections = ['expenses', 'budgets', 'cards', 'assets', 'incomes'] as const;
+    const collections = ['expenses', 'budgets', 'cards', 'assets', 'incomes', 'users'] as const;
     const unsubscribes = collections.map((colName) => {
       const q = query(collection(db, colName), where('houseId', '==', houseId));
       return onSnapshot(q, (snapshot) => {

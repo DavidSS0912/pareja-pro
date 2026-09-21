@@ -37,45 +37,56 @@ export default function App() {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (fbUser) => {
-      if (fbUser) {
-        setUser({ uid: fbUser.uid, email: fbUser.email, displayName: fbUser.displayName, photoURL: fbUser.photoURL });
-        
-        const userDocRef = doc(db, 'users', fbUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        
-        let currentHouseId = '';
-        if (userDoc.exists()) {
-          currentHouseId = userDoc.data().houseId;
-          setHouseId(currentHouseId);
-        } else {
-          currentHouseId = `house_${fbUser.uid}`;
-          await setDoc(doc(db, 'houses', currentHouseId), { members: [fbUser.uid] });
-          await setDoc(userDocRef, { houseId: currentHouseId, email: fbUser.email, displayName: fbUser.displayName });
-          setHouseId(currentHouseId);
-        }
-
-        // Check for invite
-        const path = window.location.pathname;
-        if (path.startsWith('/invite/')) {
-          const inviteId = path.split('/')[2];
-          const inviteRef = doc(db, 'invitations', inviteId);
-          const inviteDoc = await getDoc(inviteRef);
-          if (inviteDoc.exists() && !inviteDoc.data().accepted) {
-             const invitedHouseId = inviteDoc.data().houseId;
-             if (invitedHouseId !== currentHouseId) {
-               setJoinHouseConfirm(inviteId);
-             } else {
-               window.history.replaceState({}, document.title, "/");
-             }
+      try {
+        if (fbUser) {
+          setUser({ uid: fbUser.uid, email: fbUser.email, displayName: fbUser.displayName, photoURL: fbUser.photoURL });
+          
+          const userDocRef = doc(db, 'users', fbUser.uid);
+          const userDoc = await getDoc(userDocRef);
+          
+          let currentHouseId = '';
+          if (userDoc.exists()) {
+            currentHouseId = userDoc.data().houseId;
+            setHouseId(currentHouseId);
           } else {
-            window.history.replaceState({}, document.title, "/");
+            currentHouseId = `house_${fbUser.uid}`;
+            await setDoc(doc(db, 'houses', currentHouseId), { members: [fbUser.uid] });
+            await setDoc(userDocRef, { 
+              houseId: currentHouseId, 
+              email: fbUser.email, 
+              displayName: fbUser.displayName,
+              name: fbUser.displayName?.split(' ')[0] || 'Usuario',
+              avatar: 'bg-emerald-500'
+            });
+            setHouseId(currentHouseId);
           }
+
+          // Check for invite
+          const path = window.location.pathname;
+          if (path.startsWith('/invite/')) {
+            const inviteId = path.split('/')[2];
+            const inviteRef = doc(db, 'invitations', inviteId);
+            const inviteDoc = await getDoc(inviteRef);
+            if (inviteDoc.exists() && !inviteDoc.data().accepted) {
+               const invitedHouseId = inviteDoc.data().houseId;
+               if (invitedHouseId !== currentHouseId) {
+                 setJoinHouseConfirm(inviteId);
+               } else {
+                 window.history.replaceState({}, document.title, "/");
+               }
+            } else {
+              window.history.replaceState({}, document.title, "/");
+            }
+          }
+        } else {
+          setUser(null);
+          setHouseId(null);
         }
-      } else {
-        setUser(null);
-        setHouseId(null);
+      } catch (error) {
+        console.error("Error setting up user:", error);
+      } finally {
+        setAuthLoading(false);
       }
-      setAuthLoading(false);
     });
     return () => unsub();
   }, [setUser, setHouseId, setAuthLoading]);
@@ -121,16 +132,48 @@ export default function App() {
   };
 
   const calc = useMemo(() => {
-    const totalIncome = data.incomes.reduce((acc, curr) => acc + curr.amount, 0);
+    // Solo ingresos públicos se cuentan para el presupuesto de la casa (si así se desea), o todos.
+    // El requerimiento dice: "proporcional se basa en la suma total de ingresos (incomes) de cada usuario."
+    const totalIncome = data.incomes.filter(i => !i.isPrivate).reduce((acc, curr) => acc + curr.amount, 0);
+
+    const incomesByUser = {};
+    data.users.forEach(u => incomesByUser[u.id] = 0);
+    data.incomes.forEach(inc => {
+      if (inc.userId) incomesByUser[inc.userId] = (incomesByUser[inc.userId] || 0) + inc.amount;
+    });
+
+    const totalIncomesAll = data.incomes.reduce((acc, curr) => acc + curr.amount, 0);
 
     let zoeOwesDavid = 0;
     let davidOwesZoe = 0;
+
     data.expenses.forEach(exp => {
-      if (exp.split === 50) {
-        if (exp.paidBy === 'u1') zoeOwesDavid += exp.amount / 2;
-        if (exp.paidBy === 'u2') davidOwesZoe += exp.amount / 2;
+      if (exp.isPrivate) return;
+
+      let ratio1 = 0.5;
+      let ratio2 = 0.5;
+
+      if (exp.splitType === 'proporcional') {
+        const u1Id = data.users[0]?.id || 'u1';
+        const u2Id = data.users[1]?.id || 'u2';
+        
+        const inc1 = incomesByUser[u1Id] || 0;
+        const inc2 = incomesByUser[u2Id] || 0;
+        const sum = inc1 + inc2;
+
+        if (sum > 0) {
+          ratio1 = inc1 / sum;
+          ratio2 = inc2 / sum;
+        }
+      }
+
+      if (exp.paidBy === data.users[0]?.id || exp.paidBy === 'u1') {
+        zoeOwesDavid += exp.amount * ratio2;
+      } else if (exp.paidBy === data.users[1]?.id || exp.paidBy === 'u2') {
+        davidOwesZoe += exp.amount * ratio1;
       }
     });
+
     const netSettlement = zoeOwesDavid - davidOwesZoe;
 
     const totalBudgeted = data.budgets.reduce((acc, curr) => acc + curr.base, 0);
