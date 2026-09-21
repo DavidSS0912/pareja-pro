@@ -132,23 +132,31 @@ export default function App() {
   };
 
   const calc = useMemo(() => {
-    // Solo ingresos públicos se cuentan para el presupuesto de la casa (si así se desea), o todos.
-    // El requerimiento dice: "proporcional se basa en la suma total de ingresos (incomes) de cada usuario."
-    const totalIncome = data.incomes.filter(i => !i.isPrivate).reduce((acc, curr) => acc + curr.amount, 0);
+    // Tasa de cambio fija temporal para normalizar
+    const EXCHANGE_RATE_USD_MXN = 20;
+    const normalize = (amount, currency) => {
+      if (!amount) return 0;
+      return currency === 'USD' ? amount * EXCHANGE_RATE_USD_MXN : amount;
+    };
+
+    // Solo ingresos públicos se cuentan para el presupuesto de la casa
+    const totalIncome = data.incomes.filter(i => !i.isPrivate).reduce((acc, curr) => acc + normalize(curr.amount, curr.currency), 0);
 
     const incomesByUser = {};
     data.users.forEach(u => incomesByUser[u.id] = 0);
     data.incomes.forEach(inc => {
-      if (inc.userId) incomesByUser[inc.userId] = (incomesByUser[inc.userId] || 0) + inc.amount;
+      if (inc.userId) incomesByUser[inc.userId] = (incomesByUser[inc.userId] || 0) + normalize(inc.amount, inc.currency);
     });
 
-    const totalIncomesAll = data.incomes.reduce((acc, curr) => acc + curr.amount, 0);
+    const totalIncomesAll = data.incomes.reduce((acc, curr) => acc + normalize(curr.amount, curr.currency), 0);
 
     let zoeOwesDavid = 0;
     let davidOwesZoe = 0;
 
     data.expenses.forEach(exp => {
       if (exp.isPrivate) return;
+
+      const normalizedAmount = normalize(exp.amount, exp.currency);
 
       let ratio1 = 0.5;
       let ratio2 = 0.5;
@@ -168,9 +176,9 @@ export default function App() {
       }
 
       if (exp.paidBy === data.users[0]?.id || exp.paidBy === 'u1') {
-        zoeOwesDavid += exp.amount * ratio2;
+        zoeOwesDavid += normalizedAmount * ratio2;
       } else if (exp.paidBy === data.users[1]?.id || exp.paidBy === 'u2') {
-        davidOwesZoe += exp.amount * ratio1;
+        davidOwesZoe += normalizedAmount * ratio1;
       }
     });
 
