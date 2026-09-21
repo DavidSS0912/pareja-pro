@@ -63,7 +63,7 @@ export const useAppStore = create<AppState>()(
       deleteIncome: (id) => set((state) => ({ incomes: state.incomes.filter(i => i.id !== id) })),
     }),
     {
-      name: 'parejapro_data',
+      name: 'orbita2_data',
     }
   )
 );

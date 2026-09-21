@@ -45,7 +45,7 @@ export function WealthView({ data, calc, methods }) {
       <Card className="bg-gradient-to-br from-emerald-50 to-teal-100/50 border-emerald-100 text-center py-12 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-200/50 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
         <div className="relative z-10">
-          <h3 className="text-emerald-800 font-bold uppercase tracking-widest text-sm mb-4">Riqueza Real de la Pareja</h3>
+          <h3 className="text-emerald-800 font-bold uppercase tracking-widest text-sm mb-4">Riqueza Real del Hogar</h3>
           <div className="text-6xl sm:text-7xl font-black text-emerald-600 mb-4 tracking-tighter drop-shadow-sm">
             {FormatCurrency(calc.netWorth)}
           </div>

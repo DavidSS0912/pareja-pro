@@ -93,7 +93,7 @@ export default function App() {
           <div className="bg-gradient-to-br from-emerald-400 to-teal-600 p-2.5 rounded-2xl text-white shadow-lg shadow-emerald-200">
             <Wallet size={24}/>
           </div>
-          <h1 className="text-2xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-emerald-700 to-teal-700">ParejaPro</h1>
+          <h1 className="text-2xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-emerald-700 to-teal-700">Órbita2</h1>
         </div>
         
         <div className="flex md:flex-col gap-2 w-full min-w-max">
@@ -124,7 +124,7 @@ export default function App() {
           <div className="bg-gradient-to-br from-emerald-400 to-teal-600 p-2 rounded-xl text-white shadow-md shadow-emerald-200/50">
             <Wallet size={20}/>
           </div>
-          <h1 className="text-2xl font-black tracking-tighter text-slate-800">ParejaPro</h1>
+          <h1 className="text-2xl font-black tracking-tighter text-slate-800">Órbita2</h1>
         </div>
         
         {renderTab()}
