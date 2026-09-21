@@ -2,16 +2,60 @@ import React from 'react';
 import { Card } from '../components/ui/Card';
 import { FormatCurrency } from '../utils';
 import { SEED_DATA } from '../data';
+import { useAppStore } from '../store/useAppStore';
+import { Download } from 'lucide-react';
 
 export function HistoricalView({ data }) {
+  const expenses = useAppStore(state => state.expenses);
   const snapshots = data.snapshots || SEED_DATA.snapshots || [];
   const maxVal = snapshots.length > 0 ? Math.max(...snapshots.map(s => Math.max(s.income, s.expense))) : 1;
 
+  const handleExportCSV = () => {
+    if (!expenses || expenses.length === 0) return;
+    const headers = ['id', 'description', 'amount', 'category', 'date', 'paidBy', 'type'];
+    const csvContent = [
+      headers.join(','),
+      ...expenses.map(e => headers.map(h => `"${e[h] || ''}"`).join(','))
+    ].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'historial_orbita2.csv';
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const expensesByCategory = React.useMemo(() => {
+    const totals = {};
+    let totalExpense = 0;
+    expenses.forEach(e => {
+      const amt = Number(e.amount) || 0;
+      const cat = e.category || 'Otros';
+      totals[cat] = (totals[cat] || 0) + amt;
+      totalExpense += amt;
+    });
+    return Object.entries(totals)
+      .map(([name, amount]) => ({ name, amount, percentage: totalExpense > 0 ? (amount / totalExpense) * 100 : 0 }))
+      .sort((a, b) => b.amount - a.amount);
+  }, [expenses]);
+
   return (
     <div className="space-y-6 animate-in">
-      <div className="mb-8">
+      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
         <h2 className="text-3xl font-black tracking-tight text-slate-800">Histórico Anual</h2>
         <p className="text-slate-500 mt-2 font-medium">Comparativa de ingresos vs gastos por mes.</p>
+        </div>
+        <button
+          onClick={handleExportCSV}
+          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition shadow-sm"
+        >
+          <Download className="w-5 h-5" />
+          Exportar a CSV
+        </button>
       </div>
 
       <Card className="pt-10 pb-8">
@@ -75,6 +119,28 @@ export function HistoricalView({ data }) {
           </div>
         </div>
       </Card>
+
+      {expensesByCategory.length > 0 && (
+        <Card className="p-6">
+          <h3 className="text-xl font-bold text-slate-800 mb-6">Gastos por Categoría</h3>
+          <div className="space-y-5">
+            {expensesByCategory.map((cat, idx) => (
+              <div key={idx}>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-semibold text-slate-700">{cat.name}</span>
+                  <span className="text-slate-500 font-mono text-sm">{FormatCurrency(cat.amount)} ({cat.percentage.toFixed(1)}%)</span>
+                </div>
+                <div className="w-full bg-slate-100 rounded-full h-3">
+                  <div 
+                    className="bg-emerald-500 h-3 rounded-full transition-all duration-700"
+                    style={{ width: `${cat.percentage}%` }}
+                  ></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
