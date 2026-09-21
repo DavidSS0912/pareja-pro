@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import { Card } from '../components/ui/Card';
-import { FormatCurrency } from '../utils';
+import { FormatCurrency, exportToCSV } from '../utils';
 import { SEED_DATA } from '../data';
 import { useAppStore } from '../store/useAppStore';
 import { Download } from 'lucide-react';
@@ -10,38 +10,38 @@ export function HistoricalView({ data }) {
   const snapshots = data.snapshots || SEED_DATA.snapshots || [];
   const maxVal = snapshots.length > 0 ? Math.max(...snapshots.map(s => Math.max(s.income, s.expense))) : 1;
 
-  const handleExportCSV = () => {
-    if (!expenses || expenses.length === 0) return;
-    
-    const sanitize = (val) => {
-      let str = String(val ?? '');
-      // CSV Injection mitigation
-      if (/^[=+\-@\t\r]/.test(str)) {
-        str = "'" + str;
-      }
-      // Escape double quotes
-      str = str.replace(/"/g, '""');
-      return `"${str}"`;
-    };
+  const [exportStart, setExportStart] = useState('');
+  const [exportEnd, setExportEnd] = useState('');
 
-    const headers = ['id', 'desc', 'amount', 'currency', 'category', 'paidBy', 'splitType', 'isPrivate'];
-    const csvContent = [
-      headers.join(','),
-      ...expenses.map(e => headers.map(h => sanitize(e[h])).join(','))
-    ].join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'historial_orbita2.csv';
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [isDown, setIsDown] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!scrollRef.current) return;
+    setIsDown(true);
+    setStartX(e.pageX - scrollRef.current.offsetLeft);
+    setScrollLeft(scrollRef.current.scrollLeft);
+  };
+  const handleMouseLeave = () => setIsDown(false);
+  const handleMouseUp = () => setIsDown(false);
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDown || !scrollRef.current) return;
+    const x = e.pageX - scrollRef.current.offsetLeft;
+    const walk = (x - startX) * 2;
+    scrollRef.current.scrollLeft = scrollLeft - walk;
   };
 
-  const expensesByCategory = React.useMemo(() => {
+  const handleExportCSV = () => {
+    let filtered = expenses;
+    if (exportStart && exportEnd) {
+      filtered = expenses.filter(e => !e.date || (e.date >= exportStart && e.date <= exportEnd));
+    }
+    exportToCSV(filtered, 'historial_orbita2');
+  };
+
+  const expensesByCategory = useMemo(() => {
     const totals = {};
     let totalExpense = 0;
     expenses.forEach(e => {
@@ -62,24 +62,39 @@ export function HistoricalView({ data }) {
         <h2 className="text-3xl font-black tracking-tight text-slate-800">Histórico Anual</h2>
         <p className="text-slate-500 mt-2 font-medium">Comparativa de ingresos vs gastos por mes.</p>
         </div>
-        <button
-          onClick={handleExportCSV}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition shadow-sm"
-        >
-          <Download className="w-5 h-5" />
-          Exportar a CSV
-        </button>
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-4 bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-500 uppercase">Filtro Exportar:</span>
+            <input type="date" value={exportStart} onChange={e => setExportStart(e.target.value)} className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
+            <span className="text-slate-400">-</span>
+            <input type="date" value={exportEnd} onChange={e => setExportEnd(e.target.value)} className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
+          </div>
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center justify-center w-full md:w-auto gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200/50"
+          >
+            <Download className="w-4 h-4" />
+            Exportar CSV
+          </button>
+        </div>
       </div>
 
       <Card className="pt-10 pb-8">
-        <div className="flex items-end gap-3 h-72 w-full border-b-2 border-slate-100 pb-3 overflow-x-auto scrollbar-hide px-4">
+        <div 
+          ref={scrollRef}
+          onMouseDown={handleMouseDown}
+          onMouseLeave={handleMouseLeave}
+          onMouseUp={handleMouseUp}
+          onMouseMove={handleMouseMove}
+          className={`flex items-end gap-3 h-72 w-full border-b-2 border-slate-100 pb-3 overflow-x-auto scrollbar-hide px-4 select-none ${isDown ? 'cursor-grabbing' : 'cursor-grab'}`}
+        >
           {snapshots.map((snap, idx) => {
             const incomeHeight = (snap.income / maxVal) * 100;
             const expenseHeight = (snap.expense / maxVal) * 100;
             const isOver = snap.expense > snap.income;
 
             return (
-              <div key={idx} className="flex-1 flex flex-col justify-end items-center group min-w-[60px] relative cursor-pointer">
+              <div key={idx} className="flex-1 flex flex-col justify-end items-center group min-w-[60px] relative">
                 <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:-translate-y-2 text-xs text-center mb-2 bg-slate-900 text-white p-3 rounded-xl whitespace-nowrap absolute bottom-full mb-4 z-10 pointer-events-none shadow-xl border border-slate-700">
                   <div className="font-bold text-slate-300 mb-1 uppercase tracking-widest">{snap.month}</div>
                   <div className="flex justify-between gap-4">
