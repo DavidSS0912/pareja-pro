@@ -12,7 +12,7 @@ const LABEL_CLASS = 'block text-xs font-semibold text-slate-500 uppercase tracki
 
 const incomeSchema = z.object({
   userId: z.string().min(1, 'El aportador es obligatorio'),
-  amount: z.coerce.number().min(0.01, 'El monto debe ser mayor a 0'),
+  amount: z.number().min(0.01, 'El monto debe ser mayor a 0'),
   type: z.enum(['Sueldo', 'Bono', 'Ventas', 'Inversiones', 'Otro']),
   currency: z.enum(['MXN', 'USD']),
   date: z.string().min(1, 'La fecha es obligatoria'),
@@ -95,7 +95,7 @@ export function IncomeForm({ initialData, users, currentUserId, onSubmit, onCanc
             step="0.01"
             className={`${INPUT_CLASS} flex-1 tabular-nums tracking-tight`}
             placeholder="0.00"
-            {...register('amount')}
+            {...register('amount', { valueAsNumber: true })}
           />
           <select
             className="px-3 py-2.5 bg-white border border-[#E5E5E5] rounded-lg text-sm text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"

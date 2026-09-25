@@ -7,13 +7,13 @@ import { Button } from '../ui/Button';
 const cardSchema = z.object({
   name: z.string().min(1, 'Obligatorio'),
   ownerId: z.string().min(1, 'Obligatorio'),
-  shared: z.coerce.boolean(),
-  limit: z.coerce.number().min(0),
-  cutDay: z.coerce.number().min(1).max(31),
-  payDay: z.coerce.number().min(1).max(31),
-  balance: z.coerce.number(),
-  noInterestPay: z.coerce.number().min(0),
-  interestRate: z.coerce.number().min(0),
+  shared: z.boolean(),
+  limit: z.number().min(0),
+  cutDay: z.number().min(1).max(31),
+  payDay: z.number().min(1).max(31),
+  balance: z.number(),
+  noInterestPay: z.number().min(0),
+  interestRate: z.number().min(0),
   color: z.string()
 });
 
@@ -83,7 +83,7 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
           <label className="block text-sm font-bold text-slate-700 mb-1">Uso Compartido</label>
           <select 
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-            {...register('shared')}
+            {...register('shared', { setValueAs: v => v === 'true' })}
           >
             <option value="false">No (Individual)</option>
             <option value="true">Sí (Gastos de Hogar)</option>
@@ -97,7 +97,7 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
           <input 
             type="number" 
             className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-            {...register('limit')}
+            {...register('limit', { valueAsNumber: true })}
           />
         </div>
         <div>
@@ -105,7 +105,7 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
           <input 
             type="number" 
             className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-            {...register('cutDay')}
+            {...register('cutDay', { valueAsNumber: true })}
           />
         </div>
         <div>
@@ -113,7 +113,7 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
           <input 
             type="number" 
             className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-            {...register('payDay')}
+            {...register('payDay', { valueAsNumber: true })}
           />
         </div>
       </div>
@@ -124,7 +124,7 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
           <input 
             type="number" step="0.01" 
             className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-            {...register('balance')}
+            {...register('balance', { valueAsNumber: true })}
           />
         </div>
         <div>
@@ -132,7 +132,7 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
           <input 
             type="number" step="0.01" 
             className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-            {...register('noInterestPay')}
+            {...register('noInterestPay', { valueAsNumber: true })}
           />
         </div>
         <div>
@@ -140,7 +140,7 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
           <input 
             type="number" step="0.01" 
             className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-            {...register('interestRate')}
+            {...register('interestRate', { valueAsNumber: true })}
           />
         </div>
       </div>

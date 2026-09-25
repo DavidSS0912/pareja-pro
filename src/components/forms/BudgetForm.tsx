@@ -8,9 +8,9 @@ const budgetSchema = z.object({
   category: z.string().min(1, 'La categoría es obligatoria'),
   type: z.enum(['Necesidad', 'Deseo', 'Ahorro']),
   shared: z.boolean(),
-  base: z.coerce.number().min(0, 'El monto base no puede ser negativo'),
-  rollover: z.coerce.number(),
-  spent: z.coerce.number().min(0),
+  base: z.number().min(0, 'El monto base no puede ser negativo'),
+  rollover: z.number(),
+  spent: z.number().min(0),
   icon: z.string().min(1, 'Obligatorio'),
 });
 
@@ -76,7 +76,7 @@ export function BudgetForm({ initialData, onSubmit, onCancel }) {
             type="number"
             step="0.01"
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-            {...register('base')}
+            {...register('base', { valueAsNumber: true })}
           />
           {errors.base && <p className="text-red-500 text-xs mt-1">{errors.base.message}</p>}
         </div>
@@ -89,7 +89,7 @@ export function BudgetForm({ initialData, onSubmit, onCancel }) {
             type="number"
             step="0.01"
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-            {...register('rollover')}
+            {...register('rollover', { valueAsNumber: true })}
           />
         </div>
         <div>
@@ -98,7 +98,7 @@ export function BudgetForm({ initialData, onSubmit, onCancel }) {
             type="number"
             step="0.01"
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-            {...register('spent')}
+            {...register('spent', { valueAsNumber: true })}
           />
         </div>
       </div>

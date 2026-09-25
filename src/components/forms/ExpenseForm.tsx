@@ -6,7 +6,7 @@ import { Button } from '../ui/Button';
 
 const expenseSchema = z.object({
   desc: z.string().min(1, 'La descripción es obligatoria'),
-  amount: z.coerce.number().min(0.01, 'El monto debe ser mayor a 0'),
+  amount: z.number().min(0.01, 'El monto debe ser mayor a 0'),
   paidBy: z.string().min(1, 'Obligatorio'),
   splitType: z.enum(['50/50', 'proporcional']),
   currency: z.enum(['MXN', 'USD']),
@@ -70,7 +70,7 @@ export function ExpenseForm({ initialData, users, budgets = [], currentUserId, o
             step="0.01"
             className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
             placeholder="0.00"
-            {...register('amount')}
+            {...register('amount', { valueAsNumber: true })}
           />
           <select
             className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"

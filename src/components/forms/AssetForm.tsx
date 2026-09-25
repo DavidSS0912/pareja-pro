@@ -7,7 +7,7 @@ import { Button } from '../ui/Button';
 const assetSchema = z.object({
   name: z.string().min(1, 'El nombre es obligatorio'),
   owner: z.string().min(1, 'Obligatorio'),
-  value: z.coerce.number().min(0, 'El valor no puede ser negativo'),
+  value: z.number().min(0, 'El valor no puede ser negativo'),
   type: z.enum(['Liquidez', 'Inversión Segura', 'Alto Riesgo', 'Bien Depreciable', 'Bienes Raíces']),
 });
 
@@ -49,7 +49,7 @@ export function AssetForm({ initialData, users, onSubmit, onCancel }) {
             step="0.01"
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             placeholder="0.00"
-            {...register('value')}
+            {...register('value', { valueAsNumber: true })}
           />
           {errors.value && <p className="text-red-500 text-xs mt-1">{errors.value.message}</p>}
         </div>
