@@ -6,6 +6,8 @@ import { assetService } from '../../services/assetService';
 import { incomeService } from '../../services/incomeService';
 import { goalService } from '../../services/goalService';
 import { userService } from '../../services/userService';
+import { projectService } from '../../services/projectService';
+import { contributionService } from '../../services/contributionService';
 
 import { ExpenseSlice } from './expenseSlice';
 import { BudgetSlice } from './budgetSlice';
@@ -14,12 +16,13 @@ import { AssetSlice } from './assetSlice';
 import { IncomeSlice } from './incomeSlice';
 import { GoalSlice } from './goalSlice';
 import { UserListSlice } from './userListSlice';
+import { ProjectSlice } from './projectSlice';
 
 export interface ListenerSlice {
   initListeners: (houseId: string) => () => void;
 }
 
-type CombinedSlices = ExpenseSlice & BudgetSlice & CardSlice & AssetSlice & IncomeSlice & GoalSlice & UserListSlice;
+type CombinedSlices = ExpenseSlice & BudgetSlice & CardSlice & AssetSlice & IncomeSlice & GoalSlice & UserListSlice & ProjectSlice;
 
 export const createListenerSlice: StateCreator<ListenerSlice & CombinedSlices, [], [], ListenerSlice> = (set, get) => ({
   initListeners: (houseId: string) => {
@@ -30,6 +33,8 @@ export const createListenerSlice: StateCreator<ListenerSlice & CombinedSlices, [
     const unsubIncomes = incomeService.subscribe(houseId, get().setIncomes);
     const unsubGoals = goalService.subscribe(houseId, get().setGoals);
     const unsubUsers = userService.subscribe(houseId, get().setUsers);
+    const unsubProjects = projectService.subscribe(houseId, get().setProjects);
+    const unsubContributions = contributionService.subscribe(houseId, get().setContributions);
 
     return () => {
       unsubExpenses();
@@ -39,6 +44,8 @@ export const createListenerSlice: StateCreator<ListenerSlice & CombinedSlices, [
       unsubIncomes();
       unsubGoals();
       unsubUsers();
+      unsubProjects();
+      unsubContributions();
     };
   }
 });

@@ -115,5 +115,37 @@ service cloud.firestore {
       allow create: if isMemberOfHouse(request.resource.data.houseId) && isValidAsset(request.resource.data);
       allow update: if isMemberOfHouse(resource.data.houseId) && request.resource.data.houseId == resource.data.houseId && isValidAsset(request.resource.data);
     }
+
+    function isValidProject(data) {
+      return data.houseId is string
+          && data.name is string
+          && data.targetAmount is number
+          && data.savedAmount is number
+          && data.monthlyQuota is number
+          && data.targetAccount is string
+          && data.priority is number
+          && data.status is string
+          && data.startDate is string;
+    }
+
+    match /projects/{docId} {
+      allow read, delete: if isMemberOfHouse(resource.data.houseId);
+      allow create: if isMemberOfHouse(request.resource.data.houseId) && isValidProject(request.resource.data);
+      allow update: if isMemberOfHouse(resource.data.houseId) && request.resource.data.houseId == resource.data.houseId && isValidProject(request.resource.data);
+    }
+
+    function isValidContribution(data) {
+      return data.houseId is string
+          && data.projectId is string
+          && data.userId is string
+          && data.amount is number
+          && data.date is string;
+    }
+
+    match /contributions/{docId} {
+      allow read, delete: if isMemberOfHouse(resource.data.houseId);
+      allow create: if isMemberOfHouse(request.resource.data.houseId) && isValidContribution(request.resource.data);
+      allow update: if isMemberOfHouse(resource.data.houseId) && request.resource.data.houseId == resource.data.houseId && isValidContribution(request.resource.data);
+    }
   }
 }

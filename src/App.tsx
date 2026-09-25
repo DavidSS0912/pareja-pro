@@ -9,7 +9,8 @@ import {
   Landmark,
   Flame,
   UserPlus,
-  LogOut
+  LogOut,
+  Target
 } from 'lucide-react';
 import { authService } from './services/authService';
 import { getOrCreateUserAndHouse, checkInvitation, acceptInvitation, createInvitation } from './services/userService';
@@ -23,6 +24,7 @@ import { CardsView } from './views/CardsView';
 import { SettlementView } from './views/SettlementView';
 import { DebtSimulatorView } from './views/DebtSimulatorView';
 import { WealthView } from './views/WealthView';
+import { ProjectsView } from './views/ProjectsView';
 import { HistoricalView } from './views/HistoricalView';
 import { TermsView } from './views/TermsView';
 import { PrivacyPolicyView } from './views/PrivacyPolicyView';
@@ -47,12 +49,19 @@ export default function App() {
     incomes: state.incomes,
     users: state.users,
     goals: state.goals,
+    projects: state.projects,
+    contributions: state.contributions,
     setUser: state.setUser,
     setHouseId: state.setHouseId,
     setAuthLoading: state.setAuthLoading,
     setDateRange: state.setDateRange,
     initListeners: state.initListeners,
     addExpense: state.addExpense,
+    addProject: state.addProject,
+    updateProject: state.updateProject,
+    deleteProject: state.deleteProject,
+    addContribution: state.addContribution,
+    deleteContribution: state.deleteContribution,
     updateExpense: state.updateExpense,
     deleteExpense: state.deleteExpense,
     addBudget: state.addBudget,
@@ -237,6 +246,7 @@ export default function App() {
       case 'settlement': return <SettlementView data={filteredData} calc={calc} methods={methods} />;
       case 'debts': return <DebtSimulatorView data={filteredData} />;
       case 'wealth': return <WealthView data={filteredData} calc={calc} methods={methods} />;
+      case 'projects': return <ProjectsView data={filteredData} calc={calc} methods={methods} />;
       case 'historical': return <HistoricalView data={data} />;
       case 'terms': return <TermsView />;
       case 'privacy': return <PrivacyPolicyView />;
@@ -250,6 +260,7 @@ export default function App() {
     { id: 'cards', icon: <CreditCard size={20} />, label: 'Tarjetas' },
     { id: 'settlement', icon: <ArrowRightLeft size={20} />, label: 'Cuentas' },
     { id: 'debts', icon: <Flame size={20} />, label: 'Simulador' },
+    { id: 'projects', icon: <Target size={20} />, label: 'Proyectos' },
     { id: 'wealth', icon: <Landmark size={20} />, label: 'Patrimonio' },
     { id: 'historical', icon: <BarChart3 size={20} />, label: 'Histórico' },
   ];

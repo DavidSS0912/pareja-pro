@@ -8,6 +8,7 @@ import { IncomeSlice, createIncomeSlice } from './slices/incomeSlice';
 import { GoalSlice, createGoalSlice } from './slices/goalSlice';
 import { UserListSlice, createUserListSlice } from './slices/userListSlice';
 import { ListenerSlice, createListenerSlice } from './slices/listenerSlice';
+import { ProjectSlice, createProjectSlice } from './slices/projectSlice';
 
 // Export types to be used across the app
 export type { UserState } from './slices/authSlice';
@@ -21,7 +22,8 @@ export type AppState = AuthSlice &
   IncomeSlice &
   GoalSlice &
   UserListSlice &
-  ListenerSlice;
+  ListenerSlice &
+  ProjectSlice;
 
 export const useAppStore = create<AppState>()((...a) => ({
   ...createAuthSlice(...a),
@@ -33,6 +35,7 @@ export const useAppStore = create<AppState>()((...a) => ({
   ...createGoalSlice(...a),
   ...createUserListSlice(...a),
   ...createListenerSlice(...a),
+  ...createProjectSlice(...a),
 }));
 
 if (typeof window !== 'undefined') { (window as any).useAppStore = useAppStore; }
