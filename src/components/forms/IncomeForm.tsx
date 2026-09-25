@@ -107,8 +107,11 @@ export function IncomeForm({ initialData, users, currentUserId, onSubmit, onCanc
             {...register('amount', { valueAsNumber: true })}
           />
           <select
+            id="income-currency"
             aria-label="Moneda"
             className="px-3 py-2.5 bg-white border border-[#E5E5E5] rounded-lg text-sm text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
+            aria-invalid={!!errors.currency}
+            aria-describedby={errors.currency ? "income-currency-error" : undefined}
             {...register('currency')}
           >
             <option value="MXN">MXN</option>
@@ -116,6 +119,7 @@ export function IncomeForm({ initialData, users, currentUserId, onSubmit, onCanc
           </select>
         </div>
         {errors.amount && <p id="income-amount-error" className="text-red-500 text-xs mt-1">{errors.amount.message}</p>}
+        {errors.currency && <p id="income-currency-error" className="text-red-500 text-xs mt-1">{errors.currency.message}</p>}
       </div>
 
       {/* Row 3: Tipo */}
@@ -129,6 +133,8 @@ export function IncomeForm({ initialData, users, currentUserId, onSubmit, onCanc
         <select
           id="income-type"
           className={INPUT_CLASS}
+          aria-invalid={!!errors.type}
+          aria-describedby={errors.type ? "income-type-error" : undefined}
           {...register('type')}
         >
           <option value="Sueldo">Sueldo / Salario</option>
@@ -137,6 +143,7 @@ export function IncomeForm({ initialData, users, currentUserId, onSubmit, onCanc
           <option value="Inversiones">Retornos de Inversión</option>
           <option value="Otro">Otro Ingreso</option>
         </select>
+        {errors.type && <p id="income-type-error" className="text-red-500 text-xs mt-1">{errors.type.message}</p>}
       </div>
 
       {/* Row 4: Privado toggle */}
@@ -163,7 +170,15 @@ export function IncomeForm({ initialData, users, currentUserId, onSubmit, onCanc
           <p className="text-xs text-slate-500 mt-0.5">No se contabiliza en el presupuesto compartido.</p>
         </div>
       </div>
-      <input type="checkbox" className="hidden" {...register('isPrivate')} />
+      <input 
+        type="checkbox" 
+        className="hidden" 
+        id="income-isPrivate"
+        aria-invalid={!!errors.isPrivate}
+        aria-describedby={errors.isPrivate ? "income-isPrivate-error" : undefined}
+        {...register('isPrivate')} 
+      />
+      {errors.isPrivate && <p id="income-isPrivate-error" className="text-red-500 text-xs mt-1">{errors.isPrivate.message}</p>}
 
       {/* Actions */}
       <div className="flex justify-end gap-2 pt-4 border-t border-[#E5E5E5]">

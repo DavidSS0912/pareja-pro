@@ -70,12 +70,15 @@ export function BudgetForm({ initialData, onSubmit, onCancel }) {
           <select 
             id="budget-type"
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+            aria-invalid={!!errors.type}
+            aria-describedby={errors.type ? "budget-type-error" : undefined}
             {...register('type')}
           >
             <option value="Necesidad">Necesidad (50%)</option>
             <option value="Deseo">Deseo (30%)</option>
             <option value="Ahorro">Ahorro/Deuda (20%)</option>
           </select>
+          {errors.type && <p id="budget-type-error" className="text-red-500 text-xs mt-1">{errors.type.message}</p>}
         </div>
         <div>
           <label htmlFor="budget-base" className="block text-sm font-bold text-slate-700 mb-1">Monto Base Mensual</label>
@@ -100,8 +103,11 @@ export function BudgetForm({ initialData, onSubmit, onCancel }) {
             type="number"
             step="0.01"
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+            aria-invalid={!!errors.rollover}
+            aria-describedby={errors.rollover ? "budget-rollover-error" : undefined}
             {...register('rollover', { valueAsNumber: true })}
           />
+          {errors.rollover && <p id="budget-rollover-error" className="text-red-500 text-xs mt-1">{errors.rollover.message}</p>}
         </div>
         <div>
           <label htmlFor="budget-spent" className="block text-sm font-bold text-slate-700 mb-1">Ya gastado</label>
@@ -110,8 +116,11 @@ export function BudgetForm({ initialData, onSubmit, onCancel }) {
             type="number"
             step="0.01"
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+            aria-invalid={!!errors.spent}
+            aria-describedby={errors.spent ? "budget-spent-error" : undefined}
             {...register('spent', { valueAsNumber: true })}
           />
+          {errors.spent && <p id="budget-spent-error" className="text-red-500 text-xs mt-1">{errors.spent.message}</p>}
         </div>
       </div>
 

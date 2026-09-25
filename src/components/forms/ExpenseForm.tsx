@@ -82,8 +82,11 @@ export function ExpenseForm({ initialData, users, budgets = [], currentUserId, o
             {...register('amount', { valueAsNumber: true })}
           />
           <select
+            id="expense-currency"
             aria-label="Moneda"
             className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+            aria-invalid={!!errors.currency}
+            aria-describedby={errors.currency ? "expense-currency-error" : undefined}
             {...register('currency')}
           >
             <option value="MXN">MXN</option>
@@ -91,6 +94,7 @@ export function ExpenseForm({ initialData, users, budgets = [], currentUserId, o
           </select>
         </div>
         {errors.amount && <p id="expense-amount-error" className="text-red-500 text-xs mt-1">{errors.amount.message}</p>}
+        {errors.currency && <p id="expense-currency-error" className="text-red-500 text-xs mt-1">{errors.currency.message}</p>}
       </div>
 
       <div className="flex items-center gap-2">
@@ -98,16 +102,21 @@ export function ExpenseForm({ initialData, users, budgets = [], currentUserId, o
           type="checkbox"
           id="isPrivate"
           className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
+          aria-invalid={!!errors.isPrivate}
+          aria-describedby={errors.isPrivate ? "expense-isPrivate-error" : undefined}
           {...register('isPrivate')}
         />
         <label htmlFor="isPrivate" className="text-sm font-medium text-slate-700">Gasto Privado (No se divide)</label>
       </div>
+      {errors.isPrivate && <p id="expense-isPrivate-error" className="text-red-500 text-xs mt-1">{errors.isPrivate.message}</p>}
 
       <div>
         <label htmlFor="expense-category" className="block text-sm font-bold text-slate-700 mb-1">Categoría</label>
         <select
           id="expense-category"
           className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+          aria-invalid={!!errors.category}
+          aria-describedby={errors.category ? "expense-category-error" : undefined}
           {...register('category')}
         >
           <option value="Varios">Varios</option>
@@ -115,6 +124,7 @@ export function ExpenseForm({ initialData, users, budgets = [], currentUserId, o
             <option key={b.id} value={b.category}>{b.category}</option>
           ))}
         </select>
+        {errors.category && <p id="expense-category-error" className="text-red-500 text-xs mt-1">{errors.category.message}</p>}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -123,10 +133,13 @@ export function ExpenseForm({ initialData, users, budgets = [], currentUserId, o
           <select 
             id="expense-paidBy"
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            aria-invalid={!!errors.paidBy}
+            aria-describedby={errors.paidBy ? "expense-paidBy-error" : undefined}
             {...register('paidBy')}
           >
             {users.map((u: any) => <option key={u.id} value={u.id}>{u.name}</option>)}
           </select>
+          {errors.paidBy && <p id="expense-paidBy-error" className="text-red-500 text-xs mt-1">{errors.paidBy.message}</p>}
         </div>
         
         {!isPrivate && (
@@ -135,11 +148,14 @@ export function ExpenseForm({ initialData, users, budgets = [], currentUserId, o
             <select
               id="expense-splitType"
               className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              aria-invalid={!!errors.splitType}
+              aria-describedby={errors.splitType ? "expense-splitType-error" : undefined}
               {...register('splitType')}
             >
               <option value="50/50">Mitades (50/50)</option>
               <option value="proporcional">Proporcional (Ingresos)</option>
             </select>
+            {errors.splitType && <p id="expense-splitType-error" className="text-red-500 text-xs mt-1">{errors.splitType.message}</p>}
           </div>
         )}
       </div>

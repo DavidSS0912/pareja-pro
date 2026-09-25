@@ -61,6 +61,8 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
           <select 
             id="card-color"
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+            aria-invalid={!!errors.color}
+            aria-describedby={errors.color ? "card-color-error" : undefined}
             {...register('color')}
           >
             <option value="bg-gradient-to-br from-slate-700 to-slate-900">Negro (Clásica)</option>
@@ -70,6 +72,7 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
             <option value="bg-gradient-to-br from-amber-500 to-yellow-700">Oro (Gold)</option>
             <option value="bg-gradient-to-br from-slate-300 to-slate-500">Plata (Silver)</option>
           </select>
+          {errors.color && <p id="card-color-error" className="text-red-500 text-xs mt-1">{errors.color.message}</p>}
         </div>
       </div>
 
@@ -79,21 +82,27 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
           <select 
             id="card-owner"
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+            aria-invalid={!!errors.ownerId}
+            aria-describedby={errors.ownerId ? "card-ownerId-error" : undefined}
             {...register('ownerId')}
           >
             {users.map((u: any) => <option key={u.id} value={u.id}>{u.name}</option>)}
           </select>
+          {errors.ownerId && <p id="card-ownerId-error" className="text-red-500 text-xs mt-1">{errors.ownerId.message}</p>}
         </div>
         <div>
           <label htmlFor="card-shared" className="block text-sm font-bold text-slate-700 mb-1">Uso Compartido</label>
           <select 
             id="card-shared"
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+            aria-invalid={!!errors.shared}
+            aria-describedby={errors.shared ? "card-shared-error" : undefined}
             {...register('shared', { setValueAs: v => v === 'true' })}
           >
             <option value="false">No (Individual)</option>
             <option value="true">Sí (Gastos de Hogar)</option>
           </select>
+          {errors.shared && <p id="card-shared-error" className="text-red-500 text-xs mt-1">{errors.shared.message}</p>}
         </div>
       </div>
 
@@ -104,8 +113,11 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
             id="card-limit"
             type="number" 
             className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+            aria-invalid={!!errors.limit}
+            aria-describedby={errors.limit ? "card-limit-error" : undefined}
             {...register('limit', { valueAsNumber: true })}
           />
+          {errors.limit && <p id="card-limit-error" className="text-red-500 text-xs mt-1">{errors.limit.message}</p>}
         </div>
         <div>
           <label htmlFor="card-cutDay" className="block text-sm font-bold text-slate-700 mb-1">Día Corte</label>
@@ -113,8 +125,11 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
             id="card-cutDay"
             type="number" 
             className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+            aria-invalid={!!errors.cutDay}
+            aria-describedby={errors.cutDay ? "card-cutDay-error" : undefined}
             {...register('cutDay', { valueAsNumber: true })}
           />
+          {errors.cutDay && <p id="card-cutDay-error" className="text-red-500 text-xs mt-1">{errors.cutDay.message}</p>}
         </div>
         <div>
           <label htmlFor="card-payDay" className="block text-sm font-bold text-slate-700 mb-1">Día Pago</label>
@@ -122,8 +137,11 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
             id="card-payDay"
             type="number" 
             className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+            aria-invalid={!!errors.payDay}
+            aria-describedby={errors.payDay ? "card-payDay-error" : undefined}
             {...register('payDay', { valueAsNumber: true })}
           />
+          {errors.payDay && <p id="card-payDay-error" className="text-red-500 text-xs mt-1">{errors.payDay.message}</p>}
         </div>
       </div>
 
@@ -134,8 +152,11 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
             id="card-balance"
             type="number" step="0.01" 
             className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+            aria-invalid={!!errors.balance}
+            aria-describedby={errors.balance ? "card-balance-error" : undefined}
             {...register('balance', { valueAsNumber: true })}
           />
+          {errors.balance && <p id="card-balance-error" className="text-red-500 text-xs mt-1">{errors.balance.message}</p>}
         </div>
         <div>
           <label htmlFor="card-noInterestPay" className="block text-[11px] font-bold text-slate-700 mb-1 leading-tight">Pago para no int.</label>
@@ -143,8 +164,11 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
             id="card-noInterestPay"
             type="number" step="0.01" 
             className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+            aria-invalid={!!errors.noInterestPay}
+            aria-describedby={errors.noInterestPay ? "card-noInterestPay-error" : undefined}
             {...register('noInterestPay', { valueAsNumber: true })}
           />
+          {errors.noInterestPay && <p id="card-noInterestPay-error" className="text-red-500 text-xs mt-1">{errors.noInterestPay.message}</p>}
         </div>
         <div>
           <label htmlFor="card-interestRate" className="block text-sm font-bold text-slate-700 mb-1">Tasa Int. (%)</label>
@@ -152,8 +176,11 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
             id="card-interestRate"
             type="number" step="0.01" 
             className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+            aria-invalid={!!errors.interestRate}
+            aria-describedby={errors.interestRate ? "card-interestRate-error" : undefined}
             {...register('interestRate', { valueAsNumber: true })}
           />
+          {errors.interestRate && <p id="card-interestRate-error" className="text-red-500 text-xs mt-1">{errors.interestRate.message}</p>}
         </div>
       </div>
 

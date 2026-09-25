@@ -65,11 +65,14 @@ export function AssetForm({ initialData, users, onSubmit, onCancel }) {
           <select 
             id="asset-owner"
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+            aria-invalid={!!errors.owner}
+            aria-describedby={errors.owner ? "asset-owner-error" : undefined}
             {...register('owner')}
           >
             <option value="Ambos">Ambos (Compartido)</option>
             {users.map((u: any) => <option key={u.id} value={u.name}>{u.name}</option>)}
           </select>
+          {errors.owner && <p id="asset-owner-error" className="text-red-500 text-xs mt-1">{errors.owner.message}</p>}
         </div>
       </div>
 
@@ -78,6 +81,8 @@ export function AssetForm({ initialData, users, onSubmit, onCancel }) {
         <select 
           id="asset-type"
           className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+          aria-invalid={!!errors.type}
+          aria-describedby={errors.type ? "asset-type-error" : undefined}
           {...register('type')}
         >
           <option value="Liquidez">Liquidez (Efectivo)</option>
@@ -86,6 +91,7 @@ export function AssetForm({ initialData, users, onSubmit, onCancel }) {
           <option value="Bien Depreciable">Bien Depreciable</option>
           <option value="Bienes Raíces">Bienes Raíces</option>
         </select>
+        {errors.type && <p id="asset-type-error" className="text-red-500 text-xs mt-1">{errors.type.message}</p>}
       </div>
 
       <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
