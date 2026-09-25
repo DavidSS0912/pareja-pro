@@ -1,49 +1,64 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Button } from '../ui/Button';
 
+const expenseSchema = z.object({
+  desc: z.string().min(1, 'La descripción es obligatoria'),
+  amount: z.number().min(0.01, 'El monto debe ser mayor a 0'),
+  paidBy: z.string().min(1, 'Obligatorio'),
+  splitType: z.enum(['50/50', 'proporcional']),
+  currency: z.enum(['MXN', 'USD']),
+  category: z.string().min(1, 'Obligatorio'),
+  date: z.string().min(1, 'Obligatorio'),
+  isPrivate: z.boolean(),
+});
+
+type ExpenseFormData = z.infer<typeof expenseSchema>;
+
 export function ExpenseForm({ initialData, users, budgets = [], currentUserId, onSubmit, onCancel }) {
-  const [formData, setFormData] = useState(initialData || {
-    desc: '',
-    amount: '',
-    paidBy: currentUserId || users[0]?.id || '',
-    splitType: '50/50',
-    currency: 'MXN',
-    category: 'Varios',
-    date: new Date().toISOString().split('T')[0],
-    isPrivate: false
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<ExpenseFormData>({
+    resolver: zodResolver(expenseSchema),
+    defaultValues: initialData || {
+      desc: '',
+      amount: 0,
+      paidBy: currentUserId || users[0]?.id || '',
+      splitType: '50/50',
+      currency: 'MXN',
+      category: 'Varios',
+      date: new Date().toISOString().split('T')[0],
+      isPrivate: false,
+    },
   });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit({
-      ...formData,
-      amount: Number(formData.amount)
-    });
+  const isPrivate = watch('isPrivate');
+
+  const onFormSubmit = (data: ExpenseFormData) => {
+    onSubmit(data);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-1">Fecha</label>
           <input 
-            type="date" 
-            required
+            type="date"
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-colors"
-            value={formData.date} 
-            onChange={e => setFormData({...formData, date: e.target.value})} 
+            {...register('date')}
           />
+          {errors.date && <p className="text-red-500 text-xs mt-1">{errors.date.message}</p>}
         </div>
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-1">Descripción</label>
           <input 
-            type="text" 
-            required
+            type="text"
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-            value={formData.desc} 
-            onChange={e => setFormData({...formData, desc: e.target.value})} 
             placeholder="Ej. Walmart Quincena"
+            {...register('desc')}
           />
+          {errors.desc && <p className="text-red-500 text-xs mt-1">{errors.desc.message}</p>}
         </div>
       </div>
       
@@ -52,32 +67,28 @@ export function ExpenseForm({ initialData, users, budgets = [], currentUserId, o
         <div className="flex gap-2">
           <input
             type="number"
-            required
-            min="0"
             step="0.01"
             className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-            value={formData.amount}
-            onChange={e => setFormData({...formData, amount: e.target.value})}
             placeholder="0.00"
+            {...register('amount', { valueAsNumber: true })}
           />
           <select
             className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-            value={formData.currency}
-            onChange={e => setFormData({...formData, currency: e.target.value})}
+            {...register('currency')}
           >
             <option value="MXN">MXN</option>
             <option value="USD">USD</option>
           </select>
         </div>
+        {errors.amount && <p className="text-red-500 text-xs mt-1">{errors.amount.message}</p>}
       </div>
 
       <div className="flex items-center gap-2">
         <input
           type="checkbox"
           id="isPrivate"
-          checked={formData.isPrivate}
-          onChange={e => setFormData({...formData, isPrivate: e.target.checked})}
           className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
+          {...register('isPrivate')}
         />
         <label htmlFor="isPrivate" className="text-sm font-medium text-slate-700">Gasto Privado (No se divide)</label>
       </div>
@@ -86,11 +97,10 @@ export function ExpenseForm({ initialData, users, budgets = [], currentUserId, o
         <label className="block text-sm font-bold text-slate-700 mb-1">Categoría</label>
         <select
           className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-          value={formData.category}
-          onChange={e => setFormData({...formData, category: e.target.value})}
+          {...register('category')}
         >
           <option value="Varios">Varios</option>
-          {budgets.map(b => (
+          {budgets.map((b: any) => (
             <option key={b.id} value={b.category}>{b.category}</option>
           ))}
         </select>
@@ -101,20 +111,18 @@ export function ExpenseForm({ initialData, users, budgets = [], currentUserId, o
           <label className="block text-sm font-bold text-slate-700 mb-1">Pagado por</label>
           <select 
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            value={formData.paidBy} 
-            onChange={e => setFormData({...formData, paidBy: e.target.value})}
+            {...register('paidBy')}
           >
-            {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+            {users.map((u: any) => <option key={u.id} value={u.id}>{u.name}</option>)}
           </select>
         </div>
         
-        {!formData.isPrivate && (
+        {!isPrivate && (
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-1">División</label>
             <select
               className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              value={formData.splitType}
-              onChange={e => setFormData({...formData, splitType: e.target.value})}
+              {...register('splitType')}
             >
               <option value="50/50">Mitades (50/50)</option>
               <option value="proporcional">Proporcional (Ingresos)</option>
@@ -124,7 +132,7 @@ export function ExpenseForm({ initialData, users, budgets = [], currentUserId, o
       </div>
 
       <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
-        <Button variant="secondary" onClick={onCancel}>Cancelar</Button>
+        <Button variant="secondary" onClick={onCancel} type="button">Cancelar</Button>
         <Button type="submit">Guardar Gasto</Button>
       </div>
     </form>

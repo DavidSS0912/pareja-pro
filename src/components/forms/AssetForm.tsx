@@ -1,34 +1,44 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Button } from '../ui/Button';
 
+const assetSchema = z.object({
+  name: z.string().min(1, 'El nombre es obligatorio'),
+  owner: z.string().min(1, 'Obligatorio'),
+  value: z.number().min(0, 'El valor no puede ser negativo'),
+  type: z.enum(['Liquidez', 'Inversión Segura', 'Alto Riesgo', 'Bien Depreciable', 'Bienes Raíces']),
+});
+
+type AssetFormData = z.infer<typeof assetSchema>;
+
 export function AssetForm({ initialData, users, onSubmit, onCancel }) {
-  const [formData, setFormData] = useState(initialData || {
-    name: '',
-    owner: 'Ambos',
-    value: '',
-    type: 'Liquidez'
+  const { register, handleSubmit, formState: { errors } } = useForm<AssetFormData>({
+    resolver: zodResolver(assetSchema),
+    defaultValues: initialData || {
+      name: '',
+      owner: 'Ambos',
+      value: 0,
+      type: 'Liquidez'
+    }
   });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit({
-      ...formData,
-      value: Number(formData.value)
-    });
+  const onFormSubmit = (data: AssetFormData) => {
+    onSubmit(data);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
       <div>
         <label className="block text-sm font-bold text-slate-700 mb-1">Nombre del Activo</label>
         <input 
           type="text" 
-          required
           className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-          value={formData.name} 
-          onChange={e => setFormData({...formData, name: e.target.value})} 
           placeholder="Ej. Cuenta Nu, Auto, CETES"
+          {...register('name')}
         />
+        {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -36,24 +46,22 @@ export function AssetForm({ initialData, users, onSubmit, onCancel }) {
           <label className="block text-sm font-bold text-slate-700 mb-1">Valor (MXN)</label>
           <input 
             type="number" 
-            required
             step="0.01"
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-            value={formData.value} 
-            onChange={e => setFormData({...formData, value: e.target.value})} 
             placeholder="0.00"
+            {...register('value', { valueAsNumber: true })}
           />
+          {errors.value && <p className="text-red-500 text-xs mt-1">{errors.value.message}</p>}
         </div>
         
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-1">Propietario</label>
           <select 
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-            value={formData.owner} 
-            onChange={e => setFormData({...formData, owner: e.target.value})}
+            {...register('owner')}
           >
             <option value="Ambos">Ambos (Compartido)</option>
-            {users.map(u => <option key={u.id} value={u.name}>{u.name}</option>)}
+            {users.map((u: any) => <option key={u.id} value={u.name}>{u.name}</option>)}
           </select>
         </div>
       </div>
@@ -62,8 +70,7 @@ export function AssetForm({ initialData, users, onSubmit, onCancel }) {
         <label className="block text-sm font-bold text-slate-700 mb-1">Tipo de Activo</label>
         <select 
           className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-          value={formData.type} 
-          onChange={e => setFormData({...formData, type: e.target.value})}
+          {...register('type')}
         >
           <option value="Liquidez">Liquidez (Efectivo)</option>
           <option value="Inversión Segura">Inversión Segura</option>
@@ -74,7 +81,7 @@ export function AssetForm({ initialData, users, onSubmit, onCancel }) {
       </div>
 
       <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
-        <Button variant="secondary" onClick={onCancel}>Cancelar</Button>
+        <Button variant="secondary" onClick={onCancel} type="button">Cancelar</Button>
         <Button type="submit">Guardar Activo</Button>
       </div>
     </form>

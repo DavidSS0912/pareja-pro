@@ -16,6 +16,7 @@ import { auth, db } from './firebase';
 import { doc, getDoc, setDoc, addDoc, collection } from 'firebase/firestore';
 
 import { useAppStore } from './store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { AuthView } from './views/AuthView';
 import { DashboardView } from './views/DashboardView';
 import { BudgetsView } from './views/BudgetsView';
@@ -32,7 +33,42 @@ export default function App() {
   const [inviteLink, setInviteLink] = useState('');
   const [joinHouseConfirm, setJoinHouseConfirm] = useState<string | null>(null);
 
-  const data = useAppStore();
+  const data = useAppStore(useShallow(state => ({
+    user: state.user,
+    houseId: state.houseId,
+    authLoading: state.authLoading,
+    dateRange: state.dateRange,
+    expenses: state.expenses,
+    budgets: state.budgets,
+    cards: state.cards,
+    assets: state.assets,
+    incomes: state.incomes,
+    users: state.users,
+    goals: state.goals,
+    setUser: state.setUser,
+    setHouseId: state.setHouseId,
+    setAuthLoading: state.setAuthLoading,
+    setDateRange: state.setDateRange,
+    initListeners: state.initListeners,
+    addExpense: state.addExpense,
+    updateExpense: state.updateExpense,
+    deleteExpense: state.deleteExpense,
+    addBudget: state.addBudget,
+    updateBudget: state.updateBudget,
+    deleteBudget: state.deleteBudget,
+    addCard: state.addCard,
+    updateCard: state.updateCard,
+    deleteCard: state.deleteCard,
+    addAsset: state.addAsset,
+    updateAsset: state.updateAsset,
+    deleteAsset: state.deleteAsset,
+    addIncome: state.addIncome,
+    updateIncome: state.updateIncome,
+    deleteIncome: state.deleteIncome,
+    addGoal: state.addGoal,
+    updateGoal: state.updateGoal,
+    deleteGoal: state.deleteGoal,
+  })));
   const methods = data;
   const { user, houseId, authLoading, setUser, setHouseId, setAuthLoading, initListeners, dateRange, setDateRange } = data;
 
@@ -165,7 +201,7 @@ export default function App() {
       if (inc.userId) incomesByUser[inc.userId] = (incomesByUser[inc.userId] || 0) + normalize(inc.amount, inc.currency);
     });
 
-    const totalIncomesAll = filteredData.incomes.reduce((acc, curr) => acc + normalize(curr.amount, curr.currency), 0);
+
 
     let zoeOwesDavid = 0;
     let davidOwesZoe = 0;
