@@ -34,3 +34,6 @@ export const useAppStore = create<AppState>()((...a) => ({
   ...createUserListSlice(...a),
   ...createListenerSlice(...a),
 }));
+
+if (typeof window !== 'undefined') { (window as any).useAppStore = useAppStore; }
+

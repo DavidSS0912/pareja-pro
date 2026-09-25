@@ -86,6 +86,7 @@ export default function App() {
   }, [data, dateRange]);
 
   useEffect(() => {
+    if (typeof window !== "undefined" && window.localStorage.getItem("PLAYWRIGHT_TEST") === "true") return;
     const unsub = onAuthStateChanged(auth, async (fbUser) => {
       try {
         if (fbUser) {
