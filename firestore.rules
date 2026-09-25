@@ -25,17 +25,18 @@ service cloud.firestore {
     }
 
     match /invitations/{inviteId} {
-      allow read: if request.auth != null;
+      allow read: if request.auth != null 
+                  && (request.auth.uid == resource.data.fromUid || request.auth.token.email == resource.data.toEmail);
       allow create: if isMemberOfHouse(request.resource.data.houseId) 
                     && request.resource.data.fromUid == request.auth.uid
                     && request.resource.data.houseId is string
                     && request.resource.data.fromUid is string
                     && request.resource.data.toEmail is string;
       allow update: if request.auth != null 
-                    && (request.auth.uid == resource.data.fromUid || request.resource.data.accepted == true)
-                    && request.resource.data.houseId is string
-                    && request.resource.data.fromUid is string
-                    && request.resource.data.toEmail is string
+                    && (request.auth.uid == resource.data.fromUid || (request.auth.token.email == resource.data.toEmail && request.resource.data.accepted == true))
+                    && request.resource.data.houseId == resource.data.houseId
+                    && request.resource.data.fromUid == resource.data.fromUid
+                    && request.resource.data.toEmail == resource.data.toEmail
                     && request.resource.data.accepted is bool;
     }
 
