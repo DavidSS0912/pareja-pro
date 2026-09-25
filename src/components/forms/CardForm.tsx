@@ -44,18 +44,22 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
     <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1">Nombre Tarjeta</label>
+          <label htmlFor="card-name" className="block text-sm font-bold text-slate-700 mb-1">Nombre Tarjeta</label>
           <input 
+            id="card-name"
             type="text" 
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             placeholder="Ej. Nu Clásica"
+            aria-invalid={!!errors.name}
+            aria-describedby={errors.name ? "card-name-error" : undefined}
             {...register('name')}
           />
-          {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
+          {errors.name && <p id="card-name-error" className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
         </div>
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1">Color/Tema</label>
+          <label htmlFor="card-color" className="block text-sm font-bold text-slate-700 mb-1">Color/Tema</label>
           <select 
+            id="card-color"
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             {...register('color')}
           >
@@ -71,8 +75,9 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1">Titular</label>
+          <label htmlFor="card-owner" className="block text-sm font-bold text-slate-700 mb-1">Titular</label>
           <select 
+            id="card-owner"
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             {...register('ownerId')}
           >
@@ -80,8 +85,9 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1">Uso Compartido</label>
+          <label htmlFor="card-shared" className="block text-sm font-bold text-slate-700 mb-1">Uso Compartido</label>
           <select 
+            id="card-shared"
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             {...register('shared', { setValueAs: v => v === 'true' })}
           >
@@ -93,24 +99,27 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
 
       <div className="grid grid-cols-3 gap-2">
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1">Límite</label>
+          <label htmlFor="card-limit" className="block text-sm font-bold text-slate-700 mb-1">Límite</label>
           <input 
+            id="card-limit"
             type="number" 
             className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             {...register('limit', { valueAsNumber: true })}
           />
         </div>
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1">Día Corte</label>
+          <label htmlFor="card-cutDay" className="block text-sm font-bold text-slate-700 mb-1">Día Corte</label>
           <input 
+            id="card-cutDay"
             type="number" 
             className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             {...register('cutDay', { valueAsNumber: true })}
           />
         </div>
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1">Día Pago</label>
+          <label htmlFor="card-payDay" className="block text-sm font-bold text-slate-700 mb-1">Día Pago</label>
           <input 
+            id="card-payDay"
             type="number" 
             className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             {...register('payDay', { valueAsNumber: true })}
@@ -120,24 +129,27 @@ export function CardForm({ initialData, users, onSubmit, onCancel }) {
 
       <div className="grid grid-cols-3 gap-2">
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1">Saldo Actual</label>
+          <label htmlFor="card-balance" className="block text-sm font-bold text-slate-700 mb-1">Saldo Actual</label>
           <input 
+            id="card-balance"
             type="number" step="0.01" 
             className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             {...register('balance', { valueAsNumber: true })}
           />
         </div>
         <div>
-          <label className="block text-[11px] font-bold text-slate-700 mb-1 leading-tight">Pago para no int.</label>
+          <label htmlFor="card-noInterestPay" className="block text-[11px] font-bold text-slate-700 mb-1 leading-tight">Pago para no int.</label>
           <input 
+            id="card-noInterestPay"
             type="number" step="0.01" 
             className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             {...register('noInterestPay', { valueAsNumber: true })}
           />
         </div>
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1">Tasa Int. (%)</label>
+          <label htmlFor="card-interestRate" className="block text-sm font-bold text-slate-700 mb-1">Tasa Int. (%)</label>
           <input 
+            id="card-interestRate"
             type="number" step="0.01" 
             className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             {...register('interestRate', { valueAsNumber: true })}

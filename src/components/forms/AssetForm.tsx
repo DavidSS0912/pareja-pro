@@ -31,32 +31,39 @@ export function AssetForm({ initialData, users, onSubmit, onCancel }) {
   return (
     <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
       <div>
-        <label className="block text-sm font-bold text-slate-700 mb-1">Nombre del Activo</label>
+        <label htmlFor="asset-name" className="block text-sm font-bold text-slate-700 mb-1">Nombre del Activo</label>
         <input 
+          id="asset-name"
           type="text" 
           className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
           placeholder="Ej. Cuenta Nu, Auto, CETES"
+          aria-invalid={!!errors.name}
+          aria-describedby={errors.name ? "asset-name-error" : undefined}
           {...register('name')}
         />
-        {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
+        {errors.name && <p id="asset-name-error" className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1">Valor (MXN)</label>
+          <label htmlFor="asset-value" className="block text-sm font-bold text-slate-700 mb-1">Valor (MXN)</label>
           <input 
+            id="asset-value"
             type="number" 
             step="0.01"
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             placeholder="0.00"
+            aria-invalid={!!errors.value}
+            aria-describedby={errors.value ? "asset-value-error" : undefined}
             {...register('value', { valueAsNumber: true })}
           />
-          {errors.value && <p className="text-red-500 text-xs mt-1">{errors.value.message}</p>}
+          {errors.value && <p id="asset-value-error" className="text-red-500 text-xs mt-1">{errors.value.message}</p>}
         </div>
         
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1">Propietario</label>
+          <label htmlFor="asset-owner" className="block text-sm font-bold text-slate-700 mb-1">Propietario</label>
           <select 
+            id="asset-owner"
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
             {...register('owner')}
           >
@@ -67,8 +74,9 @@ export function AssetForm({ initialData, users, onSubmit, onCancel }) {
       </div>
 
       <div>
-        <label className="block text-sm font-bold text-slate-700 mb-1">Tipo de Activo</label>
+        <label htmlFor="asset-type" className="block text-sm font-bold text-slate-700 mb-1">Tipo de Activo</label>
         <select 
+          id="asset-type"
           className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
           {...register('type')}
         >

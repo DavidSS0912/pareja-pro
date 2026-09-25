@@ -25,6 +25,9 @@ import { SettlementView } from './views/SettlementView';
 import { DebtSimulatorView } from './views/DebtSimulatorView';
 import { WealthView } from './views/WealthView';
 import { HistoricalView } from './views/HistoricalView';
+import { TermsView } from './views/TermsView';
+import { PrivacyPolicyView } from './views/PrivacyPolicyView';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { ToastContainer } from './components/ui/Toast';
 
 export default function App() {
@@ -275,6 +278,8 @@ export default function App() {
       case 'debts': return <DebtSimulatorView data={filteredData} />;
       case 'wealth': return <WealthView data={filteredData} calc={calc} methods={methods} />;
       case 'historical': return <HistoricalView data={data} />;
+      case 'terms': return <TermsView />;
+      case 'privacy': return <PrivacyPolicyView />;
       default: return <DashboardView data={filteredData} calc={calc} methods={methods} />;
     }
   };
@@ -326,6 +331,10 @@ export default function App() {
               <LogOut size={18} />
               <span className="text-sm">Cerrar sesión</span>
             </button>
+            <div className="mt-4 flex gap-4 justify-center text-xs text-slate-400">
+              <button onClick={() => setActiveTab('terms')} className="hover:text-slate-600">Términos</button>
+              <button onClick={() => setActiveTab('privacy')} className="hover:text-slate-600">Privacidad</button>
+            </div>
           </div>
         </div>
       </nav>
@@ -343,7 +352,7 @@ export default function App() {
           </button>
         </div>
 
-        {activeTab !== 'historical' && (
+        {activeTab !== 'historical' && activeTab !== 'terms' && activeTab !== 'privacy' && (
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4 bg-white p-4 rounded-xl border border-[#E5E5E5]">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Periodo:</span>
             <div className="flex items-center gap-2">
@@ -354,7 +363,9 @@ export default function App() {
           </div>
         )}
 
-        {renderTab()}
+        <ErrorBoundary>
+          {renderTab()}
+        </ErrorBoundary>
       </main>
 
       {/* Invite Modal */}
