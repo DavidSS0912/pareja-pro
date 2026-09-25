@@ -14,6 +14,7 @@ export interface ProjectSlice {
   deleteProject: (id: string) => Promise<void>;
   addContribution: (contribution: Omit<RecordItem, 'id'>) => Promise<void>;
   deleteContribution: (id: string) => Promise<void>;
+  addContributionAndUpdateProject: (projectId: string, contribution: Omit<RecordItem, 'id'>, newSavedAmount: number) => Promise<void>;
 }
 
 export const createProjectSlice: StateCreator<ProjectSlice & AuthSlice, [], [], ProjectSlice> = (set, get) => ({
@@ -39,5 +40,10 @@ export const createProjectSlice: StateCreator<ProjectSlice & AuthSlice, [], [], 
   },
   deleteContribution: async (id) => {
     await contributionService.delete(id);
+  },
+  addContributionAndUpdateProject: async (projectId, contribution, newSavedAmount) => {
+    const { houseId } = get();
+    if (!houseId) return;
+    await projectService.addContributionAndUpdateProject(houseId, projectId, contribution, newSavedAmount);
   }
 });

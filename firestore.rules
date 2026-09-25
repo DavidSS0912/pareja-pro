@@ -50,8 +50,10 @@ service cloud.firestore {
     function isValidIncome(data) {
       return data.houseId is string
           && data.amount is number
+          && data.amount > 0
           && data.type is string
-          && data.date is string;
+          && data.date is string
+          && (!('notes' in data) || data.notes is string);
     }
 
     match /incomes/{docId} {
@@ -63,6 +65,7 @@ service cloud.firestore {
     function isValidExpense(data) {
       return data.houseId is string
           && data.amount is number
+          && data.amount > 0
           && data.desc is string
           && data.splitType is string
           && data.currency is string
@@ -120,11 +123,12 @@ service cloud.firestore {
       return data.houseId is string
           && data.name is string
           && data.targetAmount is number
+          && data.targetAmount > 0
           && data.savedAmount is number
           && data.monthlyQuota is number
           && data.targetAccount is string
           && data.priority is number
-          && data.status is string
+          && data.status in ['active', 'pending', 'completed']
           && data.startDate is string;
     }
 
@@ -139,7 +143,9 @@ service cloud.firestore {
           && data.projectId is string
           && data.userId is string
           && data.amount is number
-          && data.date is string;
+          && data.amount > 0
+          && data.date is string
+          && (!('notes' in data) || data.notes is string);
     }
 
     match /contributions/{docId} {

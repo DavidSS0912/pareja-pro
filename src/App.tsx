@@ -61,6 +61,7 @@ export default function App() {
     updateProject: state.updateProject,
     deleteProject: state.deleteProject,
     addContribution: state.addContribution,
+    addContributionAndUpdateProject: state.addContributionAndUpdateProject,
     deleteContribution: state.deleteContribution,
     updateExpense: state.updateExpense,
     deleteExpense: state.deleteExpense,

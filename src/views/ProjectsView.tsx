@@ -62,30 +62,29 @@ export const ProjectsView = ({ data, methods }: any) => {
     if (!activeProject || newContribution.amount <= 0) return;
     if (!data.user) return;
 
-    await methods.addContribution({
-      projectId: activeProject.id,
-      userId: data.user.uid,
-      amount: Number(newContribution.amount),
-      date: newContribution.date,
-      notes: newContribution.notes
-    });
-
-    await methods.updateProject(activeProject.id, {
-      savedAmount: activeProject.savedAmount + Number(newContribution.amount)
-    });
+    await methods.addContributionAndUpdateProject(
+      activeProject.id,
+      {
+        userId: data.user.uid,
+        amount: Number(newContribution.amount),
+        date: newContribution.date,
+        notes: newContribution.notes
+      },
+      activeProject.savedAmount + Number(newContribution.amount)
+    );
 
     setShowContributionForm(false);
     setNewContribution({ amount: 0, notes: '', date: new Date().toISOString().split('T')[0] });
   };
 
   const changePriority = async (project: any, direction: 'up' | 'down') => {
-    const currentIndex = sortedProjects.findIndex(p => p.id === project.id);
+    const currentIndex = pendingProjects.findIndex(p => p.id === project.id);
     if (direction === 'up' && currentIndex > 0) {
-      const other = sortedProjects[currentIndex - 1];
+      const other = pendingProjects[currentIndex - 1];
       await methods.updateProject(project.id, { priority: other.priority });
       await methods.updateProject(other.id, { priority: project.priority });
-    } else if (direction === 'down' && currentIndex < sortedProjects.length - 1) {
-      const other = sortedProjects[currentIndex + 1];
+    } else if (direction === 'down' && currentIndex < pendingProjects.length - 1) {
+      const other = pendingProjects[currentIndex + 1];
       await methods.updateProject(project.id, { priority: other.priority });
       await methods.updateProject(other.id, { priority: project.priority });
     }
@@ -152,7 +151,7 @@ export const ProjectsView = ({ data, methods }: any) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {users.map((u: any) => {
                 const userIncome = incomePerUser[u.id] || 0;
-                const percentage = totalHouseholdIncome > 0 ? userIncome / totalHouseholdIncome : (1 / users.length);
+                const percentage = totalHouseholdIncome > 0 ? userIncome / totalHouseholdIncome : (users.length > 0 ? 1 / users.length : 0);
                 const suggestedAmount = activeProject.monthlyQuota * percentage;
                 return (
                   <div key={u.id} className="bg-white p-3 rounded-lg border border-[#E5E5E5] flex justify-between items-center">
