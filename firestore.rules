@@ -16,10 +16,12 @@ service cloud.firestore {
 
     match /houses/{houseId} {
       allow read: if request.auth != null && request.auth.uid in resource.data.members;
-      allow update: if request.auth != null && request.auth.uid in resource.data.members
-                    && request.resource.data.members is list;
       allow create: if request.auth != null && request.auth.uid in request.resource.data.members
-                    && request.resource.data.members is list;
+                    && request.resource.data.members is list
+                    && request.resource.data.name is string;
+      allow update: if request.auth != null && request.auth.uid in resource.data.members
+                    && request.resource.data.members is list
+                    && request.resource.data.name is string;
     }
 
     match /invitations/{inviteId} {
@@ -31,47 +33,75 @@ service cloud.firestore {
                     && request.resource.data.toEmail is string;
       allow update: if request.auth != null 
                     && (request.auth.uid == resource.data.fromUid || request.resource.data.accepted == true)
+                    && request.resource.data.houseId is string
+                    && request.resource.data.fromUid is string
+                    && request.resource.data.toEmail is string
                     && request.resource.data.accepted is bool;
+    }
+
+    function isValidIncome(data) {
+      return data.houseId is string
+          && data.amount is number
+          && data.type is string
+          && data.date is string;
     }
 
     match /incomes/{docId} {
       allow read, delete: if isMemberOfHouse(resource.data.houseId);
-      allow create, update: if isMemberOfHouse(request.resource.data.houseId)
-                            && request.resource.data.amount is number
-                            && request.resource.data.type is string
-                            && request.resource.data.date is string;
+      allow create: if isMemberOfHouse(request.resource.data.houseId) && isValidIncome(request.resource.data);
+      allow update: if isMemberOfHouse(resource.data.houseId) && isMemberOfHouse(request.resource.data.houseId) && isValidIncome(request.resource.data);
+    }
+
+    function isValidExpense(data) {
+      return data.houseId is string
+          && data.amount is number
+          && data.desc is string
+          && data.split is number
+          && data.date is string;
     }
 
     match /expenses/{docId} {
       allow read, delete: if isMemberOfHouse(resource.data.houseId);
-      allow create, update: if isMemberOfHouse(request.resource.data.houseId)
-                            && request.resource.data.amount is number
-                            && request.resource.data.desc is string
-                            && request.resource.data.split is number
-                            && request.resource.data.date is string;
+      allow create: if isMemberOfHouse(request.resource.data.houseId) && isValidExpense(request.resource.data);
+      allow update: if isMemberOfHouse(resource.data.houseId) && isMemberOfHouse(request.resource.data.houseId) && isValidExpense(request.resource.data);
+    }
+
+    function isValidBudget(data) {
+      return data.houseId is string
+          && data.base is number
+          && data.spent is number
+          && data.category is string;
     }
 
     match /budgets/{docId} {
       allow read, delete: if isMemberOfHouse(resource.data.houseId);
-      allow create, update: if isMemberOfHouse(request.resource.data.houseId)
-                            && request.resource.data.base is number
-                            && request.resource.data.spent is number
-                            && request.resource.data.category is string;
+      allow create: if isMemberOfHouse(request.resource.data.houseId) && isValidBudget(request.resource.data);
+      allow update: if isMemberOfHouse(resource.data.houseId) && isMemberOfHouse(request.resource.data.houseId) && isValidBudget(request.resource.data);
+    }
+
+    function isValidCard(data) {
+      return data.houseId is string
+          && data.limit is number
+          && data.balance is number
+          && data.name is string;
     }
 
     match /cards/{docId} {
       allow read, delete: if isMemberOfHouse(resource.data.houseId);
-      allow create, update: if isMemberOfHouse(request.resource.data.houseId)
-                            && request.resource.data.limit is number
-                            && request.resource.data.balance is number
-                            && request.resource.data.name is string;
+      allow create: if isMemberOfHouse(request.resource.data.houseId) && isValidCard(request.resource.data);
+      allow update: if isMemberOfHouse(resource.data.houseId) && isMemberOfHouse(request.resource.data.houseId) && isValidCard(request.resource.data);
+    }
+
+    function isValidAsset(data) {
+      return data.houseId is string
+          && data.value is number
+          && data.name is string;
     }
 
     match /assets/{docId} {
       allow read, delete: if isMemberOfHouse(resource.data.houseId);
-      allow create, update: if isMemberOfHouse(request.resource.data.houseId)
-                            && request.resource.data.value is number
-                            && request.resource.data.name is string;
+      allow create: if isMemberOfHouse(request.resource.data.houseId) && isValidAsset(request.resource.data);
+      allow update: if isMemberOfHouse(resource.data.houseId) && isMemberOfHouse(request.resource.data.houseId) && isValidAsset(request.resource.data);
     }
   }
 }
