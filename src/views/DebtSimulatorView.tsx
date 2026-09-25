@@ -62,6 +62,10 @@ export function DebtSimulatorView({ data }) {
           </Card>
         ))}
       </div>
+
+      <div className="mt-8 text-xs text-slate-400 text-center px-4">
+        <p><strong>Aviso Legal:</strong> Las simulaciones mostradas son proyecciones estimadas y pueden variar según los términos específicos de tus instituciones financieras. Consulta directamente con tu banco para conocer los montos exactos y condiciones vigentes.</p>
+      </div>
     </div>
   );
 }

@@ -51,39 +51,45 @@ export function IncomeForm({ initialData, users, currentUserId, onSubmit, onCanc
       {/* Row 1: Fecha + Aportador */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className={LABEL_CLASS}>
+          <label htmlFor="income-date" className={LABEL_CLASS}>
             <span className="flex items-center gap-1.5">
               <Calendar size={11} />
               Fecha
             </span>
           </label>
           <input
+            id="income-date"
             type="date"
             className={INPUT_CLASS}
+            aria-invalid={!!errors.date}
+            aria-describedby={errors.date ? "income-date-error" : undefined}
             {...register('date')}
           />
-          {errors.date && <p className="text-red-500 text-xs mt-1">{errors.date.message}</p>}
+          {errors.date && <p id="income-date-error" className="text-red-500 text-xs mt-1">{errors.date.message}</p>}
         </div>
         <div>
-          <label className={LABEL_CLASS}>
+          <label htmlFor="income-userId" className={LABEL_CLASS}>
             <span className="flex items-center gap-1.5">
               <User size={11} />
               Aportador
             </span>
           </label>
           <select
+            id="income-userId"
             className={INPUT_CLASS}
+            aria-invalid={!!errors.userId}
+            aria-describedby={errors.userId ? "income-userId-error" : undefined}
             {...register('userId')}
           >
             {users.map((u: any) => <option key={u.id} value={u.id}>{u.name}</option>)}
           </select>
-          {errors.userId && <p className="text-red-500 text-xs mt-1">{errors.userId.message}</p>}
+          {errors.userId && <p id="income-userId-error" className="text-red-500 text-xs mt-1">{errors.userId.message}</p>}
         </div>
       </div>
 
       {/* Row 2: Monto + Moneda */}
       <div>
-        <label className={LABEL_CLASS}>
+        <label htmlFor="income-amount" className={LABEL_CLASS}>
           <span className="flex items-center gap-1.5">
             <DollarSign size={11} />
             Monto
@@ -91,33 +97,44 @@ export function IncomeForm({ initialData, users, currentUserId, onSubmit, onCanc
         </label>
         <div className="flex gap-2">
           <input
+            id="income-amount"
             type="number"
             step="0.01"
             className={`${INPUT_CLASS} flex-1 tabular-nums tracking-tight`}
             placeholder="0.00"
+            aria-invalid={!!errors.amount}
+            aria-describedby={errors.amount ? "income-amount-error" : undefined}
             {...register('amount', { valueAsNumber: true })}
           />
           <select
+            id="income-currency"
+            aria-label="Moneda"
             className="px-3 py-2.5 bg-white border border-[#E5E5E5] rounded-lg text-sm text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
+            aria-invalid={!!errors.currency}
+            aria-describedby={errors.currency ? "income-currency-error" : undefined}
             {...register('currency')}
           >
             <option value="MXN">MXN</option>
             <option value="USD">USD</option>
           </select>
         </div>
-        {errors.amount && <p className="text-red-500 text-xs mt-1">{errors.amount.message}</p>}
+        {errors.amount && <p id="income-amount-error" className="text-red-500 text-xs mt-1">{errors.amount.message}</p>}
+        {errors.currency && <p id="income-currency-error" className="text-red-500 text-xs mt-1">{errors.currency.message}</p>}
       </div>
 
       {/* Row 3: Tipo */}
       <div>
-        <label className={LABEL_CLASS}>
+        <label htmlFor="income-type" className={LABEL_CLASS}>
           <span className="flex items-center gap-1.5">
             <Tag size={11} />
             Tipo de Ingreso
           </span>
         </label>
         <select
+          id="income-type"
           className={INPUT_CLASS}
+          aria-invalid={!!errors.type}
+          aria-describedby={errors.type ? "income-type-error" : undefined}
           {...register('type')}
         >
           <option value="Sueldo">Sueldo / Salario</option>
@@ -126,6 +143,7 @@ export function IncomeForm({ initialData, users, currentUserId, onSubmit, onCanc
           <option value="Inversiones">Retornos de Inversión</option>
           <option value="Otro">Otro Ingreso</option>
         </select>
+        {errors.type && <p id="income-type-error" className="text-red-500 text-xs mt-1">{errors.type.message}</p>}
       </div>
 
       {/* Row 4: Privado toggle */}
@@ -152,7 +170,15 @@ export function IncomeForm({ initialData, users, currentUserId, onSubmit, onCanc
           <p className="text-xs text-slate-500 mt-0.5">No se contabiliza en el presupuesto compartido.</p>
         </div>
       </div>
-      <input type="checkbox" className="hidden" {...register('isPrivate')} />
+      <input 
+        type="checkbox" 
+        className="hidden" 
+        id="income-isPrivate"
+        aria-invalid={!!errors.isPrivate}
+        aria-describedby={errors.isPrivate ? "income-isPrivate-error" : undefined}
+        {...register('isPrivate')} 
+      />
+      {errors.isPrivate && <p id="income-isPrivate-error" className="text-red-500 text-xs mt-1">{errors.isPrivate.message}</p>}
 
       {/* Actions */}
       <div className="flex justify-end gap-2 pt-4 border-t border-[#E5E5E5]">

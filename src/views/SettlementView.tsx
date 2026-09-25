@@ -150,6 +150,10 @@ export function SettlementView({ data, calc, methods }) {
           onCancel={handleCloseModal} 
         />
       </Modal>
+
+      <div className="mt-8 text-xs text-slate-400 text-center px-4">
+        <p><strong>Aviso:</strong> Este simulador y liquidador tienen fines informativos y de ayuda en la gestión. No constituyen asesoría contable ni legal. Verifica tus montos antes de realizar cualquier transferencia.</p>
+      </div>
     </div>
   );
 }
