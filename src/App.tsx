@@ -12,8 +12,8 @@ import {
   LogOut
 } from 'lucide-react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth, db } from './firebase';
-import { doc, getDoc, setDoc, addDoc, collection } from 'firebase/firestore';
+import { auth } from './firebase';
+import { getOrCreateUserAndHouse, checkInvitation, acceptInvitation, createInvitation } from './services/userService';
 
 import { useAppStore } from './store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -92,40 +92,15 @@ export default function App() {
         if (fbUser) {
           setUser({ uid: fbUser.uid, email: fbUser.email, displayName: fbUser.displayName, photoURL: fbUser.photoURL });
           
-          const userDocRef = doc(db, 'users', fbUser.uid);
-          const userDoc = await getDoc(userDocRef);
-          
-          let currentHouseId = '';
-          if (userDoc.exists()) {
-            currentHouseId = userDoc.data().houseId;
-            try {
-              await setDoc(userDocRef, { photoURL: fbUser.photoURL || null }, { merge: true });
-            } catch (err) {
-              console.error("Error updating photoURL", err);
-            }
-            setHouseId(currentHouseId);
-          } else {
-            currentHouseId = `house_${fbUser.uid}`;
-            await setDoc(doc(db, 'houses', currentHouseId), { members: [fbUser.uid] });
-            await setDoc(userDocRef, { 
-              houseId: currentHouseId, 
-              email: fbUser.email, 
-              displayName: fbUser.displayName,
-              name: fbUser.displayName?.split(' ')[0] || 'Usuario',
-              avatar: 'bg-indigo-500',
-              photoURL: fbUser.photoURL || null
-            });
-            setHouseId(currentHouseId);
-          }
+          const currentHouseId = await getOrCreateUserAndHouse(fbUser);
+          setHouseId(currentHouseId);
 
           // Check for invite
           const path = window.location.pathname;
           if (path.startsWith('/invite/')) {
             const inviteId = path.split('/')[2];
-            const inviteRef = doc(db, 'invitations', inviteId);
-            const inviteDoc = await getDoc(inviteRef);
-            if (inviteDoc.exists() && !inviteDoc.data().accepted) {
-               const invitedHouseId = inviteDoc.data().houseId;
+            const invitedHouseId = await checkInvitation(inviteId);
+            if (invitedHouseId) {
                if (invitedHouseId !== currentHouseId) {
                  setJoinHouseConfirm(inviteId);
                } else {
@@ -157,18 +132,9 @@ export default function App() {
 
   const handleJoinHouse = async (accept: boolean) => {
     if (accept && joinHouseConfirm && user) {
-      const inviteRef = doc(db, 'invitations', joinHouseConfirm);
-      const inviteDoc = await getDoc(inviteRef);
-      if (inviteDoc.exists()) {
-        const newHouseId = inviteDoc.data().houseId;
-        const houseRef = doc(db, 'houses', newHouseId);
-        const houseDoc = await getDoc(houseRef);
-        if (houseDoc.exists()) {
-           await setDoc(doc(db, 'houses', newHouseId), { members: [...houseDoc.data().members, user.uid] }, { merge: true });
-           await setDoc(doc(db, 'users', user.uid), { houseId: newHouseId }, { merge: true });
-           await setDoc(inviteRef, { accepted: true }, { merge: true });
-           setHouseId(newHouseId);
-        }
+      const newHouseId = await acceptInvitation(user.uid, joinHouseConfirm);
+      if (newHouseId) {
+        setHouseId(newHouseId);
       }
     }
     setJoinHouseConfirm(null);
@@ -177,13 +143,8 @@ export default function App() {
 
   const handleInvite = async () => {
     if (!user || !houseId) return;
-    const inviteRef = await addDoc(collection(db, 'invitations'), {
-      houseId,
-      fromUid: user.uid,
-      createdAt: new Date().toISOString(),
-      accepted: false
-    });
-    const link = `${window.location.origin}/invite/${inviteRef.id}`;
+    const inviteId = await createInvitation(user.uid, houseId);
+    const link = `${window.location.origin}/invite/${inviteId}`;
     setInviteLink(link);
     navigator.clipboard.writeText(link);
   };
