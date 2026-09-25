@@ -96,5 +96,3 @@ export function ToastContainer() {
   );
 }
 
-// Convenience hook to use toast from any component
-export { useToastStore as useToast };
