@@ -1,20 +1,23 @@
 import { test, expect } from '@playwright/test';
 
 test('navigate through tabs/simulators deterministically', async ({ page }) => {
-  // Set localStorage before page loads to bypass Firebase auth listener
-  await page.addInitScript(() => {
-    window.localStorage.setItem('PLAYWRIGHT_TEST', 'true');
-  });
-
   await page.goto('/');
 
-  // Inject a mock user into Zustand store to bypass login
+  // Inject a mock user into Zustand store repeatedly to win any race condition with Firebase Auth's initial null emission
   await page.evaluate(() => {
-    (window as any).useAppStore.setState({ 
-      user: { uid: 'test-uid', email: 'test@example.com', displayName: 'Test User' },
-      houseId: 'test-house-id',
-      authLoading: false
-    });
+    // Override the store state
+    const setMockState = () => {
+      if ((window as any).useAppStore) {
+        (window as any).useAppStore.setState({ 
+          user: { uid: 'test-uid', email: 'test@example.com', displayName: 'Test User' },
+          houseId: 'test-house-id',
+          authLoading: false
+        });
+      }
+    };
+    setMockState();
+    // Keep enforcing it for the duration of the setup just in case Firebase overwrites it
+    setInterval(setMockState, 50);
   });
 
   // Wait for the UI to update to the authenticated state

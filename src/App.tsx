@@ -11,8 +11,7 @@ import {
   UserPlus,
   LogOut
 } from 'lucide-react';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth } from './firebase';
+import { authService } from './services/authService';
 import { getOrCreateUserAndHouse, checkInvitation, acceptInvitation, createInvitation } from './services/userService';
 
 import { useAppStore } from './store/useAppStore';
@@ -86,8 +85,7 @@ export default function App() {
   }, [data, dateRange]);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && window.localStorage.getItem("PLAYWRIGHT_TEST") === "true") return;
-    const unsub = onAuthStateChanged(auth, async (fbUser) => {
+    const unsub = authService.onAuthStateChange(async (fbUser) => {
       try {
         if (fbUser) {
           setUser({ uid: fbUser.uid, email: fbUser.email, displayName: fbUser.displayName, photoURL: fbUser.photoURL });
@@ -289,7 +287,7 @@ export default function App() {
               <UserPlus size={18} />
               <span className="text-sm">Invitar integrante</span>
             </button>
-            <button onClick={() => signOut(auth)} className="w-full mt-2 flex items-center gap-3 p-3 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors">
+            <button onClick={() => authService.logout()} className="w-full mt-2 flex items-center gap-3 p-3 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors">
               <LogOut size={18} />
               <span className="text-sm">Cerrar sesión</span>
             </button>
@@ -318,9 +316,11 @@ export default function App() {
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4 bg-white p-4 rounded-xl border border-[#E5E5E5]">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Periodo:</span>
             <div className="flex items-center gap-2">
-              <input type="date" value={dateRange?.start || ''} onChange={e => setDateRange(e.target.value, dateRange?.end || '')} className="px-3 py-1.5 bg-white border border-[#E5E5E5] rounded-md text-sm font-medium text-slate-900 focus:ring-1 focus:ring-indigo-500 outline-none transition-all tabular-nums tracking-tight" />
+              <label htmlFor="startDate" className="sr-only">Fecha inicial</label>
+              <input id="startDate" type="date" value={dateRange?.start || ''} onChange={e => setDateRange(e.target.value, dateRange?.end || '')} className="px-3 py-1.5 bg-white border border-[#E5E5E5] rounded-md text-sm font-medium text-slate-900 focus:ring-1 focus:ring-indigo-500 outline-none transition-all tabular-nums tracking-tight" aria-label="Fecha inicial" />
               <span className="text-slate-400">-</span>
-              <input type="date" value={dateRange?.end || ''} onChange={e => setDateRange(dateRange?.start || '', e.target.value)} className="px-3 py-1.5 bg-white border border-[#E5E5E5] rounded-md text-sm font-medium text-slate-900 focus:ring-1 focus:ring-indigo-500 outline-none transition-all tabular-nums tracking-tight" />
+              <label htmlFor="endDate" className="sr-only">Fecha final</label>
+              <input id="endDate" type="date" value={dateRange?.end || ''} onChange={e => setDateRange(dateRange?.start || '', e.target.value)} className="px-3 py-1.5 bg-white border border-[#E5E5E5] rounded-md text-sm font-medium text-slate-900 focus:ring-1 focus:ring-indigo-500 outline-none transition-all tabular-nums tracking-tight" aria-label="Fecha final" />
             </div>
           </div>
         )}

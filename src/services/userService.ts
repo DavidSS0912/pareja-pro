@@ -1,6 +1,6 @@
 import { createService } from './baseService';
 import { db } from '../firebase';
-import { doc, getDoc, setDoc, addDoc, collection } from 'firebase/firestore';
+import { doc, getDoc, setDoc, addDoc, collection, writeBatch } from 'firebase/firestore';
 
 export const userService = createService('users');
 
@@ -48,9 +48,11 @@ export const acceptInvitation = async (userId: string, inviteId: string) => {
     const houseRef = doc(db, 'houses', newHouseId);
     const houseDoc = await getDoc(houseRef);
     if (houseDoc.exists()) {
-       await setDoc(doc(db, 'houses', newHouseId), { members: [...houseDoc.data().members, userId] }, { merge: true });
-       await setDoc(doc(db, 'users', userId), { houseId: newHouseId }, { merge: true });
-       await setDoc(inviteRef, { accepted: true }, { merge: true });
+       const batch = writeBatch(db);
+       batch.set(houseRef, { members: [...houseDoc.data().members, userId], lastInviteId: inviteId }, { merge: true });
+       batch.set(doc(db, 'users', userId), { houseId: newHouseId }, { merge: true });
+       batch.set(inviteRef, { accepted: true }, { merge: true });
+       await batch.commit();
        return newHouseId;
     }
   }

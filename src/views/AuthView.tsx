@@ -1,12 +1,11 @@
 import React from 'react';
-import { signInWithPopup } from 'firebase/auth';
-import { auth, googleProvider } from '../firebase';
+import { authService } from '../services/authService';
 import { Wallet, LogIn } from 'lucide-react';
 
 export const AuthView = () => {
   const handleLogin = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      await authService.loginWithGoogle();
     } catch (error) {
       console.error("Error logging in:", error);
     }

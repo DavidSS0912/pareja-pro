@@ -28,7 +28,7 @@ export function IncomeForm({ initialData, users, currentUserId, onSubmit, onCanc
   onSubmit: (data: any) => void;
   onCancel: () => void;
 }) {
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<IncomeFormData>({
+  const { register, handleSubmit, formState: { errors } } = useForm<IncomeFormData>({
     resolver: zodResolver(incomeSchema),
     defaultValues: initialData || {
       userId: currentUserId || users[0]?.id || '',
@@ -39,8 +39,6 @@ export function IncomeForm({ initialData, users, currentUserId, onSubmit, onCanc
       isPrivate: false,
     },
   });
-
-  const isPrivate = watch('isPrivate');
 
   const onFormSubmit = (data: IncomeFormData) => {
     onSubmit(data);
@@ -147,20 +145,19 @@ export function IncomeForm({ initialData, users, currentUserId, onSubmit, onCanc
       </div>
 
       {/* Row 4: Privado toggle */}
-      <div 
-        className="flex items-start gap-3 p-3 rounded-lg border border-[#E5E5E5] bg-slate-50 cursor-pointer group"
-        onClick={() => setValue('isPrivate', !isPrivate, { shouldValidate: true })}
+      <label 
+        htmlFor="income-isPrivate"
+        className="flex items-start gap-3 p-3 rounded-lg border border-[#E5E5E5] bg-slate-50 cursor-pointer group hover:bg-slate-100 transition-colors"
       >
-        <div className={`mt-0.5 w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
-          isPrivate
-            ? 'bg-indigo-600 border-indigo-600'
-            : 'bg-white border-slate-300 group-hover:border-indigo-400'
-        }`}>
-          {isPrivate && (
-            <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 10 10" fill="none">
-              <path d="M1.5 5L4 7.5L8.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          )}
+        <div className="mt-0.5 flex items-center justify-center shrink-0">
+          <input 
+            type="checkbox" 
+            id="income-isPrivate"
+            className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 cursor-pointer"
+            aria-invalid={!!errors.isPrivate}
+            aria-describedby={errors.isPrivate ? "income-isPrivate-error" : undefined}
+            {...register('isPrivate')} 
+          />
         </div>
         <div>
           <p className="text-sm font-medium text-slate-900 flex items-center gap-1.5">
@@ -169,15 +166,7 @@ export function IncomeForm({ initialData, users, currentUserId, onSubmit, onCanc
           </p>
           <p className="text-xs text-slate-500 mt-0.5">No se contabiliza en el presupuesto compartido.</p>
         </div>
-      </div>
-      <input 
-        type="checkbox" 
-        className="hidden" 
-        id="income-isPrivate"
-        aria-invalid={!!errors.isPrivate}
-        aria-describedby={errors.isPrivate ? "income-isPrivate-error" : undefined}
-        {...register('isPrivate')} 
-      />
+      </label>
       {errors.isPrivate && <p id="income-isPrivate-error" className="text-red-500 text-xs mt-1">{errors.isPrivate.message}</p>}
 
       {/* Actions */}
