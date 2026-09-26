@@ -261,7 +261,7 @@ export default function App() {
 
   const navItems = [
     { id: 'dashboard', icon: <Home size={20} />, label: 'Resumen' },
-    { id: 'budgets', icon: <PieChart size={20} />, label: 'Rollover' },
+    { id: 'budgets', icon: <PieChart size={20} />, label: 'Acumulado' },
     { id: 'cards', icon: <CreditCard size={20} />, label: 'Tarjetas' },
     { id: 'settlement', icon: <ArrowRightLeft size={20} />, label: 'Cuentas' },
     { id: 'debts', icon: <Flame size={20} />, label: 'Simulador' },
@@ -329,7 +329,7 @@ export default function App() {
           </button>
         </div>
 
-        {activeTab !== 'historical' && activeTab !== 'terms' && activeTab !== 'privacy' && activeTab !== 'profile' && (
+        {activeTab !== 'historical' && activeTab !== 'terms' && activeTab !== 'privacy' && activeTab !== 'profile' && activeTab !== 'cards' && activeTab !== 'debts' && activeTab !== 'wealth' && activeTab !== 'projects' && (
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4 bg-white p-4 rounded-xl border border-[#E5E5E5]">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Periodo:</span>
             <div className="flex items-center gap-2">
