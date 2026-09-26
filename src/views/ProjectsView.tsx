@@ -14,6 +14,7 @@ export const ProjectsView = ({ data, methods }: any) => {
   const [selectedCompletedProject, setSelectedCompletedProject] = useState<any>(null);
 
   const [showMilestoneForm, setShowMilestoneForm] = useState(false);
+  const [editingMilestoneId, setEditingMilestoneId] = useState<string | null>(null);
   const [newMilestone, setNewMilestone] = useState({ title: '', amountThreshold: '', dateThreshold: '' });
 
   // Form states
@@ -145,18 +146,47 @@ export const ProjectsView = ({ data, methods }: any) => {
     e.preventDefault();
     if (!activeProject || !newMilestone.title) return;
     
-    const milestone = {
-      id: Date.now().toString(),
-      title: newMilestone.title,
-      amountThreshold: newMilestone.amountThreshold ? Number(newMilestone.amountThreshold) : null,
-      dateThreshold: newMilestone.dateThreshold || null,
-      isCompleted: false
-    };
+    let updatedMilestones;
+    if (editingMilestoneId) {
+      updatedMilestones = (activeProject.milestones || []).map((m: any) =>
+        m.id === editingMilestoneId
+          ? {
+              ...m,
+              title: newMilestone.title,
+              amountThreshold: newMilestone.amountThreshold ? Number(newMilestone.amountThreshold) : null,
+              dateThreshold: newMilestone.dateThreshold || null
+            }
+          : m
+      );
+    } else {
+      const milestone = {
+        id: Date.now().toString(),
+        title: newMilestone.title,
+        amountThreshold: newMilestone.amountThreshold ? Number(newMilestone.amountThreshold) : null,
+        dateThreshold: newMilestone.dateThreshold || null,
+        isCompleted: false
+      };
+      updatedMilestones = [...(activeProject.milestones || []), milestone];
+    }
 
-    const updatedMilestones = [...(activeProject.milestones || []), milestone];
     await methods.updateProject(activeProject.id, { milestones: updatedMilestones });
     
+    closeMilestoneForm();
+  };
+
+  const handleEditMilestone = (milestone: any) => {
+    setNewMilestone({
+      title: milestone.title,
+      amountThreshold: milestone.amountThreshold ? milestone.amountThreshold.toString() : '',
+      dateThreshold: milestone.dateThreshold || ''
+    });
+    setEditingMilestoneId(milestone.id);
+    setShowMilestoneForm(true);
+  };
+
+  const closeMilestoneForm = () => {
     setShowMilestoneForm(false);
+    setEditingMilestoneId(null);
     setNewMilestone({ title: '', amountThreshold: '', dateThreshold: '' });
   };
 
@@ -219,7 +249,12 @@ export const ProjectsView = ({ data, methods }: any) => {
                     {m.isCompleted ? <CheckCircle2 className="text-emerald-500" size={20} /> : <Circle className={isReached ? 'text-amber-500' : 'text-slate-300'} size={20} />}
                   </button>
                   <div className="flex-1">
-                    <p className={`text-sm font-bold ${m.isCompleted ? 'text-slate-500 line-through' : 'text-slate-900'}`}>{m.title}</p>
+                    <p className={`text-sm font-bold flex items-center gap-2 ${m.isCompleted ? 'text-slate-500 line-through' : 'text-slate-900'}`}>
+                      {m.title}
+                      <button onClick={() => handleEditMilestone(m)} className="text-slate-400 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Edit2 size={12} />
+                      </button>
+                    </p>
                     <div className="flex gap-3 mt-1 text-xs text-slate-500">
                       {m.amountThreshold && <span>Alcanzar: ${Number(m.amountThreshold).toLocaleString()}</span>}
                       {m.dateThreshold && <span>Fecha: {new Date(m.dateThreshold).toLocaleDateString('es-MX')}</span>}
@@ -237,8 +272,7 @@ export const ProjectsView = ({ data, methods }: any) => {
     );
   };
 
-  const Modals = () => {
-    return createPortal(
+  const modalsContent = typeof document !== 'undefined' ? createPortal(
       <>
         {showForm && (
           <div className="fixed inset-0 bg-slate-900/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
@@ -302,7 +336,7 @@ export const ProjectsView = ({ data, methods }: any) => {
         {showMilestoneForm && (
           <div className="fixed inset-0 bg-slate-900/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
             <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl animate-in zoom-in-95 duration-200">
-              <h3 className="text-xl font-bold font-title mb-4">Añadir Hito / Tarea</h3>
+              <h3 className="text-xl font-bold font-title mb-4">{editingMilestoneId ? 'Editar Hito / Tarea' : 'Añadir Hito / Tarea'}</h3>
               <form onSubmit={handleAddMilestone} className="space-y-4">
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1">Descripción de la Tarea</label>
@@ -317,7 +351,7 @@ export const ProjectsView = ({ data, methods }: any) => {
                   <input type="date" value={newMilestone.dateThreshold || ''} onChange={e => setNewMilestone({...newMilestone, dateThreshold: e.target.value})} className="w-full border border-[#E5E5E5] rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none" />
                 </div>
                 <div className="flex gap-3 pt-2">
-                  <button type="button" onClick={() => setShowMilestoneForm(false)} className="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-bold hover:bg-slate-200 transition-colors">Cancelar</button>
+                  <button type="button" onClick={closeMilestoneForm} className="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-bold hover:bg-slate-200 transition-colors">Cancelar</button>
                   <button type="submit" className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-colors">Guardar</button>
                 </div>
               </form>
@@ -374,8 +408,7 @@ export const ProjectsView = ({ data, methods }: any) => {
         )}
       </>,
       document.body
-    );
-  };
+    ) : null;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -418,11 +451,23 @@ export const ProjectsView = ({ data, methods }: any) => {
               <span className="text-indigo-600">{Math.round((activeProject.savedAmount / activeProject.targetAmount) * 100)}%</span>
               <span className="text-slate-500">Restan ${(activeProject.targetAmount - activeProject.savedAmount).toLocaleString()}</span>
             </div>
-            <div className="w-full bg-slate-100 rounded-full h-4 overflow-hidden border border-slate-200">
+            <div className="w-full bg-slate-100 rounded-full h-4 relative border border-slate-200">
               <div 
-                className="bg-indigo-500 h-4 rounded-full transition-all duration-1000 ease-out" 
+                className="bg-indigo-500 h-full rounded-full transition-all duration-1000 ease-out" 
                 style={{ width: `${Math.min(100, (activeProject.savedAmount / activeProject.targetAmount) * 100)}%` }}
               ></div>
+              {activeProject.milestones?.map((m: any) => {
+                if (!m.amountThreshold) return null;
+                const percent = Math.min(100, (Number(m.amountThreshold) / activeProject.targetAmount) * 100);
+                return (
+                  <div 
+                    key={m.id}
+                    className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 ${m.isCompleted ? 'bg-emerald-500 border-white' : 'bg-white border-indigo-500'} z-10 shadow-sm`}
+                    style={{ left: `calc(${percent}% - 8px)` }}
+                    title={m.title}
+                  />
+                );
+              })}
             </div>
           </div>
 
@@ -569,7 +614,7 @@ export const ProjectsView = ({ data, methods }: any) => {
         </div>
       )}
 
-      <Modals />
+      {modalsContent}
     </div>
   );
 };
