@@ -24,7 +24,7 @@ export function ExpenseForm({ initialData, users, budgets = [], currentUserId, o
     defaultValues: initialData || {
       desc: '',
       amount: 0,
-      paidBy: currentUserId || users[0]?.id || '',
+      paidBy: initialData?.paidBy || (users?.some(u => u.id === currentUserId) ? currentUserId : users?.[0]?.id) || '',
       splitType: '50/50',
       currency: 'MXN',
       category: 'Varios',
@@ -145,13 +145,19 @@ export function ExpenseForm({ initialData, users, budgets = [], currentUserId, o
         
         <div>
           <label htmlFor="expense-sourceAccount" className="block text-sm font-bold text-slate-700 mb-1">Origen de Fondos</label>
-          <input
+          <select
             id="expense-sourceAccount"
-            type="text"
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            placeholder="Ej. Ingreso, Presupuesto..."
             {...register("sourceAccount")}
-          />
+          >
+            <option value="">Selecciona un origen (opcional)</option>
+            <option value="Sueldo / Salario">Sueldo / Salario</option>
+            <option value="Bono / Utilidades">Bono / Utilidades</option>
+            <option value="Ahorros">Ahorros</option>
+            <option value="Tarjeta de Crédito">Tarjeta de Crédito</option>
+            <option value="Fondo de Emergencia">Fondo de Emergencia</option>
+            <option value="Otro">Otro</option>
+          </select>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">

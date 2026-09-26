@@ -32,7 +32,7 @@ export function IncomeForm({ initialData, users, currentUserId, onSubmit, onCanc
   const { register, handleSubmit, formState: { errors } } = useForm<IncomeFormData>({
     resolver: zodResolver(incomeSchema),
     defaultValues: initialData || {
-      userId: currentUserId || users[0]?.id || '',
+      userId: initialData?.userId || (users?.some(u => u.id === currentUserId) ? currentUserId : users?.[0]?.id) || '',
       amount: 0,
       type: 'Sueldo',
       currency: 'MXN',
