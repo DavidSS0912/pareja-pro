@@ -13,7 +13,24 @@ export function HistoricalView() {
   const [exportEnd, setExportEnd] = useState('');
   
   const [deselectedUsers, setDeselectedUsers] = useState<Set<string>>(new Set());
+  const [deselectedCategories, setDeselectedCategories] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'graph' | 'table'>('graph');
+
+  const categories = useMemo(() => {
+    const cats = new Set<string>();
+    expenses.forEach(e => cats.add(e.category || 'Otros'));
+    incomes.forEach(i => cats.add(i.category || 'Otros'));
+    return Array.from(cats).sort();
+  }, [expenses, incomes]);
+
+  const toggleCategory = (cat: string) => {
+    setDeselectedCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  };
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isDown, setIsDown] = useState(false);
@@ -50,16 +67,20 @@ export function HistoricalView() {
   const filteredExpenses = useMemo(() => {
     return expenses.filter(e => {
       if (e.userId && deselectedUsers.has(e.userId)) return false;
+      const cat = e.category || 'Otros';
+      if (deselectedCategories.has(cat)) return false;
       return true;
     });
-  }, [expenses, deselectedUsers]);
+  }, [expenses, deselectedUsers, deselectedCategories]);
 
   const filteredIncomes = useMemo(() => {
     return incomes.filter(i => {
       if (i.userId && deselectedUsers.has(i.userId)) return false;
+      const cat = i.category || 'Otros';
+      if (deselectedCategories.has(cat)) return false;
       return true;
     });
-  }, [incomes, deselectedUsers]);
+  }, [incomes, deselectedUsers, deselectedCategories]);
 
   const handleExportCSV = () => {
     let filtered = filteredExpenses;
@@ -246,21 +267,6 @@ export function HistoricalView() {
                 ))}
               </div>
             )}
-
-            <div className="flex flex-wrap justify-center gap-6 mt-10 border-t border-slate-100 pt-8">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-sm"></div> 
-                <span className="text-sm font-bold text-slate-600">Ingresos</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 shadow-sm"></div> 
-                <span className="text-sm font-bold text-slate-600">Gastos Normales</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-gradient-to-br from-rose-400 to-rose-600 shadow-sm"></div> 
-                <span className="text-sm font-bold text-slate-600">Mes Sobregirado</span>
-              </div>
-            </div>
           </>
         ) : (
           <div className="overflow-x-auto">
@@ -300,6 +306,30 @@ export function HistoricalView() {
                 )}
               </tbody>
             </table>
+          </div>
+        )}
+        
+        {categories.length > 0 && (
+          <div className={`border-t border-slate-100 ${viewMode === 'graph' ? 'mt-8 pt-6 px-6' : 'mt-0 p-6 bg-slate-50'}`}>
+            <span className="text-xs font-bold text-slate-400 uppercase mb-3 block text-center">Filtrar por Categoría</span>
+            <div className="flex flex-wrap justify-center gap-2">
+              {categories.map(cat => {
+                const isSelected = !deselectedCategories.has(cat);
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => toggleCategory(cat)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
+                      isSelected 
+                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm' 
+                        : 'bg-white border-slate-200 text-slate-400 opacity-50 hover:opacity-100'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
       </Card>
