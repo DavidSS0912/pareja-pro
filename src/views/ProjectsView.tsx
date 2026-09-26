@@ -22,7 +22,7 @@ export const ProjectsView = ({ data, methods }: any) => {
     name: '', targetAmount: 0, monthlyQuota: 0, targetAccount: '', priority: projects.length + 1
   });
 
-  const [newContribution, setNewContribution] = useState({ amount: 0, notes: '', date: new Date().toISOString().split('T')[0] });
+  const [newContribution, setNewContribution] = useState({ amount: 0, notes: '', date: new Date().toISOString().split('T')[0], sourceBudget: '' });
 
   // Calculate incomes per user for the current month/period to get proportional quota
   const incomePerUser = useMemo(() => {
@@ -98,7 +98,8 @@ export const ProjectsView = ({ data, methods }: any) => {
     setNewContribution({
       amount: contribution.amount,
       notes: contribution.notes || '',
-      date: contribution.date
+      date: contribution.date,
+      sourceBudget: contribution.sourceBudget || ''
     });
     setEditingContributionId(contribution.id);
     setShowContributionForm(true);
@@ -128,10 +129,26 @@ export const ProjectsView = ({ data, methods }: any) => {
           userId: data.user.uid,
           amount: Number(newContribution.amount),
           date: newContribution.date,
-          notes: newContribution.notes
+          notes: newContribution.notes,
+          sourceBudget: newContribution.sourceBudget
         },
         activeProject.savedAmount + Number(newContribution.amount)
       );
+
+      if (newContribution.sourceBudget) {
+        const budget = data.budgets?.find((b:any) => b.id === newContribution.sourceBudget);
+        if (budget) {
+          await methods.updateBudget(budget.id, { spent: (budget.spent || 0) + Number(newContribution.amount) });
+        }
+      }
+
+      const assetName = activeProject.targetAccount || activeProject.name;
+      const existingAsset = data.assets?.find((a:any) => a.name === assetName);
+      if (existingAsset) {
+        await methods.updateAsset(existingAsset.id, { value: Number(existingAsset.value) + Number(newContribution.amount) });
+      } else if (methods.addAsset) {
+        await methods.addAsset({ name: assetName, owner: 'Ambos', value: Number(newContribution.amount), type: 'Liquidez' });
+      }
     }
     closeContributionForm();
   };
@@ -139,7 +156,7 @@ export const ProjectsView = ({ data, methods }: any) => {
   const closeContributionForm = () => {
     setShowContributionForm(false);
     setEditingContributionId(null);
-    setNewContribution({ amount: 0, notes: '', date: new Date().toISOString().split('T')[0] });
+    setNewContribution({ amount: 0, notes: '', date: new Date().toISOString().split('T')[0], sourceBudget: '' });
   };
 
   const handleAddMilestone = async (e: React.FormEvent) => {
@@ -323,6 +340,19 @@ export const ProjectsView = ({ data, methods }: any) => {
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1">Notas (Opcional)</label>
                   <input type="text" value={newContribution.notes} onChange={e => setNewContribution({...newContribution, notes: e.target.value})} className="w-full border border-[#E5E5E5] rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Ej. Bono de fin de año" />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Origen (Presupuesto a deducir)</label>
+                  <select
+                    value={newContribution.sourceBudget}
+                    onChange={e => setNewContribution({...newContribution, sourceBudget: e.target.value})}
+                    className="w-full border border-[#E5E5E5] rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"
+                  >
+                    <option value="">Seleccionar (Opcional)</option>
+                    {data.budgets?.map((b:any) => (
+                      <option key={b.id} value={b.id}>{b.category} (Disponible: ${Math.max(0, b.base - (b.spent || 0))})</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="flex gap-3 pt-2">
                   <button type="button" onClick={closeContributionForm} className="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-bold hover:bg-slate-200 transition-colors">Cancelar</button>

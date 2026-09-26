@@ -16,6 +16,7 @@ const incomeSchema = z.object({
   type: z.enum(['Sueldo', 'Bono', 'Ventas', 'Inversiones', 'Otro']),
   currency: z.enum(['MXN', 'USD']),
   date: z.string().min(1, 'La fecha es obligatoria'),
+  source: z.string().optional(),
   isPrivate: z.boolean(),
 });
 
@@ -142,6 +143,20 @@ export function IncomeForm({ initialData, users, currentUserId, onSubmit, onCanc
           <option value="Otro">Otro Ingreso</option>
         </select>
         {errors.type && <p id="income-type-error" className="text-red-500 text-xs mt-1">{errors.type.message}</p>}
+      </div>
+
+      {/* Origen */}
+      <div>
+        <label htmlFor="income-source" className={LABEL_CLASS}>
+          Origen / Fuente del Dinero
+        </label>
+        <input
+          id="income-source"
+          type="text"
+          placeholder="Ej. Empresa SA de CV, Banco X..."
+          className={INPUT_CLASS}
+          {...register('source')}
+        />
       </div>
 
       {/* Row 4: Privado toggle */}

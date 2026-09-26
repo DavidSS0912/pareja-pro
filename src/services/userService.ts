@@ -1,6 +1,6 @@
 import { createService } from './baseService';
 import { db } from '../firebase';
-import { doc, getDoc, setDoc, addDoc, collection, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, setDoc, addDoc, collection, writeBatch, query, where, getDocs } from 'firebase/firestore';
 
 export const userService = createService('users');
 
@@ -67,4 +67,35 @@ export const createInvitation = async (userId: string, houseId: string) => {
     accepted: false
   });
   return inviteRef.id;
+};
+
+export const leaveHouse = async (userId: string, currentHouseId: string) => {
+  const newHouseId = `house_${userId}`;
+  const batch = writeBatch(db);
+
+  // Set user to their own house
+  batch.set(doc(db, 'houses', newHouseId), { members: [userId] }, { merge: true });
+  batch.set(doc(db, 'users', userId), { houseId: newHouseId }, { merge: true });
+
+  const oldHouseRef = doc(db, "houses", currentHouseId);
+  const oldHouseDoc = await getDoc(oldHouseRef);
+  if (oldHouseDoc.exists()) {
+    const members = oldHouseDoc.data().members || [];
+    batch.update(oldHouseRef, { members: members.filter((id: string) => id !== userId) });
+  }
+  // Move their records to the new house
+  const collections = ['incomes', 'expenses', 'contributions'];
+  for (const collName of collections) {
+    const q = query(collection(db, collName), where('houseId', '==', currentHouseId));
+    const snapshot = await getDocs(q);
+    snapshot.forEach(docSnap => {
+      const data = docSnap.data();
+      if (data.userId === userId || data.paidBy === userId) {
+        batch.update(docSnap.ref, { houseId: newHouseId });
+      }
+    });
+  }
+
+  await batch.commit();
+  return newHouseId;
 };

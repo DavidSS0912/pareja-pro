@@ -10,7 +10,8 @@ import {
   Flame,
   UserPlus,
   LogOut,
-  Target
+  Target,
+  User
 } from 'lucide-react';
 import { authService } from './services/authService';
 import { getOrCreateUserAndHouse, checkInvitation, acceptInvitation, createInvitation } from './services/userService';
@@ -26,6 +27,7 @@ import { DebtSimulatorView } from './views/DebtSimulatorView';
 import { WealthView } from './views/WealthView';
 import { ProjectsView } from './views/ProjectsView';
 import { HistoricalView } from './views/HistoricalView';
+import { ProfileView } from './views/ProfileView';
 import { TermsView } from './views/TermsView';
 import { PrivacyPolicyView } from './views/PrivacyPolicyView';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
@@ -250,6 +252,7 @@ export default function App() {
       case 'wealth': return <WealthView data={filteredData} calc={calc} methods={methods} />;
       case 'projects': return <ProjectsView data={filteredData} calc={calc} methods={methods} />;
       case 'historical': return <HistoricalView data={data} />;
+      case 'profile': return <ProfileView data={data} />;
       case 'terms': return <TermsView />;
       case 'privacy': return <PrivacyPolicyView />;
       default: return <DashboardView data={filteredData} calc={calc} methods={methods} />;
@@ -265,6 +268,7 @@ export default function App() {
     { id: 'projects', icon: <Target size={20} />, label: 'Proyectos' },
     { id: 'wealth', icon: <Landmark size={20} />, label: 'Patrimonio' },
     { id: 'historical', icon: <BarChart3 size={20} />, label: 'Histórico' },
+    { id: 'profile', icon: <User size={20} />, label: 'Mi Casa' },
   ];
 
   return (
@@ -325,7 +329,7 @@ export default function App() {
           </button>
         </div>
 
-        {activeTab !== 'historical' && activeTab !== 'terms' && activeTab !== 'privacy' && (
+        {activeTab !== 'historical' && activeTab !== 'terms' && activeTab !== 'privacy' && activeTab !== 'profile' && (
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4 bg-white p-4 rounded-xl border border-[#E5E5E5]">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Periodo:</span>
             <div className="flex items-center gap-2">
