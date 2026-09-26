@@ -251,7 +251,7 @@ export default function App() {
       case 'debts': return <DebtSimulatorView data={filteredData} />;
       case 'wealth': return <WealthView data={filteredData} calc={calc} methods={methods} />;
       case 'projects': return <ProjectsView data={filteredData} calc={calc} methods={methods} />;
-      case 'historical': return <HistoricalView data={data} />;
+      case 'historical': return <HistoricalView />;
       case 'profile': return <ProfileView data={data} />;
       case 'terms': return <TermsView />;
       case 'privacy': return <PrivacyPolicyView />;

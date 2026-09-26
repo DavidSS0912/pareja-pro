@@ -45,7 +45,7 @@ export function BudgetsView({ data, methods }) {
     <div className="space-y-6 animate-in">
       <div className="flex justify-between items-end mb-8">
         <div>
-          <h2 className="text-3xl font-black tracking-tight text-slate-800">Rollover & Fondos</h2>
+          <h2 className="text-3xl font-black tracking-tight text-slate-800">Acumulado & Fondos</h2>
           <p className="text-slate-500 mt-2 font-medium">Saldos arrastrados de meses anteriores.</p>
         </div>
         <Button onClick={() => handleOpenModal()}>
@@ -113,7 +113,7 @@ export function BudgetsView({ data, methods }) {
                   <span className="font-bold text-slate-700">{FormatCurrency(budget.base)}</span>
                 </div>
                 <div className="border-x border-slate-200">
-                  <span className="block text-slate-400 font-medium mb-1">Rollover</span>
+                  <span className="block text-slate-400 font-medium mb-1">Acumulado</span>
                   <span className={`font-bold ${budget.rollover >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                     {budget.rollover > 0 ? '+' : ''}{FormatCurrency(budget.rollover)}
                   </span>

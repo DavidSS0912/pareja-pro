@@ -97,7 +97,7 @@ export function BudgetForm({ initialData, onSubmit, onCancel }) {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label htmlFor="budget-rollover" className="block text-sm font-bold text-slate-700 mb-1">Rollover Inicial</label>
+          <label htmlFor="budget-rollover" className="block text-sm font-bold text-slate-700 mb-1">Acumulado Inicial</label>
           <input 
             id="budget-rollover"
             type="number"
