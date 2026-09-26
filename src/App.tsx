@@ -329,7 +329,7 @@ export default function App() {
           </button>
         </div>
 
-        {activeTab !== 'historical' && activeTab !== 'terms' && activeTab !== 'privacy' && activeTab !== 'profile' && activeTab !== 'cards' && activeTab !== 'debts' && activeTab !== 'wealth' && activeTab !== 'projects' && (
+        {activeTab !== 'historical' && activeTab !== 'terms' && activeTab !== 'privacy' && activeTab !== 'profile' && activeTab !== 'cards' && activeTab !== 'debts' && activeTab !== 'wealth' && (
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4 bg-white p-4 rounded-xl border border-[#E5E5E5]">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Periodo:</span>
             <div className="flex items-center gap-2">
