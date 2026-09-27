@@ -246,39 +246,76 @@ export function HistoricalView() {
                   No hay datos para mostrar
                 </div>
               ) : (
-                snapshots.map((snap, idx) => {
-                  const incomeHeight = (snap.income / maxVal) * 100;
-                  const expenseHeight = (snap.expense / maxVal) * 100;
-                  const isOver = snap.expense > snap.income;
+                  snapshots.map((snap, idx) => {
+                    const isOver = snap.expense > snap.income;
 
-                  return (
-                    <div key={idx} className="flex-1 h-full flex flex-col justify-end items-center group min-w-[60px] relative">
-                      <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:-translate-y-2 text-xs text-center mb-2 bg-slate-900 text-white p-3 rounded-xl whitespace-nowrap absolute bottom-full mb-4 z-10 pointer-events-none shadow-xl border border-slate-700">
-                        <div className="font-bold text-slate-300 mb-1 uppercase tracking-widest">{snap.month}</div>
-                        <div className="flex justify-between gap-4">
-                          <span className="text-emerald-400">In:</span> 
-                          <span className="font-mono">{FormatCurrency(snap.income)}</span>
-                        </div>
-                        <div className="flex justify-between gap-4">
-                          <span className={isOver ? 'text-rose-400' : 'text-slate-300'}>Out:</span> 
-                          <span className="font-mono">{FormatCurrency(snap.expense)}</span>
-                        </div>
-                        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900"></div>
-                      </div>
+                    return (
+                      <div key={idx} className="flex-1 h-full flex flex-col justify-end items-center group min-w-[60px] relative">
+                        <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:-translate-y-2 text-xs mb-2 bg-slate-900 text-white p-3 rounded-xl whitespace-nowrap absolute bottom-full mb-4 z-10 pointer-events-none shadow-xl border border-slate-700">
+                          <div className="font-bold text-slate-300 mb-1 uppercase tracking-widest text-center">{snap.month}</div>
+                          
+                          {Object.entries(snap.incomeByCategory).length > 0 && (
+                            <div className="mt-2 mb-1 text-[10px] uppercase text-emerald-400 font-bold border-b border-slate-700 pb-1">Ingresos</div>
+                          )}
+                          {Object.entries(snap.incomeByCategory).map(([cat, amt]) => (
+                            <div key={cat} className="flex justify-between gap-4 text-xs mt-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className={`w-2 h-2 rounded-full ${categoryColorMap[cat] || 'bg-slate-500'}`}></span>
+                                <span className="text-slate-300">{cat}</span>
+                              </div>
+                              <span className="font-mono text-white">{FormatCurrency(amt)}</span>
+                            </div>
+                          ))}
 
-                      <div className="flex gap-1.5 w-full justify-center items-end h-full">
-                        <div 
-                          className="w-4 md:w-8 bg-gradient-to-t from-emerald-600 to-emerald-400 rounded-t-md transition-all duration-700 ease-out group-hover:brightness-110 shadow-sm" 
-                          style={{ height: `${incomeHeight}%` }}
-                        ></div>
-                        <div 
-                          className={`w-4 md:w-8 rounded-t-md transition-all duration-700 ease-out group-hover:brightness-110 shadow-sm ${isOver ? 'bg-gradient-to-t from-rose-600 to-rose-400' : 'bg-gradient-to-t from-slate-300 to-slate-200'}`} 
-                          style={{ height: `${expenseHeight}%` }}
-                        ></div>
+                          {Object.entries(snap.expenseByCategory).length > 0 && (
+                            <div className="mt-2 mb-1 text-[10px] uppercase text-rose-400 font-bold border-b border-slate-700 pb-1">Gastos</div>
+                          )}
+                          {Object.entries(snap.expenseByCategory).map(([cat, amt]) => (
+                            <div key={cat} className="flex justify-between gap-4 text-xs mt-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className={`w-2 h-2 rounded-full ${categoryColorMap[cat] || 'bg-slate-500'}`}></span>
+                                <span className="text-slate-300">{cat}</span>
+                              </div>
+                              <span className="font-mono text-white">{FormatCurrency(amt)}</span>
+                            </div>
+                          ))}
+
+                          <div className="mt-2 pt-2 border-t border-slate-700 flex justify-between gap-4 font-bold">
+                            <span className={snap.balance >= 0 ? 'text-emerald-400' : 'text-rose-400'}>Bal:</span>
+                            <span className="font-mono text-white">{FormatCurrency(snap.balance)}</span>
+                          </div>
+                          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900"></div>
+                        </div>
+
+                        <div className="flex gap-1.5 w-full justify-center items-end h-full">
+                          <div className="w-4 md:w-8 h-full flex flex-col-reverse justify-start gap-[1px]">
+                            {Object.entries(snap.incomeByCategory).map(([cat, amt]) => {
+                              const h = (amt / maxVal) * 100;
+                              return (
+                                <div
+                                  key={cat}
+                                  className={`${categoryColorMap[cat] || 'bg-slate-500'} w-full transition-all duration-700 hover:brightness-110 shadow-sm first:rounded-b-md last:rounded-t-md`}
+                                  style={{ height: `${h}%` }}
+                                ></div>
+                              );
+                            })}
+                          </div>
+                          <div className="w-4 md:w-8 h-full flex flex-col-reverse justify-start gap-[1px]">
+                            {Object.entries(snap.expenseByCategory).map(([cat, amt]) => {
+                              const h = (amt / maxVal) * 100;
+                              return (
+                                <div
+                                  key={cat}
+                                  className={`${categoryColorMap[cat] || 'bg-slate-500'} w-full transition-all duration-700 hover:brightness-110 shadow-sm first:rounded-b-md last:rounded-t-md opacity-90`}
+                                  style={{ height: `${h}%` }}
+                                ></div>
+                              );
+                            })}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })
+                    );
+                  })
               )}
             </div>
             
@@ -337,22 +374,24 @@ export function HistoricalView() {
           <div className={`border-t border-slate-100 ${viewMode === 'graph' ? 'mt-8 pt-6 px-6' : 'mt-0 p-6 bg-slate-50'}`}>
             <span className="text-xs font-bold text-slate-400 uppercase mb-3 block text-center">Filtrar por Categoría</span>
             <div className="flex flex-wrap justify-center gap-2">
-              {categories.map(cat => {
-                const isSelected = !deselectedCategories.has(cat);
-                return (
-                  <button
-                    key={cat}
-                    onClick={() => toggleCategory(cat)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
-                      isSelected 
-                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm' 
-                        : 'bg-white border-slate-200 text-slate-400 opacity-50 hover:opacity-100'
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                );
-              })}
+                {categories.map(cat => {
+                  const isSelected = !deselectedCategories.has(cat);
+                  const colorClass = categoryColorMap[cat] || 'bg-slate-500';
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => toggleCategory(cat)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border shadow-sm flex items-center gap-2 ${
+                        isSelected
+                          ? 'bg-white border-slate-200 text-slate-700'
+                          : 'bg-slate-50 border-transparent text-slate-400 opacity-50 hover:opacity-100'
+                      }`}
+                    >
+                      <span className={`w-2 h-2 rounded-full ${colorClass}`}></span>
+                      {cat}
+                    </button>
+                  );
+                })}
             </div>
           </div>
         )}
