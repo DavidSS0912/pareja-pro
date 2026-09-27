@@ -4,6 +4,12 @@ import { FormatCurrency, exportToCSV } from '../utils';
 import { useAppStore } from '../store/useAppStore';
 import { Download, BarChart2, Table as TableIcon } from 'lucide-react';
 
+const CATEGORY_COLORS = [
+  'bg-emerald-500', 'bg-blue-500', 'bg-rose-500', 'bg-amber-500',
+  'bg-purple-500', 'bg-cyan-500', 'bg-pink-500', 'bg-orange-500',
+  'bg-teal-500', 'bg-indigo-500', 'bg-fuchsia-500', 'bg-lime-500'
+];
+
 export function HistoricalView() {
   const expenses = useAppStore(state => state.expenses);
   const incomes = useAppStore(state => state.incomes);
@@ -16,12 +22,22 @@ export function HistoricalView() {
   const [deselectedCategories, setDeselectedCategories] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'graph' | 'table'>('graph');
 
+  
+
   const categories = useMemo(() => {
     const cats = new Set<string>();
     expenses.forEach(e => cats.add(e.category || 'Otros'));
     incomes.forEach(i => cats.add(i.category || 'Otros'));
     return Array.from(cats).sort();
   }, [expenses, incomes]);
+
+  const categoryColorMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    categories.forEach((cat, idx) => {
+      map[cat] = CATEGORY_COLORS[idx % CATEGORY_COLORS.length];
+    });
+    return map;
+  }, [categories]);
 
   const toggleCategory = (cat: string) => {
     setDeselectedCategories(prev => {
@@ -105,22 +121,28 @@ export function HistoricalView() {
   }, [filteredExpenses]);
 
   const snapshots = useMemo(() => {
-    const monthlyData: Record<string, { income: number; expense: number; count: number }> = {};
+    const monthlyData: Record<string, { income: number; expense: number; count: number; incomeByCategory: Record<string, number>; expenseByCategory: Record<string, number> }> = {};
     
     filteredExpenses.forEach(e => {
       if (!e.date) return;
       const month = e.date.substring(0, 7);
-      if (!monthlyData[month]) monthlyData[month] = { income: 0, expense: 0, count: 0 };
-      monthlyData[month].expense += Number(e.amount) || 0;
+      if (!monthlyData[month]) monthlyData[month] = { income: 0, expense: 0, count: 0, incomeByCategory: {}, expenseByCategory: {} };
+      const amt = Number(e.amount) || 0;
+      monthlyData[month].expense += amt;
       monthlyData[month].count += 1;
+      const cat = e.category || 'Otros';
+      monthlyData[month].expenseByCategory[cat] = (monthlyData[month].expenseByCategory[cat] || 0) + amt;
     });
 
     filteredIncomes.forEach(i => {
       if (!i.date) return;
       const month = i.date.substring(0, 7);
-      if (!monthlyData[month]) monthlyData[month] = { income: 0, expense: 0, count: 0 };
-      monthlyData[month].income += Number(i.amount) || 0;
+      if (!monthlyData[month]) monthlyData[month] = { income: 0, expense: 0, count: 0, incomeByCategory: {}, expenseByCategory: {} };
+      const amt = Number(i.amount) || 0;
+      monthlyData[month].income += amt;
       monthlyData[month].count += 1;
+      const cat = i.category || 'Otros';
+      monthlyData[month].incomeByCategory[cat] = (monthlyData[month].incomeByCategory[cat] || 0) + amt;
     });
 
     return Object.entries(monthlyData)
@@ -137,6 +159,8 @@ export function HistoricalView() {
           income: data.income,
           expense: data.expense,
           count: data.count,
+          incomeByCategory: data.incomeByCategory,
+          expenseByCategory: data.expenseByCategory,
           balance: data.income - data.expense,
           margin: data.income > 0 ? ((data.income - data.expense) / data.income) * 100 : 0
         };
@@ -228,7 +252,7 @@ export function HistoricalView() {
                   const isOver = snap.expense > snap.income;
 
                   return (
-                    <div key={idx} className="flex-1 flex flex-col justify-end items-center group min-w-[60px] relative">
+                    <div key={idx} className="flex-1 h-full flex flex-col justify-end items-center group min-w-[60px] relative">
                       <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:-translate-y-2 text-xs text-center mb-2 bg-slate-900 text-white p-3 rounded-xl whitespace-nowrap absolute bottom-full mb-4 z-10 pointer-events-none shadow-xl border border-slate-700">
                         <div className="font-bold text-slate-300 mb-1 uppercase tracking-widest">{snap.month}</div>
                         <div className="flex justify-between gap-4">
@@ -346,7 +370,7 @@ export function HistoricalView() {
                 </div>
                 <div className="w-full bg-slate-100 rounded-full h-3">
                   <div 
-                    className="bg-emerald-500 h-3 rounded-full transition-all duration-700"
+                    className={`${categoryColorMap[cat.name] || 'bg-emerald-500'} h-3 rounded-full transition-all duration-700`}
                     style={{ width: `${cat.percentage}%` }}
                   ></div>
                 </div>
