@@ -247,7 +247,6 @@ export function HistoricalView() {
                 </div>
               ) : (
                   snapshots.map((snap, idx) => {
-                    const isOver = snap.expense > snap.income;
 
                     return (
                       <div key={idx} className="flex-1 h-full flex flex-col justify-end items-center group min-w-[60px] relative">
