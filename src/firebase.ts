@@ -1,6 +1,5 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore, enableMultiTabIndexedDbPersistence } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCpNwMBegGWdKoR2SE5Ntm-DbN0omTYybY",
@@ -14,14 +13,4 @@ const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
-
-enableMultiTabIndexedDbPersistence(db).catch((err) => {
-  if (err.code === 'failed-precondition') {
-    console.warn('Múltiples pestañas abiertas, persistencia desactivada.');
-  } else if (err.code === 'unimplemented') {
-    console.warn('El navegador no soporta persistencia offline.');
-  }
-});
-
 export const googleProvider = new GoogleAuthProvider();

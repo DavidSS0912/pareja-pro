@@ -11,11 +11,11 @@ export interface ExpenseSlice {
 
 }
 
-export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice, [], [], ExpenseSlice> = (set, get) => ({
+export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice, [], [], ExpenseSlice> = (set) => ({
   expenses: [],
   setExpenses: (items) => set({ expenses: items }),
   addExpense: async (item) => {},
   updateExpense: async (id, item) => {},
-  deleteExpense: async (id) => {}
+  deleteExpense: async (_id) => {}
 
 });

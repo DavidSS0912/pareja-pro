@@ -12,7 +12,7 @@ export const ProfileView = ({ data }: any) => {
         await leaveHouse(user.uid, houseId);
         addToast('Has salido de la casa exitosamente.', 'success');
         window.location.reload();
-      } catch (_err) {
+      } catch {
         addToast('Error al salir de la casa.', 'error');
       }
     }
@@ -24,7 +24,7 @@ export const ProfileView = ({ data }: any) => {
         await leaveHouse(memberId, houseId);
         addToast('Miembro eliminado exitosamente.', 'success');
         window.location.reload();
-      } catch (_err) {
+      } catch {
         addToast('Error al eliminar miembro.', 'error');
       }
     }
