@@ -100,3 +100,39 @@ type UnassignedCash @view(sql: """
   household: Household @unique
   unassigned: Float
 }
+
+# Proyecto de Ahorro (cuenta de capital, no presupuesto operativo)
+type SavingsProject @table {
+  name: String!
+  targetAmount: Float!          # Meta de capitalización
+  currentAmount: Float!         @default(value: 0.0)
+  priority: Int!                # Orden en la cascada (1 = primero)
+  isCompleted: Boolean!         @default(value: false)
+  household: Household!
+  createdAt: Timestamp!         @default(expr: "request.time")
+}
+
+# Activo externo/ilíquido (casa, auto, inversiones externas)
+type ExternalAsset @table {
+  name: String!
+  estimatedValue: Float!
+  assetType: String!            # ej: "inmueble", "vehiculo", "inversion"
+  household: Household!
+  lastUpdated: Timestamp!       @default(expr: "request.time")
+}
+
+# Vista: Patrimonio Neto del Hogar
+type NetWorthSnapshot @view(sql: """
+  SELECT
+    h.id as household_id,
+    COALESCE(SUM(CASE WHEN a.type = 'ASSET' THEN e.amount ELSE 0 END), 0)
+      + COALESCE((SELECT SUM(estimated_value) FROM external_asset ea WHERE ea.household_id = h.id), 0)
+      - COALESCE(SUM(CASE WHEN a.type = 'LIABILITY' THEN e.amount ELSE 0 END), 0) as net_worth
+  FROM household h
+  LEFT JOIN account a ON a.household_id = h.id
+  LEFT JOIN entry e ON e.account_id = a.id
+  GROUP BY h.id
+""") {
+  household: Household @unique
+  netWorth: Float
+}

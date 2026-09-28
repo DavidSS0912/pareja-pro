@@ -133,3 +133,49 @@ mutation UpdateBudgetAmount(
     assignedAmount: $assignedAmount
   })
 }
+
+mutation CreateSavingsProject(
+  $householdId: UUID!,
+  $name: String!,
+  $targetAmount: Float!,
+  $priority: Int!
+) @auth(level: USER) {
+  savingsProject_insert(data: {
+    householdId: $householdId,
+    name: $name,
+    targetAmount: $targetAmount,
+    priority: $priority
+  })
+}
+
+mutation UpdateProjectProgress(
+  $projectId: UUID!,
+  $amountToAdd: Float!
+) @auth(level: USER) {
+  savingsProject_update(id: $projectId, data: {
+    currentAmount: $amountToAdd
+  })
+}
+
+mutation CreateExternalAsset(
+  $householdId: UUID!,
+  $name: String!,
+  $estimatedValue: Float!,
+  $assetType: String!
+) @auth(level: USER) {
+  externalAsset_insert(data: {
+    householdId: $householdId,
+    name: $name,
+    estimatedValue: $estimatedValue,
+    assetType: $assetType
+  })
+}
+
+mutation UpdateExternalAsset(
+  $assetId: UUID!,
+  $estimatedValue: Float!
+) @auth(level: USER) {
+  externalAsset_update(id: $assetId, data: {
+    estimatedValue: $estimatedValue
+  })
+}

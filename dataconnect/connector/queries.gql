@@ -27,3 +27,29 @@ query GetUnassignedCash($householdId: UUID!) @auth(level: USER) {
     unassigned
   }
 }
+
+query GetSavingsProjects($householdId: UUID!) @auth(level: USER) {
+  savingsProjects(where: { householdId: { eq: $householdId } }, orderBy: { priority: ASC }) {
+    id
+    name
+    targetAmount
+    currentAmount
+    priority
+    isCompleted
+  }
+}
+
+query GetExternalAssets($householdId: UUID!) @auth(level: USER) {
+  externalAssets(where: { householdId: { eq: $householdId } }) {
+    id
+    name
+    estimatedValue
+    assetType
+  }
+}
+
+query GetNetWorth($householdId: UUID!) @auth(level: USER) {
+  netWorthSnapshots(where: { householdId: { eq: $householdId } }) {
+    netWorth
+  }
+}
