@@ -28,13 +28,13 @@ export function PaymentCalendar({ expenses = [] }) {
       
       <div className="space-y-4">
         {upcoming.length === 0 ? (
-          <p className="text-sm text-slate-500">No hay pagos próximos registrados.</p>
+          <p className="text-sm text-slate-600">No hay pagos próximos registrados.</p>
         ) : (
           upcoming.map((payment) => (
             <div key={payment.id} className="flex justify-between items-center p-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center gap-4">
                 <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 flex flex-col items-center justify-center min-w-[60px]">
-                  <span className="text-xs text-slate-400 font-bold uppercase">
+                  <span className="text-xs text-slate-500 font-bold uppercase">
                     {payment.date.toLocaleString('es-MX', { month: 'short' })}
                   </span>
                   <span className="text-lg text-slate-800 font-black">
@@ -43,11 +43,11 @@ export function PaymentCalendar({ expenses = [] }) {
                 </div>
                 <div>
                   <p className="font-bold text-slate-800">{payment.desc}</p>
-                  <p className="text-xs text-slate-500">Recordatorio / Recurrente</p>
+                  <p className="text-xs text-slate-600">Recordatorio / Recurrente</p>
                 </div>
               </div>
               <span className="font-black text-slate-800">
-                {FormatCurrency(payment.amount)} <span className="text-xs font-normal text-slate-500">{payment.currency}</span>
+                {FormatCurrency(payment.amount)} <span className="text-xs font-normal text-slate-600">{payment.currency}</span>
               </span>
             </div>
           ))

@@ -43,7 +43,7 @@ export function Modal({ isOpen, onClose, title, children }: {
       onClick={handleBackdropClick}
       className="p-0 m-auto bg-transparent backdrop:bg-slate-900/60 rounded-xl overflow-hidden animate-in fade-in duration-200"
     >
-      <div className="bg-white rounded-xl border border-slate-200 shadow-lg max-w-lg w-[90vw] md:w-[500px] flex flex-col max-h-[90vh]">
+      <div className="bg-white rounded-3xl border border-slate-200 shadow-lg max-w-lg w-[90vw] md:w-[500px] flex flex-col max-h-[90vh]">
         <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-white">
           <h2 className="text-lg font-bold tracking-tight text-slate-900">{title}</h2>
           <Button variant="ghost" size="sm" onClick={onClose} className="!p-2 -mr-2" aria-label="Cerrar">

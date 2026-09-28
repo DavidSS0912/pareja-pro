@@ -69,7 +69,7 @@ function ToastItem({ toast }: { toast: Toast }) {
       </span>
       <button
         onClick={handleClose}
-        className="shrink-0 text-slate-400 hover:text-slate-700 transition-colors mt-0.5"
+        className="shrink-0 text-slate-500 hover:text-slate-700 transition-colors mt-0.5"
         aria-label="Cerrar notificación"
       >
         <X size={16} />

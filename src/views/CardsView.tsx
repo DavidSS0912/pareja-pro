@@ -39,7 +39,7 @@ export function CardsView({ data, methods }) {
       <div className="flex justify-between items-end mb-8">
         <div>
           <h2 className="text-3xl font-black tracking-tight text-slate-800">Gestión de Crédito</h2>
-          <p className="text-slate-500 mt-2 font-medium">Controla tus fechas y pagos para no generar intereses.</p>
+          <p className="text-slate-600 mt-2 font-medium">Controla tus fechas y pagos para no generar intereses.</p>
         </div>
         <Button onClick={() => handleOpenModal()}>
           <Plus size={18} className="mr-2" /> Nueva Tarjeta

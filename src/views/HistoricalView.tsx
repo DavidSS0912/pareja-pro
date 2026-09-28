@@ -174,14 +174,14 @@ export function HistoricalView() {
       <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-black tracking-tight text-slate-800">Histórico Anual</h2>
-          <p className="text-slate-500 mt-2 font-medium">Comparativa de ingresos vs gastos por mes.</p>
+          <p className="text-slate-600 mt-2 font-medium">Comparativa de ingresos vs gastos por mes.</p>
         </div>
         
         <div className="flex flex-col md:flex-row items-start md:items-center gap-4 bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-500 uppercase">Filtro Exportar:</span>
+            <span className="text-xs font-bold text-slate-600 uppercase">Filtro Exportar:</span>
             <input type="date" value={exportStart} onChange={e => setExportStart(e.target.value)} className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
-            <span className="text-slate-400">-</span>
+            <span className="text-slate-500">-</span>
             <input type="date" value={exportEnd} onChange={e => setExportEnd(e.target.value)} className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
           </div>
           <button
@@ -196,7 +196,7 @@ export function HistoricalView() {
 
       {users.length > 0 && (
         <div className="flex flex-wrap items-center gap-4 mb-6">
-          <span className="text-sm font-bold text-slate-500 uppercase">Filtrar por:</span>
+          <span className="text-sm font-bold text-slate-600 uppercase">Filtrar por:</span>
           {users.map(user => (
             <label key={user.id} className="flex items-center gap-2 cursor-pointer group">
               <input
@@ -216,14 +216,14 @@ export function HistoricalView() {
       <div className="flex items-center gap-2 mb-4 bg-slate-100 p-1 rounded-xl w-fit">
         <button
           onClick={() => setViewMode('graph')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'graph' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'graph' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-700'}`}
         >
           <BarChart2 className="w-4 h-4" />
           Gráfica
         </button>
         <button
           onClick={() => setViewMode('table')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'table' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'table' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-700'}`}
         >
           <TableIcon className="w-4 h-4" />
           Tabla
@@ -242,7 +242,7 @@ export function HistoricalView() {
               className={`flex items-end gap-3 h-72 w-full border-b-2 border-slate-100 pb-3 overflow-x-auto scrollbar-hide px-4 select-none ${isDown ? 'cursor-grabbing' : 'cursor-grab'}`}
             >
               {snapshots.length === 0 ? (
-                <div className="w-full h-full flex items-center justify-center text-slate-400 font-medium">
+                <div className="w-full h-full flex items-center justify-center text-slate-500 font-medium">
                   No hay datos para mostrar
                 </div>
               ) : (
@@ -321,7 +321,7 @@ export function HistoricalView() {
             {snapshots.length > 0 && (
               <div className="flex gap-3 w-full mt-4 px-4">
                 {snapshots.map((snap, idx) => (
-                  <div key={idx} className="flex-1 text-center text-sm font-bold text-slate-500 min-w-[60px]">
+                  <div key={idx} className="flex-1 text-center text-sm font-bold text-slate-600 min-w-[60px]">
                     {snap.month}
                   </div>
                 ))}
@@ -331,7 +331,7 @@ export function HistoricalView() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-slate-600">
-              <thead className="bg-slate-50 text-slate-500 text-xs uppercase font-bold">
+              <thead className="bg-slate-50 text-slate-600 text-xs uppercase font-bold">
                 <tr>
                   <th className="px-6 py-4 rounded-tl-xl">Mes</th>
                   <th className="px-6 py-4 text-right">Movimientos</th>
@@ -344,7 +344,7 @@ export function HistoricalView() {
               <tbody className="divide-y divide-slate-100">
                 {snapshots.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-slate-400 font-medium">
+                    <td colSpan={6} className="px-6 py-8 text-center text-slate-500 font-medium">
                       No hay datos para mostrar
                     </td>
                   </tr>
@@ -371,7 +371,7 @@ export function HistoricalView() {
         
         {categories.length > 0 && (
           <div className={`border-t border-slate-100 ${viewMode === 'graph' ? 'mt-8 pt-6 px-6' : 'mt-0 p-6 bg-slate-50'}`}>
-            <span className="text-xs font-bold text-slate-400 uppercase mb-3 block text-center">Filtrar por Categoría</span>
+            <span className="text-xs font-bold text-slate-500 uppercase mb-3 block text-center">Filtrar por Categoría</span>
             <div className="flex flex-wrap justify-center gap-2">
                 {categories.map(cat => {
                   const isSelected = !deselectedCategories.has(cat);
@@ -383,7 +383,7 @@ export function HistoricalView() {
                       className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border shadow-sm flex items-center gap-2 ${
                         isSelected
                           ? 'bg-white border-slate-200 text-slate-700'
-                          : 'bg-slate-50 border-transparent text-slate-400 opacity-50 hover:opacity-100'
+                          : 'bg-slate-50 border-transparent text-slate-500 opacity-50 hover:opacity-100'
                       }`}
                     >
                       <span className={`w-2 h-2 rounded-full ${colorClass}`}></span>
@@ -404,7 +404,7 @@ export function HistoricalView() {
               <div key={idx}>
                 <div className="flex justify-between items-center mb-2">
                   <span className="font-semibold text-slate-700">{cat.name}</span>
-                  <span className="text-slate-500 font-mono text-sm">{FormatCurrency(cat.amount)} ({cat.percentage.toFixed(1)}%)</span>
+                  <span className="text-slate-600 font-mono text-sm">{FormatCurrency(cat.amount)} ({cat.percentage.toFixed(1)}%)</span>
                 </div>
                 <div className="w-full bg-slate-100 rounded-full h-3">
                   <div 

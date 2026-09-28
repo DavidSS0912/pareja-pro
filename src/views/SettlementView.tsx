@@ -40,7 +40,7 @@ export function SettlementView({ data, calc, methods }) {
     <div className="space-y-6 animate-in">
       <div className="mb-8">
         <h2 className="text-3xl font-black tracking-tight text-slate-800">Liquidador Interno</h2>
-        <p className="text-slate-500 mt-2 font-medium">Conciliación automática de gastos compartidos.</p>
+        <p className="text-slate-600 mt-2 font-medium">Conciliación automática de gastos compartidos.</p>
       </div>
 
       <Card className="bg-gradient-to-br from-slate-900 to-slate-800 text-white border-0 py-16 relative overflow-hidden shadow-2xl">
@@ -49,7 +49,7 @@ export function SettlementView({ data, calc, methods }) {
         <div className="absolute bottom-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="text-center relative z-10">
-          <p className="text-slate-400 font-bold mb-4 tracking-widest uppercase text-sm">Balance Neto Mensual</p>
+          <p className="text-slate-300 font-bold mb-4 tracking-widest uppercase text-sm">Balance Neto Mensual</p>
           <div className="text-7xl font-black mb-8 tracking-tighter text-white tabular-nums drop-shadow-lg">
             {FormatCurrency(calc.settlementAmount)}
           </div>
@@ -114,7 +114,7 @@ export function SettlementView({ data, calc, methods }) {
                   </div>
                   <div>
                     <p className="font-bold text-slate-800">{exp.desc} {exp.isPrivate && <span className="text-xs ml-2 bg-slate-200 text-slate-600 px-2 py-1 rounded">Privado</span>}</p>
-                    <p className="text-xs font-medium text-slate-500 mt-1">
+                    <p className="text-xs font-medium text-slate-600 mt-1">
                       Pagado por {payer?.name} • Fecha: {exp.date || 'N/A'} • División: {exp.isPrivate ? 'No aplica (Privado)' : (exp.splitType === 'proporcional' ? 'Proporcional' : '50/50')} • Moneda: {exp.currency || 'MXN'}
                     </p>
                   </div>
@@ -122,10 +122,10 @@ export function SettlementView({ data, calc, methods }) {
                 <div className="flex items-center gap-6">
                   <span className="font-black text-slate-800 text-lg">{FormatCurrency(exp.amount)}</span>
                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => handleOpenModal(exp)} className="p-2 text-slate-400 hover:text-blue-500 hover:bg-white rounded-lg transition-colors">
+                    <button onClick={() => handleOpenModal(exp)} className="p-2 text-slate-500 hover:text-blue-500 hover:bg-white rounded-lg transition-colors">
                       <Edit2 size={16} />
                     </button>
-                    <button onClick={() => handleDelete(exp.id)} className="p-2 text-slate-400 hover:text-rose-500 hover:bg-white rounded-lg transition-colors">
+                    <button onClick={() => handleDelete(exp.id)} className="p-2 text-slate-500 hover:text-rose-500 hover:bg-white rounded-lg transition-colors">
                       <Trash2 size={16} />
                     </button>
                   </div>
@@ -151,7 +151,7 @@ export function SettlementView({ data, calc, methods }) {
         />
       </Modal>
 
-      <div className="mt-8 text-xs text-slate-400 text-center px-4">
+      <div className="mt-8 text-xs text-slate-500 text-center px-4">
         <p><strong>Aviso:</strong> Este simulador y liquidador tienen fines informativos y de ayuda en la gestión. No constituyen asesoría contable ni legal. Verifica tus montos antes de realizar cualquier transferencia.</p>
       </div>
     </div>

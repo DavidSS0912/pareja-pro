@@ -2,7 +2,7 @@ import React from 'react';
 
 export function PrivacyPolicyView() {
   return (
-    <div className="space-y-6 animate-in p-6 bg-white rounded-xl border border-slate-200">
+    <div className="space-y-6 animate-in p-6 bg-white rounded-3xl border border-slate-200">
       <h2 className="text-3xl font-black tracking-tight text-slate-800">Política de Privacidad</h2>
       <div className="prose text-slate-600">
         <p>Tu privacidad es importante para nosotros. Esta política explica cómo recopilamos y usamos tu información.</p>

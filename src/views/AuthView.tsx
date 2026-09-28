@@ -17,14 +17,14 @@ export const AuthView = () => {
       <div className="absolute top-0 right-0 w-[480px] h-[480px] bg-indigo-50 rounded-full opacity-60 pointer-events-none -translate-y-1/2 translate-x-1/3" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-slate-100 rounded-full opacity-50 pointer-events-none translate-y-1/2 -translate-x-1/3" />
 
-      <div className="bg-white border border-[#E5E5E5] shadow-lg rounded-2xl p-10 md:p-16 w-full max-w-md text-center relative z-10 mx-4">
+      <div className="bg-white border border-slate-100 shadow-lg rounded-2xl p-10 md:p-16 w-full max-w-md text-center relative z-10 mx-4">
         <div className="flex justify-center mb-8">
           <div className="bg-indigo-600 p-4 rounded-2xl text-white">
             <Wallet size={40} strokeWidth={1.5} />
           </div>
         </div>
         <h1 className="text-4xl font-black tracking-tighter text-slate-900 mb-2">Órbita2</h1>
-        <p className="text-slate-500 font-medium mb-10 text-base">Finanzas en pareja, en órbita.</p>
+        <p className="text-slate-600 font-medium mb-10 text-base">Finanzas en pareja, en órbita.</p>
 
         <button
           onClick={handleLogin}

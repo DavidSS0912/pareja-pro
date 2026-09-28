@@ -32,18 +32,18 @@ export const ProfileView = ({ data }: any) => {
 
   return (
     <div className="space-y-6 animate-in">
-      <div className="bg-white p-8 rounded-2xl border border-[#E5E5E5]">
+      <div className="bg-white p-8 rounded-3xl border border-slate-100">
         <h2 className="text-xl font-bold font-title mb-6">Mi Casa (Compartida)</h2>
         <div className="space-y-4">
           {users.map((u: any) => (
-            <div key={u.id} className="flex justify-between items-center p-4 border border-[#E5E5E5] rounded-xl bg-slate-50">
+            <div key={u.id} className="flex justify-between items-center p-4 border border-slate-100 rounded-xl bg-slate-50">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
                   {u.name?.charAt(0) || <User size={20} />}
                 </div>
                 <div>
                   <p className="font-bold text-slate-900">{u.name} {u.id === user?.uid && '(Tú)'}</p>
-                  <p className="text-sm text-slate-500">{u.email}</p>
+                  <p className="text-sm text-slate-600">{u.email}</p>
                 </div>
               </div>
               {users.length > 1 && u.id === user?.uid && (

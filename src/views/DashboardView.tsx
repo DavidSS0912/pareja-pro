@@ -43,7 +43,7 @@ export function DashboardView({ data, calc, methods }) {
           <PieChart size={240} className="text-white" />
         </div>
         <div className="relative z-10">
-          <h2 className="text-slate-400 font-medium mb-2 uppercase tracking-wider text-xs flex items-center gap-2">
+          <h2 className="text-slate-300 font-medium mb-2 uppercase tracking-wider text-xs flex items-center gap-2">
             <TrendingUp size={14} /> Presupuesto Base Cero
           </h2>
           <div className="text-5xl sm:text-6xl font-title font-bold mb-3 tracking-tight text-white tabular-nums">
@@ -64,8 +64,8 @@ export function DashboardView({ data, calc, methods }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="rounded-2xl border border-[#E5E5E5] shadow-none">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
           <h2 className="text-lg font-title font-bold text-slate-900 mb-6 flex items-center gap-3">
             <div className="bg-slate-100 p-2 rounded-lg text-slate-600">
               <UserPlus size={20} />
@@ -82,7 +82,7 @@ export function DashboardView({ data, calc, methods }) {
                         src={u.photoURL} 
                         alt={u.name} 
                         referrerPolicy="no-referrer"
-                        className="w-full h-full object-cover rounded-full border border-[#E5E5E5]" 
+                        className="w-full h-full object-cover rounded-full border border-slate-100" 
                         onError={(e) => {
                           e.currentTarget.style.display = 'none';
                           if (e.currentTarget.nextElementSibling) {
@@ -98,48 +98,14 @@ export function DashboardView({ data, calc, methods }) {
                 </div>
                 <div>
                   <p className="font-bold text-slate-900">{u.name}</p>
-                  <p className="text-xs text-slate-500">{u.email}</p>
+                  <p className="text-xs text-slate-600">{u.email}</p>
                 </div>
               </div>
             ))}
           </div>
         </Card>
 
-        <Card className="rounded-2xl border border-[#E5E5E5] shadow-none">
-          <h2 className="text-lg font-title font-bold text-slate-900 mb-8 flex items-center gap-3">
-            <div className="bg-indigo-50 p-2 rounded-lg text-indigo-600">
-              <PieChart size={20} />
-            </div>
-            Regla 50/30/20
-          </h2>
-          <div className="space-y-6">
-            {[
-              { label: 'Necesidades', target: 'Meta: 50%', color: 'bg-indigo-500', pct: calc.needsPct },
-              { label: 'Deseos', target: 'Meta: 30%', color: 'bg-slate-400', pct: calc.wantsPct },
-              { label: 'Ahorro / Deudas', target: 'Meta: 20%', color: 'bg-slate-800', pct: calc.savingsPct },
-            ].map(item => (
-              <div key={item.label} className="group cursor-default">
-                <div className="flex justify-between items-end mb-2">
-                  <div>
-                    <span className="font-medium text-slate-900 block text-sm">{item.label}</span>
-                    <span className="text-xs text-slate-500">{item.target}</span>
-                  </div>
-                  <span className="font-medium tabular-nums tracking-tight text-slate-900">
-                    {item.pct.toFixed(1)}%
-                  </span>
-                </div>
-                <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                  <div 
-                    className={`${item.color} h-2 rounded-full transition-all duration-1000 ease-out`} 
-                    style={{ width: `${Math.min(item.pct, 100)}%` }}
-                  ></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        <Card className="rounded-2xl border border-[#E5E5E5] shadow-none">
+        <Card>
           <h2 className="text-lg font-title font-bold text-slate-900 mb-6">Desglose de Ingresos</h2>
           <div className="space-y-3">
             {data.incomes.map(income => {
@@ -170,16 +136,16 @@ export function DashboardView({ data, calc, methods }) {
                     </div>
                     <div>
                       <p className="font-medium text-slate-900 text-sm">{income.type}</p>
-                      <p className="text-xs text-slate-500">{user?.name} &bull; {income.date}</p>
+                      <p className="text-xs text-slate-600">{user?.name} &bull; {income.date}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
                     <p className="font-medium text-green-600 tabular-nums tracking-tight">{FormatCurrency(income.amount)}</p>
                     <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => handleOpenModal(income)} className="text-slate-400 hover:text-indigo-600">
+                      <button onClick={() => handleOpenModal(income)} className="text-slate-500 hover:text-indigo-600">
                         <Edit2 size={14} />
                       </button>
-                      <button onClick={() => handleDelete(income.id)} className="text-slate-400 hover:text-red-600">
+                      <button onClick={() => handleDelete(income.id)} className="text-slate-500 hover:text-red-600">
                         <Trash2 size={14} />
                       </button>
                     </div>

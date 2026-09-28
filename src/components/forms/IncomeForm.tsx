@@ -6,9 +6,9 @@ import { Button } from '../ui/Button';
 import { DollarSign, Calendar, User, Tag, Lock } from 'lucide-react';
 
 const INPUT_CLASS =
-  'w-full px-3 py-2.5 bg-white border border-[#E5E5E5] rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors';
+  'w-full px-3 py-2.5 bg-white border border-slate-100 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors';
 
-const LABEL_CLASS = 'block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5';
+const LABEL_CLASS = 'block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5';
 
 const incomeSchema = z.object({
   userId: z.string().min(1, 'El aportador es obligatorio'),
@@ -108,7 +108,7 @@ export function IncomeForm({ initialData, users, currentUserId, onSubmit, onCanc
           <select
             id="income-currency"
             aria-label="Moneda"
-            className="px-3 py-2.5 bg-white border border-[#E5E5E5] rounded-lg text-sm text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
+            className="px-3 py-2.5 bg-white border border-slate-100 rounded-lg text-sm text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
             aria-invalid={!!errors.currency}
             aria-describedby={errors.currency ? "income-currency-error" : undefined}
             {...register('currency')}
@@ -162,7 +162,7 @@ export function IncomeForm({ initialData, users, currentUserId, onSubmit, onCanc
       {/* Row 4: Privado toggle */}
       <label 
         htmlFor="income-isPrivate"
-        className="flex items-start gap-3 p-3 rounded-lg border border-[#E5E5E5] bg-slate-50 cursor-pointer group hover:bg-slate-100 transition-colors"
+        className="flex items-start gap-3 p-3 rounded-lg border border-slate-100 bg-slate-50 cursor-pointer group hover:bg-slate-100 transition-colors"
       >
         <div className="mt-0.5 flex items-center justify-center shrink-0">
           <input 
@@ -176,16 +176,16 @@ export function IncomeForm({ initialData, users, currentUserId, onSubmit, onCanc
         </div>
         <div>
           <p className="text-sm font-medium text-slate-900 flex items-center gap-1.5">
-            <Lock size={12} className="text-slate-400" />
+            <Lock size={12} className="text-slate-500" />
             Ingreso Privado
           </p>
-          <p className="text-xs text-slate-500 mt-0.5">No se contabiliza en el presupuesto compartido.</p>
+          <p className="text-xs text-slate-600 mt-0.5">No se contabiliza en el presupuesto compartido.</p>
         </div>
       </label>
       {errors.isPrivate && <p id="income-isPrivate-error" className="text-red-500 text-xs mt-1">{errors.isPrivate.message}</p>}
 
       {/* Actions */}
-      <div className="flex justify-end gap-2 pt-4 border-t border-[#E5E5E5]">
+      <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
         <Button variant="secondary" type="button" onClick={onCancel}>Cancelar</Button>
         <Button type="submit">Guardar Ingreso</Button>
       </div>

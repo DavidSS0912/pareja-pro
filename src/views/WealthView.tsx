@@ -40,12 +40,12 @@ export function WealthView({ data, calc, methods }) {
     <div className="space-y-6 animate-in">
       <div className="mb-8">
         <h2 className="text-3xl font-black tracking-tight text-slate-800">Patrimonio Neto</h2>
-        <p className="text-slate-500 mt-2 font-medium">Activos (Lo que tienes) menos Pasivos (Lo que debes).</p>
+        <p className="text-slate-600 mt-2 font-medium">Activos (Lo que tienes) menos Pasivos (Lo que debes).</p>
       </div>
 
       <Card className="text-center py-12 relative overflow-hidden">
         <div className="relative z-10">
-          <h3 className="text-slate-500 font-medium uppercase tracking-widest text-xs mb-4">Riqueza Real del Hogar</h3>
+          <h3 className="text-slate-600 font-medium uppercase tracking-widest text-xs mb-4">Riqueza Real del Hogar</h3>
           <div className="text-6xl sm:text-7xl font-black text-slate-900 mb-4 tracking-tighter tabular-nums">
             {FormatCurrency(calc.netWorth)}
           </div>
@@ -73,15 +73,15 @@ export function WealthView({ data, calc, methods }) {
               <div key={asset.id} className="flex justify-between items-center p-3 bg-green-50/50 rounded-xl border border-green-100/50 hover:bg-green-50 transition-colors group">
                 <div>
                   <p className="font-medium text-slate-900">{asset.name}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">{asset.type} • <span className="text-slate-600 font-medium">{asset.owner}</span></p>
+                  <p className="text-xs text-slate-600 mt-0.5">{asset.type} • <span className="text-slate-600 font-medium">{asset.owner}</span></p>
                 </div>
                 <div className="flex items-center gap-4">
                   <p className="font-semibold text-green-600 tabular-nums tracking-tight">{FormatCurrency(asset.value)}</p>
                   <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => handleOpenModal(asset)} className="text-slate-400 hover:text-indigo-600">
+                    <button onClick={() => handleOpenModal(asset)} className="text-slate-500 hover:text-indigo-600">
                       <Edit2 size={14} />
                     </button>
-                    <button onClick={() => handleDelete(asset.id)} className="text-slate-400 hover:text-red-600">
+                    <button onClick={() => handleDelete(asset.id)} className="text-slate-500 hover:text-red-600">
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -103,7 +103,7 @@ export function WealthView({ data, calc, methods }) {
               <div key={debt.id} className="flex justify-between items-center p-3 bg-rose-50/50 rounded-xl border border-rose-100/50 hover:bg-rose-50 transition-colors">
                 <div>
                   <p className="font-medium text-slate-900">{debt.name}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Tarjeta de Crédito</p>
+                  <p className="text-xs text-slate-600 mt-0.5">Tarjeta de Crédito</p>
                 </div>
                 <p className="font-semibold text-red-600 tabular-nums tracking-tight">{FormatCurrency(debt.balance)}</p>
               </div>

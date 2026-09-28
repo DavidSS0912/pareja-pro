@@ -27,7 +27,7 @@ export function SavingsGoals({ goals = [] }) {
                 <span className="text-sm font-black text-indigo-600">{porcentaje.toFixed(1)}%</span>
               </div>
               
-              <div className="flex justify-between text-xs text-slate-500 mb-3">
+              <div className="flex justify-between text-xs text-slate-600 mb-3">
                 <span>{FormatCurrency(goal.current)}</span>
                 <span>Meta: {FormatCurrency(goal.target)}</span>
               </div>

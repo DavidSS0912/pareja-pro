@@ -46,7 +46,7 @@ export function BudgetsView({ data, methods }) {
       <div className="flex justify-between items-end mb-8">
         <div>
           <h2 className="text-3xl font-black tracking-tight text-slate-800">Acumulado & Fondos</h2>
-          <p className="text-slate-500 mt-2 font-medium">Saldos arrastrados de meses anteriores.</p>
+          <p className="text-slate-600 mt-2 font-medium">Saldos arrastrados de meses anteriores.</p>
         </div>
         <Button onClick={() => handleOpenModal()}>
           <Plus size={18} className="mr-2" /> Nuevo Presupuesto
@@ -80,10 +80,10 @@ export function BudgetsView({ data, methods }) {
           return (
             <Card key={budget.id} className="hover:border-indigo-200 transition-colors group cursor-default relative">
               <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => handleOpenModal(budget)} className="p-1.5 bg-white text-slate-500 hover:text-blue-600 rounded-lg shadow-sm border border-slate-100">
+                <button onClick={() => handleOpenModal(budget)} className="p-1.5 bg-white text-slate-600 hover:text-blue-600 rounded-lg shadow-sm border border-slate-100">
                   <Edit2 size={16} />
                 </button>
-                <button onClick={() => handleDelete(budget.id)} className="p-1.5 bg-white text-slate-500 hover:text-rose-600 rounded-lg shadow-sm border border-slate-100">
+                <button onClick={() => handleDelete(budget.id)} className="p-1.5 bg-white text-slate-600 hover:text-rose-600 rounded-lg shadow-sm border border-slate-100">
                   <Trash2 size={16} />
                 </button>
               </div>
@@ -109,23 +109,23 @@ export function BudgetsView({ data, methods }) {
 
               <div className="grid grid-cols-3 gap-2 text-xs p-4 bg-slate-50 rounded-2xl mb-5 text-center border border-slate-100">
                 <div>
-                  <span className="block text-slate-400 font-medium mb-1">Base Mes</span>
+                  <span className="block text-slate-500 font-medium mb-1">Base Mes</span>
                   <span className="font-bold text-slate-700">{FormatCurrency(budget.base)}</span>
                 </div>
                 <div className="border-x border-slate-200">
-                  <span className="block text-slate-400 font-medium mb-1">Acumulado</span>
+                  <span className="block text-slate-500 font-medium mb-1">Acumulado</span>
                   <span className={`font-bold ${budget.rollover >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                     {budget.rollover > 0 ? '+' : ''}{FormatCurrency(budget.rollover)}
                   </span>
                 </div>
                 <div>
-                  <span className="block text-slate-400 font-medium mb-1">Total Disp.</span>
+                  <span className="block text-slate-500 font-medium mb-1">Total Disp.</span>
                   <span className="font-black text-slate-800">{FormatCurrency(disponible)}</span>
                 </div>
               </div>
 
               <div className="flex justify-between text-sm mb-3 font-bold">
-                <span className="text-slate-500">Gastado: {FormatCurrency(actualSpent)}</span>
+                <span className="text-slate-600">Gastado: {FormatCurrency(actualSpent)}</span>
                 <span className={disponible - actualSpent < 0 ? 'text-rose-600' : alertText}>
                   Restante: {FormatCurrency(disponible - actualSpent)}
                 </span>
