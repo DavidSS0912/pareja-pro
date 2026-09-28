@@ -33,7 +33,7 @@ export function ExpenseForm({ initialData, users, budgets = [], currentUserId, o
     },
   });
 
-  const isPrivate = watch('isPrivate');
+  const isShared = !watch('isPrivate');
 
   const onFormSubmit = (data: ExpenseFormData) => {
     onSubmit(data);
@@ -101,13 +101,12 @@ export function ExpenseForm({ initialData, users, budgets = [], currentUserId, o
       <div className="flex items-center gap-2">
         <input
           type="checkbox"
-          id="isPrivate"
+          id="isShared"
           className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
-          aria-invalid={!!errors.isPrivate}
-          aria-describedby={errors.isPrivate ? "expense-isPrivate-error" : undefined}
-          {...register('isPrivate')}
+          checked={isShared}
+          onChange={(e) => register('isPrivate').onChange({ target: { name: 'isPrivate', value: !e.target.checked } })}
         />
-        <label htmlFor="isPrivate" className="text-sm font-medium text-slate-700">Gasto Privado (No se divide)</label>
+        <label htmlFor="isShared" className="text-sm font-medium text-slate-700">Gasto Compartido</label>
       </div>
       {errors.isPrivate && <p id="expense-isPrivate-error" className="text-red-500 text-xs mt-1">{errors.isPrivate.message}</p>}
 
@@ -161,7 +160,7 @@ export function ExpenseForm({ initialData, users, budgets = [], currentUserId, o
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
-        {!isPrivate && (
+        {isShared && (
           <div>
             <label htmlFor="expense-splitType" className="block text-sm font-bold text-slate-700 mb-1">División</label>
             <select
@@ -173,6 +172,7 @@ export function ExpenseForm({ initialData, users, budgets = [], currentUserId, o
             >
               <option value="50/50">Mitades (50/50)</option>
               <option value="proporcional">Proporcional (Ingresos)</option>
+              <option value="MSI">Meses Sin Intereses (MSI)</option>
             </select>
             {errors.splitType && <p id="expense-splitType-error" className="text-red-500 text-xs mt-1">{errors.splitType.message}</p>}
           </div>

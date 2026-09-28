@@ -18,7 +18,7 @@ export const exportToCSV = (data: any[], filename: string) => {
     }).join(','))
   ];
   
-  const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const blob = new Blob(['\ufeff' + csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
   link.setAttribute('download', `${filename}.csv`);

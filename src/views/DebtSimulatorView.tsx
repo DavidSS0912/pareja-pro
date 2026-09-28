@@ -2,14 +2,21 @@ import React, { useState } from 'react';
 import { Flame, Snowflake } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { FormatCurrency } from '../utils';
+import { proyectarLiquidacion, ordenarAvalancha, ordenarBolaDNieve } from '../services/simuladorService';
 
 export function DebtSimulatorView({ data }) {
   const [strategy, setStrategy] = useState('avalanche');
   
-  const sortedDebts = [...data.cards].filter(c => c.balance > 0).sort((a, b) => {
-    if (strategy === 'avalanche') return b.interestRate - a.interestRate;
-    return a.balance - b.balance;
-  });
+  const activeCards = data.cards.filter(c => c.balance > 0).map(c => ({
+    id: c.id,
+    nombre: c.name,
+    saldoActual: c.balance,
+    apr: c.interestRate / 100,
+    pagoMinimo: c.balance * 0.05 // default 5% minimum payment
+  }));
+  const sortedDebts = strategy === 'avalanche' ? ordenarAvalancha(activeCards) : ordenarBolaDNieve(activeCards);
+  const { meses, totalInteresPagado } = proyectarLiquidacion(sortedDebts, 1000); // 1000 is mock extra payment
+
 
   return (
     <div className="space-y-6 animate-in">
@@ -34,6 +41,10 @@ export function DebtSimulatorView({ data }) {
         </div>
       </div>
 
+      <div className="bg-indigo-50 p-4 rounded-xl mb-6 flex justify-between items-center">
+        <div><p className="text-sm text-indigo-800 font-bold">Tiempo estimado (pago extra $1000)</p><p className="text-2xl font-black text-indigo-900">{meses} meses</p></div>
+        <div className="text-right"><p className="text-sm text-indigo-800 font-bold">Interés Total</p><p className="text-2xl font-black text-indigo-900">{FormatCurrency(totalInteresPagado)}</p></div>
+      </div>
       <div className="space-y-5">
         {sortedDebts.map((debt, idx) => (
           <Card key={debt.id} className="relative overflow-hidden group hover:border-slate-300 transition-colors">
@@ -43,7 +54,7 @@ export function DebtSimulatorView({ data }) {
             <div className="flex justify-between items-center pl-4">
               <div>
                 <div className="flex items-center gap-4 mb-2">
-                  <h3 className="font-black text-xl text-slate-800 tracking-tight">{debt.name}</h3>
+                  <h3 className="font-black text-xl text-slate-800 tracking-tight">{debt.nombre}</h3>
                   {idx === 0 && (
                     <span className={`text-[10px] uppercase font-black px-3 py-1 rounded-lg text-white tracking-widest shadow-sm ${strategy === 'avalanche' ? 'bg-rose-500' : 'bg-blue-500'}`}>
                       Objetivo Actual
@@ -51,12 +62,12 @@ export function DebtSimulatorView({ data }) {
                   )}
                 </div>
                 <p className="text-sm font-medium text-slate-600">
-                  Tasa de Interés: <span className="font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-md ml-1">{debt.interestRate}%</span>
+                  Tasa de Interés: <span className="font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-md ml-1">{debt.apr * 100}%</span>
                 </p>
               </div>
               <div className="text-right">
                 <p className="text-xs text-slate-500 mb-1 uppercase tracking-widest font-bold">Saldo Pendiente</p>
-                <p className="text-3xl font-black text-slate-800 tracking-tighter">{FormatCurrency(debt.balance)}</p>
+                <p className="text-3xl font-black text-slate-800 tracking-tighter">{FormatCurrency(debt.saldoActual)}</p>
               </div>
             </div>
           </Card>

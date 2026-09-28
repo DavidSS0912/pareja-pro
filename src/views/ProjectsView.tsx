@@ -1,3 +1,5 @@
+import { Modal } from '../components/ui/Modal';
+import { distribuirEnCascada } from '../services/proyectosService';
 import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Target, Plus, ArrowUp, ArrowDown, History, Info, Calendar, Edit2, CheckCircle2, Circle, Flag } from 'lucide-react';
@@ -8,6 +10,8 @@ export const ProjectsView = ({ data, methods }: any) => {
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   
   const [showContributionForm, setShowContributionForm] = useState(false);
+  const [showCascadeModal, setShowCascadeModal] = useState(false);
+  const [excedente, setExcedente] = useState(0);
   const [editingContributionId, setEditingContributionId] = useState<string | null>(null);
 
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -552,9 +556,9 @@ export const ProjectsView = ({ data, methods }: any) => {
       {/* Lists Container */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        {/* Pending Projects */}
+        <div className="flex justify-between items-center mb-4"><h3 className="font-bold text-slate-900 font-title flex items-center gap-2"><Target size={18} className="text-slate-500"/> Próximos (Cascada)</h3><button onClick={() => setShowCascadeModal(true)} className="text-xs bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg font-bold hover:bg-indigo-200">Distribuir Excedente</button></div>
         <div className="bg-white rounded-3xl border-0 shadow-sm p-6">
-          <h3 className="font-bold text-slate-900 mb-4 font-title flex items-center gap-2"><Target size={18} className="text-slate-500"/> Próximos (Cascada)</h3>
+          
           {pendingProjects.length === 0 ? (
             <p className="text-sm text-slate-600 text-center py-4">No hay proyectos en cola.</p>
           ) : (
@@ -644,7 +648,18 @@ export const ProjectsView = ({ data, methods }: any) => {
         </div>
       )}
 
-      {modalsContent}
+            {modalsContent}
+      <Modal isOpen={showCascadeModal} onClose={() => setShowCascadeModal(false)} title="Distribuir en Cascada">
+        <div className="p-4">
+          <label className="block text-sm font-bold text-slate-700 mb-2">Monto Excedente a Distribuir</label>
+          <input type="number" value={excedente} onChange={(e) => setExcedente(Number(e.target.value))} className="w-full border rounded-lg p-3 mb-4" />
+          <button onClick={() => {
+            const aportes = distribuirEnCascada(pendingProjects.map(p => ({...p, targetAmount: p.targetAmount, currentAmount: p.savedAmount, priority: p.order})), excedente);
+            aportes.forEach(a => { alert('Se distribuirán $' + a.aporte + ' al proyecto ' + pendingProjects.find(p => p.id === a.projectId)?.name); });
+            setShowCascadeModal(false);
+          }} className="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg">Aplicar Cascada</button>
+        </div>
+      </Modal>
     </div>
   );
 };

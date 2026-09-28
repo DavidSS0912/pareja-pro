@@ -1,3 +1,6 @@
+import { filtrarPorContexto } from './services/contextService';
+import { calcularProrrateo, simplificarDeudas } from './services/liquidadorService';
+import { calcularPatrimonio } from './services/simuladorService';
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   Home,
@@ -38,6 +41,7 @@ export default function App() {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
   const [joinHouseConfirm, setJoinHouseConfirm] = useState<string | null>(null);
+    const [appContext, setAppContext] = useState<any>('household');
 
   const data = useAppStore(useShallow(state => ({
     user: state.user,
@@ -90,12 +94,16 @@ export default function App() {
   const filteredData = useMemo(() => {
     const start = dateRange?.start || '2000-01-01';
     const end = dateRange?.end || '2100-12-31';
+    const filterContext = (items) => {
+       const userUid = user?.uid || '';
+       return filtrarPorContexto(items.map(i => ({...i, ownerUid: i.userId || i.paidBy, isShared: !i.isPrivate})), appContext, userUid);
+    };
     return {
       ...data,
-      incomes: data.incomes.filter(i => !i.date || (i.date >= start && i.date <= end)),
-      expenses: data.expenses.filter(e => !e.date || (e.date >= start && e.date <= end))
+      incomes: filterContext(data.incomes.filter(i => !i.date || (i.date >= start && i.date <= end))).map(i => data.incomes.find(d => d.id === i.id)),
+      expenses: filterContext(data.expenses.filter(e => !e.date || (e.date >= start && e.date <= end))).map(i => data.expenses.find(d => d.id === i.id))
     };
-  }, [data, dateRange]);
+  }, [data, dateRange, appContext, user]);
 
   useEffect(() => {
     const unsub = authService.onAuthStateChange(async (fbUser) => {
@@ -161,7 +169,7 @@ export default function App() {
 
   const calc = useMemo(() => {
     // Tasa de cambio fija temporal para normalizar
-    const EXCHANGE_RATE_USD_MXN = 20;
+    const EXCHANGE_RATE_USD_MXN = parseFloat(localStorage.getItem("exchangeRate") || "20");
     const normalize = (amount, currency) => {
       if (!amount) return 0;
       return currency === 'USD' ? amount * EXCHANGE_RATE_USD_MXN : amount;
@@ -197,10 +205,8 @@ export default function App() {
         const inc2 = incomesByUser[u2Id] || 0;
         const sum = inc1 + inc2;
 
-        if (sum > 0) {
-          ratio1 = inc1 / sum;
-          ratio2 = inc2 / sum;
-        }
+        ratio1 = calcularProrrateo(inc1, inc2);
+        ratio2 = 1 - ratio1;
       }
 
       if (exp.paidBy === filteredData.users[0]?.id || exp.paidBy === 'u1') {
@@ -211,9 +217,12 @@ export default function App() {
     });
 
     const netSettlement = zoeOwesDavid - davidOwesZoe;
+    const simplifiedDebt = simplificarDeudas(davidOwesZoe, zoeOwesDavid);
 
     const totalBudgeted = filteredData.budgets.reduce((acc, curr) => acc + curr.base, 0);
-    const unallocated = totalIncome - totalBudgeted;
+    const totalDebtAllocated = filteredData.cards.reduce((acc, curr) => acc + curr.balance, 0);
+    const totalSavingsProjects = filteredData.projects ? filteredData.projects.reduce((acc, curr) => acc + curr.currentAmount, 0) : 0;
+    const unallocated = totalIncome - (totalBudgeted + totalDebtAllocated + totalSavingsProjects);
 
     const needs = filteredData.budgets.filter(b => b.type === 'Necesidad').reduce((acc, curr) => acc + curr.base, 0);
     const wants = filteredData.budgets.filter(b => b.type === 'Deseo').reduce((acc, curr) => acc + curr.base, 0);
@@ -221,11 +230,13 @@ export default function App() {
 
     const totalAssets = filteredData.assets.reduce((acc, curr) => acc + curr.value, 0);
     const totalLiabilities = filteredData.cards.reduce((acc, curr) => acc + curr.balance, 0);
-    const netWorth = totalAssets - totalLiabilities;
+    const activosLiquidos = (filteredData as any).accounts ? (filteredData as any).accounts.reduce((acc: any, curr: any) => acc + curr.balance, 0) : 0;
+    const activosExternos = totalAssets;
+    const netWorth = calcularPatrimonio(activosLiquidos, activosExternos, totalLiabilities);
 
     return {
       totalIncome, unallocated,
-      netSettlement, settlementAmount: Math.abs(netSettlement),
+      netSettlement, settlementAmount: simplifiedDebt.monto, simplifiedDebt,
       needsPct: totalIncome ? (needs / totalIncome) * 100 : 0,
       wantsPct: totalIncome ? (wants / totalIncome) * 100 : 0,
       savingsPct: totalIncome ? (savings / totalIncome) * 100 : 0,
@@ -332,6 +343,10 @@ export default function App() {
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4 bg-white p-4 rounded-xl border border-[#E5E5E5]">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Periodo:</span>
             <div className="flex items-center gap-2">
+              <div className="flex gap-2 mr-4">
+              <button onClick={() => setAppContext('household')} className={`px-3 py-1.5 rounded-md text-sm font-bold ${appContext === 'household' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}`}>Hogar</button>
+              <button onClick={() => setAppContext('personal')} className={`px-3 py-1.5 rounded-md text-sm font-bold ${appContext === 'personal' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}`}>Personal</button>
+            </div>
               <label htmlFor="startDate" className="sr-only">Fecha inicial</label>
               <input id="startDate" type="date" value={dateRange?.start || ''} onChange={e => setDateRange(e.target.value, dateRange?.end || '')} className="px-3 py-1.5 bg-white border border-[#E5E5E5] rounded-md text-sm font-medium text-slate-900 focus:ring-1 focus:ring-indigo-500 outline-none transition-all tabular-nums tracking-tight" aria-label="Fecha inicial" />
               <span className="text-slate-400">-</span>
