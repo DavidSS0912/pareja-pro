@@ -14,8 +14,14 @@ export interface GoalSlice {
 export const createGoalSlice: StateCreator<GoalSlice & AuthSlice, [], [], GoalSlice> = (set) => ({
   goals: [],
   setGoals: (items) => set({ goals: items }),
-  addGoal: async (_item) => {},
-  updateGoal: async (_id, _item) => {},
-  deleteGoal: async (_id) => {}
+  addGoal: async (_item) => {
+    alert("Operación 'Agregar Meta' no disponible en DataConnect (PostgreSQL).");
+  },
+  updateGoal: async (_id, _item) => {
+    alert("Operación 'Actualizar Meta' no disponible en DataConnect (PostgreSQL).");
+  },
+  deleteGoal: async (_id) => {
+    alert("Operación 'Eliminar Meta' no disponible en DataConnect (PostgreSQL).");
+  }
 
 });

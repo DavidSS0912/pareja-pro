@@ -14,8 +14,14 @@ export interface CardSlice {
 export const createCardSlice: StateCreator<CardSlice & AuthSlice, [], [], CardSlice> = (set) => ({
   cards: [],
   setCards: (items) => set({ cards: items }),
-  addCard: async (_item) => {},
-  updateCard: async (_id, _item) => {},
-  deleteCard: async (_id) => {}
+  addCard: async (_item) => {
+    alert("Operación 'Agregar Tarjeta' no disponible en DataConnect (PostgreSQL).");
+  },
+  updateCard: async (_id, _item) => {
+    alert("Operación 'Actualizar Tarjeta' no disponible en DataConnect (PostgreSQL).");
+  },
+  deleteCard: async (_id) => {
+    alert("Operación 'Eliminar Tarjeta' no disponible en DataConnect (PostgreSQL).");
+  }
 
 });

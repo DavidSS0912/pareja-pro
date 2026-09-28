@@ -42,19 +42,19 @@ export const createProjectSlice: StateCreator<ProjectSlice & AuthSlice & DataSli
       if (state.houseId) await state.fetchDashboardData(state.houseId);
     }
   },
-  deleteProject: async (_id) => {},
+  deleteProject: async (_id) => { alert("Operación 'Eliminar Proyecto' no disponible en DataConnect (PostgreSQL)."); },
   
   contributions: [],
   setContributions: (items) => set({ contributions: items }),
-  addContribution: async (_item) => {},
+  addContribution: async (_item) => { alert("Operación 'Agregar Aportación' no disponible aisladamente en DataConnect."); },
   addContributionAndUpdateProject: async (c, p) => {
     const state = get();
     await updateProjectProgress({
       projectId: p.id,
-      amountToAdd: (p.currentAmount || p.savedAmount || 0) + c.amount
+      amountToAdd: c.amount
     });
     if (state.houseId) await state.fetchDashboardData(state.houseId);
   },
-  updateContribution: async (_id, _item) => {},
-  deleteContribution: async (_id) => {}
+  updateContribution: async (_id, _item) => { alert("Operación 'Actualizar Aportación' no disponible en DataConnect (PostgreSQL)."); },
+  deleteContribution: async (_id) => { alert("Operación 'Eliminar Aportación' no disponible en DataConnect (PostgreSQL)."); }
 });
