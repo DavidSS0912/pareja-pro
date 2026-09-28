@@ -16,7 +16,7 @@ export function DebtSimulatorView({ data }) {
     pagoMinimo: c.balance * 0.05 // default 5% minimum payment
   }));
   const sortedDebts = strategy === 'avalanche' ? ordenarAvalancha(activeCards) : ordenarBolaDNieve(activeCards);
-  const { meses, totalInteresPagado } = proyectarLiquidacion(sortedDebts, 1000); // 1000 is mock extra payment
+  const { meses, totalInteresPagado } = proyectarLiquidacion(sortedDebts, pagoExtra);
 
 
   return (

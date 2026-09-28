@@ -655,7 +655,7 @@ export const ProjectsView = ({ data, methods }: any) => {
           <input type="number" value={excedente} onChange={(e) => setExcedente(Number(e.target.value))} className="w-full border rounded-lg p-3 mb-4" />
           <button onClick={() => {
             const aportes = distribuirEnCascada(pendingProjects.map(p => ({...p, targetAmount: p.targetAmount, currentAmount: p.savedAmount, priority: p.order})), excedente);
-            aportes.forEach(a => { methods.updateProject(a.projectId, { currentAmount: a.aporte }); });
+            aportes.forEach(a => { methods.updateProject(a.projectId, { savedAmount: (pendingProjects.find(p => p.id === a.projectId)?.savedAmount || 0) + a.aporte }); });
             setShowCascadeModal(false);
           }} className="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg">Aplicar Cascada</button>
         </div>

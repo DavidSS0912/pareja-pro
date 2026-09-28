@@ -203,8 +203,6 @@ export default function App() {
         
         const inc1 = incomesByUser[u1Id] || 0;
         const inc2 = incomesByUser[u2Id] || 0;
-        const sum = inc1 + inc2;
-
         ratio1 = calcularProrrateo(inc1, inc2);
         ratio2 = 1 - ratio1;
       }

@@ -6,7 +6,6 @@ import { Modal } from '../components/ui/Modal';
 import { BudgetForm } from '../components/forms/BudgetForm';
 import { FormatCurrency } from '../utils';
 
-import { calcularArrastre } from '../services/budgetService';
 const normalize = (amount, currency) => {
   if (!amount) return 0;
   return currency === 'USD' ? amount * parseFloat(localStorage.getItem('exchangeRate') || '20') : amount;
