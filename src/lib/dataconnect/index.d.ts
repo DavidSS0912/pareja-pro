@@ -121,6 +121,12 @@ export interface Entry_Key {
   __typename?: 'Entry_Key';
 }
 
+export interface ExchangeRate_Key {
+  currency: string;
+  date: DateString;
+  __typename?: 'ExchangeRate_Key';
+}
+
 export interface ExternalAsset_Key {
   id: UUIDString;
   __typename?: 'ExternalAsset_Key';
@@ -152,6 +158,17 @@ export interface GetHouseholdNetBalancesData {
 
 export interface GetHouseholdNetBalancesVariables {
   householdId: UUIDString;
+}
+
+export interface GetLatestRateData {
+  exchangeRates: ({
+    rate: number;
+    date: DateString;
+  })[];
+}
+
+export interface GetLatestRateVariables {
+  currency: string;
 }
 
 export interface GetMonthBudgetsData {
@@ -244,6 +261,16 @@ export interface UpdateProjectProgressData {
 export interface UpdateProjectProgressVariables {
   projectId: UUIDString;
   amountToAdd: number;
+}
+
+export interface UpsertExchangeRateData {
+  exchangeRate_upsert: ExchangeRate_Key;
+}
+
+export interface UpsertExchangeRateVariables {
+  currency: string;
+  rate: number;
+  date: DateString;
 }
 
 export interface User_Key {
@@ -359,6 +386,18 @@ export const updateExternalAssetRef: UpdateExternalAssetRef;
 export function updateExternalAsset(vars: UpdateExternalAssetVariables): MutationPromise<UpdateExternalAssetData, UpdateExternalAssetVariables>;
 export function updateExternalAsset(dc: DataConnect, vars: UpdateExternalAssetVariables): MutationPromise<UpdateExternalAssetData, UpdateExternalAssetVariables>;
 
+interface UpsertExchangeRateRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpsertExchangeRateVariables): MutationRef<UpsertExchangeRateData, UpsertExchangeRateVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: UpsertExchangeRateVariables): MutationRef<UpsertExchangeRateData, UpsertExchangeRateVariables>;
+  operationName: string;
+}
+export const upsertExchangeRateRef: UpsertExchangeRateRef;
+
+export function upsertExchangeRate(vars: UpsertExchangeRateVariables): MutationPromise<UpsertExchangeRateData, UpsertExchangeRateVariables>;
+export function upsertExchangeRate(dc: DataConnect, vars: UpsertExchangeRateVariables): MutationPromise<UpsertExchangeRateData, UpsertExchangeRateVariables>;
+
 interface GetHouseholdNetBalancesRef {
   /* Allow users to create refs without passing in DataConnect */
   (vars: GetHouseholdNetBalancesVariables): QueryRef<GetHouseholdNetBalancesData, GetHouseholdNetBalancesVariables>;
@@ -430,4 +469,16 @@ export const getNetWorthRef: GetNetWorthRef;
 
 export function getNetWorth(vars: GetNetWorthVariables, options?: ExecuteQueryOptions): QueryPromise<GetNetWorthData, GetNetWorthVariables>;
 export function getNetWorth(dc: DataConnect, vars: GetNetWorthVariables, options?: ExecuteQueryOptions): QueryPromise<GetNetWorthData, GetNetWorthVariables>;
+
+interface GetLatestRateRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetLatestRateVariables): QueryRef<GetLatestRateData, GetLatestRateVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetLatestRateVariables): QueryRef<GetLatestRateData, GetLatestRateVariables>;
+  operationName: string;
+}
+export const getLatestRateRef: GetLatestRateRef;
+
+export function getLatestRate(vars: GetLatestRateVariables, options?: ExecuteQueryOptions): QueryPromise<GetLatestRateData, GetLatestRateVariables>;
+export function getLatestRate(dc: DataConnect, vars: GetLatestRateVariables, options?: ExecuteQueryOptions): QueryPromise<GetLatestRateData, GetLatestRateVariables>;
 

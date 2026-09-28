@@ -179,3 +179,15 @@ mutation UpdateExternalAsset(
     estimatedValue: $estimatedValue
   })
 }
+
+mutation UpsertExchangeRate(
+  $currency: String!,
+  $rate: Float!,
+  $date: Date!
+) @auth(level: NO_ACCESS) {
+  exchangeRate_upsert(data: {
+    currency: $currency,
+    rate: $rate,
+    date: $date
+  })
+}

@@ -53,3 +53,14 @@ query GetNetWorth($householdId: UUID!) @auth(level: USER) {
     netWorth
   }
 }
+
+query GetLatestRate($currency: String!) @auth(level: USER) {
+  exchangeRates(
+    where: { currency: { eq: $currency } },
+    orderBy: { date: DESC },
+    limit: 1
+  ) {
+    rate
+    date
+  }
+}

@@ -14,6 +14,7 @@ This README will guide you through the process of using the generated JavaScript
   - [*GetSavingsProjects*](#getsavingsprojects)
   - [*GetExternalAssets*](#getexternalassets)
   - [*GetNetWorth*](#getnetworth)
+  - [*GetLatestRate*](#getlatestrate)
 - [**Mutations**](#mutations)
   - [*CreateJournalWithEntries*](#createjournalwithentries)
   - [*CreateSharedExpenseWithProration*](#createsharedexpensewithproration)
@@ -24,6 +25,7 @@ This README will guide you through the process of using the generated JavaScript
   - [*UpdateProjectProgress*](#updateprojectprogress)
   - [*CreateExternalAsset*](#createexternalasset)
   - [*UpdateExternalAsset*](#updateexternalasset)
+  - [*UpsertExchangeRate*](#upsertexchangerate)
 
 # Accessing the connector
 A connector is a collection of Queries and Mutations. One SDK is generated for each connector - this SDK is generated for the connector `orbita2-connector`. You can find more information about connectors in the [Data Connect documentation](https://firebase.google.com/docs/data-connect#how-does).
@@ -753,6 +755,118 @@ console.log(data.netWorthSnapshots);
 executeQuery(ref).then((response) => {
   const data = response.data;
   console.log(data.netWorthSnapshots);
+});
+```
+
+## GetLatestRate
+You can execute the `GetLatestRate` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+getLatestRate(vars: GetLatestRateVariables, options?: ExecuteQueryOptions): QueryPromise<GetLatestRateData, GetLatestRateVariables>;
+
+interface GetLatestRateRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetLatestRateVariables): QueryRef<GetLatestRateData, GetLatestRateVariables>;
+}
+export const getLatestRateRef: GetLatestRateRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
+```typescript
+getLatestRate(dc: DataConnect, vars: GetLatestRateVariables, options?: ExecuteQueryOptions): QueryPromise<GetLatestRateData, GetLatestRateVariables>;
+
+interface GetLatestRateRef {
+  ...
+  (dc: DataConnect, vars: GetLatestRateVariables): QueryRef<GetLatestRateData, GetLatestRateVariables>;
+}
+export const getLatestRateRef: GetLatestRateRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the getLatestRateRef:
+```typescript
+const name = getLatestRateRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `GetLatestRate` query requires an argument of type `GetLatestRateVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface GetLatestRateVariables {
+  currency: string;
+}
+```
+### Return Type
+Recall that executing the `GetLatestRate` query returns a `QueryPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `GetLatestRateData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface GetLatestRateData {
+  exchangeRates: ({
+    rate: number;
+    date: DateString;
+  })[];
+}
+```
+### Using `GetLatestRate`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, getLatestRate, GetLatestRateVariables } from '@pareja-pro/dataconnect';
+
+// The `GetLatestRate` query requires an argument of type `GetLatestRateVariables`:
+const getLatestRateVars: GetLatestRateVariables = {
+  currency: ..., 
+};
+
+// Call the `getLatestRate()` function to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await getLatestRate(getLatestRateVars);
+// Variables can be defined inline as well.
+const { data } = await getLatestRate({ currency: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await getLatestRate(dataConnect, getLatestRateVars);
+
+console.log(data.exchangeRates);
+
+// Or, you can use the `Promise` API.
+getLatestRate(getLatestRateVars).then((response) => {
+  const data = response.data;
+  console.log(data.exchangeRates);
+});
+```
+
+### Using `GetLatestRate`'s `QueryRef` function
+
+```typescript
+import { getDataConnect, executeQuery } from 'firebase/data-connect';
+import { connectorConfig, getLatestRateRef, GetLatestRateVariables } from '@pareja-pro/dataconnect';
+
+// The `GetLatestRate` query requires an argument of type `GetLatestRateVariables`:
+const getLatestRateVars: GetLatestRateVariables = {
+  currency: ..., 
+};
+
+// Call the `getLatestRateRef()` function to get a reference to the query.
+const ref = getLatestRateRef(getLatestRateVars);
+// Variables can be defined inline as well.
+const ref = getLatestRateRef({ currency: ..., });
+
+// You can also pass in a `DataConnect` instance to the `QueryRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = getLatestRateRef(dataConnect, getLatestRateVars);
+
+// Call `executeQuery()` on the reference to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeQuery(ref);
+
+console.log(data.exchangeRates);
+
+// Or, you can use the `Promise` API.
+executeQuery(ref).then((response) => {
+  const data = response.data;
+  console.log(data.exchangeRates);
 });
 ```
 
@@ -1896,6 +2010,121 @@ console.log(data.externalAsset_update);
 executeMutation(ref).then((response) => {
   const data = response.data;
   console.log(data.externalAsset_update);
+});
+```
+
+## UpsertExchangeRate
+You can execute the `UpsertExchangeRate` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+upsertExchangeRate(vars: UpsertExchangeRateVariables): MutationPromise<UpsertExchangeRateData, UpsertExchangeRateVariables>;
+
+interface UpsertExchangeRateRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpsertExchangeRateVariables): MutationRef<UpsertExchangeRateData, UpsertExchangeRateVariables>;
+}
+export const upsertExchangeRateRef: UpsertExchangeRateRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+upsertExchangeRate(dc: DataConnect, vars: UpsertExchangeRateVariables): MutationPromise<UpsertExchangeRateData, UpsertExchangeRateVariables>;
+
+interface UpsertExchangeRateRef {
+  ...
+  (dc: DataConnect, vars: UpsertExchangeRateVariables): MutationRef<UpsertExchangeRateData, UpsertExchangeRateVariables>;
+}
+export const upsertExchangeRateRef: UpsertExchangeRateRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the upsertExchangeRateRef:
+```typescript
+const name = upsertExchangeRateRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `UpsertExchangeRate` mutation requires an argument of type `UpsertExchangeRateVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface UpsertExchangeRateVariables {
+  currency: string;
+  rate: number;
+  date: DateString;
+}
+```
+### Return Type
+Recall that executing the `UpsertExchangeRate` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `UpsertExchangeRateData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface UpsertExchangeRateData {
+  exchangeRate_upsert: ExchangeRate_Key;
+}
+```
+### Using `UpsertExchangeRate`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, upsertExchangeRate, UpsertExchangeRateVariables } from '@pareja-pro/dataconnect';
+
+// The `UpsertExchangeRate` mutation requires an argument of type `UpsertExchangeRateVariables`:
+const upsertExchangeRateVars: UpsertExchangeRateVariables = {
+  currency: ..., 
+  rate: ..., 
+  date: ..., 
+};
+
+// Call the `upsertExchangeRate()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await upsertExchangeRate(upsertExchangeRateVars);
+// Variables can be defined inline as well.
+const { data } = await upsertExchangeRate({ currency: ..., rate: ..., date: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await upsertExchangeRate(dataConnect, upsertExchangeRateVars);
+
+console.log(data.exchangeRate_upsert);
+
+// Or, you can use the `Promise` API.
+upsertExchangeRate(upsertExchangeRateVars).then((response) => {
+  const data = response.data;
+  console.log(data.exchangeRate_upsert);
+});
+```
+
+### Using `UpsertExchangeRate`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, upsertExchangeRateRef, UpsertExchangeRateVariables } from '@pareja-pro/dataconnect';
+
+// The `UpsertExchangeRate` mutation requires an argument of type `UpsertExchangeRateVariables`:
+const upsertExchangeRateVars: UpsertExchangeRateVariables = {
+  currency: ..., 
+  rate: ..., 
+  date: ..., 
+};
+
+// Call the `upsertExchangeRateRef()` function to get a reference to the mutation.
+const ref = upsertExchangeRateRef(upsertExchangeRateVars);
+// Variables can be defined inline as well.
+const ref = upsertExchangeRateRef({ currency: ..., rate: ..., date: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = upsertExchangeRateRef(dataConnect, upsertExchangeRateVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.exchangeRate_upsert);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.exchangeRate_upsert);
 });
 ```
 

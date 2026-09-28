@@ -140,6 +140,20 @@ exports.updateExternalAsset = function updateExternalAsset(dcOrVars, vars) {
 }
 ;
 
+const upsertExchangeRateRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertExchangeRate', inputVars);
+}
+upsertExchangeRateRef.operationName = 'UpsertExchangeRate';
+exports.upsertExchangeRateRef = upsertExchangeRateRef;
+
+exports.upsertExchangeRate = function upsertExchangeRate(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(upsertExchangeRateRef(dcInstance, inputVars));
+}
+;
+
 const getHouseholdNetBalancesRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();
@@ -227,5 +241,20 @@ exports.getNetWorth = function getNetWorth(dcOrVars, varsOrOptions, options) {
   
   const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
   return executeQuery(getNetWorthRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
+}
+;
+
+const getLatestRateRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetLatestRate', inputVars);
+}
+getLatestRateRef.operationName = 'GetLatestRate';
+exports.getLatestRateRef = getLatestRateRef;
+
+exports.getLatestRate = function getLatestRate(dcOrVars, varsOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
+  return executeQuery(getLatestRateRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
 }
 ;

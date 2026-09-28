@@ -136,3 +136,12 @@ type NetWorthSnapshot @view(sql: """
   household: Household @unique
   netWorth: Float
 }
+
+# Tabla de Tipos de Cambio diarios (fuente: Banxico)
+type ExchangeRate @table(key: ["currency", "date"]) {
+  currency: String!   @col(dataType: "varchar(3)")  # ej. "USD", "EUR"
+  rate: Float!                                        # Tasa vs MXN
+  date: Date!                                         # Fecha del tipo de cambio
+  source: String!     @default(value: "BANXICO")
+  createdAt: Timestamp! @default(expr: "request.time")
+}
