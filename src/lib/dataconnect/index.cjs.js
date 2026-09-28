@@ -1,21 +1,5 @@
 const { queryRef, executeQuery, validateArgsWithOptions, mutationRef, executeMutation, validateArgs } = require('firebase/data-connect');
 
-const AccountType = {
-  ASSET: "ASSET",
-  LIABILITY: "LIABILITY",
-  INCOME: "INCOME",
-  EXPENSE: "EXPENSE",
-  EQUITY: "EQUITY",
-}
-exports.AccountType = AccountType;
-
-const OwnerType = {
-  USER_A: "USER_A",
-  USER_B: "USER_B",
-  SHARED: "SHARED",
-}
-exports.OwnerType = OwnerType;
-
 const connectorConfig = {
   connector: 'orbita2-connector',
   service: 'dataconnect',
@@ -37,47 +21,45 @@ exports.createJournalWithEntries = function createJournalWithEntries(dcOrVars, v
 }
 ;
 
-const getHouseholdBalanceRef = (dcOrVars, vars) => {
+const createSharedExpenseWithProrationRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();
-  return queryRef(dcInstance, 'GetHouseholdBalance', inputVars);
+  return mutationRef(dcInstance, 'CreateSharedExpenseWithProration', inputVars);
 }
-getHouseholdBalanceRef.operationName = 'GetHouseholdBalance';
-exports.getHouseholdBalanceRef = getHouseholdBalanceRef;
+createSharedExpenseWithProrationRef.operationName = 'CreateSharedExpenseWithProration';
+exports.createSharedExpenseWithProrationRef = createSharedExpenseWithProrationRef;
 
-exports.getHouseholdBalance = function getHouseholdBalance(dcOrVars, varsOrOptions, options) {
-  
-  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
-  return executeQuery(getHouseholdBalanceRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
+exports.createSharedExpenseWithProration = function createSharedExpenseWithProration(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(createSharedExpenseWithProrationRef(dcInstance, inputVars));
 }
 ;
 
-const getMyEntriesRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+const createMsiExpenseRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();
-  return queryRef(dcInstance, 'GetMyEntries');
+  return mutationRef(dcInstance, 'CreateMsiExpense', inputVars);
 }
-getMyEntriesRef.operationName = 'GetMyEntries';
-exports.getMyEntriesRef = getMyEntriesRef;
+createMsiExpenseRef.operationName = 'CreateMsiExpense';
+exports.createMsiExpenseRef = createMsiExpenseRef;
 
-exports.getMyEntries = function getMyEntries(dcOrOptions, options) {
-  
-  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrOptions, options, undefined,false, false);
-  return executeQuery(getMyEntriesRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
+exports.createMsiExpense = function createMsiExpense(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(createMsiExpenseRef(dcInstance, inputVars));
 }
 ;
 
-const validateJournalBalanceRef = (dcOrVars, vars) => {
+const getHouseholdNetBalancesRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();
-  return queryRef(dcInstance, 'ValidateJournalBalance', inputVars);
+  return queryRef(dcInstance, 'GetHouseholdNetBalances', inputVars);
 }
-validateJournalBalanceRef.operationName = 'ValidateJournalBalance';
-exports.validateJournalBalanceRef = validateJournalBalanceRef;
+getHouseholdNetBalancesRef.operationName = 'GetHouseholdNetBalances';
+exports.getHouseholdNetBalancesRef = getHouseholdNetBalancesRef;
 
-exports.validateJournalBalance = function validateJournalBalance(dcOrVars, varsOrOptions, options) {
+exports.getHouseholdNetBalances = function getHouseholdNetBalances(dcOrVars, varsOrOptions, options) {
   
   const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
-  return executeQuery(validateJournalBalanceRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
+  return executeQuery(getHouseholdNetBalancesRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
 }
 ;

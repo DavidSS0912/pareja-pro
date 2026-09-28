@@ -8,11 +8,11 @@ This README will guide you through the process of using the generated JavaScript
 - [**Accessing the connector**](#accessing-the-connector)
   - [*Connecting to the local Emulator*](#connecting-to-the-local-emulator)
 - [**Queries**](#queries)
-  - [*GetHouseholdBalance*](#gethouseholdbalance)
-  - [*GetMyEntries*](#getmyentries)
-  - [*ValidateJournalBalance*](#validatejournalbalance)
+  - [*GetHouseholdNetBalances*](#gethouseholdnetbalances)
 - [**Mutations**](#mutations)
   - [*CreateJournalWithEntries*](#createjournalwithentries)
+  - [*CreateSharedExpenseWithProration*](#createsharedexpensewithproration)
+  - [*CreateMsiExpense*](#createmsiexpense)
 
 # Accessing the connector
 A connector is a collection of Queries and Mutations. One SDK is generated for each connector - this SDK is generated for the connector `orbita2-connector`. You can find more information about connectors in the [Data Connect documentation](https://firebase.google.com/docs/data-connect#how-does).
@@ -59,332 +59,119 @@ The following is true for both the action shortcut function and the `QueryRef` f
 
 Below are examples of how to use the `orbita2-connector` connector's generated functions to execute each query. You can also follow the examples from the [Data Connect documentation](https://firebase.google.com/docs/data-connect/web-sdk#using-queries).
 
-## GetHouseholdBalance
-You can execute the `GetHouseholdBalance` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+## GetHouseholdNetBalances
+You can execute the `GetHouseholdNetBalances` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
 ```typescript
-getHouseholdBalance(vars: GetHouseholdBalanceVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdBalanceData, GetHouseholdBalanceVariables>;
+getHouseholdNetBalances(vars: GetHouseholdNetBalancesVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdNetBalancesData, GetHouseholdNetBalancesVariables>;
 
-interface GetHouseholdBalanceRef {
+interface GetHouseholdNetBalancesRef {
   ...
   /* Allow users to create refs without passing in DataConnect */
-  (vars: GetHouseholdBalanceVariables): QueryRef<GetHouseholdBalanceData, GetHouseholdBalanceVariables>;
+  (vars: GetHouseholdNetBalancesVariables): QueryRef<GetHouseholdNetBalancesData, GetHouseholdNetBalancesVariables>;
 }
-export const getHouseholdBalanceRef: GetHouseholdBalanceRef;
+export const getHouseholdNetBalancesRef: GetHouseholdNetBalancesRef;
 ```
 You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
 ```typescript
-getHouseholdBalance(dc: DataConnect, vars: GetHouseholdBalanceVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdBalanceData, GetHouseholdBalanceVariables>;
+getHouseholdNetBalances(dc: DataConnect, vars: GetHouseholdNetBalancesVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdNetBalancesData, GetHouseholdNetBalancesVariables>;
 
-interface GetHouseholdBalanceRef {
+interface GetHouseholdNetBalancesRef {
   ...
-  (dc: DataConnect, vars: GetHouseholdBalanceVariables): QueryRef<GetHouseholdBalanceData, GetHouseholdBalanceVariables>;
+  (dc: DataConnect, vars: GetHouseholdNetBalancesVariables): QueryRef<GetHouseholdNetBalancesData, GetHouseholdNetBalancesVariables>;
 }
-export const getHouseholdBalanceRef: GetHouseholdBalanceRef;
+export const getHouseholdNetBalancesRef: GetHouseholdNetBalancesRef;
 ```
 
-If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the getHouseholdBalanceRef:
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the getHouseholdNetBalancesRef:
 ```typescript
-const name = getHouseholdBalanceRef.operationName;
+const name = getHouseholdNetBalancesRef.operationName;
 console.log(name);
 ```
 
 ### Variables
-The `GetHouseholdBalance` query requires an argument of type `GetHouseholdBalanceVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+The `GetHouseholdNetBalances` query requires an argument of type `GetHouseholdNetBalancesVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
 
 ```typescript
-export interface GetHouseholdBalanceVariables {
+export interface GetHouseholdNetBalancesVariables {
   householdId: UUIDString;
 }
 ```
 ### Return Type
-Recall that executing the `GetHouseholdBalance` query returns a `QueryPromise` that resolves to an object with a `data` property.
+Recall that executing the `GetHouseholdNetBalances` query returns a `QueryPromise` that resolves to an object with a `data` property.
 
-The `data` property is an object of type `GetHouseholdBalanceData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+The `data` property is an object of type `GetHouseholdNetBalancesData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
 ```typescript
-export interface GetHouseholdBalanceData {
-  accounts: ({
-    id: UUIDString;
-    name: string;
-    type: AccountType;
-    ownerType: OwnerType;
-    balance?: {
-      balance?: number | null;
-    };
-  } & Account_Key)[];
-}
-```
-### Using `GetHouseholdBalance`'s action shortcut function
-
-```typescript
-import { getDataConnect } from 'firebase/data-connect';
-import { connectorConfig, getHouseholdBalance, GetHouseholdBalanceVariables } from '@pareja-pro/dataconnect';
-
-// The `GetHouseholdBalance` query requires an argument of type `GetHouseholdBalanceVariables`:
-const getHouseholdBalanceVars: GetHouseholdBalanceVariables = {
-  householdId: ..., 
-};
-
-// Call the `getHouseholdBalance()` function to execute the query.
-// You can use the `await` keyword to wait for the promise to resolve.
-const { data } = await getHouseholdBalance(getHouseholdBalanceVars);
-// Variables can be defined inline as well.
-const { data } = await getHouseholdBalance({ householdId: ..., });
-
-// You can also pass in a `DataConnect` instance to the action shortcut function.
-const dataConnect = getDataConnect(connectorConfig);
-const { data } = await getHouseholdBalance(dataConnect, getHouseholdBalanceVars);
-
-console.log(data.accounts);
-
-// Or, you can use the `Promise` API.
-getHouseholdBalance(getHouseholdBalanceVars).then((response) => {
-  const data = response.data;
-  console.log(data.accounts);
-});
-```
-
-### Using `GetHouseholdBalance`'s `QueryRef` function
-
-```typescript
-import { getDataConnect, executeQuery } from 'firebase/data-connect';
-import { connectorConfig, getHouseholdBalanceRef, GetHouseholdBalanceVariables } from '@pareja-pro/dataconnect';
-
-// The `GetHouseholdBalance` query requires an argument of type `GetHouseholdBalanceVariables`:
-const getHouseholdBalanceVars: GetHouseholdBalanceVariables = {
-  householdId: ..., 
-};
-
-// Call the `getHouseholdBalanceRef()` function to get a reference to the query.
-const ref = getHouseholdBalanceRef(getHouseholdBalanceVars);
-// Variables can be defined inline as well.
-const ref = getHouseholdBalanceRef({ householdId: ..., });
-
-// You can also pass in a `DataConnect` instance to the `QueryRef` function.
-const dataConnect = getDataConnect(connectorConfig);
-const ref = getHouseholdBalanceRef(dataConnect, getHouseholdBalanceVars);
-
-// Call `executeQuery()` on the reference to execute the query.
-// You can use the `await` keyword to wait for the promise to resolve.
-const { data } = await executeQuery(ref);
-
-console.log(data.accounts);
-
-// Or, you can use the `Promise` API.
-executeQuery(ref).then((response) => {
-  const data = response.data;
-  console.log(data.accounts);
-});
-```
-
-## GetMyEntries
-You can execute the `GetMyEntries` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
-```typescript
-getMyEntries(options?: ExecuteQueryOptions): QueryPromise<GetMyEntriesData, undefined>;
-
-interface GetMyEntriesRef {
-  ...
-  /* Allow users to create refs without passing in DataConnect */
-  (): QueryRef<GetMyEntriesData, undefined>;
-}
-export const getMyEntriesRef: GetMyEntriesRef;
-```
-You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
-```typescript
-getMyEntries(dc: DataConnect, options?: ExecuteQueryOptions): QueryPromise<GetMyEntriesData, undefined>;
-
-interface GetMyEntriesRef {
-  ...
-  (dc: DataConnect): QueryRef<GetMyEntriesData, undefined>;
-}
-export const getMyEntriesRef: GetMyEntriesRef;
-```
-
-If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the getMyEntriesRef:
-```typescript
-const name = getMyEntriesRef.operationName;
-console.log(name);
-```
-
-### Variables
-The `GetMyEntries` query has no variables.
-### Return Type
-Recall that executing the `GetMyEntries` query returns a `QueryPromise` that resolves to an object with a `data` property.
-
-The `data` property is an object of type `GetMyEntriesData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
-```typescript
-export interface GetMyEntriesData {
+export interface GetHouseholdNetBalancesData {
   entries: ({
-    id: UUIDString;
+    ownerUid: string;
     amount: number;
     account: {
-      name: string;
-    };
-    journal: {
-      date: TimestampString;
-      description: string;
-    };
-  } & Entry_Key)[];
-}
-```
-### Using `GetMyEntries`'s action shortcut function
-
-```typescript
-import { getDataConnect } from 'firebase/data-connect';
-import { connectorConfig, getMyEntries } from '@pareja-pro/dataconnect';
-
-
-// Call the `getMyEntries()` function to execute the query.
-// You can use the `await` keyword to wait for the promise to resolve.
-const { data } = await getMyEntries();
-
-// You can also pass in a `DataConnect` instance to the action shortcut function.
-const dataConnect = getDataConnect(connectorConfig);
-const { data } = await getMyEntries(dataConnect);
-
-console.log(data.entries);
-
-// Or, you can use the `Promise` API.
-getMyEntries().then((response) => {
-  const data = response.data;
-  console.log(data.entries);
-});
-```
-
-### Using `GetMyEntries`'s `QueryRef` function
-
-```typescript
-import { getDataConnect, executeQuery } from 'firebase/data-connect';
-import { connectorConfig, getMyEntriesRef } from '@pareja-pro/dataconnect';
-
-
-// Call the `getMyEntriesRef()` function to get a reference to the query.
-const ref = getMyEntriesRef();
-
-// You can also pass in a `DataConnect` instance to the `QueryRef` function.
-const dataConnect = getDataConnect(connectorConfig);
-const ref = getMyEntriesRef(dataConnect);
-
-// Call `executeQuery()` on the reference to execute the query.
-// You can use the `await` keyword to wait for the promise to resolve.
-const { data } = await executeQuery(ref);
-
-console.log(data.entries);
-
-// Or, you can use the `Promise` API.
-executeQuery(ref).then((response) => {
-  const data = response.data;
-  console.log(data.entries);
-});
-```
-
-## ValidateJournalBalance
-You can execute the `ValidateJournalBalance` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
-```typescript
-validateJournalBalance(vars: ValidateJournalBalanceVariables, options?: ExecuteQueryOptions): QueryPromise<ValidateJournalBalanceData, ValidateJournalBalanceVariables>;
-
-interface ValidateJournalBalanceRef {
-  ...
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: ValidateJournalBalanceVariables): QueryRef<ValidateJournalBalanceData, ValidateJournalBalanceVariables>;
-}
-export const validateJournalBalanceRef: ValidateJournalBalanceRef;
-```
-You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
-```typescript
-validateJournalBalance(dc: DataConnect, vars: ValidateJournalBalanceVariables, options?: ExecuteQueryOptions): QueryPromise<ValidateJournalBalanceData, ValidateJournalBalanceVariables>;
-
-interface ValidateJournalBalanceRef {
-  ...
-  (dc: DataConnect, vars: ValidateJournalBalanceVariables): QueryRef<ValidateJournalBalanceData, ValidateJournalBalanceVariables>;
-}
-export const validateJournalBalanceRef: ValidateJournalBalanceRef;
-```
-
-If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the validateJournalBalanceRef:
-```typescript
-const name = validateJournalBalanceRef.operationName;
-console.log(name);
-```
-
-### Variables
-The `ValidateJournalBalance` query requires an argument of type `ValidateJournalBalanceVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
-
-```typescript
-export interface ValidateJournalBalanceVariables {
-  journalId: UUIDString;
-}
-```
-### Return Type
-Recall that executing the `ValidateJournalBalance` query returns a `QueryPromise` that resolves to an object with a `data` property.
-
-The `data` property is an object of type `ValidateJournalBalanceData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
-```typescript
-export interface ValidateJournalBalanceData {
-  journalBalances: ({
-    netBalance?: number | null;
+      id: UUIDString;
+      type: AccountType;
+    } & Account_Key;
   })[];
 }
 ```
-### Using `ValidateJournalBalance`'s action shortcut function
+### Using `GetHouseholdNetBalances`'s action shortcut function
 
 ```typescript
 import { getDataConnect } from 'firebase/data-connect';
-import { connectorConfig, validateJournalBalance, ValidateJournalBalanceVariables } from '@pareja-pro/dataconnect';
+import { connectorConfig, getHouseholdNetBalances, GetHouseholdNetBalancesVariables } from '@pareja-pro/dataconnect';
 
-// The `ValidateJournalBalance` query requires an argument of type `ValidateJournalBalanceVariables`:
-const validateJournalBalanceVars: ValidateJournalBalanceVariables = {
-  journalId: ..., 
+// The `GetHouseholdNetBalances` query requires an argument of type `GetHouseholdNetBalancesVariables`:
+const getHouseholdNetBalancesVars: GetHouseholdNetBalancesVariables = {
+  householdId: ..., 
 };
 
-// Call the `validateJournalBalance()` function to execute the query.
+// Call the `getHouseholdNetBalances()` function to execute the query.
 // You can use the `await` keyword to wait for the promise to resolve.
-const { data } = await validateJournalBalance(validateJournalBalanceVars);
+const { data } = await getHouseholdNetBalances(getHouseholdNetBalancesVars);
 // Variables can be defined inline as well.
-const { data } = await validateJournalBalance({ journalId: ..., });
+const { data } = await getHouseholdNetBalances({ householdId: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
-const { data } = await validateJournalBalance(dataConnect, validateJournalBalanceVars);
+const { data } = await getHouseholdNetBalances(dataConnect, getHouseholdNetBalancesVars);
 
-console.log(data.journalBalances);
+console.log(data.entries);
 
 // Or, you can use the `Promise` API.
-validateJournalBalance(validateJournalBalanceVars).then((response) => {
+getHouseholdNetBalances(getHouseholdNetBalancesVars).then((response) => {
   const data = response.data;
-  console.log(data.journalBalances);
+  console.log(data.entries);
 });
 ```
 
-### Using `ValidateJournalBalance`'s `QueryRef` function
+### Using `GetHouseholdNetBalances`'s `QueryRef` function
 
 ```typescript
 import { getDataConnect, executeQuery } from 'firebase/data-connect';
-import { connectorConfig, validateJournalBalanceRef, ValidateJournalBalanceVariables } from '@pareja-pro/dataconnect';
+import { connectorConfig, getHouseholdNetBalancesRef, GetHouseholdNetBalancesVariables } from '@pareja-pro/dataconnect';
 
-// The `ValidateJournalBalance` query requires an argument of type `ValidateJournalBalanceVariables`:
-const validateJournalBalanceVars: ValidateJournalBalanceVariables = {
-  journalId: ..., 
+// The `GetHouseholdNetBalances` query requires an argument of type `GetHouseholdNetBalancesVariables`:
+const getHouseholdNetBalancesVars: GetHouseholdNetBalancesVariables = {
+  householdId: ..., 
 };
 
-// Call the `validateJournalBalanceRef()` function to get a reference to the query.
-const ref = validateJournalBalanceRef(validateJournalBalanceVars);
+// Call the `getHouseholdNetBalancesRef()` function to get a reference to the query.
+const ref = getHouseholdNetBalancesRef(getHouseholdNetBalancesVars);
 // Variables can be defined inline as well.
-const ref = validateJournalBalanceRef({ journalId: ..., });
+const ref = getHouseholdNetBalancesRef({ householdId: ..., });
 
 // You can also pass in a `DataConnect` instance to the `QueryRef` function.
 const dataConnect = getDataConnect(connectorConfig);
-const ref = validateJournalBalanceRef(dataConnect, validateJournalBalanceVars);
+const ref = getHouseholdNetBalancesRef(dataConnect, getHouseholdNetBalancesVars);
 
 // Call `executeQuery()` on the reference to execute the query.
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await executeQuery(ref);
 
-console.log(data.journalBalances);
+console.log(data.entries);
 
 // Or, you can use the `Promise` API.
 executeQuery(ref).then((response) => {
   const data = response.data;
-  console.log(data.journalBalances);
+  console.log(data.entries);
 });
 ```
 
@@ -543,6 +330,298 @@ executeMutation(ref).then((response) => {
   console.log(data.journal_insert);
   console.log(data.entry1);
   console.log(data.entry2);
+});
+```
+
+## CreateSharedExpenseWithProration
+You can execute the `CreateSharedExpenseWithProration` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+createSharedExpenseWithProration(vars: CreateSharedExpenseWithProrationVariables): MutationPromise<CreateSharedExpenseWithProrationData, CreateSharedExpenseWithProrationVariables>;
+
+interface CreateSharedExpenseWithProrationRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateSharedExpenseWithProrationVariables): MutationRef<CreateSharedExpenseWithProrationData, CreateSharedExpenseWithProrationVariables>;
+}
+export const createSharedExpenseWithProrationRef: CreateSharedExpenseWithProrationRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+createSharedExpenseWithProration(dc: DataConnect, vars: CreateSharedExpenseWithProrationVariables): MutationPromise<CreateSharedExpenseWithProrationData, CreateSharedExpenseWithProrationVariables>;
+
+interface CreateSharedExpenseWithProrationRef {
+  ...
+  (dc: DataConnect, vars: CreateSharedExpenseWithProrationVariables): MutationRef<CreateSharedExpenseWithProrationData, CreateSharedExpenseWithProrationVariables>;
+}
+export const createSharedExpenseWithProrationRef: CreateSharedExpenseWithProrationRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the createSharedExpenseWithProrationRef:
+```typescript
+const name = createSharedExpenseWithProrationRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `CreateSharedExpenseWithProration` mutation requires an argument of type `CreateSharedExpenseWithProrationVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface CreateSharedExpenseWithProrationVariables {
+  householdId: UUIDString;
+  date: TimestampString;
+  description: string;
+  totalAmount: number;
+  prorataFactor: number;
+  payerAccountId: UUIDString;
+  user1ExpenseAccountId: UUIDString;
+  user2ExpenseAccountId: UUIDString;
+  user1Amount: number;
+  user2Amount: number;
+  payerAmount: number;
+}
+```
+### Return Type
+Recall that executing the `CreateSharedExpenseWithProration` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `CreateSharedExpenseWithProrationData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface CreateSharedExpenseWithProrationData {
+  journal_insert: Journal_Key;
+  payerEntry: Entry_Key;
+  user1Entry: Entry_Key;
+  user2Entry: Entry_Key;
+}
+```
+### Using `CreateSharedExpenseWithProration`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, createSharedExpenseWithProration, CreateSharedExpenseWithProrationVariables } from '@pareja-pro/dataconnect';
+
+// The `CreateSharedExpenseWithProration` mutation requires an argument of type `CreateSharedExpenseWithProrationVariables`:
+const createSharedExpenseWithProrationVars: CreateSharedExpenseWithProrationVariables = {
+  householdId: ..., 
+  date: ..., 
+  description: ..., 
+  totalAmount: ..., 
+  prorataFactor: ..., 
+  payerAccountId: ..., 
+  user1ExpenseAccountId: ..., 
+  user2ExpenseAccountId: ..., 
+  user1Amount: ..., 
+  user2Amount: ..., 
+  payerAmount: ..., 
+};
+
+// Call the `createSharedExpenseWithProration()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await createSharedExpenseWithProration(createSharedExpenseWithProrationVars);
+// Variables can be defined inline as well.
+const { data } = await createSharedExpenseWithProration({ householdId: ..., date: ..., description: ..., totalAmount: ..., prorataFactor: ..., payerAccountId: ..., user1ExpenseAccountId: ..., user2ExpenseAccountId: ..., user1Amount: ..., user2Amount: ..., payerAmount: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await createSharedExpenseWithProration(dataConnect, createSharedExpenseWithProrationVars);
+
+console.log(data.journal_insert);
+console.log(data.payerEntry);
+console.log(data.user1Entry);
+console.log(data.user2Entry);
+
+// Or, you can use the `Promise` API.
+createSharedExpenseWithProration(createSharedExpenseWithProrationVars).then((response) => {
+  const data = response.data;
+  console.log(data.journal_insert);
+  console.log(data.payerEntry);
+  console.log(data.user1Entry);
+  console.log(data.user2Entry);
+});
+```
+
+### Using `CreateSharedExpenseWithProration`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, createSharedExpenseWithProrationRef, CreateSharedExpenseWithProrationVariables } from '@pareja-pro/dataconnect';
+
+// The `CreateSharedExpenseWithProration` mutation requires an argument of type `CreateSharedExpenseWithProrationVariables`:
+const createSharedExpenseWithProrationVars: CreateSharedExpenseWithProrationVariables = {
+  householdId: ..., 
+  date: ..., 
+  description: ..., 
+  totalAmount: ..., 
+  prorataFactor: ..., 
+  payerAccountId: ..., 
+  user1ExpenseAccountId: ..., 
+  user2ExpenseAccountId: ..., 
+  user1Amount: ..., 
+  user2Amount: ..., 
+  payerAmount: ..., 
+};
+
+// Call the `createSharedExpenseWithProrationRef()` function to get a reference to the mutation.
+const ref = createSharedExpenseWithProrationRef(createSharedExpenseWithProrationVars);
+// Variables can be defined inline as well.
+const ref = createSharedExpenseWithProrationRef({ householdId: ..., date: ..., description: ..., totalAmount: ..., prorataFactor: ..., payerAccountId: ..., user1ExpenseAccountId: ..., user2ExpenseAccountId: ..., user1Amount: ..., user2Amount: ..., payerAmount: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = createSharedExpenseWithProrationRef(dataConnect, createSharedExpenseWithProrationVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.journal_insert);
+console.log(data.payerEntry);
+console.log(data.user1Entry);
+console.log(data.user2Entry);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.journal_insert);
+  console.log(data.payerEntry);
+  console.log(data.user1Entry);
+  console.log(data.user2Entry);
+});
+```
+
+## CreateMsiExpense
+You can execute the `CreateMsiExpense` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+createMsiExpense(vars: CreateMsiExpenseVariables): MutationPromise<CreateMsiExpenseData, CreateMsiExpenseVariables>;
+
+interface CreateMsiExpenseRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateMsiExpenseVariables): MutationRef<CreateMsiExpenseData, CreateMsiExpenseVariables>;
+}
+export const createMsiExpenseRef: CreateMsiExpenseRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+createMsiExpense(dc: DataConnect, vars: CreateMsiExpenseVariables): MutationPromise<CreateMsiExpenseData, CreateMsiExpenseVariables>;
+
+interface CreateMsiExpenseRef {
+  ...
+  (dc: DataConnect, vars: CreateMsiExpenseVariables): MutationRef<CreateMsiExpenseData, CreateMsiExpenseVariables>;
+}
+export const createMsiExpenseRef: CreateMsiExpenseRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the createMsiExpenseRef:
+```typescript
+const name = createMsiExpenseRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `CreateMsiExpense` mutation requires an argument of type `CreateMsiExpenseVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface CreateMsiExpenseVariables {
+  householdId: UUIDString;
+  date: TimestampString;
+  description: string;
+  totalAmount: number;
+  months: number;
+  creditCardAccountId: UUIDString;
+  expenseAccountId: UUIDString;
+  prorataFactor: number;
+  monthlyAmount: number;
+}
+```
+### Return Type
+Recall that executing the `CreateMsiExpense` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `CreateMsiExpenseData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface CreateMsiExpenseData {
+  journal_insert: Journal_Key;
+  entry_insert: Entry_Key;
+}
+```
+### Using `CreateMsiExpense`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, createMsiExpense, CreateMsiExpenseVariables } from '@pareja-pro/dataconnect';
+
+// The `CreateMsiExpense` mutation requires an argument of type `CreateMsiExpenseVariables`:
+const createMsiExpenseVars: CreateMsiExpenseVariables = {
+  householdId: ..., 
+  date: ..., 
+  description: ..., 
+  totalAmount: ..., 
+  months: ..., 
+  creditCardAccountId: ..., 
+  expenseAccountId: ..., 
+  prorataFactor: ..., 
+  monthlyAmount: ..., 
+};
+
+// Call the `createMsiExpense()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await createMsiExpense(createMsiExpenseVars);
+// Variables can be defined inline as well.
+const { data } = await createMsiExpense({ householdId: ..., date: ..., description: ..., totalAmount: ..., months: ..., creditCardAccountId: ..., expenseAccountId: ..., prorataFactor: ..., monthlyAmount: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await createMsiExpense(dataConnect, createMsiExpenseVars);
+
+console.log(data.journal_insert);
+console.log(data.entry_insert);
+
+// Or, you can use the `Promise` API.
+createMsiExpense(createMsiExpenseVars).then((response) => {
+  const data = response.data;
+  console.log(data.journal_insert);
+  console.log(data.entry_insert);
+});
+```
+
+### Using `CreateMsiExpense`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, createMsiExpenseRef, CreateMsiExpenseVariables } from '@pareja-pro/dataconnect';
+
+// The `CreateMsiExpense` mutation requires an argument of type `CreateMsiExpenseVariables`:
+const createMsiExpenseVars: CreateMsiExpenseVariables = {
+  householdId: ..., 
+  date: ..., 
+  description: ..., 
+  totalAmount: ..., 
+  months: ..., 
+  creditCardAccountId: ..., 
+  expenseAccountId: ..., 
+  prorataFactor: ..., 
+  monthlyAmount: ..., 
+};
+
+// Call the `createMsiExpenseRef()` function to get a reference to the mutation.
+const ref = createMsiExpenseRef(createMsiExpenseVars);
+// Variables can be defined inline as well.
+const ref = createMsiExpenseRef({ householdId: ..., date: ..., description: ..., totalAmount: ..., months: ..., creditCardAccountId: ..., expenseAccountId: ..., prorataFactor: ..., monthlyAmount: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = createMsiExpenseRef(dataConnect, createMsiExpenseVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.journal_insert);
+console.log(data.entry_insert);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.journal_insert);
+  console.log(data.entry_insert);
 });
 ```
 

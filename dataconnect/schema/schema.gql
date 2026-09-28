@@ -1,6 +1,7 @@
 # Enums
 enum AccountType { ASSET LIABILITY INCOME EXPENSE EQUITY }
 enum OwnerType { USER_A USER_B SHARED }
+enum EntryType { DEBIT CREDIT }
 
 # Hogar (Tenant principal)
 type Household @table {
@@ -30,18 +31,22 @@ type Account @table {
 type Journal @table {
   date: Timestamp!
   description: String!
+  dueDate: Timestamp
+  isMsi: Boolean! @default(value: false)
   household: Household!
   createdAt: Timestamp! @default(expr: "request.time")
 }
 
 # Asiento atómico (debe/haber)
 type Entry @table {
-  journal: Journal!      # FK a Journal
-  account: Account!      # FK a Account
-  amount: Float!         # positivo = débito, negativo = crédito
-  prorataFactor: Float!  # Factor de prorrateo al momento de creación (inmutable)
-  ownerUid: String!      # UID del propietario de este asiento
+  journal: Journal!
+  account: Account!
+  amount: Float!
+  prorataFactor: Float!
+  ownerUid: String!
   isShared: Boolean! @default(value: false)
+  authDate: Timestamp
+  entryType: EntryType! @default(value: DEBIT)
   createdAt: Timestamp! @default(expr: "request.time")
 }
 

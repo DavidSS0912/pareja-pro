@@ -8,20 +8,6 @@ export type Int64String = string;
 export type DateString = string;
 
 
-export enum AccountType {
-  ASSET = "ASSET",
-  LIABILITY = "LIABILITY",
-  INCOME = "INCOME",
-  EXPENSE = "EXPENSE",
-  EQUITY = "EQUITY",
-};
-
-export enum OwnerType {
-  USER_A = "USER_A",
-  USER_B = "USER_B",
-  SHARED = "SHARED",
-};
-
 
 
 export interface Account_Key {
@@ -47,39 +33,62 @@ export interface CreateJournalWithEntriesVariables {
   prorataFactor2: number;
 }
 
+export interface CreateMsiExpenseData {
+  journal_insert: Journal_Key;
+  entry_insert: Entry_Key;
+}
+
+export interface CreateMsiExpenseVariables {
+  householdId: UUIDString;
+  date: TimestampString;
+  description: string;
+  totalAmount: number;
+  months: number;
+  creditCardAccountId: UUIDString;
+  expenseAccountId: UUIDString;
+  prorataFactor: number;
+  monthlyAmount: number;
+}
+
+export interface CreateSharedExpenseWithProrationData {
+  journal_insert: Journal_Key;
+  payerEntry: Entry_Key;
+  user1Entry: Entry_Key;
+  user2Entry: Entry_Key;
+}
+
+export interface CreateSharedExpenseWithProrationVariables {
+  householdId: UUIDString;
+  date: TimestampString;
+  description: string;
+  totalAmount: number;
+  prorataFactor: number;
+  payerAccountId: UUIDString;
+  user1ExpenseAccountId: UUIDString;
+  user2ExpenseAccountId: UUIDString;
+  user1Amount: number;
+  user2Amount: number;
+  payerAmount: number;
+}
+
 export interface Entry_Key {
   id: UUIDString;
   __typename?: 'Entry_Key';
 }
 
-export interface GetHouseholdBalanceData {
-  accounts: ({
-    id: UUIDString;
-    name: string;
-    type: AccountType;
-    ownerType: OwnerType;
-    balance?: {
-      balance?: number | null;
-    };
-  } & Account_Key)[];
-}
-
-export interface GetHouseholdBalanceVariables {
-  householdId: UUIDString;
-}
-
-export interface GetMyEntriesData {
+export interface GetHouseholdNetBalancesData {
   entries: ({
-    id: UUIDString;
+    ownerUid: string;
     amount: number;
     account: {
-      name: string;
-    };
-    journal: {
-      date: TimestampString;
-      description: string;
-    };
-  } & Entry_Key)[];
+      id: UUIDString;
+      type: AccountType;
+    } & Account_Key;
+  })[];
+}
+
+export interface GetHouseholdNetBalancesVariables {
+  householdId: UUIDString;
 }
 
 export interface Household_Key {
@@ -97,16 +106,6 @@ export interface User_Key {
   __typename?: 'User_Key';
 }
 
-export interface ValidateJournalBalanceData {
-  journalBalances: ({
-    netBalance?: number | null;
-  })[];
-}
-
-export interface ValidateJournalBalanceVariables {
-  journalId: UUIDString;
-}
-
 interface CreateJournalWithEntriesRef {
   /* Allow users to create refs without passing in DataConnect */
   (vars: CreateJournalWithEntriesVariables): MutationRef<CreateJournalWithEntriesData, CreateJournalWithEntriesVariables>;
@@ -119,39 +118,39 @@ export const createJournalWithEntriesRef: CreateJournalWithEntriesRef;
 export function createJournalWithEntries(vars: CreateJournalWithEntriesVariables): MutationPromise<CreateJournalWithEntriesData, CreateJournalWithEntriesVariables>;
 export function createJournalWithEntries(dc: DataConnect, vars: CreateJournalWithEntriesVariables): MutationPromise<CreateJournalWithEntriesData, CreateJournalWithEntriesVariables>;
 
-interface GetHouseholdBalanceRef {
+interface CreateSharedExpenseWithProrationRef {
   /* Allow users to create refs without passing in DataConnect */
-  (vars: GetHouseholdBalanceVariables): QueryRef<GetHouseholdBalanceData, GetHouseholdBalanceVariables>;
+  (vars: CreateSharedExpenseWithProrationVariables): MutationRef<CreateSharedExpenseWithProrationData, CreateSharedExpenseWithProrationVariables>;
   /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetHouseholdBalanceVariables): QueryRef<GetHouseholdBalanceData, GetHouseholdBalanceVariables>;
+  (dc: DataConnect, vars: CreateSharedExpenseWithProrationVariables): MutationRef<CreateSharedExpenseWithProrationData, CreateSharedExpenseWithProrationVariables>;
   operationName: string;
 }
-export const getHouseholdBalanceRef: GetHouseholdBalanceRef;
+export const createSharedExpenseWithProrationRef: CreateSharedExpenseWithProrationRef;
 
-export function getHouseholdBalance(vars: GetHouseholdBalanceVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdBalanceData, GetHouseholdBalanceVariables>;
-export function getHouseholdBalance(dc: DataConnect, vars: GetHouseholdBalanceVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdBalanceData, GetHouseholdBalanceVariables>;
+export function createSharedExpenseWithProration(vars: CreateSharedExpenseWithProrationVariables): MutationPromise<CreateSharedExpenseWithProrationData, CreateSharedExpenseWithProrationVariables>;
+export function createSharedExpenseWithProration(dc: DataConnect, vars: CreateSharedExpenseWithProrationVariables): MutationPromise<CreateSharedExpenseWithProrationData, CreateSharedExpenseWithProrationVariables>;
 
-interface GetMyEntriesRef {
+interface CreateMsiExpenseRef {
   /* Allow users to create refs without passing in DataConnect */
-  (): QueryRef<GetMyEntriesData, undefined>;
+  (vars: CreateMsiExpenseVariables): MutationRef<CreateMsiExpenseData, CreateMsiExpenseVariables>;
   /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): QueryRef<GetMyEntriesData, undefined>;
+  (dc: DataConnect, vars: CreateMsiExpenseVariables): MutationRef<CreateMsiExpenseData, CreateMsiExpenseVariables>;
   operationName: string;
 }
-export const getMyEntriesRef: GetMyEntriesRef;
+export const createMsiExpenseRef: CreateMsiExpenseRef;
 
-export function getMyEntries(options?: ExecuteQueryOptions): QueryPromise<GetMyEntriesData, undefined>;
-export function getMyEntries(dc: DataConnect, options?: ExecuteQueryOptions): QueryPromise<GetMyEntriesData, undefined>;
+export function createMsiExpense(vars: CreateMsiExpenseVariables): MutationPromise<CreateMsiExpenseData, CreateMsiExpenseVariables>;
+export function createMsiExpense(dc: DataConnect, vars: CreateMsiExpenseVariables): MutationPromise<CreateMsiExpenseData, CreateMsiExpenseVariables>;
 
-interface ValidateJournalBalanceRef {
+interface GetHouseholdNetBalancesRef {
   /* Allow users to create refs without passing in DataConnect */
-  (vars: ValidateJournalBalanceVariables): QueryRef<ValidateJournalBalanceData, ValidateJournalBalanceVariables>;
+  (vars: GetHouseholdNetBalancesVariables): QueryRef<GetHouseholdNetBalancesData, GetHouseholdNetBalancesVariables>;
   /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: ValidateJournalBalanceVariables): QueryRef<ValidateJournalBalanceData, ValidateJournalBalanceVariables>;
+  (dc: DataConnect, vars: GetHouseholdNetBalancesVariables): QueryRef<GetHouseholdNetBalancesData, GetHouseholdNetBalancesVariables>;
   operationName: string;
 }
-export const validateJournalBalanceRef: ValidateJournalBalanceRef;
+export const getHouseholdNetBalancesRef: GetHouseholdNetBalancesRef;
 
-export function validateJournalBalance(vars: ValidateJournalBalanceVariables, options?: ExecuteQueryOptions): QueryPromise<ValidateJournalBalanceData, ValidateJournalBalanceVariables>;
-export function validateJournalBalance(dc: DataConnect, vars: ValidateJournalBalanceVariables, options?: ExecuteQueryOptions): QueryPromise<ValidateJournalBalanceData, ValidateJournalBalanceVariables>;
+export function getHouseholdNetBalances(vars: GetHouseholdNetBalancesVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdNetBalancesData, GetHouseholdNetBalancesVariables>;
+export function getHouseholdNetBalances(dc: DataConnect, vars: GetHouseholdNetBalancesVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdNetBalancesData, GetHouseholdNetBalancesVariables>;
 

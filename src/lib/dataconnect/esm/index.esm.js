@@ -1,19 +1,5 @@
 import { queryRef, executeQuery, validateArgsWithOptions, mutationRef, executeMutation, validateArgs } from 'firebase/data-connect';
 
-export const AccountType = {
-  ASSET: "ASSET",
-  LIABILITY: "LIABILITY",
-  INCOME: "INCOME",
-  EXPENSE: "EXPENSE",
-  EQUITY: "EQUITY",
-}
-
-export const OwnerType = {
-  USER_A: "USER_A",
-  USER_B: "USER_B",
-  SHARED: "SHARED",
-}
-
 export const connectorConfig = {
   connector: 'orbita2-connector',
   service: 'dataconnect',
@@ -31,42 +17,40 @@ export function createJournalWithEntries(dcOrVars, vars) {
   return executeMutation(createJournalWithEntriesRef(dcInstance, inputVars));
 }
 
-export const getHouseholdBalanceRef = (dcOrVars, vars) => {
+export const createSharedExpenseWithProrationRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();
-  return queryRef(dcInstance, 'GetHouseholdBalance', inputVars);
+  return mutationRef(dcInstance, 'CreateSharedExpenseWithProration', inputVars);
 }
-getHouseholdBalanceRef.operationName = 'GetHouseholdBalance';
+createSharedExpenseWithProrationRef.operationName = 'CreateSharedExpenseWithProration';
 
-export function getHouseholdBalance(dcOrVars, varsOrOptions, options) {
-  
-  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
-  return executeQuery(getHouseholdBalanceRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
-}
-
-export const getMyEntriesRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return queryRef(dcInstance, 'GetMyEntries');
-}
-getMyEntriesRef.operationName = 'GetMyEntries';
-
-export function getMyEntries(dcOrOptions, options) {
-  
-  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrOptions, options, undefined,false, false);
-  return executeQuery(getMyEntriesRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
+export function createSharedExpenseWithProration(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(createSharedExpenseWithProrationRef(dcInstance, inputVars));
 }
 
-export const validateJournalBalanceRef = (dcOrVars, vars) => {
+export const createMsiExpenseRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();
-  return queryRef(dcInstance, 'ValidateJournalBalance', inputVars);
+  return mutationRef(dcInstance, 'CreateMsiExpense', inputVars);
 }
-validateJournalBalanceRef.operationName = 'ValidateJournalBalance';
+createMsiExpenseRef.operationName = 'CreateMsiExpense';
 
-export function validateJournalBalance(dcOrVars, varsOrOptions, options) {
+export function createMsiExpense(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(createMsiExpenseRef(dcInstance, inputVars));
+}
+
+export const getHouseholdNetBalancesRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetHouseholdNetBalances', inputVars);
+}
+getHouseholdNetBalancesRef.operationName = 'GetHouseholdNetBalances';
+
+export function getHouseholdNetBalances(dcOrVars, varsOrOptions, options) {
   
   const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
-  return executeQuery(validateJournalBalanceRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
+  return executeQuery(getHouseholdNetBalancesRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
 }
 

@@ -32,3 +32,79 @@ mutation CreateJournalWithEntries(
     ownerUid_expr: "auth.uid"
   })
 }
+
+mutation CreateSharedExpenseWithProration(
+  $householdId: UUID!,
+  $date: Timestamp!,
+  $description: String!,
+  $totalAmount: Float!,
+  $prorataFactor: Float!,
+  $payerAccountId: UUID!,
+  $user1ExpenseAccountId: UUID!,
+  $user2ExpenseAccountId: UUID!,
+  $user1Amount: Float!,
+  $user2Amount: Float!,
+  $payerAmount: Float!
+) @auth(level: USER) @transaction {
+
+  journal_insert(data: {
+    householdId: $householdId,
+    date: $date,
+    description: $description
+  })
+
+  payerEntry: entry_insert(data: {
+    journalId_expr: "response.journal_insert.id",
+    accountId: $payerAccountId,
+    amount: $payerAmount,
+    prorataFactor: $prorataFactor,
+    ownerUid_expr: "auth.uid",
+    entryType: CREDIT
+  })
+
+  user1Entry: entry_insert(data: {
+    journalId_expr: "response.journal_insert.id",
+    accountId: $user1ExpenseAccountId,
+    amount: $user1Amount,
+    prorataFactor: $prorataFactor,
+    ownerUid_expr: "auth.uid",
+    entryType: DEBIT
+  })
+
+  user2Entry: entry_insert(data: {
+    journalId_expr: "response.journal_insert.id",
+    accountId: $user2ExpenseAccountId,
+    amount: $user2Amount,
+    prorataFactor: $prorataFactor,
+    ownerUid_expr: "auth.uid",
+    entryType: DEBIT
+  })
+}
+
+mutation CreateMsiExpense(
+  $householdId: UUID!,
+  $date: Timestamp!,
+  $description: String!,
+  $totalAmount: Float!,
+  $months: Int!,
+  $creditCardAccountId: UUID!,
+  $expenseAccountId: UUID!,
+  $prorataFactor: Float!,
+  $monthlyAmount: Float!
+) @auth(level: USER) @transaction {
+  journal_insert(data: {
+    householdId: $householdId,
+    date: $date,
+    description: $description,
+    isMsi: true
+  })
+  
+  entry_insert(data: {
+    journalId_expr: "response.journal_insert.id",
+    accountId: $creditCardAccountId,
+    amount: $totalAmount,
+    prorataFactor: $prorataFactor,
+    ownerUid_expr: "auth.uid",
+    entryType: CREDIT
+  })
+}

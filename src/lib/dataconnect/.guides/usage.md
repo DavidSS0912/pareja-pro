@@ -14,20 +14,20 @@ If a user is not using a supported framework, they can use the generated SDK dir
 Here's an example of how to use it with the first 5 operations:
 
 ```js
-import { createJournalWithEntries, getHouseholdBalance, getMyEntries, validateJournalBalance } from '@pareja-pro/dataconnect';
+import { createJournalWithEntries, createSharedExpenseWithProration, createMsiExpense, getHouseholdNetBalances } from '@pareja-pro/dataconnect';
 
 
 // Operation CreateJournalWithEntries:  For variables, look at type CreateJournalWithEntriesVars in ../index.d.ts
 const { data } = await CreateJournalWithEntries(dataConnect, createJournalWithEntriesVars);
 
-// Operation GetHouseholdBalance:  For variables, look at type GetHouseholdBalanceVars in ../index.d.ts
-const { data } = await GetHouseholdBalance(dataConnect, getHouseholdBalanceVars);
+// Operation CreateSharedExpenseWithProration:  For variables, look at type CreateSharedExpenseWithProrationVars in ../index.d.ts
+const { data } = await CreateSharedExpenseWithProration(dataConnect, createSharedExpenseWithProrationVars);
 
-// Operation GetMyEntries: 
-const { data } = await GetMyEntries(dataConnect);
+// Operation CreateMsiExpense:  For variables, look at type CreateMsiExpenseVars in ../index.d.ts
+const { data } = await CreateMsiExpense(dataConnect, createMsiExpenseVars);
 
-// Operation ValidateJournalBalance:  For variables, look at type ValidateJournalBalanceVars in ../index.d.ts
-const { data } = await ValidateJournalBalance(dataConnect, validateJournalBalanceVars);
+// Operation GetHouseholdNetBalances:  For variables, look at type GetHouseholdNetBalancesVars in ../index.d.ts
+const { data } = await GetHouseholdNetBalances(dataConnect, getHouseholdNetBalancesVars);
 
 
 ```

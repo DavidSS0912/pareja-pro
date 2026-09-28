@@ -1,31 +1,10 @@
-query GetHouseholdBalance($householdId: UUID!) @auth(level: USER) {
-  accounts(where: { householdId: { eq: $householdId } }) {
-    id
-    name
-    type
-    ownerType
-    balance: accountBalance_on_account {
-      balance
-    }
-  }
-}
-
-query GetMyEntries @auth(level: USER) {
-  entries(where: { ownerUid: { eq_expr: "auth.uid" } }) {
-    id
+query GetHouseholdNetBalances($householdId: UUID!) @auth(level: USER) {
+  entries(where: { journal: { householdId: { eq: $householdId } }, account: { type: { in: [ASSET, LIABILITY] } } }) {
+    ownerUid
     amount
     account {
-      name
+      id
+      type
     }
-    journal {
-      date
-      description
-    }
-  }
-}
-
-query ValidateJournalBalance($journalId: UUID!) @auth(level: USER) {
-  journalBalances(where: { journalId: { eq: $journalId } }) {
-    netBalance @check(expr: "this == 0.0", message: "Transaction is invalid: net balance is not 0")
   }
 }
