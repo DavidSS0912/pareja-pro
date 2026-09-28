@@ -36,7 +36,7 @@ export const createBudgetSlice: StateCreator<BudgetSlice & AuthSlice & DataSlice
     } catch(error) {
       console.error(error);
       useToastStore.getState().addToast("Error al agregar presupuesto", "error");
-      set({ budgets: state.budgets });
+      set((s) => ({ budgets: s.budgets.filter((b) => b.id !== optimisticBudget.id) }));
     }
   },
   updateBudget: async (id, item) => {

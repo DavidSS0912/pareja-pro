@@ -61,7 +61,7 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
     } catch (error) {
       console.error(error);
       useToastStore.getState().addToast("Hubo un error al agregar el gasto", "error");
-      set({ expenses: state.expenses });
+      set((s) => ({ expenses: s.expenses.filter((e) => e.id !== optimisticExpense.id) }));
     }
   },
   updateExpense: async (_id, _item) => { useToastStore.getState().addToast("Operación 'Actualizar Gasto' no disponible en DataConnect (PostgreSQL).", "error"); },

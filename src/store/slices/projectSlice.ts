@@ -41,7 +41,7 @@ export const createProjectSlice: StateCreator<ProjectSlice & AuthSlice & DataSli
     } catch(error) {
       console.error(error);
       useToastStore.getState().addToast("Error al agregar el proyecto", "error");
-      set({ projects: state.projects });
+      set((s) => ({ projects: s.projects.filter((p) => p.id !== optimisticProject.id) }));
     }
   },
   updateProject: async (id, item) => {

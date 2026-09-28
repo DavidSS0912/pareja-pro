@@ -48,7 +48,7 @@ export const createIncomeSlice: StateCreator<IncomeSlice & AuthSlice & DataSlice
     } catch(error) {
       console.error(error);
       useToastStore.getState().addToast("Error al registrar el ingreso", "error");
-      set({ incomes: state.incomes });
+      set((s) => ({ incomes: s.incomes.filter((i) => i.id !== optimisticIncome.id) }));
     }
   },
   updateIncome: async (_id, _item) => {
