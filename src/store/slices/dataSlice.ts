@@ -14,10 +14,10 @@ export interface DataSlice {
 }
 type CombinedSlices = ExpenseSlice & BudgetSlice & CardSlice & AssetSlice & IncomeSlice & GoalSlice & UserListSlice & ProjectSlice;
 
-export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], DataSlice> = (set, get) => ({
+export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], DataSlice> = (_set) => ({
   fetchDashboardData: async (houseId: string) => {
     try {
-      const [balances, budgets, projects, assets] = await Promise.all([
+      const [_balances, budgets, projects, assets] = await Promise.all([
         getHouseholdNetBalances({ householdId: houseId }),
         getMonthBudgets({ householdId: houseId, period: new Date().toISOString().slice(0,7) + '-01' }),
         getSavingsProjects({ householdId: houseId }),

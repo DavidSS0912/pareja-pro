@@ -11,11 +11,11 @@ export interface BudgetSlice {
 
 }
 
-export const createBudgetSlice: StateCreator<BudgetSlice & AuthSlice, [], [], BudgetSlice> = (set, get) => ({
+export const createBudgetSlice: StateCreator<BudgetSlice & AuthSlice, [], [], BudgetSlice> = (set) => ({
   budgets: [],
   setBudgets: (items) => set({ budgets: items }),
-  addBudget: async (item) => {},
-  updateBudget: async (id, item) => {},
-  deleteBudget: async (id) => {}
+  addBudget: async (_item) => {},
+  updateBudget: async (_id, _item) => {},
+  deleteBudget: async (_id) => {}
 
 });

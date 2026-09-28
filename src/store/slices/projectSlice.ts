@@ -16,17 +16,17 @@ export interface ProjectSlice {
   deleteContribution: (id: string) => Promise<void>;
 }
 
-export const createProjectSlice: StateCreator<ProjectSlice & AuthSlice, [], [], ProjectSlice> = (set, get) => ({
+export const createProjectSlice: StateCreator<ProjectSlice & AuthSlice, [], [], ProjectSlice> = (set) => ({
   projects: [],
   setProjects: (items) => set({ projects: items }),
-  addProject: async (item) => {},
-  updateProject: async (id, item) => {},
-  deleteProject: async (id) => {}
+  addProject: async (_item) => {},
+  updateProject: async (_id, _item) => {},
+  deleteProject: async (_id) => {}
 ,
   contributions: [],
   setContributions: (items) => set({ contributions: items }),
-  addContribution: async (item) => {},
-  addContributionAndUpdateProject: async (c, p) => {},
-  updateContribution: async (id, item) => {},
-  deleteContribution: async (id) => {}
+  addContribution: async (_item) => {},
+  addContributionAndUpdateProject: async (_c, _p) => {},
+  updateContribution: async (_id, _item) => {},
+  deleteContribution: async (_id) => {}
 });

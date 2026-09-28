@@ -11,11 +11,11 @@ export interface IncomeSlice {
 
 }
 
-export const createIncomeSlice: StateCreator<IncomeSlice & AuthSlice, [], [], IncomeSlice> = (set, get) => ({
+export const createIncomeSlice: StateCreator<IncomeSlice & AuthSlice, [], [], IncomeSlice> = (set) => ({
   incomes: [],
   setIncomes: (items) => set({ incomes: items }),
-  addIncome: async (item) => {},
-  updateIncome: async (id, item) => {},
-  deleteIncome: async (id) => {}
+  addIncome: async (_item) => {},
+  updateIncome: async (_id, _item) => {},
+  deleteIncome: async (_id) => {}
 
 });

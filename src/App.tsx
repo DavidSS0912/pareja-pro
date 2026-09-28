@@ -234,7 +234,7 @@ export default function App() {
   }, [filteredData]);
 
   if (authLoading) {
-    return <div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>;
+    return <div className="min-h-[100dvh] flex items-center justify-center bg-slate-50"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>;
   }
 
   if (!user) {
@@ -271,7 +271,7 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 text-slate-900 font-sans pb-24 md:pb-0 md:pl-72 relative">
+    <div className="min-h-[100dvh] bg-gray-50 text-slate-900 font-sans pb-24 md:pb-0 md:pl-72 relative">
       <nav className="fixed bottom-0 w-full bg-white border-t border-[#E5E5E5] flex overflow-x-auto scrollbar-hide p-3 md:flex-col md:justify-start md:w-72 md:h-full md:left-0 md:top-0 md:border-r md:border-t-0 md:p-6 z-50 transition-all">
         <div className="hidden md:flex mb-12 items-center gap-3 px-2">
           <div className="bg-indigo-600 p-2.5 rounded-lg text-white">

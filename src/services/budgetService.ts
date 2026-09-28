@@ -1,5 +1,4 @@
 
-import { calcularProrrateo } from './liquidadorService';
 
 // Calcula el dinero libre no asignado a ningún presupuesto
 export function calcularDineroSinAsignar(

@@ -11,11 +11,11 @@ export interface CardSlice {
 
 }
 
-export const createCardSlice: StateCreator<CardSlice & AuthSlice, [], [], CardSlice> = (set, get) => ({
+export const createCardSlice: StateCreator<CardSlice & AuthSlice, [], [], CardSlice> = (set) => ({
   cards: [],
   setCards: (items) => set({ cards: items }),
-  addCard: async (item) => {},
-  updateCard: async (id, item) => {},
-  deleteCard: async (id) => {}
+  addCard: async (_item) => {},
+  updateCard: async (_id, _item) => {},
+  deleteCard: async (_id) => {}
 
 });

@@ -11,11 +11,11 @@ export interface GoalSlice {
 
 }
 
-export const createGoalSlice: StateCreator<GoalSlice & AuthSlice, [], [], GoalSlice> = (set, get) => ({
+export const createGoalSlice: StateCreator<GoalSlice & AuthSlice, [], [], GoalSlice> = (set) => ({
   goals: [],
   setGoals: (items) => set({ goals: items }),
-  addGoal: async (item) => {},
-  updateGoal: async (id, item) => {},
-  deleteGoal: async (id) => {}
+  addGoal: async (_item) => {},
+  updateGoal: async (_id, _item) => {},
+  deleteGoal: async (_id) => {}
 
 });

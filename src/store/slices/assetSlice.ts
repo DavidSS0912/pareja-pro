@@ -11,11 +11,11 @@ export interface AssetSlice {
 
 }
 
-export const createAssetSlice: StateCreator<AssetSlice & AuthSlice, [], [], AssetSlice> = (set, get) => ({
+export const createAssetSlice: StateCreator<AssetSlice & AuthSlice, [], [], AssetSlice> = (set) => ({
   assets: [],
   setAssets: (items) => set({ assets: items }),
-  addAsset: async (item) => {},
-  updateAsset: async (id, item) => {},
-  deleteAsset: async (id) => {}
+  addAsset: async (_item) => {},
+  updateAsset: async (_id, _item) => {},
+  deleteAsset: async (_id) => {}
 
 });
