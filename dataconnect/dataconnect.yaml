@@ -1,0 +1,11 @@
+specVersion: "v1alpha"
+serviceId: "dataconnect"
+location: "us-central1"
+schema:
+  source: "./schema"
+  datasource:
+    postgresql:
+      database: "orbita2-f8aa1"
+      cloudSql:
+        instanceId: "orbita2-f8aa1"
+connectorDirs: ["./connector"]

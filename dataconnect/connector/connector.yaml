@@ -1,0 +1,5 @@
+connectorId: "orbita2-connector"
+generate:
+  javascriptSdk:
+    outputDir: "../../src/lib/dataconnect"
+    package: "@pareja-pro/dataconnect"

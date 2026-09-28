@@ -1,0 +1,34 @@
+mutation CreateJournalWithEntries(
+  $householdId: UUID!,
+  $date: Timestamp!,
+  $description: String!,
+  $accountId1: UUID!,
+  $amount1: Float!,
+  $prorataFactor1: Float!,
+  $accountId2: UUID!,
+  $amount2: Float!,
+  $prorataFactor2: Float!
+) @auth(level: USER) @transaction {
+  
+  journal_insert(data: {
+    householdId: $householdId,
+    date: $date,
+    description: $description
+  })
+
+  entry1: entry_insert(data: {
+    journalId_expr: "response.journal_insert.id",
+    accountId: $accountId1,
+    amount: $amount1,
+    prorataFactor: $prorataFactor1,
+    ownerUid_expr: "auth.uid"
+  })
+
+  entry2: entry_insert(data: {
+    journalId_expr: "response.journal_insert.id",
+    accountId: $accountId2,
+    amount: $amount2,
+    prorataFactor: $prorataFactor2,
+    ownerUid_expr: "auth.uid"
+  })
+}

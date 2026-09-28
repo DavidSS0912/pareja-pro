@@ -1,0 +1,70 @@
+# Enums
+enum AccountType { ASSET LIABILITY INCOME EXPENSE EQUITY }
+enum OwnerType { USER_A USER_B SHARED }
+
+# Hogar (Tenant principal)
+type Household @table {
+  name: String!
+  createdAt: Timestamp! @default(expr: "request.time")
+}
+
+# Usuario ligado a Auth UID
+type User @table(key: "uid") {
+  uid: String! @default(expr: "auth.uid")
+  email: String!
+  displayName: String
+  household: Household!
+  createdAt: Timestamp! @default(expr: "request.time")
+}
+
+# Cuenta contable (jerarquía de activos, pasivos, gastos, ingresos, capital)
+type Account @table {
+  name: String!
+  type: AccountType!
+  ownerType: OwnerType!
+  household: Household!
+  createdAt: Timestamp! @default(expr: "request.time")
+}
+
+# Cabecera de transacción
+type Journal @table {
+  date: Timestamp!
+  description: String!
+  household: Household!
+  createdAt: Timestamp! @default(expr: "request.time")
+}
+
+# Asiento atómico (debe/haber)
+type Entry @table {
+  journal: Journal!      # FK a Journal
+  account: Account!      # FK a Account
+  amount: Float!         # positivo = débito, negativo = crédito
+  prorataFactor: Float!  # Factor de prorrateo al momento de creación (inmutable)
+  ownerUid: String!      # UID del propietario de este asiento
+  isShared: Boolean! @default(value: false)
+  createdAt: Timestamp! @default(expr: "request.time")
+}
+
+# Vista para calcular el balance neto de un Journal
+type JournalBalance @view(sql: """
+  SELECT
+    journal_id,
+    SUM(amount) as net_balance
+  FROM entry
+  GROUP BY journal_id
+""") {
+  journal: Journal @unique
+  netBalance: Float
+}
+
+# Vista para saldos de cuenta
+type AccountBalance @view(sql: """
+  SELECT
+    account_id,
+    COALESCE(SUM(amount), 0) as balance
+  FROM entry
+  GROUP BY account_id
+""") {
+  account: Account @unique
+  balance: Float
+}
