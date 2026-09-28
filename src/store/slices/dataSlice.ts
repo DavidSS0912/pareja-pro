@@ -7,7 +7,7 @@ import { IncomeSlice } from './incomeSlice';
 import { GoalSlice } from './goalSlice';
 import { UserListSlice } from './userListSlice';
 import { ProjectSlice } from './projectSlice';
-import { getHouseholdNetBalances, getMonthBudgets, getSavingsProjects, getExternalAssets } from '../../lib/dataconnect';
+import { getHouseholdNetBalances, getMonthBudgets, getSavingsProjects, getExternalAssets, getExpensesByHousehold } from '../../lib/dataconnect';
 
 export interface DataSlice {
   accounts: any[];
@@ -21,11 +21,12 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
   setAccounts: (accounts) => set({ accounts }),
   fetchDashboardData: async (houseId: string) => {
     try {
-      const [balances, budgets, projects, assets] = await Promise.all([
+      const [balances, budgets, projects, assets, expensesData] = await Promise.all([
         getHouseholdNetBalances({ householdId: houseId }),
         getMonthBudgets({ householdId: houseId, period: new Date().toISOString().slice(0,7) + '-01' }),
         getSavingsProjects({ householdId: houseId }),
-        getExternalAssets({ householdId: houseId })
+        getExternalAssets({ householdId: houseId }),
+        getExpensesByHousehold({ householdId: houseId })
       ]);
       if (balances.data?.entries) {
         const uniqueAccounts = Array.from(new Map(balances.data.entries.map((e: any) => [e.account.id, e.account])).values());
@@ -34,6 +35,17 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
       if (budgets.data?.budgets) get().setBudgets(budgets.data.budgets as any);
       if (projects.data?.savingsProjects) get().setProjects(projects.data.savingsProjects as any);
       if (assets.data?.externalAssets) get().setAssets(assets.data.externalAssets as any);
+      if (expensesData.data?.entries) {
+        const mappedExpenses = expensesData.data.entries.map((e: any) => ({
+          id: e.id,
+          amount: e.amount,
+          type: e.entryType,
+          date: e.journal.date,
+          description: e.journal.description,
+          category: e.account.name
+        }));
+        get().setExpenses(mappedExpenses);
+      }
     } catch (error) {
       console.error("Error fetching dashboard data from DataConnect", error);
     }

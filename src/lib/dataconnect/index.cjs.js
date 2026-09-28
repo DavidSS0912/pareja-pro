@@ -1,5 +1,11 @@
 const { queryRef, executeQuery, validateArgsWithOptions, mutationRef, executeMutation, validateArgs } = require('firebase/data-connect');
 
+const EntryType = {
+  DEBIT: "DEBIT",
+  CREDIT: "CREDIT",
+}
+exports.EntryType = EntryType;
+
 const OwnerType = {
   USER_A: "USER_A",
   USER_B: "USER_B",
@@ -9,8 +15,8 @@ exports.OwnerType = OwnerType;
 
 const connectorConfig = {
   connector: 'orbita2-connector',
-  service: 'dataconnect',
-  location: 'us-central1'
+  service: 'orbita2-f8aa1-service',
+  location: 'us-east4'
 };
 exports.connectorConfig = connectorConfig;
 
@@ -256,5 +262,20 @@ exports.getLatestRate = function getLatestRate(dcOrVars, varsOrOptions, options)
   
   const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
   return executeQuery(getLatestRateRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
+}
+;
+
+const getExpensesByHouseholdRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetExpensesByHousehold', inputVars);
+}
+getExpensesByHouseholdRef.operationName = 'GetExpensesByHousehold';
+exports.getExpensesByHouseholdRef = getExpensesByHouseholdRef;
+
+exports.getExpensesByHousehold = function getExpensesByHousehold(dcOrVars, varsOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
+  return executeQuery(getExpensesByHouseholdRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
 }
 ;

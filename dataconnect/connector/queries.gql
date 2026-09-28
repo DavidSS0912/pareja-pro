@@ -64,3 +64,25 @@ query GetLatestRate($currency: String!) @auth(level: USER) {
     date
   }
 }
+
+query GetExpensesByHousehold($householdId: UUID!) @auth(level: USER) {
+  entries(
+    where: { 
+      journal: { householdId: { eq: $householdId } }, 
+      account: { type: { eq: EXPENSE } } 
+    },
+    orderBy: { createdAt: DESC }
+  ) {
+    id
+    amount
+    entryType
+    createdAt
+    journal {
+      description
+      date
+    }
+    account {
+      name
+    }
+  }
+}

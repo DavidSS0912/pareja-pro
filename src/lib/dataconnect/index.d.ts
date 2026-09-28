@@ -8,6 +8,11 @@ export type Int64String = string;
 export type DateString = string;
 
 
+export enum EntryType {
+  DEBIT = "DEBIT",
+  CREDIT = "CREDIT",
+}
+
 export enum OwnerType {
   USER_A = "USER_A",
   USER_B = "USER_B",
@@ -130,6 +135,26 @@ export interface ExchangeRate_Key {
 export interface ExternalAsset_Key {
   id: UUIDString;
   __typename?: 'ExternalAsset_Key';
+}
+
+export interface GetExpensesByHouseholdData {
+  entries: ({
+    id: UUIDString;
+    amount: number;
+    entryType: EntryType;
+    createdAt: TimestampString;
+    journal: {
+      description: string;
+      date: TimestampString;
+    };
+    account: {
+      name: string;
+    };
+  } & Entry_Key)[];
+}
+
+export interface GetExpensesByHouseholdVariables {
+  householdId: UUIDString;
 }
 
 export interface GetExternalAssetsData {
@@ -481,4 +506,16 @@ export const getLatestRateRef: GetLatestRateRef;
 
 export function getLatestRate(vars: GetLatestRateVariables, options?: ExecuteQueryOptions): QueryPromise<GetLatestRateData, GetLatestRateVariables>;
 export function getLatestRate(dc: DataConnect, vars: GetLatestRateVariables, options?: ExecuteQueryOptions): QueryPromise<GetLatestRateData, GetLatestRateVariables>;
+
+interface GetExpensesByHouseholdRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetExpensesByHouseholdVariables): QueryRef<GetExpensesByHouseholdData, GetExpensesByHouseholdVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetExpensesByHouseholdVariables): QueryRef<GetExpensesByHouseholdData, GetExpensesByHouseholdVariables>;
+  operationName: string;
+}
+export const getExpensesByHouseholdRef: GetExpensesByHouseholdRef;
+
+export function getExpensesByHousehold(vars: GetExpensesByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetExpensesByHouseholdData, GetExpensesByHouseholdVariables>;
+export function getExpensesByHousehold(dc: DataConnect, vars: GetExpensesByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetExpensesByHouseholdData, GetExpensesByHouseholdVariables>;
 

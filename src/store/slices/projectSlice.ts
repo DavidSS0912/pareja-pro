@@ -3,6 +3,7 @@ import { RecordItem } from '../types';
 import { AuthSlice } from './authSlice';
 import { DataSlice } from './dataSlice';
 import { createSavingsProject, updateProjectProgress } from '../../lib/dataconnect';
+import { useToastStore } from '../useToastStore';
 
 export interface ProjectSlice {
   projects: RecordItem[];
@@ -24,37 +25,60 @@ export const createProjectSlice: StateCreator<ProjectSlice & AuthSlice & DataSli
   addProject: async (item) => {
     const state = get();
     const houseId = state.houseId || "00000000-0000-0000-0000-000000000000";
-    await createSavingsProject({
-      householdId: houseId,
-      name: item.name,
-      targetAmount: item.targetAmount || 0,
-      priority: item.priority || 1
-    });
-    if (state.houseId) await state.fetchDashboardData(state.houseId);
+    
+    const optimisticProject = { ...item, id: `temp-${Date.now()}` };
+    set({ projects: [optimisticProject, ...state.projects] });
+    
+    try {
+      await createSavingsProject({
+        householdId: houseId,
+        name: item.name,
+        targetAmount: item.targetAmount || 0,
+        priority: item.priority || 1
+      });
+      useToastStore.getState().addToast("Proyecto agregado exitosamente", "success");
+      if (state.houseId) await state.fetchDashboardData(state.houseId);
+    } catch(error) {
+      console.error(error);
+      useToastStore.getState().addToast("Error al agregar el proyecto", "error");
+      set({ projects: state.projects });
+    }
   },
   updateProject: async (id, item) => {
     const state = get();
     if (item.currentAmount !== undefined || item.savedAmount !== undefined) {
-      await updateProjectProgress({
-        projectId: id,
-        amountToAdd: item.currentAmount !== undefined ? item.currentAmount : item.savedAmount
-      });
-      if (state.houseId) await state.fetchDashboardData(state.houseId);
+      try {
+        await updateProjectProgress({
+          projectId: id,
+          amountToAdd: item.currentAmount !== undefined ? item.currentAmount : item.savedAmount
+        });
+        useToastStore.getState().addToast("Progreso actualizado", "success");
+        if (state.houseId) await state.fetchDashboardData(state.houseId);
+      } catch(error) {
+        console.error(error);
+        useToastStore.getState().addToast("Error al actualizar progreso", "error");
+      }
     }
   },
-  deleteProject: async (_id) => { alert("Operación 'Eliminar Proyecto' no disponible en DataConnect (PostgreSQL)."); },
+  deleteProject: async (_id) => { useToastStore.getState().addToast("Operación no disponible", "error"); },
   
   contributions: [],
   setContributions: (items) => set({ contributions: items }),
-  addContribution: async (_item) => { alert("Operación 'Agregar Aportación' no disponible aisladamente en DataConnect."); },
+  addContribution: async (_item) => { useToastStore.getState().addToast("Operación no disponible", "error"); },
   addContributionAndUpdateProject: async (c, p) => {
     const state = get();
-    await updateProjectProgress({
-      projectId: p.id,
-      amountToAdd: c.amount
-    });
-    if (state.houseId) await state.fetchDashboardData(state.houseId);
+    try {
+      await updateProjectProgress({
+        projectId: p.id,
+        amountToAdd: c.amount
+      });
+      useToastStore.getState().addToast("Aportación registrada", "success");
+      if (state.houseId) await state.fetchDashboardData(state.houseId);
+    } catch(error) {
+      console.error(error);
+      useToastStore.getState().addToast("Error al registrar aportación", "error");
+    }
   },
-  updateContribution: async (_id, _item) => { alert("Operación 'Actualizar Aportación' no disponible en DataConnect (PostgreSQL)."); },
-  deleteContribution: async (_id) => { alert("Operación 'Eliminar Aportación' no disponible en DataConnect (PostgreSQL)."); }
+  updateContribution: async (_id, _item) => { useToastStore.getState().addToast("Operación no disponible", "error"); },
+  deleteContribution: async (_id) => { useToastStore.getState().addToast("Operación no disponible", "error"); }
 });

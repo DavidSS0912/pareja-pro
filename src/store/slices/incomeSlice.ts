@@ -3,6 +3,7 @@ import { RecordItem } from '../types';
 import { AuthSlice } from './authSlice';
 import { DataSlice } from './dataSlice';
 import { createJournalWithEntries } from '../../lib/dataconnect';
+import { useToastStore } from '../useToastStore';
 
 export interface IncomeSlice {
   incomes: RecordItem[];
@@ -23,27 +24,37 @@ export const createIncomeSlice: StateCreator<IncomeSlice & AuthSlice & DataSlice
     const assetAccount = state.accounts?.find((a: any) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT');
 
     if (!incomeAccount || !assetAccount) {
-      alert("No se encontraron las cuentas necesarias (INCOME/ASSET) para registrar el ingreso.");
+      useToastStore.getState().addToast("No se encontraron las cuentas necesarias (INCOME/ASSET) para registrar el ingreso.", "error");
       return;
     }
 
-    await createJournalWithEntries({
-      householdId: houseId,
-      date: new Date(item.date).toISOString(),
-      description: item.type + (item.source ? ` - ${item.source}` : ''),
-      accountId1: incomeAccount.id,
-      amount1: item.amount,
-      prorataFactor1: 1.0,
-      accountId2: assetAccount.id,
-      amount2: -item.amount,
-      prorataFactor2: 1.0
-    });
-    if (state.houseId) await state.fetchDashboardData(state.houseId);
+    const optimisticIncome = { ...item, id: `temp-${Date.now()}` };
+    set({ incomes: [optimisticIncome, ...state.incomes] });
+
+    try {
+      await createJournalWithEntries({
+        householdId: houseId,
+        date: new Date(item.date).toISOString(),
+        description: item.type + (item.source ? ` - ${item.source}` : ''),
+        accountId1: incomeAccount.id,
+        amount1: item.amount,
+        prorataFactor1: 1.0,
+        accountId2: assetAccount.id,
+        amount2: -item.amount,
+        prorataFactor2: 1.0
+      });
+      useToastStore.getState().addToast("Ingreso agregado correctamente", "success");
+      if (state.houseId) await state.fetchDashboardData(state.houseId);
+    } catch(error) {
+      console.error(error);
+      useToastStore.getState().addToast("Error al registrar el ingreso", "error");
+      set({ incomes: state.incomes });
+    }
   },
   updateIncome: async (_id, _item) => {
-    alert("Operación 'Actualizar Ingreso' no disponible en DataConnect (PostgreSQL).");
+    useToastStore.getState().addToast("Operación 'Actualizar Ingreso' no disponible en DataConnect (PostgreSQL).", "error");
   },
   deleteIncome: async (_id) => {
-    alert("Operación 'Eliminar Ingreso' no disponible en DataConnect (PostgreSQL).");
+    useToastStore.getState().addToast("Operación 'Eliminar Ingreso' no disponible en DataConnect (PostgreSQL).", "error");
   }
 });

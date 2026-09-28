@@ -3,6 +3,7 @@ import { RecordItem } from '../types';
 import { AuthSlice } from './authSlice';
 import { createBudget, updateBudgetAmount, OwnerType } from '../../lib/dataconnect';
 import { DataSlice } from './dataSlice';
+import { useToastStore } from '../useToastStore';
 
 export interface BudgetSlice {
   budgets: RecordItem[];
@@ -18,22 +19,39 @@ export const createBudgetSlice: StateCreator<BudgetSlice & AuthSlice & DataSlice
   addBudget: async (item) => {
     const state = get();
     const houseId = state.houseId || "00000000-0000-0000-0000-000000000000";
-    await createBudget({
-      householdId: houseId,
-      categoryName: item.category || 'General',
-      assignedAmount: item.base || 0,
-      period: new Date().toISOString().slice(0, 7) + '-01',
-      ownerType: (item.shared || item.type === 'SHARED') ? OwnerType.SHARED : OwnerType.USER_A
-    });
-    if (state.houseId) await state.fetchDashboardData(state.houseId);
+    
+    const optimisticBudget = { ...item, id: `temp-${Date.now()}` };
+    set({ budgets: [optimisticBudget, ...state.budgets] });
+    
+    try {
+      await createBudget({
+        householdId: houseId,
+        categoryName: item.category || 'General',
+        assignedAmount: item.base || 0,
+        period: new Date().toISOString().slice(0, 7) + '-01',
+        ownerType: (item.shared || item.type === 'SHARED') ? OwnerType.SHARED : OwnerType.USER_A
+      });
+      useToastStore.getState().addToast("Presupuesto agregado", "success");
+      if (state.houseId) await state.fetchDashboardData(state.houseId);
+    } catch(error) {
+      console.error(error);
+      useToastStore.getState().addToast("Error al agregar presupuesto", "error");
+      set({ budgets: state.budgets });
+    }
   },
   updateBudget: async (id, item) => {
     const state = get();
-    await updateBudgetAmount({
-      budgetId: id,
-      assignedAmount: item.base !== undefined ? item.base : (item.assignedAmount || 0)
-    });
-    if (state.houseId) await state.fetchDashboardData(state.houseId);
+    try {
+      await updateBudgetAmount({
+        budgetId: id,
+        assignedAmount: item.base !== undefined ? item.base : (item.assignedAmount || 0)
+      });
+      useToastStore.getState().addToast("Presupuesto actualizado", "success");
+      if (state.houseId) await state.fetchDashboardData(state.houseId);
+    } catch(error) {
+      console.error(error);
+      useToastStore.getState().addToast("Error al actualizar presupuesto", "error");
+    }
   },
-  deleteBudget: async (_id) => {}
+  deleteBudget: async (_id) => { useToastStore.getState().addToast("Eliminar no disponible", "error"); }
 });
