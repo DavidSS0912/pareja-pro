@@ -1,3 +1,6 @@
+import { createService } from './baseService';
+export const budgetService = createService('budgets');
+
 import { calcularProrrateo } from './liquidadorService';
 
 // Calcula el dinero libre no asignado a ningún presupuesto
