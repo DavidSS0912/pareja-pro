@@ -8,3 +8,22 @@ query GetHouseholdNetBalances($householdId: UUID!) @auth(level: USER) {
     }
   }
 }
+
+query GetMonthBudgets($householdId: UUID!, $period: Date!) @auth(level: USER) {
+  budgets(where: {
+    householdId: { eq: $householdId },
+    period: { eq: $period }
+  }) {
+    id
+    categoryName
+    assignedAmount
+    period
+    ownerType
+  }
+}
+
+query GetUnassignedCash($householdId: UUID!) @auth(level: USER) {
+  unassignedCashes(where: { householdId: { eq: $householdId } }) {
+    unassigned
+  }
+}

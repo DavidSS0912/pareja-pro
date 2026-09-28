@@ -19,5 +19,8 @@
   },
   "dataconnect": {
     "source": "dataconnect"
+  },
+  "functions": {
+    "source": "functions"
   }
 }

@@ -108,3 +108,28 @@ mutation CreateMsiExpense(
     entryType: CREDIT
   })
 }
+
+mutation CreateBudget(
+  $householdId: UUID!,
+  $categoryName: String!,
+  $assignedAmount: Float!,
+  $period: Date!,
+  $ownerType: OwnerType!
+) @auth(level: USER) {
+  budget_insert(data: {
+    householdId: $householdId,
+    categoryName: $categoryName,
+    assignedAmount: $assignedAmount,
+    period: $period,
+    ownerType: $ownerType
+  })
+}
+
+mutation UpdateBudgetAmount(
+  $budgetId: UUID!,
+  $assignedAmount: Float!
+) @auth(level: USER) {
+  budget_update(id: $budgetId, data: {
+    assignedAmount: $assignedAmount
+  })
+}

@@ -73,3 +73,30 @@ type AccountBalance @view(sql: """
   account: Account @unique
   balance: Float
 }
+
+# Presupuesto mensual por categoría
+type Budget @table @index(fields: ["householdId", "period"]) {
+  categoryName: String!
+  assignedAmount: Float!
+  period: Date!          # Mes del presupuesto (ej. 2026-10-01)
+  household: Household!
+  ownerType: OwnerType!  # Si es personal o compartido
+  createdAt: Timestamp! @default(expr: "request.time")
+}
+
+# Vista: Dinero sin asignar del mes actual
+type UnassignedCash @view(sql: """
+  SELECT
+    h.id as household_id,
+    COALESCE(SUM(CASE WHEN a.type = 'INCOME' THEN e.amount ELSE 0 END), 0)
+      - COALESCE(SUM(b.assigned_amount), 0) as unassigned
+  FROM household h
+  LEFT JOIN account a ON a.household_id = h.id
+  LEFT JOIN entry e ON e.account_id = a.id
+  LEFT JOIN budget b ON b.household_id = h.id
+    AND DATE_TRUNC('month', b.period) = DATE_TRUNC('month', NOW())
+  GROUP BY h.id
+""") {
+  household: Household @unique
+  unassigned: Float
+}
