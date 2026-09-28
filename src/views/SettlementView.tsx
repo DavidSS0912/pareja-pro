@@ -89,7 +89,7 @@ export function SettlementView({ data, calc, methods }) {
           {data.expenses.map(exp => {
             const payer = data.users.find(u => u.id === exp.paidBy);
             return (
-              <div key={exp.id} className="flex justify-between items-center p-4 bg-slate-50 hover:bg-slate-100 rounded-2xl border border-slate-100 transition-colors group">
+              <div key={exp.id} className="flex justify-between items-center p-4 bg-rose-50/50 hover:bg-rose-50 rounded-2xl border border-rose-100/50 transition-colors group">
                 <div className="flex items-center gap-4">
                   <div className={`w-10 h-10 rounded-full ${payer?.avatar || 'bg-slate-300'} flex items-center justify-center text-white font-bold`}>
                     {payer?.photoURL ? (

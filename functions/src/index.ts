@@ -5,7 +5,7 @@ admin.initializeApp();
 
 export const rolloverBudgets = functions.pubsub
   .topic('monthly-rollover')
-  .onPublish(async (message) => {
+  .onPublish(async (_message) => {
     const db = admin.firestore(); // placeholder - se migrará a Data Connect admin SDK
     const now = new Date();
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);

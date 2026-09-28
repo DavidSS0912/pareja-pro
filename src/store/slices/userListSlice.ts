@@ -1,5 +1,5 @@
 import { StateCreator } from 'zustand';
-import { RecordItem } from '../../services/baseService';
+import { RecordItem } from '../types';
 
 export interface UserListSlice {
   users: RecordItem[];

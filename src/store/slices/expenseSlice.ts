@@ -1,28 +1,21 @@
 import { StateCreator } from 'zustand';
-import { RecordItem } from '../../services/baseService';
-import { expenseService } from '../../services/expenseService';
+import { RecordItem } from '../types';
 import { AuthSlice } from './authSlice';
 
 export interface ExpenseSlice {
   expenses: RecordItem[];
-  setExpenses: (expenses: RecordItem[]) => void;
-  addExpense: (expense: Omit<RecordItem, 'id'>) => Promise<void>;
-  updateExpense: (id: string, expense: Partial<Omit<RecordItem, 'id'>>) => Promise<void>;
+  setExpenses: (items: RecordItem[]) => void;
+  addExpense: (item: any) => Promise<void>;
+  updateExpense: (id: string, item: any) => Promise<void>;
   deleteExpense: (id: string) => Promise<void>;
+
 }
 
 export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice, [], [], ExpenseSlice> = (set, get) => ({
   expenses: [],
-  setExpenses: (expenses) => set({ expenses }),
-  addExpense: async (expense) => {
-    const { houseId } = get();
-    if (!houseId) return;
-    await expenseService.add(expense, houseId);
-  },
-  updateExpense: async (id, expense) => {
-    await expenseService.update(id, expense);
-  },
-  deleteExpense: async (id) => {
-    await expenseService.delete(id);
-  }
+  setExpenses: (items) => set({ expenses: items }),
+  addExpense: async (item) => {},
+  updateExpense: async (id, item) => {},
+  deleteExpense: async (id) => {}
+
 });

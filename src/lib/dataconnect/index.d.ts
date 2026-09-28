@@ -12,7 +12,7 @@ export enum OwnerType {
   USER_A = "USER_A",
   USER_B = "USER_B",
   SHARED = "SHARED",
-};
+}
 
 
 

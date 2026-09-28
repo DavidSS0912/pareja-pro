@@ -1,53 +1,32 @@
 import { StateCreator } from 'zustand';
-import { RecordItem } from '../../services/baseService';
-import { projectService } from '../../services/projectService';
-import { contributionService } from '../../services/contributionService';
+import { RecordItem } from '../types';
 import { AuthSlice } from './authSlice';
 
 export interface ProjectSlice {
   projects: RecordItem[];
-  contributions: RecordItem[];
-  setProjects: (projects: RecordItem[]) => void;
-  setContributions: (contributions: RecordItem[]) => void;
-  addProject: (project: Omit<RecordItem, 'id'>) => Promise<void>;
-  updateProject: (id: string, project: Partial<Omit<RecordItem, 'id'>>) => Promise<void>;
+  setProjects: (items: RecordItem[]) => void;
+  addProject: (item: any) => Promise<void>;
+  updateProject: (id: string, item: any) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
-  addContribution: (contribution: Omit<RecordItem, 'id'>) => Promise<void>;
+  contributions: RecordItem[];
+  setContributions: (items: RecordItem[]) => void;
+  addContribution: (item: any) => Promise<void>;
+  addContributionAndUpdateProject: (c: any, p: any) => Promise<void>;
+  updateContribution: (id: string, item: any) => Promise<void>;
   deleteContribution: (id: string) => Promise<void>;
-  updateContribution: (id: string, contribution: Partial<Omit<RecordItem, 'id'>>) => Promise<void>;
-  addContributionAndUpdateProject: (projectId: string, contribution: Omit<RecordItem, 'id'>, newSavedAmount: number) => Promise<void>;
 }
 
 export const createProjectSlice: StateCreator<ProjectSlice & AuthSlice, [], [], ProjectSlice> = (set, get) => ({
   projects: [],
+  setProjects: (items) => set({ projects: items }),
+  addProject: async (item) => {},
+  updateProject: async (id, item) => {},
+  deleteProject: async (id) => {}
+,
   contributions: [],
-  setProjects: (projects) => set({ projects }),
-  setContributions: (contributions) => set({ contributions }),
-  addProject: async (project) => {
-    const { houseId } = get();
-    if (!houseId) return;
-    await projectService.add(project, houseId);
-  },
-  updateProject: async (id, project) => {
-    await projectService.update(id, project);
-  },
-  deleteProject: async (id) => {
-    await projectService.delete(id);
-  },
-  addContribution: async (contribution) => {
-    const { houseId } = get();
-    if (!houseId) return;
-    await contributionService.add(contribution, houseId);
-  },
-  deleteContribution: async (id) => {
-    await contributionService.delete(id);
-  },
-  updateContribution: async (id, contribution) => {
-    await contributionService.update(id, contribution);
-  },
-  addContributionAndUpdateProject: async (projectId, contribution, newSavedAmount) => {
-    const { houseId } = get();
-    if (!houseId) return;
-    await projectService.addContributionAndUpdateProject(houseId, projectId, contribution, newSavedAmount);
-  }
+  setContributions: (items) => set({ contributions: items }),
+  addContribution: async (item) => {},
+  addContributionAndUpdateProject: async (c, p) => {},
+  updateContribution: async (id, item) => {},
+  deleteContribution: async (id) => {}
 });

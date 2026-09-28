@@ -1,28 +1,21 @@
 import { StateCreator } from 'zustand';
-import { RecordItem } from '../../services/baseService';
-import { assetService } from '../../services/assetService';
+import { RecordItem } from '../types';
 import { AuthSlice } from './authSlice';
 
 export interface AssetSlice {
   assets: RecordItem[];
-  setAssets: (assets: RecordItem[]) => void;
-  addAsset: (asset: Omit<RecordItem, 'id'>) => Promise<void>;
-  updateAsset: (id: string, asset: Partial<Omit<RecordItem, 'id'>>) => Promise<void>;
+  setAssets: (items: RecordItem[]) => void;
+  addAsset: (item: any) => Promise<void>;
+  updateAsset: (id: string, item: any) => Promise<void>;
   deleteAsset: (id: string) => Promise<void>;
+
 }
 
 export const createAssetSlice: StateCreator<AssetSlice & AuthSlice, [], [], AssetSlice> = (set, get) => ({
   assets: [],
-  setAssets: (assets) => set({ assets }),
-  addAsset: async (asset) => {
-    const { houseId } = get();
-    if (!houseId) return;
-    await assetService.add(asset, houseId);
-  },
-  updateAsset: async (id, asset) => {
-    await assetService.update(id, asset);
-  },
-  deleteAsset: async (id) => {
-    await assetService.delete(id);
-  }
+  setAssets: (items) => set({ assets: items }),
+  addAsset: async (item) => {},
+  updateAsset: async (id, item) => {},
+  deleteAsset: async (id) => {}
+
 });

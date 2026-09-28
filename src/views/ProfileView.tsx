@@ -2,8 +2,6 @@ import React from 'react';
 import { User, LogOut, Trash2 } from 'lucide-react';
 import { leaveHouse } from '../services/userService';
 import { useToastStore } from '../store/useToastStore';
-import { authService } from '../services/authService';
-
 export const ProfileView = ({ data }: any) => {
   const { user, users = [], houseId } = data;
   const { addToast } = useToastStore();
@@ -14,7 +12,7 @@ export const ProfileView = ({ data }: any) => {
         await leaveHouse(user.uid, houseId);
         addToast('Has salido de la casa exitosamente.', 'success');
         window.location.reload();
-      } catch (err) {
+      } catch (_err) {
         addToast('Error al salir de la casa.', 'error');
       }
     }
@@ -26,7 +24,7 @@ export const ProfileView = ({ data }: any) => {
         await leaveHouse(memberId, houseId);
         addToast('Miembro eliminado exitosamente.', 'success');
         window.location.reload();
-      } catch (err) {
+      } catch (_err) {
         addToast('Error al eliminar miembro.', 'error');
       }
     }

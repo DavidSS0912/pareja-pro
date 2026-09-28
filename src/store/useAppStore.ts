@@ -7,12 +7,12 @@ import { AssetSlice, createAssetSlice } from './slices/assetSlice';
 import { IncomeSlice, createIncomeSlice } from './slices/incomeSlice';
 import { GoalSlice, createGoalSlice } from './slices/goalSlice';
 import { UserListSlice, createUserListSlice } from './slices/userListSlice';
-import { ListenerSlice, createListenerSlice } from './slices/listenerSlice';
+import { DataSlice, createDataSlice } from './slices/dataSlice';
 import { ProjectSlice, createProjectSlice } from './slices/projectSlice';
 
 // Export types to be used across the app
 export type { UserState } from './slices/authSlice';
-export type { RecordItem } from '../services/baseService';
+export type { RecordItem } from './types';
 
 export type AppState = AuthSlice &
   ExpenseSlice &
@@ -22,7 +22,7 @@ export type AppState = AuthSlice &
   IncomeSlice &
   GoalSlice &
   UserListSlice &
-  ListenerSlice &
+  DataSlice &
   ProjectSlice;
 
 export const useAppStore = create<AppState>()((...a) => ({
@@ -34,7 +34,7 @@ export const useAppStore = create<AppState>()((...a) => ({
   ...createIncomeSlice(...a),
   ...createGoalSlice(...a),
   ...createUserListSlice(...a),
-  ...createListenerSlice(...a),
+  ...createDataSlice(...a),
   ...createProjectSlice(...a),
 }));
 

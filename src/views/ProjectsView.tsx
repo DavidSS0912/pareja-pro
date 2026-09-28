@@ -244,7 +244,7 @@ export const ProjectsView = ({ data, methods }: any) => {
     const milestones = activeProject.milestones || [];
     
     return (
-      <div className="bg-white rounded-xl border border-[#E5E5E5] p-5 mt-6">
+      <div className="bg-white rounded-3xl shadow-sm border-0 p-6 mt-6">
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-bold text-slate-900 font-title flex items-center gap-2"><Flag size={18} className="text-slate-400"/> Hitos y Tareas</h3>
           <button onClick={() => setShowMilestoneForm(true)} className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded hover:bg-indigo-100">
@@ -442,20 +442,20 @@ export const ProjectsView = ({ data, methods }: any) => {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex justify-between items-center bg-white p-6 rounded-xl border border-[#E5E5E5]">
+      <div className="flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border-0">
         <div>
           <h2 className="text-2xl font-bold text-slate-900 font-title flex items-center gap-2">
             <Target className="text-indigo-600" /> Metas y Proyectos
           </h2>
           <p className="text-slate-500 text-sm mt-1">Conquista un objetivo a la vez (Efecto Cascada)</p>
         </div>
-        <button onClick={() => setShowForm(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors">
+        <button onClick={() => setShowForm(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-full font-bold flex items-center gap-2 transition-colors">
           <Plus size={18} /> Nuevo
         </button>
       </div>
 
       {activeProject ? (
-        <div className="bg-white rounded-xl border border-indigo-100 p-6 shadow-sm relative overflow-hidden group">
+        <div className="bg-white rounded-3xl border-0 p-8 shadow-sm relative overflow-hidden group">
           <div className="absolute top-0 left-0 w-full h-1 bg-indigo-500"></div>
           
           <button onClick={() => handleEditProject(activeProject)} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
@@ -501,7 +501,7 @@ export const ProjectsView = ({ data, methods }: any) => {
             </div>
           </div>
 
-          <div className="bg-slate-50 border border-[#E5E5E5] rounded-xl p-4 mb-6">
+          <div className="bg-slate-50 border-0 rounded-2xl p-5 mb-6">
             <h4 className="font-bold text-slate-900 mb-3 flex items-center gap-2"><Info size={16} className="text-slate-400" /> Aportación Sugerida del Mes</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {users.map((u: any) => {
@@ -541,11 +541,11 @@ export const ProjectsView = ({ data, methods }: any) => {
           </div>
         </div>
       ) : (
-        <div className="bg-slate-50 border border-dashed border-slate-300 rounded-xl p-12 text-center">
+        <div className="bg-slate-50 border-0 shadow-sm rounded-3xl p-12 text-center">
           <Target className="mx-auto text-slate-300 mb-4" size={48} />
           <h3 className="text-lg font-bold text-slate-900 mb-2">Sin proyecto activo</h3>
           <p className="text-slate-500 mb-6">Crea tu primer proyecto financiero o activa uno de la lista.</p>
-          <button onClick={() => setShowForm(true)} className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold mx-auto">Crear Proyecto</button>
+          <button onClick={() => setShowForm(true)} className="bg-indigo-600 text-white px-5 py-2.5 rounded-full font-bold mx-auto">Crear Proyecto</button>
         </div>
       )}
 
@@ -553,7 +553,7 @@ export const ProjectsView = ({ data, methods }: any) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Pending Projects */}
-        <div className="bg-white rounded-xl border border-[#E5E5E5] p-5">
+        <div className="bg-white rounded-3xl border-0 shadow-sm p-6">
           <h3 className="font-bold text-slate-900 mb-4 font-title flex items-center gap-2"><Target size={18} className="text-slate-400"/> Próximos (Cascada)</h3>
           {pendingProjects.length === 0 ? (
             <p className="text-sm text-slate-500 text-center py-4">No hay proyectos en cola.</p>
@@ -587,7 +587,7 @@ export const ProjectsView = ({ data, methods }: any) => {
 
         {/* Contributions History & Milestones Container */}
         <div className="flex flex-col">
-          <div className="bg-white rounded-xl border border-[#E5E5E5] p-5">
+          <div className="bg-white rounded-3xl border-0 shadow-sm p-6">
             <h3 className="font-bold text-slate-900 mb-4 font-title flex items-center gap-2"><History size={18} className="text-slate-400"/> Trazabilidad (Activo)</h3>
             {(!activeProject || contributions.filter((c:any) => c.projectId === activeProject.id).length === 0) ? (
               <p className="text-sm text-slate-500 text-center py-4">Sin aportaciones recientes.</p>

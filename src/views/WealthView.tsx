@@ -57,7 +57,7 @@ export function WealthView({ data, calc, methods }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <SavingsGoals goals={data.goals} />
-        <Card className="hover:border-indigo-200 transition-colors">
+        <Card>
           <div className="flex justify-between items-center mb-6">
             <h3 className="font-bold text-lg flex items-center gap-3 text-slate-900 tracking-tight">
               <div className="bg-green-50 p-2 rounded-lg text-green-600">
@@ -70,7 +70,7 @@ export function WealthView({ data, calc, methods }) {
           
           <div className="space-y-3">
             {data.assets.map(asset => (
-              <div key={asset.id} className="flex justify-between items-center p-3 bg-white rounded-lg border border-[#E5E5E5] hover:border-indigo-200 transition-colors group">
+              <div key={asset.id} className="flex justify-between items-center p-3 bg-green-50/50 rounded-xl border border-green-100/50 hover:bg-green-50 transition-colors group">
                 <div>
                   <p className="font-medium text-slate-900">{asset.name}</p>
                   <p className="text-xs text-slate-500 mt-0.5">{asset.type} • <span className="text-slate-600 font-medium">{asset.owner}</span></p>
@@ -91,7 +91,7 @@ export function WealthView({ data, calc, methods }) {
           </div>
         </Card>
 
-        <Card className="hover:border-red-200 transition-colors">
+        <Card>
           <h3 className="font-bold text-lg mb-6 flex items-center gap-3 text-slate-900 tracking-tight">
             <div className="bg-red-50 p-2 rounded-lg text-red-600">
               <TrendingDown size={18} />
@@ -100,7 +100,7 @@ export function WealthView({ data, calc, methods }) {
           </h3>
           <div className="space-y-3">
             {data.cards.map(debt => (
-              <div key={debt.id} className="flex justify-between items-center p-3 bg-white rounded-lg border border-[#E5E5E5] hover:border-red-200 transition-colors">
+              <div key={debt.id} className="flex justify-between items-center p-3 bg-rose-50/50 rounded-xl border border-rose-100/50 hover:bg-rose-50 transition-colors">
                 <div>
                   <p className="font-medium text-slate-900">{debt.name}</p>
                   <p className="text-xs text-slate-500 mt-0.5">Tarjeta de Crédito</p>

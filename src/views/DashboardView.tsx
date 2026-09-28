@@ -38,15 +38,18 @@ export function DashboardView({ data, calc, methods }) {
 
   return (
     <div className="space-y-6 animate-in">
-      <div className="bg-white p-8 rounded-2xl border border-[#E5E5E5] flex justify-between items-start">
-        <div>
-          <h2 className="text-slate-500 font-medium mb-2 uppercase tracking-wider text-xs flex items-center gap-2">
+      <div className="bg-slate-900 p-8 rounded-3xl shadow-md flex justify-between items-start relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
+          <PieChart size={240} className="text-white" />
+        </div>
+        <div className="relative z-10">
+          <h2 className="text-slate-400 font-medium mb-2 uppercase tracking-wider text-xs flex items-center gap-2">
             <TrendingUp size={14} /> Presupuesto Base Cero
           </h2>
-          <div className="text-5xl sm:text-6xl font-title font-bold mb-3 tracking-tight text-slate-900 tabular-nums">
+          <div className="text-5xl sm:text-6xl font-title font-bold mb-3 tracking-tight text-white tabular-nums">
             {FormatCurrency(calc.unallocated)}
           </div>
-          <p className="text-sm text-slate-600 max-w-sm leading-relaxed p-3 rounded-lg bg-slate-50 border border-[#E5E5E5]">
+          <p className="text-sm text-slate-300 max-w-sm leading-relaxed p-3 rounded-xl bg-slate-800/50 border border-slate-700/50">
             {calc.unallocated === 0 
               ? '¡Perfecto! Cada peso tiene una misión este mes.' 
               : calc.unallocated > 0 
@@ -54,9 +57,11 @@ export function DashboardView({ data, calc, methods }) {
                 : 'Atención: Tu presupuesto excede tus ingresos.'}
           </p>
         </div>
-        <Button variant="outline" className="text-indigo-600 hover:bg-indigo-50 border border-indigo-200" onClick={() => handleOpenModal()}>
-          <Plus size={18} className="mr-1" /> Ingreso
-        </Button>
+        <div className="relative z-10">
+          <Button className="bg-white text-slate-900 hover:bg-slate-100 shadow-sm border-0" onClick={() => handleOpenModal()}>
+            <Plus size={18} className="mr-1" /> Ingreso
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -69,7 +74,7 @@ export function DashboardView({ data, calc, methods }) {
           </h2>
           <div className="space-y-4">
             {data.users.map(u => (
-              <div key={u.id} className="flex items-center gap-3 p-3 bg-white rounded-lg border border-[#E5E5E5]">
+              <div key={u.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border-0">
                 <div className={`w-10 h-10 rounded-full ${u.avatar || 'bg-slate-200'} flex items-center justify-center text-slate-700 font-bold`}>
                   {u.photoURL ? (
                     <>
@@ -140,7 +145,7 @@ export function DashboardView({ data, calc, methods }) {
             {data.incomes.map(income => {
               const user = data.users.find(u => u.id === income.userId);
               return (
-                <div key={income.id} className="flex justify-between items-center p-3 bg-white rounded-lg border border-[#E5E5E5] group hover:border-indigo-200 transition-colors">
+                <div key={income.id} className="flex justify-between items-center p-3 bg-green-50/50 rounded-xl border border-green-100/50 group hover:bg-green-50 transition-colors">
                   <div className="flex items-center gap-3">
                     <div className={`w-8 h-8 rounded-full ${user?.avatar || 'bg-slate-200'} flex items-center justify-center text-slate-700 font-bold text-xs`}>
                       {user?.photoURL ? (

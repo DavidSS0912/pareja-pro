@@ -57,7 +57,7 @@ export default function App() {
     setHouseId: state.setHouseId,
     setAuthLoading: state.setAuthLoading,
     setDateRange: state.setDateRange,
-    initListeners: state.initListeners,
+    fetchDashboardData: state.fetchDashboardData,
     addExpense: state.addExpense,
     addProject: state.addProject,
     updateProject: state.updateProject,
@@ -85,7 +85,7 @@ export default function App() {
     deleteGoal: state.deleteGoal,
   })));
   const methods = data;
-  const { user, houseId, authLoading, setUser, setHouseId, setAuthLoading, initListeners, dateRange, setDateRange } = data;
+  const { user, houseId, authLoading, setUser, setHouseId, setAuthLoading, fetchDashboardData, dateRange, setDateRange } = data;
 
   const filteredData = useMemo(() => {
     const start = dateRange?.start || '2000-01-01';
@@ -136,10 +136,9 @@ export default function App() {
 
   useEffect(() => {
     if (houseId) {
-      const unsub = initListeners(houseId);
-      return () => unsub();
+      fetchDashboardData(houseId);
     }
-  }, [houseId, initListeners]);
+  }, [houseId, fetchDashboardData]);
 
   const handleJoinHouse = async (accept: boolean) => {
     if (accept && joinHouseConfirm && user) {
@@ -272,7 +271,7 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] text-slate-900 font-sans pb-24 md:pb-0 md:pl-72 relative">
+    <div className="min-h-screen bg-gray-50 text-slate-900 font-sans pb-24 md:pb-0 md:pl-72 relative">
       <nav className="fixed bottom-0 w-full bg-white border-t border-[#E5E5E5] flex overflow-x-auto scrollbar-hide p-3 md:flex-col md:justify-start md:w-72 md:h-full md:left-0 md:top-0 md:border-r md:border-t-0 md:p-6 z-50 transition-all">
         <div className="hidden md:flex mb-12 items-center gap-3 px-2">
           <div className="bg-indigo-600 p-2.5 rounded-lg text-white">
@@ -286,9 +285,9 @@ export default function App() {
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`flex flex-col md:flex-row items-center gap-1 md:gap-3 p-2.5 md:px-4 md:py-3 rounded-lg transition-all duration-200 flex-1 md:flex-none relative group ${
+              className={`flex flex-col md:flex-row items-center gap-1 md:gap-3 p-2.5 md:px-4 md:py-3 rounded-2xl transition-all duration-200 flex-1 md:flex-none relative group ${
                 activeTab === item.id
-                  ? 'text-indigo-600 font-medium bg-indigo-50 border border-indigo-100'
+                  ? 'text-indigo-600 font-bold bg-indigo-50/80 border border-indigo-100'
                   : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 border border-transparent'
               }`}
             >
