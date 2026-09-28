@@ -6,6 +6,7 @@ import { proyectarLiquidacion, ordenarAvalancha, ordenarBolaDNieve } from '../se
 
 export function DebtSimulatorView({ data }) {
   const [strategy, setStrategy] = useState('avalanche');
+  const [pagoExtra, setPagoExtra] = useState(1000);
   
   const activeCards = data.cards.filter(c => c.balance > 0).map(c => ({
     id: c.id,
@@ -41,8 +42,15 @@ export function DebtSimulatorView({ data }) {
         </div>
       </div>
 
-      <div className="bg-indigo-50 p-4 rounded-xl mb-6 flex justify-between items-center">
-        <div><p className="text-sm text-indigo-800 font-bold">Tiempo estimado (pago extra $1000)</p><p className="text-2xl font-black text-indigo-900">{meses} meses</p></div>
+      <div className="bg-indigo-50 p-4 rounded-xl mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div>
+          <p className="text-sm text-indigo-800 font-bold mb-1">Pago Extra Mensual</p>
+          <div className="flex items-center gap-2">
+            <span className="text-indigo-900 font-bold">$</span>
+            <input type="number" value={pagoExtra} onChange={(e) => setPagoExtra(Number(e.target.value))} className="bg-white border border-indigo-200 rounded px-2 py-1 text-indigo-900 font-bold w-24" />
+          </div>
+        </div>
+        <div><p className="text-sm text-indigo-800 font-bold">Tiempo estimado</p><p className="text-2xl font-black text-indigo-900">{meses} meses</p></div>
         <div className="text-right"><p className="text-sm text-indigo-800 font-bold">Interés Total</p><p className="text-2xl font-black text-indigo-900">{FormatCurrency(totalInteresPagado)}</p></div>
       </div>
       <div className="space-y-5">

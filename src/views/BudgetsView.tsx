@@ -7,7 +7,10 @@ import { BudgetForm } from '../components/forms/BudgetForm';
 import { FormatCurrency } from '../utils';
 
 import { calcularArrastre } from '../services/budgetService';
-const normalize = (amount) => amount || 0;
+const normalize = (amount, currency) => {
+  if (!amount) return 0;
+  return currency === 'USD' ? amount * parseFloat(localStorage.getItem('exchangeRate') || '20') : amount;
+};
 
 export function BudgetsView({ data, methods }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -54,13 +57,12 @@ export function BudgetsView({ data, methods }) {
         {data.budgets.map(budget => {
           const computedSpent = data.expenses
             .filter(e => e.category === budget.category && !e.isPrivate)
-            .reduce((acc, curr) => acc + normalize(curr.amount), 0);
+            .reduce((acc, curr) => acc + normalize(curr.amount, curr.currency), 0);
           
           // Fallback to budget.spent if no matching expenses found (for mock data compatibility)
           const actualSpent = computedSpent > 0 ? computedSpent : budget.spent || 0;
 
-          const arrastreReal = calcularArrastre(budget.base, actualSpent);
-          const disponible = budget.base + arrastreReal;
+          const disponible = budget.base + (budget.rollover || 0);
           const porcentaje = Math.min((actualSpent / disponible) * 100, 100) || 0;
           
           let alertColor = budget.type === 'Ahorro' ? 'bg-indigo-500' : 'bg-emerald-500';
