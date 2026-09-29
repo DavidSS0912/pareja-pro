@@ -206,4 +206,64 @@ mutation CreateHouseholdAndUser(
     displayName: $displayName,
     householdId_expr: "response.household_insert.id"
   })
+
+  assetAccount: account_insert(data: {
+    name: "Banco / Efectivo",
+    type: ASSET,
+    ownerType: SHARED,
+    householdId_expr: "response.household_insert.id"
+  })
+
+  incomeAccount: account_insert(data: {
+    name: "Ingresos del Hogar",
+    type: INCOME,
+    ownerType: SHARED,
+    householdId_expr: "response.household_insert.id"
+  })
+
+  expenseAccount: account_insert(data: {
+    name: "Gastos del Hogar",
+    type: EXPENSE,
+    ownerType: SHARED,
+    householdId_expr: "response.household_insert.id"
+  })
+
+  liabilityAccount: account_insert(data: {
+    name: "Tarjetas de Crédito",
+    type: LIABILITY,
+    ownerType: SHARED,
+    householdId_expr: "response.household_insert.id"
+  })
+}
+
+mutation SeedDefaultAccounts(
+  $householdId: UUID!
+) @auth(level: USER) @transaction {
+  assetAccount: account_insert(data: {
+    name: "Banco / Efectivo",
+    type: ASSET,
+    ownerType: SHARED,
+    householdId: $householdId
+  })
+
+  incomeAccount: account_insert(data: {
+    name: "Ingresos del Hogar",
+    type: INCOME,
+    ownerType: SHARED,
+    householdId: $householdId
+  })
+
+  expenseAccount: account_insert(data: {
+    name: "Gastos del Hogar",
+    type: EXPENSE,
+    ownerType: SHARED,
+    householdId: $householdId
+  })
+
+  liabilityAccount: account_insert(data: {
+    name: "Tarjetas de Crédito",
+    type: LIABILITY,
+    ownerType: SHARED,
+    householdId: $householdId
+  })
 }

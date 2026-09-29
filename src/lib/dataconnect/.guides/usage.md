@@ -14,38 +14,38 @@ If a user is not using a supported framework, they can use the generated SDK dir
 Here's an example of how to use it with the first 5 operations:
 
 ```js
-import { getHouseholdNetBalances, getMonthBudgets, getUnassignedCash, getSavingsProjects, getExternalAssets, getNetWorth, getLatestRate, getExpensesByHousehold, getCurrentUser, createJournalWithEntries } from '@pareja-pro/dataconnect';
+import { createJournalWithEntries, createSharedExpenseWithProration, createMsiExpense, createBudget, updateBudgetAmount, createSavingsProject, updateProjectProgress, createExternalAsset, updateExternalAsset, upsertExchangeRate } from '@pareja-pro/dataconnect';
 
-
-// Operation GetHouseholdNetBalances:  For variables, look at type GetHouseholdNetBalancesVars in ../index.d.ts
-const { data } = await GetHouseholdNetBalances(dataConnect, getHouseholdNetBalancesVars);
-
-// Operation GetMonthBudgets:  For variables, look at type GetMonthBudgetsVars in ../index.d.ts
-const { data } = await GetMonthBudgets(dataConnect, getMonthBudgetsVars);
-
-// Operation GetUnassignedCash:  For variables, look at type GetUnassignedCashVars in ../index.d.ts
-const { data } = await GetUnassignedCash(dataConnect, getUnassignedCashVars);
-
-// Operation GetSavingsProjects:  For variables, look at type GetSavingsProjectsVars in ../index.d.ts
-const { data } = await GetSavingsProjects(dataConnect, getSavingsProjectsVars);
-
-// Operation GetExternalAssets:  For variables, look at type GetExternalAssetsVars in ../index.d.ts
-const { data } = await GetExternalAssets(dataConnect, getExternalAssetsVars);
-
-// Operation GetNetWorth:  For variables, look at type GetNetWorthVars in ../index.d.ts
-const { data } = await GetNetWorth(dataConnect, getNetWorthVars);
-
-// Operation GetLatestRate:  For variables, look at type GetLatestRateVars in ../index.d.ts
-const { data } = await GetLatestRate(dataConnect, getLatestRateVars);
-
-// Operation GetExpensesByHousehold:  For variables, look at type GetExpensesByHouseholdVars in ../index.d.ts
-const { data } = await GetExpensesByHousehold(dataConnect, getExpensesByHouseholdVars);
-
-// Operation GetCurrentUser: 
-const { data } = await GetCurrentUser(dataConnect);
 
 // Operation CreateJournalWithEntries:  For variables, look at type CreateJournalWithEntriesVars in ../index.d.ts
 const { data } = await CreateJournalWithEntries(dataConnect, createJournalWithEntriesVars);
+
+// Operation CreateSharedExpenseWithProration:  For variables, look at type CreateSharedExpenseWithProrationVars in ../index.d.ts
+const { data } = await CreateSharedExpenseWithProration(dataConnect, createSharedExpenseWithProrationVars);
+
+// Operation CreateMsiExpense:  For variables, look at type CreateMsiExpenseVars in ../index.d.ts
+const { data } = await CreateMsiExpense(dataConnect, createMsiExpenseVars);
+
+// Operation CreateBudget:  For variables, look at type CreateBudgetVars in ../index.d.ts
+const { data } = await CreateBudget(dataConnect, createBudgetVars);
+
+// Operation UpdateBudgetAmount:  For variables, look at type UpdateBudgetAmountVars in ../index.d.ts
+const { data } = await UpdateBudgetAmount(dataConnect, updateBudgetAmountVars);
+
+// Operation CreateSavingsProject:  For variables, look at type CreateSavingsProjectVars in ../index.d.ts
+const { data } = await CreateSavingsProject(dataConnect, createSavingsProjectVars);
+
+// Operation UpdateProjectProgress:  For variables, look at type UpdateProjectProgressVars in ../index.d.ts
+const { data } = await UpdateProjectProgress(dataConnect, updateProjectProgressVars);
+
+// Operation CreateExternalAsset:  For variables, look at type CreateExternalAssetVars in ../index.d.ts
+const { data } = await CreateExternalAsset(dataConnect, createExternalAssetVars);
+
+// Operation UpdateExternalAsset:  For variables, look at type UpdateExternalAssetVars in ../index.d.ts
+const { data } = await UpdateExternalAsset(dataConnect, updateExternalAssetVars);
+
+// Operation UpsertExchangeRate:  For variables, look at type UpsertExchangeRateVars in ../index.d.ts
+const { data } = await UpsertExchangeRate(dataConnect, upsertExchangeRateVars);
 
 
 ```

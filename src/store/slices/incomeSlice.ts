@@ -2,7 +2,7 @@ import { StateCreator } from 'zustand';
 import { RecordItem } from '../types';
 import { AuthSlice } from './authSlice';
 import { DataSlice } from './dataSlice';
-import { createJournalWithEntries } from '../../lib/dataconnect';
+import { createJournalWithEntries, seedDefaultAccounts } from '../../lib/dataconnect';
 import { useToastStore } from '../useToastStore';
 
 export interface IncomeSlice {
@@ -20,11 +20,33 @@ export const createIncomeSlice: StateCreator<IncomeSlice & AuthSlice & DataSlice
     const state = get();
     const houseId = state.houseId || "00000000-0000-0000-0000-000000000000";
 
-    const incomeAccount = state.accounts?.find((a: any) => a.type === 'INCOME');
-    const assetAccount = state.accounts?.find((a: any) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT');
+    let incomeAccount = state.accounts?.find((a: any) => a.type === 'INCOME');
+    let assetAccount = state.accounts?.find((a: any) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT');
+
+    // If accounts are missing, try to seed them and reload
+    if (!incomeAccount || !assetAccount) {
+      try {
+        useToastStore.getState().addToast("Configurando cuentas contables...", "info");
+        await seedDefaultAccounts({ householdId: houseId });
+        if (state.houseId) await state.fetchDashboardData(state.houseId);
+        // Re-read accounts from updated state
+        const updatedState = get();
+        incomeAccount = updatedState.accounts?.find((a: any) => a.type === 'INCOME');
+        assetAccount = updatedState.accounts?.find((a: any) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT');
+      } catch (seedError) {
+        console.warn("seedDefaultAccounts falló (puede que ya existan):", seedError);
+        // Re-read accounts in case they existed but hadn't loaded yet
+        const updatedState = get();
+        incomeAccount = updatedState.accounts?.find((a: any) => a.type === 'INCOME');
+        assetAccount = updatedState.accounts?.find((a: any) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT');
+      }
+    }
 
     if (!incomeAccount || !assetAccount) {
-      useToastStore.getState().addToast("No se encontraron las cuentas necesarias (INCOME/ASSET) para registrar el ingreso.", "error");
+      useToastStore.getState().addToast(
+        "No se pudieron crear las cuentas contables. Recarga la app e intenta de nuevo.",
+        "error"
+      );
       return;
     }
 

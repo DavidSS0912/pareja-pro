@@ -1,4 +1,4 @@
-import { getCurrentUser, createHouseholdAndUser } from '../lib/dataconnect';
+import { getCurrentUser, createHouseholdAndUser, seedDefaultAccounts } from '../lib/dataconnect';
 
 export const getOrCreateUserAndHouse = async (fbUser: any) => {
   try {
@@ -6,11 +6,22 @@ export const getOrCreateUserAndHouse = async (fbUser: any) => {
     const existing = await getCurrentUser();
     
     if (existing.data.user && existing.data.user.householdId) {
-      console.log("Usuario encontrado en BD:", existing.data.user.householdId);
-      return existing.data.user.householdId;
+      const householdId = existing.data.user.householdId;
+      console.log("Usuario encontrado en BD:", householdId);
+      
+      // 2. Aseguramos que el hogar tenga cuentas contables por defecto
+      try {
+        await seedDefaultAccounts({ householdId });
+        console.log("Cuentas contables verificadas/creadas para hogar existente:", householdId);
+      } catch (seedError) {
+        // Ignoramos el error si las cuentas ya existen (unique constraint violation)
+        console.log("seedDefaultAccounts: las cuentas ya existen o hubo un error menor:", seedError);
+      }
+      
+      return householdId;
     }
     
-    // 2. Si no existe, creamos el Hogar y el Usuario vinculados
+    // 3. Si no existe, creamos el Hogar y el Usuario vinculados (con cuentas por defecto)
     console.log("Usuario no existe en BD, creándolo...");
     const created = await createHouseholdAndUser({
       email: fbUser.email || '',
@@ -18,7 +29,7 @@ export const getOrCreateUserAndHouse = async (fbUser: any) => {
     });
     
     const newHouseholdId = created.data.household_insert.id;
-    console.log("Hogar creado con éxito:", newHouseholdId);
+    console.log("Hogar creado con éxito (cuentas incluidas):", newHouseholdId);
     
     return newHouseholdId;
     

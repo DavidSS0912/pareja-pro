@@ -29,6 +29,7 @@ This README will guide you through the process of using the generated JavaScript
   - [*UpdateExternalAsset*](#updateexternalasset)
   - [*UpsertExchangeRate*](#upsertexchangerate)
   - [*CreateHouseholdAndUser*](#createhouseholdanduser)
+  - [*SeedDefaultAccounts*](#seeddefaultaccounts)
 
 # Accessing the connector
 A connector is a collection of Queries and Mutations. One SDK is generated for each connector - this SDK is generated for the connector `orbita2-connector`. You can find more information about connectors in the [Data Connect documentation](https://firebase.google.com/docs/data-connect#how-does).
@@ -2394,6 +2395,10 @@ The `data` property is an object of type `CreateHouseholdAndUserData`, which is 
 export interface CreateHouseholdAndUserData {
   household_insert: Household_Key;
   user_insert: User_Key;
+  assetAccount: Account_Key;
+  incomeAccount: Account_Key;
+  expenseAccount: Account_Key;
+  liabilityAccount: Account_Key;
 }
 ```
 ### Using `CreateHouseholdAndUser`'s action shortcut function
@@ -2420,12 +2425,20 @@ const { data } = await createHouseholdAndUser(dataConnect, createHouseholdAndUse
 
 console.log(data.household_insert);
 console.log(data.user_insert);
+console.log(data.assetAccount);
+console.log(data.incomeAccount);
+console.log(data.expenseAccount);
+console.log(data.liabilityAccount);
 
 // Or, you can use the `Promise` API.
 createHouseholdAndUser(createHouseholdAndUserVars).then((response) => {
   const data = response.data;
   console.log(data.household_insert);
   console.log(data.user_insert);
+  console.log(data.assetAccount);
+  console.log(data.incomeAccount);
+  console.log(data.expenseAccount);
+  console.log(data.liabilityAccount);
 });
 ```
 
@@ -2456,12 +2469,144 @@ const { data } = await executeMutation(ref);
 
 console.log(data.household_insert);
 console.log(data.user_insert);
+console.log(data.assetAccount);
+console.log(data.incomeAccount);
+console.log(data.expenseAccount);
+console.log(data.liabilityAccount);
 
 // Or, you can use the `Promise` API.
 executeMutation(ref).then((response) => {
   const data = response.data;
   console.log(data.household_insert);
   console.log(data.user_insert);
+  console.log(data.assetAccount);
+  console.log(data.incomeAccount);
+  console.log(data.expenseAccount);
+  console.log(data.liabilityAccount);
+});
+```
+
+## SeedDefaultAccounts
+You can execute the `SeedDefaultAccounts` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+seedDefaultAccounts(vars: SeedDefaultAccountsVariables): MutationPromise<SeedDefaultAccountsData, SeedDefaultAccountsVariables>;
+
+interface SeedDefaultAccountsRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: SeedDefaultAccountsVariables): MutationRef<SeedDefaultAccountsData, SeedDefaultAccountsVariables>;
+}
+export const seedDefaultAccountsRef: SeedDefaultAccountsRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+seedDefaultAccounts(dc: DataConnect, vars: SeedDefaultAccountsVariables): MutationPromise<SeedDefaultAccountsData, SeedDefaultAccountsVariables>;
+
+interface SeedDefaultAccountsRef {
+  ...
+  (dc: DataConnect, vars: SeedDefaultAccountsVariables): MutationRef<SeedDefaultAccountsData, SeedDefaultAccountsVariables>;
+}
+export const seedDefaultAccountsRef: SeedDefaultAccountsRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the seedDefaultAccountsRef:
+```typescript
+const name = seedDefaultAccountsRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `SeedDefaultAccounts` mutation requires an argument of type `SeedDefaultAccountsVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface SeedDefaultAccountsVariables {
+  householdId: UUIDString;
+}
+```
+### Return Type
+Recall that executing the `SeedDefaultAccounts` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `SeedDefaultAccountsData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface SeedDefaultAccountsData {
+  assetAccount: Account_Key;
+  incomeAccount: Account_Key;
+  expenseAccount: Account_Key;
+  liabilityAccount: Account_Key;
+}
+```
+### Using `SeedDefaultAccounts`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, seedDefaultAccounts, SeedDefaultAccountsVariables } from '@pareja-pro/dataconnect';
+
+// The `SeedDefaultAccounts` mutation requires an argument of type `SeedDefaultAccountsVariables`:
+const seedDefaultAccountsVars: SeedDefaultAccountsVariables = {
+  householdId: ..., 
+};
+
+// Call the `seedDefaultAccounts()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await seedDefaultAccounts(seedDefaultAccountsVars);
+// Variables can be defined inline as well.
+const { data } = await seedDefaultAccounts({ householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await seedDefaultAccounts(dataConnect, seedDefaultAccountsVars);
+
+console.log(data.assetAccount);
+console.log(data.incomeAccount);
+console.log(data.expenseAccount);
+console.log(data.liabilityAccount);
+
+// Or, you can use the `Promise` API.
+seedDefaultAccounts(seedDefaultAccountsVars).then((response) => {
+  const data = response.data;
+  console.log(data.assetAccount);
+  console.log(data.incomeAccount);
+  console.log(data.expenseAccount);
+  console.log(data.liabilityAccount);
+});
+```
+
+### Using `SeedDefaultAccounts`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, seedDefaultAccountsRef, SeedDefaultAccountsVariables } from '@pareja-pro/dataconnect';
+
+// The `SeedDefaultAccounts` mutation requires an argument of type `SeedDefaultAccountsVariables`:
+const seedDefaultAccountsVars: SeedDefaultAccountsVariables = {
+  householdId: ..., 
+};
+
+// Call the `seedDefaultAccountsRef()` function to get a reference to the mutation.
+const ref = seedDefaultAccountsRef(seedDefaultAccountsVars);
+// Variables can be defined inline as well.
+const ref = seedDefaultAccountsRef({ householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = seedDefaultAccountsRef(dataConnect, seedDefaultAccountsVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.assetAccount);
+console.log(data.incomeAccount);
+console.log(data.expenseAccount);
+console.log(data.liabilityAccount);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.assetAccount);
+  console.log(data.incomeAccount);
+  console.log(data.expenseAccount);
+  console.log(data.liabilityAccount);
 });
 ```
 
