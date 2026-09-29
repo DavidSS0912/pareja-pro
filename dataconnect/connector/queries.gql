@@ -86,7 +86,33 @@ query GetExpensesByHousehold($householdId: UUID!) @auth(level: USER) {
     amount
     entryType
     createdAt
+    ownerUid
     journal {
+      id
+      description
+      date
+    }
+    account {
+      name
+    }
+  }
+}
+
+query GetIncomesByHousehold($householdId: UUID!) @auth(level: USER) {
+  entries(
+    where: { 
+      journal: { householdId: { eq: $householdId } }, 
+      account: { type: { eq: INCOME } } 
+    },
+    orderBy: { createdAt: DESC }
+  ) {
+    id
+    amount
+    entryType
+    createdAt
+    ownerUid
+    journal {
+      id
       description
       date
     }

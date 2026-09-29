@@ -2,7 +2,7 @@ import { StateCreator } from 'zustand';
 import { RecordItem } from '../types';
 import { AuthSlice } from './authSlice';
 import { DataSlice } from './dataSlice';
-import { createJournalWithEntries, seedDefaultAccounts } from '../../lib/dataconnect';
+import { createJournalWithEntries, seedDefaultAccounts, deleteJournal } from '../../lib/dataconnect';
 import { useToastStore } from '../useToastStore';
 
 export interface IncomeSlice {
@@ -76,7 +76,22 @@ export const createIncomeSlice: StateCreator<IncomeSlice & AuthSlice & DataSlice
   updateIncome: async (_id, _item) => {
     useToastStore.getState().addToast("Operación 'Actualizar Ingreso' no disponible en DataConnect (PostgreSQL).", "error");
   },
-  deleteIncome: async (_id) => {
-    useToastStore.getState().addToast("Operación 'Eliminar Ingreso' no disponible en DataConnect (PostgreSQL).", "error");
+  deleteIncome: async (id) => {
+    const state = get();
+    // Optimistic delete
+    const previousIncomes = [...state.incomes];
+    set((s) => ({ incomes: s.incomes.filter(i => i.id !== id) }));
+    
+    try {
+      if (!id.startsWith('temp-')) {
+        await deleteJournal({ journalId: id });
+        useToastStore.getState().addToast("Ingreso eliminado correctamente", "success");
+        if (state.houseId) await state.fetchDashboardData(state.houseId);
+      }
+    } catch(error) {
+      console.error(error);
+      useToastStore.getState().addToast("Error al eliminar el ingreso", "error");
+      set({ incomes: previousIncomes });
+    }
   }
 });

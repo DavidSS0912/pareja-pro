@@ -7,7 +7,7 @@ import { IncomeSlice } from './incomeSlice';
 import { GoalSlice } from './goalSlice';
 import { UserListSlice } from './userListSlice';
 import { ProjectSlice } from './projectSlice';
-import { getHouseholdNetBalances, getMonthBudgets, getSavingsProjects, getExternalAssets, getExpensesByHousehold, getHouseholdAccounts } from '../../lib/dataconnect';
+import { getHouseholdNetBalances, getMonthBudgets, getSavingsProjects, getExternalAssets, getExpensesByHousehold, getHouseholdAccounts, getIncomesByHousehold } from '../../lib/dataconnect';
 
 export interface DataSlice {
   accounts: any[];
@@ -21,12 +21,13 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
   setAccounts: (accounts) => set({ accounts }),
   fetchDashboardData: async (houseId: string) => {
     try {
-      const [balances, budgets, projects, assets, expensesData] = await Promise.all([
+      const [balances, budgets, projects, assets, expensesData, incomesData] = await Promise.all([
         getHouseholdNetBalances({ householdId: houseId }),
         getMonthBudgets({ householdId: houseId, period: new Date().toISOString().slice(0,7) + '-01' }),
         getSavingsProjects({ householdId: houseId }),
         getExternalAssets({ householdId: houseId }),
-        getExpensesByHousehold({ householdId: houseId })
+        getExpensesByHousehold({ householdId: houseId }),
+        getIncomesByHousehold({ householdId: houseId })
       ]);
       // Load accounts directly (not via entries, so they appear even without transactions)
       const accountsResult = await getHouseholdAccounts({ householdId: houseId });
@@ -42,7 +43,7 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
       if (assets.data?.externalAssets) get().setAssets(assets.data.externalAssets as any);
       if (expensesData.data?.entries) {
         const mappedExpenses = expensesData.data.entries.map((e: any) => ({
-          id: e.id,
+          id: e.journal.id, // Use journal ID for deletion
           amount: e.amount,
           type: e.entryType,
           date: e.journal.date,
@@ -50,6 +51,16 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
           category: e.account.name
         }));
         get().setExpenses(mappedExpenses);
+      }
+      if (incomesData.data?.entries) {
+        const mappedIncomes = incomesData.data.entries.map((e: any) => ({
+          id: e.journal.id, // Use journal ID for deletion
+          amount: Math.abs(e.amount),
+          type: e.journal.description,
+          date: e.journal.date,
+          userId: e.ownerUid
+        }));
+        get().setIncomes(mappedIncomes);
       }
     } catch (error) {
       console.error("Error fetching dashboard data from DataConnect", error);

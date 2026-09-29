@@ -2,7 +2,7 @@ import { StateCreator } from 'zustand';
 import { RecordItem } from '../types';
 import { AuthSlice } from './authSlice';
 import { DataSlice } from './dataSlice';
-import { createSharedExpenseWithProration } from '../../lib/dataconnect';
+import { createSharedExpenseWithProration, deleteJournal } from '../../lib/dataconnect';
 import { useToastStore } from '../useToastStore';
 
 export interface ExpenseSlice {
@@ -65,5 +65,22 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
     }
   },
   updateExpense: async (_id, _item) => { useToastStore.getState().addToast("Operación 'Actualizar Gasto' no disponible en DataConnect (PostgreSQL).", "error"); },
-  deleteExpense: async (_id) => { useToastStore.getState().addToast("Operación 'Eliminar Gasto' no disponible en DataConnect (PostgreSQL).", "error"); }
+  deleteExpense: async (id) => {
+    const state = get();
+    // Optimistic delete
+    const previousExpenses = [...state.expenses];
+    set((s) => ({ expenses: s.expenses.filter(e => e.id !== id) }));
+    
+    try {
+      if (!id.startsWith('temp-')) {
+        await deleteJournal({ journalId: id });
+        useToastStore.getState().addToast("Gasto eliminado correctamente", "success");
+        if (state.houseId) await state.fetchDashboardData(state.houseId);
+      }
+    } catch(error) {
+      console.error(error);
+      useToastStore.getState().addToast("Error al eliminar el gasto", "error");
+      set({ expenses: previousExpenses });
+    }
+  }
 });

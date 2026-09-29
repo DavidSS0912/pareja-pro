@@ -143,6 +143,15 @@ export interface CreateSharedExpenseWithProrationVariables {
   payerAmount: number;
 }
 
+export interface DeleteJournalData {
+  entry_deleteMany: number;
+  journal_delete?: Journal_Key | null;
+}
+
+export interface DeleteJournalVariables {
+  journalId: UUIDString;
+}
+
 export interface Entry_Key {
   id: UUIDString;
   __typename?: 'Entry_Key';
@@ -174,10 +183,12 @@ export interface GetExpensesByHouseholdData {
     amount: number;
     entryType: EntryType;
     createdAt: TimestampString;
+    ownerUid: string;
     journal: {
+      id: UUIDString;
       description: string;
       date: TimestampString;
-    };
+    } & Journal_Key;
     account: {
       name: string;
     };
@@ -226,6 +237,28 @@ export interface GetHouseholdNetBalancesData {
 }
 
 export interface GetHouseholdNetBalancesVariables {
+  householdId: UUIDString;
+}
+
+export interface GetIncomesByHouseholdData {
+  entries: ({
+    id: UUIDString;
+    amount: number;
+    entryType: EntryType;
+    createdAt: TimestampString;
+    ownerUid: string;
+    journal: {
+      id: UUIDString;
+      description: string;
+      date: TimestampString;
+    } & Journal_Key;
+    account: {
+      name: string;
+    };
+  } & Entry_Key)[];
+}
+
+export interface GetIncomesByHouseholdVariables {
   householdId: UUIDString;
 }
 
@@ -502,6 +535,18 @@ export const seedDefaultAccountsRef: SeedDefaultAccountsRef;
 export function seedDefaultAccounts(vars: SeedDefaultAccountsVariables): MutationPromise<SeedDefaultAccountsData, SeedDefaultAccountsVariables>;
 export function seedDefaultAccounts(dc: DataConnect, vars: SeedDefaultAccountsVariables): MutationPromise<SeedDefaultAccountsData, SeedDefaultAccountsVariables>;
 
+interface DeleteJournalRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: DeleteJournalVariables): MutationRef<DeleteJournalData, DeleteJournalVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: DeleteJournalVariables): MutationRef<DeleteJournalData, DeleteJournalVariables>;
+  operationName: string;
+}
+export const deleteJournalRef: DeleteJournalRef;
+
+export function deleteJournal(vars: DeleteJournalVariables): MutationPromise<DeleteJournalData, DeleteJournalVariables>;
+export function deleteJournal(dc: DataConnect, vars: DeleteJournalVariables): MutationPromise<DeleteJournalData, DeleteJournalVariables>;
+
 interface GetHouseholdAccountsRef {
   /* Allow users to create refs without passing in DataConnect */
   (vars: GetHouseholdAccountsVariables): QueryRef<GetHouseholdAccountsData, GetHouseholdAccountsVariables>;
@@ -609,6 +654,18 @@ export const getExpensesByHouseholdRef: GetExpensesByHouseholdRef;
 
 export function getExpensesByHousehold(vars: GetExpensesByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetExpensesByHouseholdData, GetExpensesByHouseholdVariables>;
 export function getExpensesByHousehold(dc: DataConnect, vars: GetExpensesByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetExpensesByHouseholdData, GetExpensesByHouseholdVariables>;
+
+interface GetIncomesByHouseholdRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetIncomesByHouseholdVariables): QueryRef<GetIncomesByHouseholdData, GetIncomesByHouseholdVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetIncomesByHouseholdVariables): QueryRef<GetIncomesByHouseholdData, GetIncomesByHouseholdVariables>;
+  operationName: string;
+}
+export const getIncomesByHouseholdRef: GetIncomesByHouseholdRef;
+
+export function getIncomesByHousehold(vars: GetIncomesByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetIncomesByHouseholdData, GetIncomesByHouseholdVariables>;
+export function getIncomesByHousehold(dc: DataConnect, vars: GetIncomesByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetIncomesByHouseholdData, GetIncomesByHouseholdVariables>;
 
 interface GetCurrentUserRef {
   /* Allow users to create refs without passing in DataConnect */

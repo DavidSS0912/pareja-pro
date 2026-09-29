@@ -17,6 +17,7 @@ This README will guide you through the process of using the generated JavaScript
   - [*GetNetWorth*](#getnetworth)
   - [*GetLatestRate*](#getlatestrate)
   - [*GetExpensesByHousehold*](#getexpensesbyhousehold)
+  - [*GetIncomesByHousehold*](#getincomesbyhousehold)
   - [*GetCurrentUser*](#getcurrentuser)
 - [**Mutations**](#mutations)
   - [*CreateJournalWithEntries*](#createjournalwithentries)
@@ -31,6 +32,7 @@ This README will guide you through the process of using the generated JavaScript
   - [*UpsertExchangeRate*](#upsertexchangerate)
   - [*CreateHouseholdAndUser*](#createhouseholdanduser)
   - [*SeedDefaultAccounts*](#seeddefaultaccounts)
+  - [*DeleteJournal*](#deletejournal)
 
 # Accessing the connector
 A connector is a collection of Queries and Mutations. One SDK is generated for each connector - this SDK is generated for the connector `orbita2-connector`. You can find more information about connectors in the [Data Connect documentation](https://firebase.google.com/docs/data-connect#how-does).
@@ -1037,10 +1039,12 @@ export interface GetExpensesByHouseholdData {
     amount: number;
     entryType: EntryType;
     createdAt: TimestampString;
+    ownerUid: string;
     journal: {
+      id: UUIDString;
       description: string;
       date: TimestampString;
-    };
+    } & Journal_Key;
     account: {
       name: string;
     };
@@ -1096,6 +1100,129 @@ const ref = getExpensesByHouseholdRef({ householdId: ..., });
 // You can also pass in a `DataConnect` instance to the `QueryRef` function.
 const dataConnect = getDataConnect(connectorConfig);
 const ref = getExpensesByHouseholdRef(dataConnect, getExpensesByHouseholdVars);
+
+// Call `executeQuery()` on the reference to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeQuery(ref);
+
+console.log(data.entries);
+
+// Or, you can use the `Promise` API.
+executeQuery(ref).then((response) => {
+  const data = response.data;
+  console.log(data.entries);
+});
+```
+
+## GetIncomesByHousehold
+You can execute the `GetIncomesByHousehold` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+getIncomesByHousehold(vars: GetIncomesByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetIncomesByHouseholdData, GetIncomesByHouseholdVariables>;
+
+interface GetIncomesByHouseholdRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetIncomesByHouseholdVariables): QueryRef<GetIncomesByHouseholdData, GetIncomesByHouseholdVariables>;
+}
+export const getIncomesByHouseholdRef: GetIncomesByHouseholdRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
+```typescript
+getIncomesByHousehold(dc: DataConnect, vars: GetIncomesByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetIncomesByHouseholdData, GetIncomesByHouseholdVariables>;
+
+interface GetIncomesByHouseholdRef {
+  ...
+  (dc: DataConnect, vars: GetIncomesByHouseholdVariables): QueryRef<GetIncomesByHouseholdData, GetIncomesByHouseholdVariables>;
+}
+export const getIncomesByHouseholdRef: GetIncomesByHouseholdRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the getIncomesByHouseholdRef:
+```typescript
+const name = getIncomesByHouseholdRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `GetIncomesByHousehold` query requires an argument of type `GetIncomesByHouseholdVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface GetIncomesByHouseholdVariables {
+  householdId: UUIDString;
+}
+```
+### Return Type
+Recall that executing the `GetIncomesByHousehold` query returns a `QueryPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `GetIncomesByHouseholdData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface GetIncomesByHouseholdData {
+  entries: ({
+    id: UUIDString;
+    amount: number;
+    entryType: EntryType;
+    createdAt: TimestampString;
+    ownerUid: string;
+    journal: {
+      id: UUIDString;
+      description: string;
+      date: TimestampString;
+    } & Journal_Key;
+    account: {
+      name: string;
+    };
+  } & Entry_Key)[];
+}
+```
+### Using `GetIncomesByHousehold`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, getIncomesByHousehold, GetIncomesByHouseholdVariables } from '@pareja-pro/dataconnect';
+
+// The `GetIncomesByHousehold` query requires an argument of type `GetIncomesByHouseholdVariables`:
+const getIncomesByHouseholdVars: GetIncomesByHouseholdVariables = {
+  householdId: ..., 
+};
+
+// Call the `getIncomesByHousehold()` function to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await getIncomesByHousehold(getIncomesByHouseholdVars);
+// Variables can be defined inline as well.
+const { data } = await getIncomesByHousehold({ householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await getIncomesByHousehold(dataConnect, getIncomesByHouseholdVars);
+
+console.log(data.entries);
+
+// Or, you can use the `Promise` API.
+getIncomesByHousehold(getIncomesByHouseholdVars).then((response) => {
+  const data = response.data;
+  console.log(data.entries);
+});
+```
+
+### Using `GetIncomesByHousehold`'s `QueryRef` function
+
+```typescript
+import { getDataConnect, executeQuery } from 'firebase/data-connect';
+import { connectorConfig, getIncomesByHouseholdRef, GetIncomesByHouseholdVariables } from '@pareja-pro/dataconnect';
+
+// The `GetIncomesByHousehold` query requires an argument of type `GetIncomesByHouseholdVariables`:
+const getIncomesByHouseholdVars: GetIncomesByHouseholdVariables = {
+  householdId: ..., 
+};
+
+// Call the `getIncomesByHouseholdRef()` function to get a reference to the query.
+const ref = getIncomesByHouseholdRef(getIncomesByHouseholdVars);
+// Variables can be defined inline as well.
+const ref = getIncomesByHouseholdRef({ householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the `QueryRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = getIncomesByHouseholdRef(dataConnect, getIncomesByHouseholdVars);
 
 // Call `executeQuery()` on the reference to execute the query.
 // You can use the `await` keyword to wait for the promise to resolve.
@@ -2722,6 +2849,120 @@ executeMutation(ref).then((response) => {
   console.log(data.incomeAccount);
   console.log(data.expenseAccount);
   console.log(data.liabilityAccount);
+});
+```
+
+## DeleteJournal
+You can execute the `DeleteJournal` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+deleteJournal(vars: DeleteJournalVariables): MutationPromise<DeleteJournalData, DeleteJournalVariables>;
+
+interface DeleteJournalRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: DeleteJournalVariables): MutationRef<DeleteJournalData, DeleteJournalVariables>;
+}
+export const deleteJournalRef: DeleteJournalRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+deleteJournal(dc: DataConnect, vars: DeleteJournalVariables): MutationPromise<DeleteJournalData, DeleteJournalVariables>;
+
+interface DeleteJournalRef {
+  ...
+  (dc: DataConnect, vars: DeleteJournalVariables): MutationRef<DeleteJournalData, DeleteJournalVariables>;
+}
+export const deleteJournalRef: DeleteJournalRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the deleteJournalRef:
+```typescript
+const name = deleteJournalRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `DeleteJournal` mutation requires an argument of type `DeleteJournalVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface DeleteJournalVariables {
+  journalId: UUIDString;
+}
+```
+### Return Type
+Recall that executing the `DeleteJournal` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `DeleteJournalData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface DeleteJournalData {
+  entry_deleteMany: number;
+  journal_delete?: Journal_Key | null;
+}
+```
+### Using `DeleteJournal`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, deleteJournal, DeleteJournalVariables } from '@pareja-pro/dataconnect';
+
+// The `DeleteJournal` mutation requires an argument of type `DeleteJournalVariables`:
+const deleteJournalVars: DeleteJournalVariables = {
+  journalId: ..., 
+};
+
+// Call the `deleteJournal()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await deleteJournal(deleteJournalVars);
+// Variables can be defined inline as well.
+const { data } = await deleteJournal({ journalId: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await deleteJournal(dataConnect, deleteJournalVars);
+
+console.log(data.entry_deleteMany);
+console.log(data.journal_delete);
+
+// Or, you can use the `Promise` API.
+deleteJournal(deleteJournalVars).then((response) => {
+  const data = response.data;
+  console.log(data.entry_deleteMany);
+  console.log(data.journal_delete);
+});
+```
+
+### Using `DeleteJournal`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, deleteJournalRef, DeleteJournalVariables } from '@pareja-pro/dataconnect';
+
+// The `DeleteJournal` mutation requires an argument of type `DeleteJournalVariables`:
+const deleteJournalVars: DeleteJournalVariables = {
+  journalId: ..., 
+};
+
+// Call the `deleteJournalRef()` function to get a reference to the mutation.
+const ref = deleteJournalRef(deleteJournalVars);
+// Variables can be defined inline as well.
+const ref = deleteJournalRef({ journalId: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = deleteJournalRef(dataConnect, deleteJournalVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.entry_deleteMany);
+console.log(data.journal_delete);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.entry_deleteMany);
+  console.log(data.journal_delete);
 });
 ```
 

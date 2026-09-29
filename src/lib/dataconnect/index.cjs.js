@@ -197,6 +197,20 @@ exports.seedDefaultAccounts = function seedDefaultAccounts(dcOrVars, vars) {
 }
 ;
 
+const deleteJournalRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'DeleteJournal', inputVars);
+}
+deleteJournalRef.operationName = 'DeleteJournal';
+exports.deleteJournalRef = deleteJournalRef;
+
+exports.deleteJournal = function deleteJournal(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(deleteJournalRef(dcInstance, inputVars));
+}
+;
+
 const getHouseholdAccountsRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();
@@ -329,6 +343,21 @@ exports.getExpensesByHousehold = function getExpensesByHousehold(dcOrVars, varsO
   
   const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
   return executeQuery(getExpensesByHouseholdRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
+}
+;
+
+const getIncomesByHouseholdRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetIncomesByHousehold', inputVars);
+}
+getIncomesByHouseholdRef.operationName = 'GetIncomesByHousehold';
+exports.getIncomesByHouseholdRef = getIncomesByHouseholdRef;
+
+exports.getIncomesByHousehold = function getIncomesByHousehold(dcOrVars, varsOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
+  return executeQuery(getIncomesByHouseholdRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
 }
 ;
 
