@@ -29,10 +29,10 @@ export function IncomeForm({ initialData, users, currentUserId, onSubmit, onCanc
   onSubmit: (data: any) => void;
   onCancel: () => void;
 }) {
-  const { register, handleSubmit, formState: { errors } } = useForm<IncomeFormData>({
+  const { register, handleSubmit, setValue, getValues, formState: { errors } } = useForm<IncomeFormData>({
     resolver: zodResolver(incomeSchema),
     defaultValues: initialData || {
-      userId: initialData?.userId || (users?.some(u => u.id === currentUserId) ? currentUserId : users?.[0]?.id) || '',
+      userId: '',
       amount: 0,
       type: 'Sueldo',
       currency: 'MXN',
@@ -40,6 +40,19 @@ export function IncomeForm({ initialData, users, currentUserId, onSubmit, onCanc
       isPrivate: false,
     },
   });
+
+  React.useEffect(() => {
+    const currentFieldValue = getValues('userId');
+    // If no user is selected yet and we have users, set a default
+    if (!currentFieldValue && users && users.length > 0) {
+      const defaultUser = users.some(u => u.id === currentUserId) ? currentUserId : users[0].id;
+      setValue('userId', defaultUser, { 
+        shouldValidate: false,
+        shouldDirty: false, 
+        shouldTouch: false 
+      });
+    }
+  }, [users, currentUserId, setValue, getValues]);
 
   const onFormSubmit = (data: IncomeFormData) => {
     onSubmit(data);
