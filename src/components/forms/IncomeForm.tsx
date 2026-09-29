@@ -29,10 +29,10 @@ export function IncomeForm({ initialData, users, currentUserId, onSubmit, onCanc
   onSubmit: (data: any) => void;
   onCancel: () => void;
 }) {
-  const { register, handleSubmit, setValue, getValues, formState: { errors } } = useForm<IncomeFormData>({
+  const { register, handleSubmit, formState: { errors } } = useForm<IncomeFormData>({
     resolver: zodResolver(incomeSchema),
     defaultValues: initialData || {
-      userId: '',
+      userId: users?.some(u => u.id === currentUserId) ? currentUserId : (users?.[0]?.id || ''),
       amount: 0,
       type: 'Sueldo',
       currency: 'MXN',
@@ -40,19 +40,6 @@ export function IncomeForm({ initialData, users, currentUserId, onSubmit, onCanc
       isPrivate: false,
     },
   });
-
-  React.useEffect(() => {
-    const currentFieldValue = getValues('userId');
-    // If no user is selected yet and we have users, set a default
-    if (!currentFieldValue && users && users.length > 0) {
-      const defaultUser = users.some(u => u.id === currentUserId) ? currentUserId : users[0].id;
-      setValue('userId', defaultUser, { 
-        shouldValidate: false,
-        shouldDirty: false, 
-        shouldTouch: false 
-      });
-    }
-  }, [users, currentUserId, setValue, getValues]);
 
   const onFormSubmit = (data: IncomeFormData) => {
     onSubmit(data);
@@ -80,22 +67,55 @@ export function IncomeForm({ initialData, users, currentUserId, onSubmit, onCanc
           {errors.date && <p id="income-date-error" className="text-red-500 text-xs mt-1">{errors.date.message}</p>}
         </div>
         <div>
-          <label htmlFor="income-userId" className={LABEL_CLASS}>
+          <label className={LABEL_CLASS}>
             <span className="flex items-center gap-1.5">
               <User size={11} />
               Aportador
             </span>
           </label>
-          <select
-            id="income-userId"
-            className={INPUT_CLASS}
-            aria-invalid={!!errors.userId}
-            aria-describedby={errors.userId ? "income-userId-error" : undefined}
-            {...register('userId')}
-          >
-            {users.map((u: any) => <option key={u.id} value={u.id}>{u.name}</option>)}
-          </select>
-          {errors.userId && <p id="income-userId-error" className="text-red-500 text-xs mt-1">{errors.userId.message}</p>}
+          <div className="flex gap-3 mt-2">
+            {users.map((u: any) => (
+              <label 
+                key={u.id} 
+                className="relative cursor-pointer group flex flex-col items-center gap-1.5"
+                title={u.name}
+              >
+                <input
+                  type="radio"
+                  value={u.id}
+                  className="peer sr-only"
+                  aria-invalid={!!errors.userId}
+                  aria-describedby={errors.userId ? "income-userId-error" : undefined}
+                  {...register('userId')}
+                />
+                <div className={`w-10 h-10 rounded-full ${u.avatar || 'bg-slate-200'} flex items-center justify-center text-slate-700 font-bold transition-all peer-checked:ring-2 peer-checked:ring-indigo-600 peer-checked:ring-offset-2 hover:ring-2 hover:ring-indigo-300 hover:ring-offset-1`}>
+                  {u.photoURL ? (
+                    <>
+                      <img 
+                        src={u.photoURL} 
+                        alt={u.name} 
+                        referrerPolicy="no-referrer"
+                        className="w-full h-full object-cover rounded-full" 
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          if (e.currentTarget.nextElementSibling) {
+                            e.currentTarget.nextElementSibling.classList.remove('hidden');
+                          }
+                        }}
+                      />
+                      <span className="hidden text-sm">{u.name?.[0]}</span>
+                    </>
+                  ) : (
+                    <span className="text-sm">{u.name?.[0]}</span>
+                  )}
+                </div>
+                <span className="text-[10px] font-medium text-slate-600 truncate max-w-[60px] text-center peer-checked:text-indigo-700 peer-checked:font-bold">
+                  {u.name?.split(' ')[0]}
+                </span>
+              </label>
+            ))}
+          </div>
+          {errors.userId && <p id="income-userId-error" className="text-red-500 text-xs mt-2">{errors.userId.message}</p>}
         </div>
       </div>
 

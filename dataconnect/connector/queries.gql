@@ -86,3 +86,12 @@ query GetExpensesByHousehold($householdId: UUID!) @auth(level: USER) {
     }
   }
 }
+
+query GetCurrentUser @auth(level: USER) {
+  user(key: { uid_expr: "auth.uid" }) {
+    uid
+    email
+    displayName
+    householdId
+  }
+}

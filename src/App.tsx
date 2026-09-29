@@ -60,6 +60,7 @@ export default function App() {
     setUser: state.setUser,
     setHouseId: state.setHouseId,
     setAuthLoading: state.setAuthLoading,
+    setUsers: state.setUsers,
     setDateRange: state.setDateRange,
     fetchDashboardData: state.fetchDashboardData,
     addExpense: state.addExpense,
@@ -114,6 +115,15 @@ export default function App() {
           const currentHouseId = await getOrCreateUserAndHouse(fbUser);
           setHouseId(currentHouseId);
 
+          // Poblar el store de usuarios con el usuario actual de Firebase Auth
+          const localUser = {
+            id: fbUser.uid,
+            name: fbUser.displayName || fbUser.email || 'Usuario',
+            email: fbUser.email || '',
+            photoURL: fbUser.photoURL || null,
+          };
+          data.setUsers([localUser]);
+
           // Check for invite
           const path = window.location.pathname;
           if (path.startsWith('/invite/')) {
@@ -140,7 +150,7 @@ export default function App() {
       }
     });
     return () => unsub();
-  }, [setUser, setHouseId, setAuthLoading]);
+  }, [setUser, setHouseId, setAuthLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (houseId) {

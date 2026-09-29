@@ -16,6 +16,7 @@ This README will guide you through the process of using the generated JavaScript
   - [*GetNetWorth*](#getnetworth)
   - [*GetLatestRate*](#getlatestrate)
   - [*GetExpensesByHousehold*](#getexpensesbyhousehold)
+  - [*GetCurrentUser*](#getcurrentuser)
 - [**Mutations**](#mutations)
   - [*CreateJournalWithEntries*](#createjournalwithentries)
   - [*CreateSharedExpenseWithProration*](#createsharedexpensewithproration)
@@ -27,6 +28,7 @@ This README will guide you through the process of using the generated JavaScript
   - [*CreateExternalAsset*](#createexternalasset)
   - [*UpdateExternalAsset*](#updateexternalasset)
   - [*UpsertExchangeRate*](#upsertexchangerate)
+  - [*CreateHouseholdAndUser*](#createhouseholdanduser)
 
 # Accessing the connector
 A connector is a collection of Queries and Mutations. One SDK is generated for each connector - this SDK is generated for the connector `orbita2-connector`. You can find more information about connectors in the [Data Connect documentation](https://firebase.google.com/docs/data-connect#how-does).
@@ -989,6 +991,102 @@ console.log(data.entries);
 executeQuery(ref).then((response) => {
   const data = response.data;
   console.log(data.entries);
+});
+```
+
+## GetCurrentUser
+You can execute the `GetCurrentUser` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+getCurrentUser(options?: ExecuteQueryOptions): QueryPromise<GetCurrentUserData, undefined>;
+
+interface GetCurrentUserRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (): QueryRef<GetCurrentUserData, undefined>;
+}
+export const getCurrentUserRef: GetCurrentUserRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
+```typescript
+getCurrentUser(dc: DataConnect, options?: ExecuteQueryOptions): QueryPromise<GetCurrentUserData, undefined>;
+
+interface GetCurrentUserRef {
+  ...
+  (dc: DataConnect): QueryRef<GetCurrentUserData, undefined>;
+}
+export const getCurrentUserRef: GetCurrentUserRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the getCurrentUserRef:
+```typescript
+const name = getCurrentUserRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `GetCurrentUser` query has no variables.
+### Return Type
+Recall that executing the `GetCurrentUser` query returns a `QueryPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `GetCurrentUserData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface GetCurrentUserData {
+  user?: {
+    uid: string;
+    email: string;
+    displayName?: string | null;
+    householdId: UUIDString;
+  } & User_Key;
+}
+```
+### Using `GetCurrentUser`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, getCurrentUser } from '@pareja-pro/dataconnect';
+
+
+// Call the `getCurrentUser()` function to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await getCurrentUser();
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await getCurrentUser(dataConnect);
+
+console.log(data.user);
+
+// Or, you can use the `Promise` API.
+getCurrentUser().then((response) => {
+  const data = response.data;
+  console.log(data.user);
+});
+```
+
+### Using `GetCurrentUser`'s `QueryRef` function
+
+```typescript
+import { getDataConnect, executeQuery } from 'firebase/data-connect';
+import { connectorConfig, getCurrentUserRef } from '@pareja-pro/dataconnect';
+
+
+// Call the `getCurrentUserRef()` function to get a reference to the query.
+const ref = getCurrentUserRef();
+
+// You can also pass in a `DataConnect` instance to the `QueryRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = getCurrentUserRef(dataConnect);
+
+// Call `executeQuery()` on the reference to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeQuery(ref);
+
+console.log(data.user);
+
+// Or, you can use the `Promise` API.
+executeQuery(ref).then((response) => {
+  const data = response.data;
+  console.log(data.user);
 });
 ```
 
@@ -2247,6 +2345,123 @@ console.log(data.exchangeRate_upsert);
 executeMutation(ref).then((response) => {
   const data = response.data;
   console.log(data.exchangeRate_upsert);
+});
+```
+
+## CreateHouseholdAndUser
+You can execute the `CreateHouseholdAndUser` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+createHouseholdAndUser(vars: CreateHouseholdAndUserVariables): MutationPromise<CreateHouseholdAndUserData, CreateHouseholdAndUserVariables>;
+
+interface CreateHouseholdAndUserRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateHouseholdAndUserVariables): MutationRef<CreateHouseholdAndUserData, CreateHouseholdAndUserVariables>;
+}
+export const createHouseholdAndUserRef: CreateHouseholdAndUserRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+createHouseholdAndUser(dc: DataConnect, vars: CreateHouseholdAndUserVariables): MutationPromise<CreateHouseholdAndUserData, CreateHouseholdAndUserVariables>;
+
+interface CreateHouseholdAndUserRef {
+  ...
+  (dc: DataConnect, vars: CreateHouseholdAndUserVariables): MutationRef<CreateHouseholdAndUserData, CreateHouseholdAndUserVariables>;
+}
+export const createHouseholdAndUserRef: CreateHouseholdAndUserRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the createHouseholdAndUserRef:
+```typescript
+const name = createHouseholdAndUserRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `CreateHouseholdAndUser` mutation requires an argument of type `CreateHouseholdAndUserVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface CreateHouseholdAndUserVariables {
+  email: string;
+  displayName: string;
+}
+```
+### Return Type
+Recall that executing the `CreateHouseholdAndUser` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `CreateHouseholdAndUserData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface CreateHouseholdAndUserData {
+  household_insert: Household_Key;
+  user_insert: User_Key;
+}
+```
+### Using `CreateHouseholdAndUser`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, createHouseholdAndUser, CreateHouseholdAndUserVariables } from '@pareja-pro/dataconnect';
+
+// The `CreateHouseholdAndUser` mutation requires an argument of type `CreateHouseholdAndUserVariables`:
+const createHouseholdAndUserVars: CreateHouseholdAndUserVariables = {
+  email: ..., 
+  displayName: ..., 
+};
+
+// Call the `createHouseholdAndUser()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await createHouseholdAndUser(createHouseholdAndUserVars);
+// Variables can be defined inline as well.
+const { data } = await createHouseholdAndUser({ email: ..., displayName: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await createHouseholdAndUser(dataConnect, createHouseholdAndUserVars);
+
+console.log(data.household_insert);
+console.log(data.user_insert);
+
+// Or, you can use the `Promise` API.
+createHouseholdAndUser(createHouseholdAndUserVars).then((response) => {
+  const data = response.data;
+  console.log(data.household_insert);
+  console.log(data.user_insert);
+});
+```
+
+### Using `CreateHouseholdAndUser`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, createHouseholdAndUserRef, CreateHouseholdAndUserVariables } from '@pareja-pro/dataconnect';
+
+// The `CreateHouseholdAndUser` mutation requires an argument of type `CreateHouseholdAndUserVariables`:
+const createHouseholdAndUserVars: CreateHouseholdAndUserVariables = {
+  email: ..., 
+  displayName: ..., 
+};
+
+// Call the `createHouseholdAndUserRef()` function to get a reference to the mutation.
+const ref = createHouseholdAndUserRef(createHouseholdAndUserVars);
+// Variables can be defined inline as well.
+const ref = createHouseholdAndUserRef({ email: ..., displayName: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = createHouseholdAndUserRef(dataConnect, createHouseholdAndUserVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.household_insert);
+console.log(data.user_insert);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.household_insert);
+  console.log(data.user_insert);
 });
 ```
 
