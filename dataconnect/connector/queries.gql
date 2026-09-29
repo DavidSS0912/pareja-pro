@@ -1,3 +1,12 @@
+query GetHouseholdAccounts($householdId: UUID!) @auth(level: USER) {
+  accounts(where: { householdId: { eq: $householdId } }) {
+    id
+    name
+    type
+    ownerType
+  }
+}
+
 query GetHouseholdNetBalances($householdId: UUID!) @auth(level: USER) {
   entries(where: { journal: { householdId: { eq: $householdId } }, account: { type: { in: [ASSET, LIABILITY] } } }) {
     ownerUid

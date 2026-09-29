@@ -8,6 +8,14 @@ export type Int64String = string;
 export type DateString = string;
 
 
+export enum AccountType {
+  ASSET = "ASSET",
+  LIABILITY = "LIABILITY",
+  INCOME = "INCOME",
+  EXPENSE = "EXPENSE",
+  EQUITY = "EQUITY",
+};
+
 export enum EntryType {
   DEBIT = "DEBIT",
   CREDIT = "CREDIT",
@@ -190,6 +198,19 @@ export interface GetExternalAssetsData {
 }
 
 export interface GetExternalAssetsVariables {
+  householdId: UUIDString;
+}
+
+export interface GetHouseholdAccountsData {
+  accounts: ({
+    id: UUIDString;
+    name: string;
+    type: AccountType;
+    ownerType: OwnerType;
+  } & Account_Key)[];
+}
+
+export interface GetHouseholdAccountsVariables {
   householdId: UUIDString;
 }
 
@@ -480,6 +501,18 @@ export const seedDefaultAccountsRef: SeedDefaultAccountsRef;
 
 export function seedDefaultAccounts(vars: SeedDefaultAccountsVariables): MutationPromise<SeedDefaultAccountsData, SeedDefaultAccountsVariables>;
 export function seedDefaultAccounts(dc: DataConnect, vars: SeedDefaultAccountsVariables): MutationPromise<SeedDefaultAccountsData, SeedDefaultAccountsVariables>;
+
+interface GetHouseholdAccountsRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetHouseholdAccountsVariables): QueryRef<GetHouseholdAccountsData, GetHouseholdAccountsVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetHouseholdAccountsVariables): QueryRef<GetHouseholdAccountsData, GetHouseholdAccountsVariables>;
+  operationName: string;
+}
+export const getHouseholdAccountsRef: GetHouseholdAccountsRef;
+
+export function getHouseholdAccounts(vars: GetHouseholdAccountsVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdAccountsData, GetHouseholdAccountsVariables>;
+export function getHouseholdAccounts(dc: DataConnect, vars: GetHouseholdAccountsVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdAccountsData, GetHouseholdAccountsVariables>;
 
 interface GetHouseholdNetBalancesRef {
   /* Allow users to create refs without passing in DataConnect */

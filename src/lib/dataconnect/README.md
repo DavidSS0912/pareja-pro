@@ -8,6 +8,7 @@ This README will guide you through the process of using the generated JavaScript
 - [**Accessing the connector**](#accessing-the-connector)
   - [*Connecting to the local Emulator*](#connecting-to-the-local-emulator)
 - [**Queries**](#queries)
+  - [*GetHouseholdAccounts*](#gethouseholdaccounts)
   - [*GetHouseholdNetBalances*](#gethouseholdnetbalances)
   - [*GetMonthBudgets*](#getmonthbudgets)
   - [*GetUnassignedCash*](#getunassignedcash)
@@ -75,6 +76,120 @@ The following is true for both the action shortcut function and the `QueryRef` f
 - Both functions can be called with or without passing in a `DataConnect` instance as an argument. If no `DataConnect` argument is passed in, then the generated SDK will call `getDataConnect(connectorConfig)` behind the scenes for you.
 
 Below are examples of how to use the `orbita2-connector` connector's generated functions to execute each query. You can also follow the examples from the [Data Connect documentation](https://firebase.google.com/docs/data-connect/web-sdk#using-queries).
+
+## GetHouseholdAccounts
+You can execute the `GetHouseholdAccounts` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+getHouseholdAccounts(vars: GetHouseholdAccountsVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdAccountsData, GetHouseholdAccountsVariables>;
+
+interface GetHouseholdAccountsRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetHouseholdAccountsVariables): QueryRef<GetHouseholdAccountsData, GetHouseholdAccountsVariables>;
+}
+export const getHouseholdAccountsRef: GetHouseholdAccountsRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
+```typescript
+getHouseholdAccounts(dc: DataConnect, vars: GetHouseholdAccountsVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdAccountsData, GetHouseholdAccountsVariables>;
+
+interface GetHouseholdAccountsRef {
+  ...
+  (dc: DataConnect, vars: GetHouseholdAccountsVariables): QueryRef<GetHouseholdAccountsData, GetHouseholdAccountsVariables>;
+}
+export const getHouseholdAccountsRef: GetHouseholdAccountsRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the getHouseholdAccountsRef:
+```typescript
+const name = getHouseholdAccountsRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `GetHouseholdAccounts` query requires an argument of type `GetHouseholdAccountsVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface GetHouseholdAccountsVariables {
+  householdId: UUIDString;
+}
+```
+### Return Type
+Recall that executing the `GetHouseholdAccounts` query returns a `QueryPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `GetHouseholdAccountsData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface GetHouseholdAccountsData {
+  accounts: ({
+    id: UUIDString;
+    name: string;
+    type: AccountType;
+    ownerType: OwnerType;
+  } & Account_Key)[];
+}
+```
+### Using `GetHouseholdAccounts`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, getHouseholdAccounts, GetHouseholdAccountsVariables } from '@pareja-pro/dataconnect';
+
+// The `GetHouseholdAccounts` query requires an argument of type `GetHouseholdAccountsVariables`:
+const getHouseholdAccountsVars: GetHouseholdAccountsVariables = {
+  householdId: ..., 
+};
+
+// Call the `getHouseholdAccounts()` function to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await getHouseholdAccounts(getHouseholdAccountsVars);
+// Variables can be defined inline as well.
+const { data } = await getHouseholdAccounts({ householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await getHouseholdAccounts(dataConnect, getHouseholdAccountsVars);
+
+console.log(data.accounts);
+
+// Or, you can use the `Promise` API.
+getHouseholdAccounts(getHouseholdAccountsVars).then((response) => {
+  const data = response.data;
+  console.log(data.accounts);
+});
+```
+
+### Using `GetHouseholdAccounts`'s `QueryRef` function
+
+```typescript
+import { getDataConnect, executeQuery } from 'firebase/data-connect';
+import { connectorConfig, getHouseholdAccountsRef, GetHouseholdAccountsVariables } from '@pareja-pro/dataconnect';
+
+// The `GetHouseholdAccounts` query requires an argument of type `GetHouseholdAccountsVariables`:
+const getHouseholdAccountsVars: GetHouseholdAccountsVariables = {
+  householdId: ..., 
+};
+
+// Call the `getHouseholdAccountsRef()` function to get a reference to the query.
+const ref = getHouseholdAccountsRef(getHouseholdAccountsVars);
+// Variables can be defined inline as well.
+const ref = getHouseholdAccountsRef({ householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the `QueryRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = getHouseholdAccountsRef(dataConnect, getHouseholdAccountsVars);
+
+// Call `executeQuery()` on the reference to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeQuery(ref);
+
+console.log(data.accounts);
+
+// Or, you can use the `Promise` API.
+executeQuery(ref).then((response) => {
+  const data = response.data;
+  console.log(data.accounts);
+});
+```
 
 ## GetHouseholdNetBalances
 You can execute the `GetHouseholdNetBalances` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):

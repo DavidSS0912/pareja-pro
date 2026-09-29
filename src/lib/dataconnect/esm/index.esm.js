@@ -1,5 +1,13 @@
 import { queryRef, executeQuery, validateArgsWithOptions, mutationRef, executeMutation, validateArgs } from 'firebase/data-connect';
 
+export const AccountType = {
+  ASSET: "ASSET",
+  LIABILITY: "LIABILITY",
+  INCOME: "INCOME",
+  EXPENSE: "EXPENSE",
+  EQUITY: "EQUITY",
+}
+
 export const EntryType = {
   DEBIT: "DEBIT",
   CREDIT: "CREDIT",
@@ -158,6 +166,19 @@ seedDefaultAccountsRef.operationName = 'SeedDefaultAccounts';
 export function seedDefaultAccounts(dcOrVars, vars) {
   const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
   return executeMutation(seedDefaultAccountsRef(dcInstance, inputVars));
+}
+
+export const getHouseholdAccountsRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetHouseholdAccounts', inputVars);
+}
+getHouseholdAccountsRef.operationName = 'GetHouseholdAccounts';
+
+export function getHouseholdAccounts(dcOrVars, varsOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
+  return executeQuery(getHouseholdAccountsRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
 }
 
 export const getHouseholdNetBalancesRef = (dcOrVars, vars) => {

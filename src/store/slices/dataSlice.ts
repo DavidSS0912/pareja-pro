@@ -7,7 +7,7 @@ import { IncomeSlice } from './incomeSlice';
 import { GoalSlice } from './goalSlice';
 import { UserListSlice } from './userListSlice';
 import { ProjectSlice } from './projectSlice';
-import { getHouseholdNetBalances, getMonthBudgets, getSavingsProjects, getExternalAssets, getExpensesByHousehold } from '../../lib/dataconnect';
+import { getHouseholdNetBalances, getMonthBudgets, getSavingsProjects, getExternalAssets, getExpensesByHousehold, getHouseholdAccounts } from '../../lib/dataconnect';
 
 export interface DataSlice {
   accounts: any[];
@@ -28,7 +28,12 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
         getExternalAssets({ householdId: houseId }),
         getExpensesByHousehold({ householdId: houseId })
       ]);
-      if (balances.data?.entries) {
+      // Load accounts directly (not via entries, so they appear even without transactions)
+      const accountsResult = await getHouseholdAccounts({ householdId: houseId });
+      if (accountsResult.data?.accounts) {
+        get().setAccounts(accountsResult.data.accounts as any);
+      } else if (balances.data?.entries) {
+        // Fallback: derive accounts from entries (legacy)
         const uniqueAccounts = Array.from(new Map(balances.data.entries.map((e: any) => [e.account.id, e.account])).values());
         get().setAccounts(uniqueAccounts);
       }
