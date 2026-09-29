@@ -14,7 +14,8 @@ import {
   UserPlus,
   LogOut,
   Target,
-  User
+  User,
+  Users
 } from 'lucide-react';
 import { authService } from './services/authService';
 import { getOrCreateUserAndHouse, checkInvitation, acceptInvitation, createInvitation } from './services/userService';
@@ -289,6 +290,33 @@ export default function App() {
     { id: 'profile', icon: <User size={20} />, label: 'Mi Casa' },
   ];
 
+  const renderContextToggle = () => {
+    const isPersonal = appContext === 'personal';
+    const otherUser = data.users.find(u => u.id !== user?.uid);
+    
+    return (
+      <button 
+        onClick={() => setAppContext(isPersonal ? 'household' : 'personal')}
+        className={`relative flex items-center justify-center w-10 h-10 rounded-full border-2 shadow-sm overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 ${isPersonal ? 'border-slate-200 bg-white' : 'border-indigo-500 bg-indigo-50'}`}
+        title={isPersonal ? "Contexto: Personal" : "Contexto: Hogar"}
+      >
+        {isPersonal ? (
+          user?.photoURL ? (
+            <img src={user.photoURL} alt="Personal" className="w-full h-full object-cover" />
+          ) : (
+            <User size={20} className="text-slate-600" />
+          )
+        ) : (
+          otherUser?.photoURL ? (
+            <img src={otherUser.photoURL} alt="Hogar" className="w-full h-full object-cover" />
+          ) : (
+            <Users size={20} className="text-indigo-600" />
+          )
+        )}
+      </button>
+    );
+  };
+
   return (
     <div className="min-h-[100dvh] bg-gray-50 text-slate-900 font-sans pb-24 md:pb-0 md:pl-72 relative">
       <nav className="fixed bottom-0 w-full bg-white border-t border-[#E5E5E5] flex overflow-x-auto scrollbar-hide p-3 md:flex-col md:justify-start md:w-72 md:h-full md:left-0 md:top-0 md:border-r md:border-t-0 md:p-6 z-50 transition-all">
@@ -342,19 +370,25 @@ export default function App() {
             </div>
             <h1 className="text-xl font-bold tracking-tight text-slate-900 font-title">Órbita2</h1>
           </div>
-          <button onClick={() => { setShowInviteModal(true); handleInvite(); }} className="p-2 text-indigo-600 bg-indigo-50 rounded-lg">
-            <UserPlus size={20} />
-          </button>
+          <div className="flex items-center gap-3">
+            {renderContextToggle()}
+            <button onClick={() => { setShowInviteModal(true); handleInvite(); }} className="p-2 text-indigo-600 bg-indigo-50 rounded-lg">
+              <UserPlus size={20} />
+            </button>
+          </div>
+        </div>
+
+        <div className="hidden md:flex justify-end items-center mb-2 -mt-4">
+           <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full border border-slate-200 shadow-sm">
+             <span className="text-sm font-bold text-slate-600">{appContext === 'personal' ? 'Personal' : 'Hogar'}</span>
+             {renderContextToggle()}
+           </div>
         </div>
 
         {activeTab !== 'historical' && activeTab !== 'terms' && activeTab !== 'privacy' && activeTab !== 'profile' && activeTab !== 'cards' && activeTab !== 'debts' && activeTab !== 'wealth' && (
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4 bg-white p-4 rounded-xl border border-[#E5E5E5]">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Periodo:</span>
             <div className="flex items-center gap-2">
-              <div className="flex gap-2 mr-4">
-              <button onClick={() => setAppContext('household')} className={`px-3 py-1.5 rounded-md text-sm font-bold ${appContext === 'household' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}`}>Hogar</button>
-              <button onClick={() => setAppContext('personal')} className={`px-3 py-1.5 rounded-md text-sm font-bold ${appContext === 'personal' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}`}>Personal</button>
-            </div>
               <label htmlFor="startDate" className="sr-only">Fecha inicial</label>
               <input id="startDate" type="date" value={dateRange?.start || ''} onChange={e => setDateRange(e.target.value, dateRange?.end || '')} className="px-3 py-1.5 bg-white border border-[#E5E5E5] rounded-md text-sm font-medium text-slate-900 focus:ring-1 focus:ring-indigo-500 outline-none transition-all tabular-nums tracking-tight" aria-label="Fecha inicial" />
               <span className="text-slate-400">-</span>
