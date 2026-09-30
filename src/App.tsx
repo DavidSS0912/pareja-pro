@@ -31,7 +31,7 @@ import { DebtSimulatorView } from './views/DebtSimulatorView';
 import { WealthView } from './views/WealthView';
 import { ProjectsView } from './views/ProjectsView';
 import { HistoricalView } from './views/HistoricalView';
-import { ProfileView } from './views/ProfileView';
+
 import { TermsView } from './views/TermsView';
 import { PrivacyPolicyView } from './views/PrivacyPolicyView';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
@@ -271,7 +271,7 @@ export default function App() {
       case 'wealth': return <WealthView data={filteredData} calc={calc} methods={methods} />;
       case 'projects': return <ProjectsView data={filteredData} calc={calc} methods={methods} />;
       case 'historical': return <HistoricalView />;
-      case 'profile': return <ProfileView data={data} />;
+
       case 'terms': return <TermsView />;
       case 'privacy': return <PrivacyPolicyView />;
       default: return <DashboardView data={filteredData} calc={calc} methods={methods} />;
@@ -287,7 +287,7 @@ export default function App() {
     { id: 'projects', icon: <Target size={20} />, label: 'Proyectos' },
     { id: 'wealth', icon: <Landmark size={20} />, label: 'Patrimonio' },
     { id: 'historical', icon: <BarChart3 size={20} />, label: 'Histórico' },
-    { id: 'profile', icon: <User size={20} />, label: 'Mi Casa' },
+
   ];
 
   const renderContextToggle = () => {
@@ -319,23 +319,23 @@ export default function App() {
 
   return (
     <div className="min-h-[100dvh] bg-gray-50 text-slate-900 font-sans pb-24 md:pb-0 md:pl-72 relative">
-      <nav className="fixed bottom-0 w-full bg-white border-t border-[#E5E5E5] flex overflow-x-auto scrollbar-hide p-3 md:flex-col md:justify-start md:w-72 md:h-full md:left-0 md:top-0 md:border-r md:border-t-0 md:p-6 z-50 transition-all">
+      <nav className="fixed bottom-0 w-full bg-slate-900 text-white flex overflow-x-auto scrollbar-hide p-6 md:flex-col md:justify-start md:w-72 md:h-full md:left-0 md:top-0 md:p-8 z-50 transition-all">
         <div className="hidden md:flex mb-12 items-center gap-3 px-2">
-          <div className="bg-indigo-600 p-2.5 rounded-lg text-white">
+          <div className="bg-indigo-600 p-2.5 rounded-2xl text-white">
             <Wallet size={24}/>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-title">Órbita2</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-white font-title">Órbita2</h1>
         </div>
 
-        <div className="flex md:flex-col gap-2 w-full min-w-max">
+        <div className="flex md:flex-col gap-4 w-full min-w-max">
           {navItems.map(item => (
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`flex flex-col md:flex-row items-center gap-1 md:gap-3 p-2.5 md:px-4 md:py-3 rounded-2xl transition-all duration-200 flex-1 md:flex-none relative group ${
+              className={`flex flex-col md:flex-row items-center gap-1 md:gap-3 p-3 md:px-4 md:py-3 rounded-2xl transition-all duration-200 flex-1 md:flex-none relative group ${
                 activeTab === item.id
-                  ? 'text-indigo-600 font-bold bg-indigo-50/80 border border-indigo-100'
-                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 border border-transparent'
+                  ? 'text-white font-medium bg-indigo-600 shadow-md'
+                  : 'text-slate-400 font-normal hover:text-white hover:bg-slate-800'
               }`}
             >
               <div className={`relative z-10 transition-transform duration-200 ${activeTab === item.id ? 'scale-105' : 'group-hover:scale-105'}`}>
@@ -345,18 +345,18 @@ export default function App() {
             </button>
           ))}
           
-          <div className="hidden md:block mt-auto pt-6 border-t border-[#E5E5E5]">
-            <button onClick={() => { setShowInviteModal(true); handleInvite(); }} className="w-full flex items-center gap-3 p-3 rounded-lg text-indigo-600 hover:bg-indigo-50 transition-colors font-medium">
+          <div className="hidden md:block mt-auto pt-8 border-t border-slate-800">
+            <button onClick={() => { setShowInviteModal(true); handleInvite(); }} className="w-full flex items-center gap-3 p-3 rounded-2xl text-indigo-400 hover:bg-slate-800 transition-colors font-medium">
               <UserPlus size={18} />
               <span className="text-sm">Invitar integrante</span>
             </button>
-            <button onClick={() => authService.logout()} className="w-full mt-2 flex items-center gap-3 p-3 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors">
+            <button onClick={() => authService.logout()} className="w-full mt-2 flex items-center gap-3 p-3 rounded-2xl text-slate-400 hover:text-red-400 hover:bg-slate-800 transition-colors">
               <LogOut size={18} />
               <span className="text-sm">Cerrar sesión</span>
             </button>
-            <div className="mt-4 flex gap-4 justify-center text-xs text-slate-400">
-              <button onClick={() => setActiveTab('terms')} className="hover:text-slate-600">Términos</button>
-              <button onClick={() => setActiveTab('privacy')} className="hover:text-slate-600">Privacidad</button>
+            <div className="mt-6 flex gap-4 justify-center text-xs text-slate-500">
+              <button onClick={() => setActiveTab('terms')} className="hover:text-slate-300 transition-colors">Términos</button>
+              <button onClick={() => setActiveTab('privacy')} className="hover:text-slate-300 transition-colors">Privacidad</button>
             </div>
           </div>
         </div>
@@ -385,7 +385,7 @@ export default function App() {
            </div>
         </div>
 
-        {activeTab !== 'historical' && activeTab !== 'terms' && activeTab !== 'privacy' && activeTab !== 'profile' && activeTab !== 'cards' && activeTab !== 'debts' && activeTab !== 'wealth' && (
+        {activeTab !== 'historical' && activeTab !== 'terms' && activeTab !== 'privacy' && activeTab !== 'cards' && activeTab !== 'debts' && activeTab !== 'wealth' && (
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4 bg-white p-4 rounded-xl border border-[#E5E5E5]">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Periodo:</span>
             <div className="flex items-center gap-2">
