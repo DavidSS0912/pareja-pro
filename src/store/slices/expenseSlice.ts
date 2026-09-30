@@ -64,8 +64,7 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
         }));
       }
       useToastStore.getState().addToast("Gasto agregado correctamente", "success");
-      if (state.houseId) await state.fetchDashboardData(state.houseId);
-    } catch (error) {
+      } catch (error) {
       console.error(error);
       useToastStore.getState().addToast("Hubo un error al agregar el gasto", "error");
       set((s) => ({ expenses: s.expenses.filter((e) => e.id !== optimisticExpense.id) }));
@@ -120,8 +119,7 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
       });
       useToastStore.getState().addToast("Gasto actualizado correctamente", "success");
       
-      if (state.houseId) await state.fetchDashboardData(state.houseId);
-    } catch (error: any) {
+      } catch (error: any) {
       console.error(error);
       const errorMsg = error?.message || error?.toString() || JSON.stringify(error);
       useToastStore.getState().addToast("Hubo un error al actualizar el gasto: " + errorMsg, "error");
@@ -138,8 +136,7 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
       if (!id.startsWith('temp-')) {
         await deleteJournal({ journalId: id });
         useToastStore.getState().addToast("Gasto eliminado correctamente", "success");
-        if (state.houseId) await state.fetchDashboardData(state.houseId);
-      }
+        }
     } catch(error) {
       console.error(error);
       useToastStore.getState().addToast("Error al eliminar el gasto", "error");

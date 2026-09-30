@@ -13,19 +13,19 @@ export enum AccountType {
   LIABILITY = "LIABILITY",
   INCOME = "INCOME",
   EXPENSE = "EXPENSE",
-  EQUITY = "EQUITY",
-};
+  EQUITY = "EQUITY"
+}
 
 export enum EntryType {
   DEBIT = "DEBIT",
   CREDIT = "CREDIT",
-};
+}
 
 export enum OwnerType {
   USER_A = "USER_A",
   USER_B = "USER_B",
   SHARED = "SHARED",
-};
+}
 
 
 
@@ -191,7 +191,7 @@ export interface GetExpensesByHouseholdData {
     } & Journal_Key;
     account: {
       name: string;
-    };
+    }
   } & Entry_Key)[];
 }
 
@@ -254,7 +254,7 @@ export interface GetIncomesByHouseholdData {
     } & Journal_Key;
     account: {
       name: string;
-    };
+    }
   } & Entry_Key)[];
 }
 

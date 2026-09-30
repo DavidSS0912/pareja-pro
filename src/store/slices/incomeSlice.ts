@@ -28,7 +28,6 @@ export const createIncomeSlice: StateCreator<IncomeSlice & AuthSlice & DataSlice
       try {
         useToastStore.getState().addToast("Configurando cuentas contables...", "info");
         await seedDefaultAccounts({ householdId: houseId });
-        if (state.houseId) await state.fetchDashboardData(state.houseId);
         // Re-read accounts from updated state
         const updatedState = get();
         incomeAccount = updatedState.accounts?.find((a: any) => a.type === 'INCOME');
@@ -72,8 +71,7 @@ export const createIncomeSlice: StateCreator<IncomeSlice & AuthSlice & DataSlice
         }));
       }
       useToastStore.getState().addToast("Ingreso agregado correctamente", "success");
-      if (state.houseId) await state.fetchDashboardData(state.houseId);
-    } catch(error) {
+      } catch(error) {
       console.error(error);
       useToastStore.getState().addToast("Error al registrar el ingreso", "error");
       set((s) => ({ incomes: s.incomes.filter((i) => i.id !== optimisticIncome.id) }));
@@ -111,8 +109,7 @@ export const createIncomeSlice: StateCreator<IncomeSlice & AuthSlice & DataSlice
       });
 
       useToastStore.getState().addToast("Ingreso actualizado correctamente", "success");
-      if (state.houseId) await state.fetchDashboardData(state.houseId);
-    } catch (error: any) {
+      } catch (error: any) {
       console.error(error);
       const errorMsg = error?.message || error?.toString() || JSON.stringify(error);
       useToastStore.getState().addToast("Error al actualizar el ingreso: " + errorMsg, "error");
@@ -129,8 +126,7 @@ export const createIncomeSlice: StateCreator<IncomeSlice & AuthSlice & DataSlice
       if (!id.startsWith('temp-')) {
         await deleteJournal({ journalId: id });
         useToastStore.getState().addToast("Ingreso eliminado correctamente", "success");
-        if (state.houseId) await state.fetchDashboardData(state.houseId);
-      }
+        }
     } catch(error) {
       console.error(error);
       useToastStore.getState().addToast("Error al eliminar el ingreso", "error");
