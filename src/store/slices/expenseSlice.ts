@@ -18,7 +18,7 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
   setExpenses: (items) => set({ expenses: items }),
   addExpense: async (item) => {
     const state = get();
-    const houseId = state.houseId || "00000000-0000-0000-0000-000000000000";
+    
 
     const expenseAccounts = state.accounts?.filter((a: any) => a.type === 'EXPENSE') || [];
     const assetAccounts = state.accounts?.filter((a: any) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT') || [];
@@ -70,7 +70,63 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
       set((s) => ({ expenses: s.expenses.filter((e) => e.id !== optimisticExpense.id) }));
     }
   },
-  updateExpense: async (_id, _item) => { useToastStore.getState().addToast("Operación 'Actualizar Gasto' no disponible en DataConnect (PostgreSQL).", "error"); },
+  updateExpense: async (id, item) => {
+    const state = get();
+    
+
+    const expenseAccounts = state.accounts?.filter((a: any) => a.type === 'EXPENSE') || [];
+    const assetAccounts = state.accounts?.filter((a: any) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT') || [];
+
+    if (expenseAccounts.length === 0 || assetAccounts.length === 0) {
+      useToastStore.getState().addToast("No se encontraron cuentas de EXPENSE o ASSET/BANK_ACCOUNT.", "error");
+      return;
+    }
+
+    const payerAccountId = assetAccounts[0].id;
+    const user1ExpenseAccountId = expenseAccounts[0].id;
+    const user2ExpenseAccountId = expenseAccounts.length > 1 ? expenseAccounts[1].id : expenseAccounts[0].id;
+
+    let user1Amount = item.amount;
+    let user2Amount = 0;
+    if (item.splitType === '50/50') {
+      user1Amount = item.amount / 2;
+      user2Amount = item.amount / 2;
+    }
+
+    // Optimistic update
+    const previousExpenses = [...state.expenses];
+    set((s) => ({
+      expenses: s.expenses.map((e) => e.id === id ? { ...e, ...item } : e)
+    }));
+
+    try {
+      useToastStore.getState().addToast("Actualizando gasto...", "info");
+      
+      const { updateSharedExpenseWithProration } = await import('../../lib/dataconnect');
+      
+      await updateSharedExpenseWithProration({
+        journalId: id,
+        date: new Date(item.date).toISOString(),
+        description: item.description || item.category || 'Gasto',
+        totalAmount: item.amount,
+        prorataFactor: 1.0,
+        payerAccountId: payerAccountId,
+        user1ExpenseAccountId: user1ExpenseAccountId,
+        user2ExpenseAccountId: user2ExpenseAccountId,
+        user1Amount: user1Amount,
+        user2Amount: user2Amount,
+        payerAmount: item.amount
+      });
+      useToastStore.getState().addToast("Gasto actualizado correctamente", "success");
+      
+      if (state.houseId) await state.fetchDashboardData(state.houseId);
+    } catch (error: any) {
+      console.error(error);
+      const errorMsg = error?.message || error?.toString() || JSON.stringify(error);
+      useToastStore.getState().addToast("Hubo un error al actualizar el gasto: " + errorMsg, "error");
+      set({ expenses: previousExpenses });
+    }
+  },
   deleteExpense: async (id) => {
     const state = get();
     // Optimistic delete

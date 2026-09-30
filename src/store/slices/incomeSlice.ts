@@ -81,10 +81,16 @@ export const createIncomeSlice: StateCreator<IncomeSlice & AuthSlice & DataSlice
   },
   updateIncome: async (id, item) => {
     const state = get();
+    // Optimistic update
+    const previousIncomes = [...state.incomes];
+    set((s) => ({
+      incomes: s.incomes.map((i) => i.id === id ? { ...i, ...item } : i)
+    }));
+
     try {
       useToastStore.getState().addToast("Actualizando ingreso...", "info");
-      
-      const houseId = state.houseId || "00000000-0000-0000-0000-000000000000";
+
+      // Note: unused houseId removed to pass linter
       const incomeAccount = state.accounts?.find((a: any) => a.type === 'INCOME');
       const assetAccount = state.accounts?.find((a: any) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT');
 
@@ -110,7 +116,7 @@ export const createIncomeSlice: StateCreator<IncomeSlice & AuthSlice & DataSlice
       console.error(error);
       const errorMsg = error?.message || error?.toString() || JSON.stringify(error);
       useToastStore.getState().addToast("Error al actualizar el ingreso: " + errorMsg, "error");
-      if (state.houseId) await state.fetchDashboardData(state.houseId);
+      set({ incomes: previousIncomes });
     }
   },
   deleteIncome: async (id) => {
