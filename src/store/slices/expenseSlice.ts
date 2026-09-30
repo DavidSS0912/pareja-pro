@@ -18,6 +18,7 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
   setExpenses: (items) => set({ expenses: items }),
   addExpense: async (item) => {
     const state = get();
+    const houseId = state.houseId || "00000000-0000-0000-0000-000000000000";
     
 
     const expenseAccounts = state.accounts?.filter((a: any) => a.type === 'EXPENSE') || [];
