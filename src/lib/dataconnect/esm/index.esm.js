@@ -180,6 +180,30 @@ export function deleteJournal(dcOrVars, vars) {
   return executeMutation(deleteJournalRef(dcInstance, inputVars));
 }
 
+export const updateJournalWithEntriesRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpdateJournalWithEntries', inputVars);
+}
+updateJournalWithEntriesRef.operationName = 'UpdateJournalWithEntries';
+
+export function updateJournalWithEntries(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(updateJournalWithEntriesRef(dcInstance, inputVars));
+}
+
+export const updateSharedExpenseWithProrationRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpdateSharedExpenseWithProration', inputVars);
+}
+updateSharedExpenseWithProrationRef.operationName = 'UpdateSharedExpenseWithProration';
+
+export function updateSharedExpenseWithProration(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(updateSharedExpenseWithProrationRef(dcInstance, inputVars));
+}
+
 export const getHouseholdAccountsRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();

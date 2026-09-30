@@ -50,7 +50,11 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
           description: e.journal.description,
           category: e.account.name
         }));
-        get().setExpenses(mappedExpenses);
+        // Preserve optimistic temporary items
+        const currentExpenses = get().expenses;
+        const tempExpenses = currentExpenses.filter(e => e.id.startsWith('temp-'));
+        const mergedExpenses = [...tempExpenses, ...mappedExpenses.filter((me: any) => !tempExpenses.find(te => te.id === me.id))];
+        get().setExpenses(mergedExpenses);
       }
       if (incomesData.data?.entries) {
         const mappedIncomes = incomesData.data.entries.map((e: any) => ({
@@ -60,7 +64,11 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
           date: e.journal.date,
           userId: e.ownerUid
         }));
-        get().setIncomes(mappedIncomes);
+        // Preserve optimistic temporary items
+        const currentIncomes = get().incomes;
+        const tempIncomes = currentIncomes.filter(i => i.id.startsWith('temp-'));
+        const mergedIncomes = [...tempIncomes, ...mappedIncomes.filter((mi: any) => !tempIncomes.find(ti => ti.id === mi.id))];
+        get().setIncomes(mergedIncomes);
       }
     } catch (error) {
       console.error("Error fetching dashboard data from DataConnect", error);

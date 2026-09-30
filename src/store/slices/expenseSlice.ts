@@ -43,7 +43,7 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
     set({ expenses: [optimisticExpense, ...state.expenses] });
 
     try {
-      await createSharedExpenseWithProration({
+      const response = await createSharedExpenseWithProration({
         householdId: houseId,
         date: new Date(item.date).toISOString(),
         description: item.description || item.category || 'Gasto',
@@ -56,6 +56,12 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
         user2Amount: user2Amount,
         payerAmount: item.amount
       });
+      const realId = response.data?.journal_insert?.id;
+      if (realId) {
+        set((s) => ({
+          expenses: s.expenses.map((e) => e.id === optimisticExpense.id ? { ...e, id: realId } : e)
+        }));
+      }
       useToastStore.getState().addToast("Gasto agregado correctamente", "success");
       if (state.houseId) await state.fetchDashboardData(state.houseId);
     } catch (error) {

@@ -33,6 +33,8 @@ This README will guide you through the process of using the generated JavaScript
   - [*CreateHouseholdAndUser*](#createhouseholdanduser)
   - [*SeedDefaultAccounts*](#seeddefaultaccounts)
   - [*DeleteJournal*](#deletejournal)
+  - [*UpdateJournalWithEntries*](#updatejournalwithentries)
+  - [*UpdateSharedExpenseWithProration*](#updatesharedexpensewithproration)
 
 # Accessing the connector
 A connector is a collection of Queries and Mutations. One SDK is generated for each connector - this SDK is generated for the connector `orbita2-connector`. You can find more information about connectors in the [Data Connect documentation](https://firebase.google.com/docs/data-connect#how-does).
@@ -2963,6 +2965,313 @@ executeMutation(ref).then((response) => {
   const data = response.data;
   console.log(data.entry_deleteMany);
   console.log(data.journal_delete);
+});
+```
+
+## UpdateJournalWithEntries
+You can execute the `UpdateJournalWithEntries` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+updateJournalWithEntries(vars: UpdateJournalWithEntriesVariables): MutationPromise<UpdateJournalWithEntriesData, UpdateJournalWithEntriesVariables>;
+
+interface UpdateJournalWithEntriesRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateJournalWithEntriesVariables): MutationRef<UpdateJournalWithEntriesData, UpdateJournalWithEntriesVariables>;
+}
+export const updateJournalWithEntriesRef: UpdateJournalWithEntriesRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+updateJournalWithEntries(dc: DataConnect, vars: UpdateJournalWithEntriesVariables): MutationPromise<UpdateJournalWithEntriesData, UpdateJournalWithEntriesVariables>;
+
+interface UpdateJournalWithEntriesRef {
+  ...
+  (dc: DataConnect, vars: UpdateJournalWithEntriesVariables): MutationRef<UpdateJournalWithEntriesData, UpdateJournalWithEntriesVariables>;
+}
+export const updateJournalWithEntriesRef: UpdateJournalWithEntriesRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the updateJournalWithEntriesRef:
+```typescript
+const name = updateJournalWithEntriesRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `UpdateJournalWithEntries` mutation requires an argument of type `UpdateJournalWithEntriesVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface UpdateJournalWithEntriesVariables {
+  journalId: UUIDString;
+  date: TimestampString;
+  description: string;
+  accountId1: UUIDString;
+  amount1: number;
+  prorataFactor1: number;
+  accountId2: UUIDString;
+  amount2: number;
+  prorataFactor2: number;
+}
+```
+### Return Type
+Recall that executing the `UpdateJournalWithEntries` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `UpdateJournalWithEntriesData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface UpdateJournalWithEntriesData {
+  journal_update?: Journal_Key | null;
+  entry_deleteMany: number;
+  entry1: Entry_Key;
+  entry2: Entry_Key;
+}
+```
+### Using `UpdateJournalWithEntries`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, updateJournalWithEntries, UpdateJournalWithEntriesVariables } from '@pareja-pro/dataconnect';
+
+// The `UpdateJournalWithEntries` mutation requires an argument of type `UpdateJournalWithEntriesVariables`:
+const updateJournalWithEntriesVars: UpdateJournalWithEntriesVariables = {
+  journalId: ..., 
+  date: ..., 
+  description: ..., 
+  accountId1: ..., 
+  amount1: ..., 
+  prorataFactor1: ..., 
+  accountId2: ..., 
+  amount2: ..., 
+  prorataFactor2: ..., 
+};
+
+// Call the `updateJournalWithEntries()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await updateJournalWithEntries(updateJournalWithEntriesVars);
+// Variables can be defined inline as well.
+const { data } = await updateJournalWithEntries({ journalId: ..., date: ..., description: ..., accountId1: ..., amount1: ..., prorataFactor1: ..., accountId2: ..., amount2: ..., prorataFactor2: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await updateJournalWithEntries(dataConnect, updateJournalWithEntriesVars);
+
+console.log(data.journal_update);
+console.log(data.entry_deleteMany);
+console.log(data.entry1);
+console.log(data.entry2);
+
+// Or, you can use the `Promise` API.
+updateJournalWithEntries(updateJournalWithEntriesVars).then((response) => {
+  const data = response.data;
+  console.log(data.journal_update);
+  console.log(data.entry_deleteMany);
+  console.log(data.entry1);
+  console.log(data.entry2);
+});
+```
+
+### Using `UpdateJournalWithEntries`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, updateJournalWithEntriesRef, UpdateJournalWithEntriesVariables } from '@pareja-pro/dataconnect';
+
+// The `UpdateJournalWithEntries` mutation requires an argument of type `UpdateJournalWithEntriesVariables`:
+const updateJournalWithEntriesVars: UpdateJournalWithEntriesVariables = {
+  journalId: ..., 
+  date: ..., 
+  description: ..., 
+  accountId1: ..., 
+  amount1: ..., 
+  prorataFactor1: ..., 
+  accountId2: ..., 
+  amount2: ..., 
+  prorataFactor2: ..., 
+};
+
+// Call the `updateJournalWithEntriesRef()` function to get a reference to the mutation.
+const ref = updateJournalWithEntriesRef(updateJournalWithEntriesVars);
+// Variables can be defined inline as well.
+const ref = updateJournalWithEntriesRef({ journalId: ..., date: ..., description: ..., accountId1: ..., amount1: ..., prorataFactor1: ..., accountId2: ..., amount2: ..., prorataFactor2: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = updateJournalWithEntriesRef(dataConnect, updateJournalWithEntriesVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.journal_update);
+console.log(data.entry_deleteMany);
+console.log(data.entry1);
+console.log(data.entry2);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.journal_update);
+  console.log(data.entry_deleteMany);
+  console.log(data.entry1);
+  console.log(data.entry2);
+});
+```
+
+## UpdateSharedExpenseWithProration
+You can execute the `UpdateSharedExpenseWithProration` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+updateSharedExpenseWithProration(vars: UpdateSharedExpenseWithProrationVariables): MutationPromise<UpdateSharedExpenseWithProrationData, UpdateSharedExpenseWithProrationVariables>;
+
+interface UpdateSharedExpenseWithProrationRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateSharedExpenseWithProrationVariables): MutationRef<UpdateSharedExpenseWithProrationData, UpdateSharedExpenseWithProrationVariables>;
+}
+export const updateSharedExpenseWithProrationRef: UpdateSharedExpenseWithProrationRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+updateSharedExpenseWithProration(dc: DataConnect, vars: UpdateSharedExpenseWithProrationVariables): MutationPromise<UpdateSharedExpenseWithProrationData, UpdateSharedExpenseWithProrationVariables>;
+
+interface UpdateSharedExpenseWithProrationRef {
+  ...
+  (dc: DataConnect, vars: UpdateSharedExpenseWithProrationVariables): MutationRef<UpdateSharedExpenseWithProrationData, UpdateSharedExpenseWithProrationVariables>;
+}
+export const updateSharedExpenseWithProrationRef: UpdateSharedExpenseWithProrationRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the updateSharedExpenseWithProrationRef:
+```typescript
+const name = updateSharedExpenseWithProrationRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `UpdateSharedExpenseWithProration` mutation requires an argument of type `UpdateSharedExpenseWithProrationVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface UpdateSharedExpenseWithProrationVariables {
+  journalId: UUIDString;
+  date: TimestampString;
+  description: string;
+  totalAmount: number;
+  prorataFactor: number;
+  payerAccountId: UUIDString;
+  user1ExpenseAccountId: UUIDString;
+  user2ExpenseAccountId: UUIDString;
+  user1Amount: number;
+  user2Amount: number;
+  payerAmount: number;
+}
+```
+### Return Type
+Recall that executing the `UpdateSharedExpenseWithProration` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `UpdateSharedExpenseWithProrationData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface UpdateSharedExpenseWithProrationData {
+  journal_update?: Journal_Key | null;
+  entry_deleteMany: number;
+  payerEntry: Entry_Key;
+  user1Entry: Entry_Key;
+  user2Entry: Entry_Key;
+}
+```
+### Using `UpdateSharedExpenseWithProration`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, updateSharedExpenseWithProration, UpdateSharedExpenseWithProrationVariables } from '@pareja-pro/dataconnect';
+
+// The `UpdateSharedExpenseWithProration` mutation requires an argument of type `UpdateSharedExpenseWithProrationVariables`:
+const updateSharedExpenseWithProrationVars: UpdateSharedExpenseWithProrationVariables = {
+  journalId: ..., 
+  date: ..., 
+  description: ..., 
+  totalAmount: ..., 
+  prorataFactor: ..., 
+  payerAccountId: ..., 
+  user1ExpenseAccountId: ..., 
+  user2ExpenseAccountId: ..., 
+  user1Amount: ..., 
+  user2Amount: ..., 
+  payerAmount: ..., 
+};
+
+// Call the `updateSharedExpenseWithProration()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await updateSharedExpenseWithProration(updateSharedExpenseWithProrationVars);
+// Variables can be defined inline as well.
+const { data } = await updateSharedExpenseWithProration({ journalId: ..., date: ..., description: ..., totalAmount: ..., prorataFactor: ..., payerAccountId: ..., user1ExpenseAccountId: ..., user2ExpenseAccountId: ..., user1Amount: ..., user2Amount: ..., payerAmount: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await updateSharedExpenseWithProration(dataConnect, updateSharedExpenseWithProrationVars);
+
+console.log(data.journal_update);
+console.log(data.entry_deleteMany);
+console.log(data.payerEntry);
+console.log(data.user1Entry);
+console.log(data.user2Entry);
+
+// Or, you can use the `Promise` API.
+updateSharedExpenseWithProration(updateSharedExpenseWithProrationVars).then((response) => {
+  const data = response.data;
+  console.log(data.journal_update);
+  console.log(data.entry_deleteMany);
+  console.log(data.payerEntry);
+  console.log(data.user1Entry);
+  console.log(data.user2Entry);
+});
+```
+
+### Using `UpdateSharedExpenseWithProration`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, updateSharedExpenseWithProrationRef, UpdateSharedExpenseWithProrationVariables } from '@pareja-pro/dataconnect';
+
+// The `UpdateSharedExpenseWithProration` mutation requires an argument of type `UpdateSharedExpenseWithProrationVariables`:
+const updateSharedExpenseWithProrationVars: UpdateSharedExpenseWithProrationVariables = {
+  journalId: ..., 
+  date: ..., 
+  description: ..., 
+  totalAmount: ..., 
+  prorataFactor: ..., 
+  payerAccountId: ..., 
+  user1ExpenseAccountId: ..., 
+  user2ExpenseAccountId: ..., 
+  user1Amount: ..., 
+  user2Amount: ..., 
+  payerAmount: ..., 
+};
+
+// Call the `updateSharedExpenseWithProrationRef()` function to get a reference to the mutation.
+const ref = updateSharedExpenseWithProrationRef(updateSharedExpenseWithProrationVars);
+// Variables can be defined inline as well.
+const ref = updateSharedExpenseWithProrationRef({ journalId: ..., date: ..., description: ..., totalAmount: ..., prorataFactor: ..., payerAccountId: ..., user1ExpenseAccountId: ..., user2ExpenseAccountId: ..., user1Amount: ..., user2Amount: ..., payerAmount: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = updateSharedExpenseWithProrationRef(dataConnect, updateSharedExpenseWithProrationVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.journal_update);
+console.log(data.entry_deleteMany);
+console.log(data.payerEntry);
+console.log(data.user1Entry);
+console.log(data.user2Entry);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.journal_update);
+  console.log(data.entry_deleteMany);
+  console.log(data.payerEntry);
+  console.log(data.user1Entry);
+  console.log(data.user2Entry);
 });
 ```
 

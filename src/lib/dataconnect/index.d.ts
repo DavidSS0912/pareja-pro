@@ -367,6 +367,25 @@ export interface UpdateExternalAssetVariables {
   estimatedValue: number;
 }
 
+export interface UpdateJournalWithEntriesData {
+  journal_update?: Journal_Key | null;
+  entry_deleteMany: number;
+  entry1: Entry_Key;
+  entry2: Entry_Key;
+}
+
+export interface UpdateJournalWithEntriesVariables {
+  journalId: UUIDString;
+  date: TimestampString;
+  description: string;
+  accountId1: UUIDString;
+  amount1: number;
+  prorataFactor1: number;
+  accountId2: UUIDString;
+  amount2: number;
+  prorataFactor2: number;
+}
+
 export interface UpdateProjectProgressData {
   savingsProject_update?: SavingsProject_Key | null;
 }
@@ -374,6 +393,28 @@ export interface UpdateProjectProgressData {
 export interface UpdateProjectProgressVariables {
   projectId: UUIDString;
   amountToAdd: number;
+}
+
+export interface UpdateSharedExpenseWithProrationData {
+  journal_update?: Journal_Key | null;
+  entry_deleteMany: number;
+  payerEntry: Entry_Key;
+  user1Entry: Entry_Key;
+  user2Entry: Entry_Key;
+}
+
+export interface UpdateSharedExpenseWithProrationVariables {
+  journalId: UUIDString;
+  date: TimestampString;
+  description: string;
+  totalAmount: number;
+  prorataFactor: number;
+  payerAccountId: UUIDString;
+  user1ExpenseAccountId: UUIDString;
+  user2ExpenseAccountId: UUIDString;
+  user1Amount: number;
+  user2Amount: number;
+  payerAmount: number;
 }
 
 export interface UpsertExchangeRateData {
@@ -546,6 +587,30 @@ export const deleteJournalRef: DeleteJournalRef;
 
 export function deleteJournal(vars: DeleteJournalVariables): MutationPromise<DeleteJournalData, DeleteJournalVariables>;
 export function deleteJournal(dc: DataConnect, vars: DeleteJournalVariables): MutationPromise<DeleteJournalData, DeleteJournalVariables>;
+
+interface UpdateJournalWithEntriesRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateJournalWithEntriesVariables): MutationRef<UpdateJournalWithEntriesData, UpdateJournalWithEntriesVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: UpdateJournalWithEntriesVariables): MutationRef<UpdateJournalWithEntriesData, UpdateJournalWithEntriesVariables>;
+  operationName: string;
+}
+export const updateJournalWithEntriesRef: UpdateJournalWithEntriesRef;
+
+export function updateJournalWithEntries(vars: UpdateJournalWithEntriesVariables): MutationPromise<UpdateJournalWithEntriesData, UpdateJournalWithEntriesVariables>;
+export function updateJournalWithEntries(dc: DataConnect, vars: UpdateJournalWithEntriesVariables): MutationPromise<UpdateJournalWithEntriesData, UpdateJournalWithEntriesVariables>;
+
+interface UpdateSharedExpenseWithProrationRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateSharedExpenseWithProrationVariables): MutationRef<UpdateSharedExpenseWithProrationData, UpdateSharedExpenseWithProrationVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: UpdateSharedExpenseWithProrationVariables): MutationRef<UpdateSharedExpenseWithProrationData, UpdateSharedExpenseWithProrationVariables>;
+  operationName: string;
+}
+export const updateSharedExpenseWithProrationRef: UpdateSharedExpenseWithProrationRef;
+
+export function updateSharedExpenseWithProration(vars: UpdateSharedExpenseWithProrationVariables): MutationPromise<UpdateSharedExpenseWithProrationData, UpdateSharedExpenseWithProrationVariables>;
+export function updateSharedExpenseWithProration(dc: DataConnect, vars: UpdateSharedExpenseWithProrationVariables): MutationPromise<UpdateSharedExpenseWithProrationData, UpdateSharedExpenseWithProrationVariables>;
 
 interface GetHouseholdAccountsRef {
   /* Allow users to create refs without passing in DataConnect */

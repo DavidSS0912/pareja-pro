@@ -2,7 +2,7 @@ import { StateCreator } from 'zustand';
 import { RecordItem } from '../types';
 import { AuthSlice } from './authSlice';
 import { DataSlice } from './dataSlice';
-import { createJournalWithEntries, seedDefaultAccounts, deleteJournal } from '../../lib/dataconnect';
+import { createJournalWithEntries, updateJournalWithEntries, seedDefaultAccounts, deleteJournal } from '../../lib/dataconnect';
 import { useToastStore } from '../useToastStore';
 
 export interface IncomeSlice {
@@ -54,7 +54,7 @@ export const createIncomeSlice: StateCreator<IncomeSlice & AuthSlice & DataSlice
     set({ incomes: [optimisticIncome, ...state.incomes] });
 
     try {
-      await createJournalWithEntries({
+      const response = await createJournalWithEntries({
         householdId: houseId,
         date: new Date(item.date).toISOString(),
         description: item.type + (item.source ? ` - ${item.source}` : ''),
@@ -65,6 +65,12 @@ export const createIncomeSlice: StateCreator<IncomeSlice & AuthSlice & DataSlice
         amount2: -item.amount,
         prorataFactor2: 1.0
       });
+      const realId = response.data?.journal_insert?.id;
+      if (realId) {
+        set((s) => ({
+          incomes: s.incomes.map((i) => i.id === optimisticIncome.id ? { ...i, id: realId } : i)
+        }));
+      }
       useToastStore.getState().addToast("Ingreso agregado correctamente", "success");
       if (state.houseId) await state.fetchDashboardData(state.houseId);
     } catch(error) {
@@ -73,8 +79,39 @@ export const createIncomeSlice: StateCreator<IncomeSlice & AuthSlice & DataSlice
       set((s) => ({ incomes: s.incomes.filter((i) => i.id !== optimisticIncome.id) }));
     }
   },
-  updateIncome: async (_id, _item) => {
-    useToastStore.getState().addToast("Operación 'Actualizar Ingreso' no disponible en DataConnect (PostgreSQL).", "error");
+  updateIncome: async (id, item) => {
+    const state = get();
+    try {
+      useToastStore.getState().addToast("Actualizando ingreso...", "info");
+      
+      const houseId = state.houseId || "00000000-0000-0000-0000-000000000000";
+      const incomeAccount = state.accounts?.find((a: any) => a.type === 'INCOME');
+      const assetAccount = state.accounts?.find((a: any) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT');
+
+      if (!incomeAccount || !assetAccount) {
+        throw new Error("Cuentas contables no encontradas.");
+      }
+
+      await updateJournalWithEntries({
+        journalId: id,
+        date: new Date(item.date).toISOString(),
+        description: item.type + (item.source ? ` - ${item.source}` : ''),
+        accountId1: incomeAccount.id,
+        amount1: item.amount,
+        prorataFactor1: 1.0,
+        accountId2: assetAccount.id,
+        amount2: -item.amount,
+        prorataFactor2: 1.0
+      });
+
+      useToastStore.getState().addToast("Ingreso actualizado correctamente", "success");
+      if (state.houseId) await state.fetchDashboardData(state.houseId);
+    } catch (error: any) {
+      console.error(error);
+      const errorMsg = error?.message || error?.toString() || JSON.stringify(error);
+      useToastStore.getState().addToast("Error al actualizar el ingreso: " + errorMsg, "error");
+      if (state.houseId) await state.fetchDashboardData(state.houseId);
+    }
   },
   deleteIncome: async (id) => {
     const state = get();

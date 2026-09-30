@@ -267,3 +267,94 @@ mutation SeedDefaultAccounts(
     householdId: $householdId
   })
 }
+
+mutation DeleteJournal(
+  $journalId: UUID!
+) @auth(level: USER) @transaction {
+  entry_deleteMany(where: { journalId: { eq: $journalId } })
+  journal_delete(id: $journalId)
+}
+
+mutation UpdateJournalWithEntries(
+  $journalId: UUID!,
+  $date: Timestamp!,
+  $description: String!,
+  $accountId1: UUID!,
+  $amount1: Float!,
+  $prorataFactor1: Float!,
+  $accountId2: UUID!,
+  $amount2: Float!,
+  $prorataFactor2: Float!
+) @auth(level: USER) @transaction {
+  journal_update(id: $journalId, data: {
+    date: $date,
+    description: $description
+  })
+
+  entry_deleteMany(where: { journalId: { eq: $journalId } })
+
+  entry1: entry_insert(data: {
+    journalId: $journalId,
+    accountId: $accountId1,
+    amount: $amount1,
+    prorataFactor: $prorataFactor1,
+    ownerUid_expr: "auth.uid"
+  })
+
+  entry2: entry_insert(data: {
+    journalId: $journalId,
+    accountId: $accountId2,
+    amount: $amount2,
+    prorataFactor: $prorataFactor2,
+    ownerUid_expr: "auth.uid"
+  })
+}
+
+mutation UpdateSharedExpenseWithProration(
+  $journalId: UUID!,
+  $date: Timestamp!,
+  $description: String!,
+  $totalAmount: Float!,
+  $prorataFactor: Float!,
+  $payerAccountId: UUID!,
+  $user1ExpenseAccountId: UUID!,
+  $user2ExpenseAccountId: UUID!,
+  $user1Amount: Float!,
+  $user2Amount: Float!,
+  $payerAmount: Float!
+) @auth(level: USER) @transaction {
+
+  journal_update(id: $journalId, data: {
+    date: $date,
+    description: $description
+  })
+
+  entry_deleteMany(where: { journalId: { eq: $journalId } })
+
+  payerEntry: entry_insert(data: {
+    journalId: $journalId,
+    accountId: $payerAccountId,
+    amount: $payerAmount,
+    prorataFactor: $prorataFactor,
+    ownerUid_expr: "auth.uid",
+    entryType: CREDIT
+  })
+
+  user1Entry: entry_insert(data: {
+    journalId: $journalId,
+    accountId: $user1ExpenseAccountId,
+    amount: $user1Amount,
+    prorataFactor: $prorataFactor,
+    ownerUid_expr: "auth.uid",
+    entryType: DEBIT
+  })
+
+  user2Entry: entry_insert(data: {
+    journalId: $journalId,
+    accountId: $user2ExpenseAccountId,
+    amount: $user2Amount,
+    prorataFactor: $prorataFactor,
+    ownerUid_expr: "auth.uid",
+    entryType: DEBIT
+  })
+}
