@@ -7,7 +7,6 @@ import {
   CreditCard,
   PieChart,
   ArrowRightLeft,
-  Wallet,
   BarChart3,
   Landmark,
   Flame,
@@ -15,8 +14,13 @@ import {
   LogOut,
   Target,
   User,
-  Users
+  Users,
+  Plus
 } from 'lucide-react';
+import { Modal } from './components/ui/Modal';
+import { IncomeForm } from './components/forms/IncomeForm';
+import { ExpenseForm } from './components/forms/ExpenseForm';
+import { OrbitaLogo } from './components/ui/OrbitaLogo';
 import { authService } from './services/authService';
 import { getOrCreateUserAndHouse, checkInvitation, acceptInvitation, createInvitation } from './services/userService';
 
@@ -42,7 +46,23 @@ export default function App() {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
   const [joinHouseConfirm, setJoinHouseConfirm] = useState<string | null>(null);
-    const [appContext, setAppContext] = useState<any>('household');
+  const [appContext, setAppContext] = useState<any>('household');
+
+  const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
+  const [editingIncome, setEditingIncome] = useState(null);
+  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState(null);
+
+  const handleOpenIncomeModal = (income = null) => {
+    setEditingIncome(income);
+    setIsIncomeModalOpen(true);
+  };
+
+  const handleOpenExpenseModal = (expense = null) => {
+    setEditingExpense(expense);
+    setIsExpenseModalOpen(true);
+  };
+
 
   const data = useAppStore(useShallow(state => ({
     user: state.user,
@@ -90,7 +110,8 @@ export default function App() {
     updateGoal: state.updateGoal,
     deleteGoal: state.deleteGoal,
   })));
-  const methods = data;
+  
+  const methods = { ...data, handleOpenIncomeModal, handleOpenExpenseModal };
   const { user, houseId, authLoading, setUser, setHouseId, setAuthLoading, fetchDashboardData, dateRange, setDateRange } = data;
 
   const filteredData = useMemo(() => {
@@ -98,7 +119,7 @@ export default function App() {
     const end = dateRange?.end || '2100-12-31';
     const filterContext = (items) => {
        const userUid = user?.uid || '';
-       return filtrarPorContexto(items.map(i => ({...i, ownerUid: i.userId || i.paidBy, isShared: !i.isPrivate})), appContext, userUid);
+       return filtrarPorContexto(items.map(i => ({...i, ownerUid: i.ownerUid || i.userId || i.paidBy, isShared: !i.isPrivate})), appContext, userUid);
     };
     return {
       ...data,
@@ -228,14 +249,15 @@ export default function App() {
     const netSettlement = zoeOwesDavid - davidOwesZoe;
     const simplifiedDebt = simplificarDeudas(davidOwesZoe, zoeOwesDavid);
 
-    const totalBudgeted = filteredData.budgets.reduce((acc, curr) => acc + curr.base, 0);
-    const totalDebtAllocated = filteredData.cards.reduce((acc, curr) => acc + curr.balance, 0);
-    const totalSavingsProjects = filteredData.projects ? filteredData.projects.reduce((acc, curr) => acc + curr.currentAmount, 0) : 0;
+    const totalBudgeted = (filteredData.budgets || []).reduce((acc, curr) => acc + (Number(curr.base) || 0), 0);
+    const totalDebtAllocated = (filteredData.cards || []).reduce((acc, curr) => acc + (Number(curr.balance) || 0), 0);
+    const totalSavingsProjects = (filteredData.projects || []).reduce((acc, curr) => acc + (Number(curr.currentAmount) || 0), 0);
     const unallocated = totalIncome - (totalBudgeted + totalDebtAllocated + totalSavingsProjects);
 
-    const needs = filteredData.budgets.filter(b => b.type === 'Necesidad').reduce((acc, curr) => acc + curr.base, 0);
-    const wants = filteredData.budgets.filter(b => b.type === 'Deseo').reduce((acc, curr) => acc + curr.base, 0);
-    const savings = filteredData.budgets.filter(b => b.type === 'Ahorro').reduce((acc, curr) => acc + curr.base, 0);
+    const needs = (filteredData.budgets || []).filter(b => b.type === 'Necesidad').reduce((acc, curr) => acc + (Number(curr.base) || 0), 0);
+    const wants = (filteredData.budgets || []).filter(b => b.type === 'Deseo').reduce((acc, curr) => acc + (Number(curr.base) || 0), 0);
+    const savings = (filteredData.budgets || []).filter(b => b.type === 'Ahorro').reduce((acc, curr) => acc + (Number(curr.base) || 0), 0);
+
 
     const totalAssets = filteredData.assets.reduce((acc, curr) => acc + curr.value, 0);
     const totalLiabilities = filteredData.cards.reduce((acc, curr) => acc + curr.balance, 0);
@@ -321,10 +343,8 @@ export default function App() {
     <div className="min-h-[100dvh] bg-gray-50 text-slate-900 font-sans pb-24 md:pb-0 md:pl-72 relative">
       <nav className="fixed bottom-0 w-full bg-slate-900 text-white flex overflow-x-auto scrollbar-hide p-6 md:flex-col md:justify-start md:w-72 md:h-full md:left-0 md:top-0 md:p-8 z-50 transition-all">
         <div className="hidden md:flex mb-12 items-center gap-3 px-2">
-          <div className="bg-indigo-600 p-2.5 rounded-2xl text-white">
-            <Wallet size={24}/>
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white font-title">Órbita2</h1>
+          <OrbitaLogo size={44} />
+          <h1 className="text-2xl font-bold tracking-tight text-white font-title">Orbita2</h1>
         </div>
 
         <div className="flex md:flex-col gap-4 w-full min-w-max">
@@ -365,10 +385,8 @@ export default function App() {
       <main className="p-4 md:p-10 max-w-5xl mx-auto space-y-6 relative z-10">
         <div className="md:hidden flex items-center justify-between mb-6 bg-white p-4 border-b border-[#E5E5E5] -mx-4 -mt-4">
           <div className="flex items-center gap-3">
-            <div className="bg-indigo-600 p-2 rounded-lg text-white">
-              <Wallet size={20}/>
-            </div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-900 font-title">Órbita2</h1>
+            <OrbitaLogo size={36} />
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 font-title">Orbita2</h1>
           </div>
           <div className="flex items-center gap-3">
             {renderContextToggle()}
@@ -386,14 +404,25 @@ export default function App() {
         </div>
 
         {activeTab !== 'historical' && activeTab !== 'terms' && activeTab !== 'privacy' && activeTab !== 'cards' && activeTab !== 'debts' && activeTab !== 'wealth' && (
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-4 bg-white p-4 rounded-xl border border-[#E5E5E5]">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Periodo:</span>
-            <div className="flex items-center gap-2">
-              <label htmlFor="startDate" className="sr-only">Fecha inicial</label>
-              <input id="startDate" type="date" value={dateRange?.start || ''} onChange={e => setDateRange(e.target.value, dateRange?.end || '')} className="px-3 py-1.5 bg-white border border-[#E5E5E5] rounded-md text-sm font-medium text-slate-900 focus:ring-1 focus:ring-indigo-500 outline-none transition-all tabular-nums tracking-tight" aria-label="Fecha inicial" />
-              <span className="text-slate-400">-</span>
-              <label htmlFor="endDate" className="sr-only">Fecha final</label>
-              <input id="endDate" type="date" value={dateRange?.end || ''} onChange={e => setDateRange(dateRange?.start || '', e.target.value)} className="px-3 py-1.5 bg-white border border-[#E5E5E5] rounded-md text-sm font-medium text-slate-900 focus:ring-1 focus:ring-indigo-500 outline-none transition-all tabular-nums tracking-tight" aria-label="Fecha final" />
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-3 md:p-4 rounded-2xl border border-transparent shadow-sm">
+            <div className="flex items-center gap-3 w-full md:w-1/2">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:block">Periodo:</span>
+              <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-full flex-1 md:flex-none">
+                <label htmlFor="startDate" className="sr-only">Fecha inicial</label>
+                <input id="startDate" type="date" value={dateRange?.start || ''} onChange={e => setDateRange(e.target.value, dateRange?.end || '')} className="px-3 py-2 bg-transparent text-sm font-medium text-slate-700 outline-none transition-all tabular-nums tracking-tight w-full" aria-label="Fecha inicial" />
+                <span className="text-slate-300 font-bold">-</span>
+                <label htmlFor="endDate" className="sr-only">Fecha final</label>
+                <input id="endDate" type="date" value={dateRange?.end || ''} onChange={e => setDateRange(dateRange?.start || '', e.target.value)} className="px-3 py-2 bg-transparent text-sm font-medium text-slate-700 outline-none transition-all tabular-nums tracking-tight w-full" aria-label="Fecha final" />
+              </div>
+            </div>
+            
+            <div className="flex gap-2 w-full md:w-1/2 justify-end">
+              <button onClick={() => handleOpenExpenseModal()} className="flex-1 md:flex-none bg-rose-50 hover:bg-rose-100 text-rose-600 px-4 py-2.5 rounded-full text-sm font-bold flex items-center justify-center gap-2 transition-colors">
+                <Plus size={16} /> Nuevo Gasto
+              </button>
+              <button onClick={() => handleOpenIncomeModal()} className="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm px-4 py-2.5 rounded-full text-sm font-bold flex items-center justify-center gap-2 transition-colors">
+                <Plus size={16} /> Nuevo Ingreso
+              </button>
             </div>
           </div>
         )}
@@ -444,6 +473,50 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Modals for Income and Expense */}
+      <Modal 
+        isOpen={isIncomeModalOpen} 
+        onClose={() => setIsIncomeModalOpen(false)} 
+        title={editingIncome ? "Editar Ingreso" : "Nuevo Ingreso"}
+      >
+        {isIncomeModalOpen && (
+          <IncomeForm 
+            key={editingIncome ? editingIncome.id : 'new-inc'}
+            initialData={editingIncome} 
+            users={data.users} 
+            currentUserId={user?.uid}
+            onSubmit={(formData) => {
+              if (editingIncome) methods.updateIncome(editingIncome.id, formData);
+              else methods.addIncome(formData);
+              setIsIncomeModalOpen(false);
+            }} 
+            onCancel={() => setIsIncomeModalOpen(false)} 
+          />
+        )}
+      </Modal>
+
+      <Modal 
+        isOpen={isExpenseModalOpen} 
+        onClose={() => setIsExpenseModalOpen(false)} 
+        title={editingExpense ? "Editar Gasto" : "Nuevo Gasto"}
+      >
+        {isExpenseModalOpen && (
+          <ExpenseForm 
+            key={editingExpense ? editingExpense.id : 'new-exp'}
+            initialData={editingExpense} 
+            users={data.users} 
+            budgets={data.budgets || []}
+            currentUserId={user?.uid}
+            onSubmit={(formData) => {
+              if (editingExpense) methods.updateExpense(editingExpense.id, formData);
+              else methods.addExpense(formData);
+              setIsExpenseModalOpen(false);
+            }} 
+            onCancel={() => setIsExpenseModalOpen(false)} 
+          />
+        )}
+      </Modal>
 
       {/* Toast Notifications */}
       <ToastContainer />

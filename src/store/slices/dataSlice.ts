@@ -7,14 +7,17 @@ import { IncomeSlice } from './incomeSlice';
 import { GoalSlice } from './goalSlice';
 import { UserListSlice } from './userListSlice';
 import { ProjectSlice } from './projectSlice';
+import { AuthSlice } from './authSlice';
 import { getHouseholdNetBalances, getMonthBudgets, getSavingsProjects, getExternalAssets, getExpensesByHousehold, getHouseholdAccounts, getIncomesByHousehold } from '../../lib/dataconnect';
 
 export interface DataSlice {
   accounts: any[];
   setAccounts: (accounts: any[]) => void;
   fetchDashboardData: (houseId: string) => Promise<void>;
+  refreshExpenses: () => Promise<void>;
+  refreshIncomes: () => Promise<void>;
 }
-type CombinedSlices = ExpenseSlice & BudgetSlice & CardSlice & AssetSlice & IncomeSlice & GoalSlice & UserListSlice & ProjectSlice;
+type CombinedSlices = ExpenseSlice & BudgetSlice & CardSlice & AssetSlice & IncomeSlice & GoalSlice & UserListSlice & ProjectSlice & AuthSlice;
 
 export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], DataSlice> = (set, get) => ({
   accounts: [],
@@ -48,7 +51,10 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
           type: e.entryType,
           date: e.journal.date,
           description: e.journal.description,
-          category: e.account.name
+          category: e.account.name,
+          ownerUid: e.ownerUid,
+          paidBy: e.ownerUid,
+          isPrivate: !e.isShared
         }));
         // Preserve optimistic temporary items
         const currentExpenses = get().expenses;
@@ -62,7 +68,9 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
           amount: Math.abs(e.amount),
           type: e.journal.description,
           date: e.journal.date,
-          userId: e.ownerUid
+          userId: e.ownerUid,
+          ownerUid: e.ownerUid,
+          isPrivate: !e.isShared
         }));
         // Preserve optimistic temporary items
         const currentIncomes = get().incomes;
@@ -73,5 +81,51 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
     } catch (error) {
       console.error("Error fetching dashboard data from DataConnect", error);
     }
-  }
+  },
+  refreshExpenses: async () => {
+    const state = get();
+    const houseId = state.houseId;
+    if (!houseId) return;
+    try {
+      const expensesData = await getExpensesByHousehold({ householdId: houseId });
+      if (expensesData.data?.entries) {
+        const mappedExpenses = expensesData.data.entries.map((e: any) => ({
+          id: e.journal.id,
+          amount: e.amount,
+          type: e.entryType,
+          date: e.journal.date,
+          description: e.journal.description,
+          category: e.account.name,
+          ownerUid: e.ownerUid,
+          paidBy: e.ownerUid,
+          isPrivate: !e.isShared,
+        }));
+        get().setExpenses(mappedExpenses);
+      }
+    } catch (error) {
+      console.error('Error refreshing expenses', error);
+    }
+  },
+  refreshIncomes: async () => {
+    const state = get();
+    const houseId = state.houseId;
+    if (!houseId) return;
+    try {
+      const incomesData = await getIncomesByHousehold({ householdId: houseId });
+      if (incomesData.data?.entries) {
+        const mappedIncomes = incomesData.data.entries.map((e: any) => ({
+          id: e.journal.id,
+          amount: Math.abs(e.amount),
+          type: e.journal.description,
+          date: e.journal.date,
+          userId: e.ownerUid,
+          ownerUid: e.ownerUid,
+          isPrivate: !e.isShared,
+        }));
+        get().setIncomes(mappedIncomes);
+      }
+    } catch (error) {
+      console.error('Error refreshing incomes', error);
+    }
+  },
 });
