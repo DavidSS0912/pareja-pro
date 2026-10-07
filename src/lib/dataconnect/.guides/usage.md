@@ -14,7 +14,7 @@ If a user is not using a supported framework, they can use the generated SDK dir
 Here's an example of how to use it with the first 5 operations:
 
 ```js
-import { createJournalWithEntries, createSharedExpenseWithProration, createMsiExpense, createBudget, updateBudgetAmount, createSavingsProject, updateProjectProgress, createExternalAsset, updateExternalAsset, upsertExchangeRate } from '@pareja-pro/dataconnect';
+import { createJournalWithEntries, createSharedExpenseWithProration, createMsiExpense, createBudget, updateBudget, deleteBudget, createAccount, updateAccount, archiveAccount, deleteAccount } from '@pareja-pro/dataconnect';
 
 
 // Operation CreateJournalWithEntries:  For variables, look at type CreateJournalWithEntriesVars in ../index.d.ts
@@ -29,23 +29,23 @@ const { data } = await CreateMsiExpense(dataConnect, createMsiExpenseVars);
 // Operation CreateBudget:  For variables, look at type CreateBudgetVars in ../index.d.ts
 const { data } = await CreateBudget(dataConnect, createBudgetVars);
 
-// Operation UpdateBudgetAmount:  For variables, look at type UpdateBudgetAmountVars in ../index.d.ts
-const { data } = await UpdateBudgetAmount(dataConnect, updateBudgetAmountVars);
+// Operation UpdateBudget:  For variables, look at type UpdateBudgetVars in ../index.d.ts
+const { data } = await UpdateBudget(dataConnect, updateBudgetVars);
 
-// Operation CreateSavingsProject:  For variables, look at type CreateSavingsProjectVars in ../index.d.ts
-const { data } = await CreateSavingsProject(dataConnect, createSavingsProjectVars);
+// Operation DeleteBudget:  For variables, look at type DeleteBudgetVars in ../index.d.ts
+const { data } = await DeleteBudget(dataConnect, deleteBudgetVars);
 
-// Operation UpdateProjectProgress:  For variables, look at type UpdateProjectProgressVars in ../index.d.ts
-const { data } = await UpdateProjectProgress(dataConnect, updateProjectProgressVars);
+// Operation CreateAccount:  For variables, look at type CreateAccountVars in ../index.d.ts
+const { data } = await CreateAccount(dataConnect, createAccountVars);
 
-// Operation CreateExternalAsset:  For variables, look at type CreateExternalAssetVars in ../index.d.ts
-const { data } = await CreateExternalAsset(dataConnect, createExternalAssetVars);
+// Operation UpdateAccount:  For variables, look at type UpdateAccountVars in ../index.d.ts
+const { data } = await UpdateAccount(dataConnect, updateAccountVars);
 
-// Operation UpdateExternalAsset:  For variables, look at type UpdateExternalAssetVars in ../index.d.ts
-const { data } = await UpdateExternalAsset(dataConnect, updateExternalAssetVars);
+// Operation ArchiveAccount:  For variables, look at type ArchiveAccountVars in ../index.d.ts
+const { data } = await ArchiveAccount(dataConnect, archiveAccountVars);
 
-// Operation UpsertExchangeRate:  For variables, look at type UpsertExchangeRateVars in ../index.d.ts
-const { data } = await UpsertExchangeRate(dataConnect, upsertExchangeRateVars);
+// Operation DeleteAccount:  For variables, look at type DeleteAccountVars in ../index.d.ts
+const { data } = await DeleteAccount(dataConnect, deleteAccountVars);
 
 
 ```

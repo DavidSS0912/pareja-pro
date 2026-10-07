@@ -251,7 +251,7 @@ export const ProjectsView = ({ data, methods }: any) => {
       <div className="bg-white rounded-3xl shadow-sm border-0 p-6 mt-6">
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-bold text-slate-900 font-title flex items-center gap-2"><Flag size={18} className="text-slate-500"/> Hitos y Tareas</h3>
-          <button onClick={() => setShowMilestoneForm(true)} className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded hover:bg-indigo-100">
+          <button onClick={() => setShowMilestoneForm(true)} className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded hover:bg-primary/20">
             + Añadir
           </button>
         </div>
@@ -272,7 +272,7 @@ export const ProjectsView = ({ data, methods }: any) => {
                   <div className="flex-1">
                     <p className={`text-sm font-bold flex items-center gap-2 ${m.isCompleted ? 'text-slate-600 line-through' : 'text-slate-900'}`}>
                       {m.title}
-                      <button onClick={() => handleEditMilestone(m)} className="text-slate-500 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => handleEditMilestone(m)} className="text-slate-500 hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity">
                         <Edit2 size={12} />
                       </button>
                     </p>
@@ -302,25 +302,25 @@ export const ProjectsView = ({ data, methods }: any) => {
               <form onSubmit={handleSaveProject} className="space-y-4">
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1">Nombre del Proyecto</label>
-                  <input type="text" required value={newProject.name} onChange={e => setNewProject({...newProject, name: e.target.value})} className="w-full border border-slate-100 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Ej. Vacaciones Europa" />
+                  <input type="text" required value={newProject.name} onChange={e => setNewProject({...newProject, name: e.target.value})} className="w-full border border-slate-100 rounded-lg p-2.5 focus:ring-2 focus:ring-primary/50 outline-none" placeholder="Ej. Vacaciones Europa" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-1">Monto Meta ($)</label>
-                    <input type="number" required min="1" value={newProject.targetAmount || ''} onChange={e => setNewProject({...newProject, targetAmount: Number(e.target.value)})} className="w-full border border-slate-100 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="100000" />
+                    <input type="number" required min="1" value={newProject.targetAmount || ''} onChange={e => setNewProject({...newProject, targetAmount: Number(e.target.value)})} className="w-full border border-slate-100 rounded-lg p-2.5 focus:ring-2 focus:ring-primary/50 outline-none" placeholder="100000" />
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-1">Cuota Mensual ($)</label>
-                    <input type="number" required min="1" value={newProject.monthlyQuota || ''} onChange={e => setNewProject({...newProject, monthlyQuota: Number(e.target.value)})} className="w-full border border-slate-100 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="5000" />
+                    <input type="number" required min="1" value={newProject.monthlyQuota || ''} onChange={e => setNewProject({...newProject, monthlyQuota: Number(e.target.value)})} className="w-full border border-slate-100 rounded-lg p-2.5 focus:ring-2 focus:ring-primary/50 outline-none" placeholder="5000" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1">Cuenta Destino</label>
-                  <input type="text" value={newProject.targetAccount} onChange={e => setNewProject({...newProject, targetAccount: e.target.value})} className="w-full border border-slate-100 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Ej. Cuenta Nu (Fondo Ahorro)" />
+                  <input type="text" value={newProject.targetAccount} onChange={e => setNewProject({...newProject, targetAccount: e.target.value})} className="w-full border border-slate-100 rounded-lg p-2.5 focus:ring-2 focus:ring-primary/50 outline-none" placeholder="Ej. Cuenta Nu (Fondo Ahorro)" />
                 </div>
                 <div className="flex gap-3 pt-2">
                   <button type="button" onClick={closeProjectForm} className="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-bold hover:bg-slate-200 transition-colors">Cancelar</button>
-                  <button type="submit" className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-colors">Guardar</button>
+                  <button type="submit" className="flex-1 px-4 py-2 bg-primary text-white rounded-lg font-bold hover:bg-primary/90 transition-colors">Guardar</button>
                 </div>
               </form>
             </div>
@@ -374,19 +374,19 @@ export const ProjectsView = ({ data, methods }: any) => {
               <form onSubmit={handleAddMilestone} className="space-y-4">
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1">Descripción de la Tarea</label>
-                  <input type="text" required value={newMilestone.title} onChange={e => setNewMilestone({...newMilestone, title: e.target.value})} className="w-full border border-slate-100 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Ej. Comprar lavamanos" />
+                  <input type="text" required value={newMilestone.title} onChange={e => setNewMilestone({...newMilestone, title: e.target.value})} className="w-full border border-slate-100 rounded-lg p-2.5 focus:ring-2 focus:ring-primary/50 outline-none" placeholder="Ej. Comprar lavamanos" />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1">Monto Disparador ($) (Opcional)</label>
-                  <input type="number" min="1" value={newMilestone.amountThreshold || ''} onChange={e => setNewMilestone({...newMilestone, amountThreshold: e.target.value})} className="w-full border border-slate-100 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Ej. 15000" />
+                  <input type="number" min="1" value={newMilestone.amountThreshold || ''} onChange={e => setNewMilestone({...newMilestone, amountThreshold: e.target.value})} className="w-full border border-slate-100 rounded-lg p-2.5 focus:ring-2 focus:ring-primary/50 outline-none" placeholder="Ej. 15000" />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1">Fecha Disparador (Opcional)</label>
-                  <input type="date" value={newMilestone.dateThreshold || ''} onChange={e => setNewMilestone({...newMilestone, dateThreshold: e.target.value})} className="w-full border border-slate-100 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                  <input type="date" value={newMilestone.dateThreshold || ''} onChange={e => setNewMilestone({...newMilestone, dateThreshold: e.target.value})} className="w-full border border-slate-100 rounded-lg p-2.5 focus:ring-2 focus:ring-primary/50 outline-none" />
                 </div>
                 <div className="flex gap-3 pt-2">
                   <button type="button" onClick={closeMilestoneForm} className="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-bold hover:bg-slate-200 transition-colors">Cancelar</button>
-                  <button type="submit" className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-colors">Guardar</button>
+                  <button type="submit" className="flex-1 px-4 py-2 bg-primary text-white rounded-lg font-bold hover:bg-primary/90 transition-colors">Guardar</button>
                 </div>
               </form>
             </div>
@@ -449,26 +449,26 @@ export const ProjectsView = ({ data, methods }: any) => {
       <div className="flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border-0">
         <div>
           <h2 className="text-2xl font-bold text-slate-900 font-title flex items-center gap-2">
-            <Target className="text-indigo-600" /> Metas y Proyectos
+            <Target className="text-primary" /> Metas y Proyectos
           </h2>
           <p className="text-slate-600 text-sm mt-1">Conquista un objetivo a la vez (Efecto Cascada)</p>
         </div>
-        <button onClick={() => setShowForm(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-full font-bold flex items-center gap-2 transition-colors">
+        <button onClick={() => setShowForm(true)} className="bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-full font-bold flex items-center gap-2 transition-colors">
           <Plus size={18} /> Nuevo
         </button>
       </div>
 
       {activeProject ? (
         <div className="bg-white rounded-3xl border-0 p-8 shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 left-0 w-full h-1 bg-indigo-500"></div>
+          <div className="absolute top-0 left-0 w-full h-1 bg-primary"></div>
           
-          <button onClick={() => handleEditProject(activeProject)} className="absolute top-4 right-4 p-2 text-slate-500 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+          <button onClick={() => handleEditProject(activeProject)} className="absolute top-4 right-4 p-2 text-slate-500 hover:text-primary bg-slate-50 hover:bg-primary/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
             <Edit2 size={16} />
           </button>
 
           <div className="flex flex-col md:flex-row justify-between md:items-start gap-4 mb-6">
             <div>
-              <span className="bg-indigo-100 text-indigo-700 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">PROYECTO ACTIVO</span>
+              <span className="bg-primary/20 text-primary text-xs font-bold px-2 py-1 rounded mb-2 inline-block">PROYECTO ACTIVO</span>
               <h3 className="text-3xl font-bold text-slate-900">{activeProject.name}</h3>
               <p className="text-slate-600 mt-1 flex items-center gap-1"><Calendar size={14} /> Meta estimada: <span className="font-semibold text-slate-700">{getEstimatedDate(activeProject)}</span></p>
             </div>
@@ -482,12 +482,12 @@ export const ProjectsView = ({ data, methods }: any) => {
 
           <div className="mb-8">
             <div className="flex justify-between text-sm mb-1 font-bold">
-              <span className="text-indigo-600">{Math.round((activeProject.savedAmount / activeProject.targetAmount) * 100)}%</span>
+              <span className="text-primary">{Math.round((activeProject.savedAmount / activeProject.targetAmount) * 100)}%</span>
               <span className="text-slate-600">Restan ${(activeProject.targetAmount - activeProject.savedAmount).toLocaleString()}</span>
             </div>
             <div className="w-full bg-slate-100 rounded-full h-4 relative border border-slate-200">
               <div 
-                className="bg-indigo-500 h-full rounded-full transition-all duration-1000 ease-out" 
+                className="bg-primary h-full rounded-full transition-all duration-1000 ease-out" 
                 style={{ width: `${Math.min(100, (activeProject.savedAmount / activeProject.targetAmount) * 100)}%` }}
               ></div>
               {activeProject.milestones?.map((m: any) => {
@@ -496,7 +496,7 @@ export const ProjectsView = ({ data, methods }: any) => {
                 return (
                   <div 
                     key={m.id}
-                    className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 ${m.isCompleted ? 'bg-emerald-500 border-white' : 'bg-white border-indigo-500'} z-10 shadow-sm`}
+                    className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 ${m.isCompleted ? 'bg-emerald-500 border-white' : 'bg-white border-primary'} z-10 shadow-sm`}
                     style={{ left: `calc(${percent}% - 8px)` }}
                     title={m.title}
                   />
@@ -549,14 +549,14 @@ export const ProjectsView = ({ data, methods }: any) => {
           <Target className="mx-auto text-slate-500 mb-4" size={48} />
           <h3 className="text-lg font-bold text-slate-900 mb-2">Sin proyecto activo</h3>
           <p className="text-slate-600 mb-6">Crea tu primer proyecto financiero o activa uno de la lista.</p>
-          <button onClick={() => setShowForm(true)} className="bg-indigo-600 text-white px-5 py-2.5 rounded-full font-bold mx-auto">Crear Proyecto</button>
+          <button onClick={() => setShowForm(true)} className="bg-primary text-white px-5 py-2.5 rounded-full font-bold mx-auto">Crear Proyecto</button>
         </div>
       )}
 
       {/* Lists Container */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        <div className="flex justify-between items-center mb-4"><h3 className="font-bold text-slate-900 font-title flex items-center gap-2"><Target size={18} className="text-slate-500"/> Próximos (Cascada)</h3><button onClick={() => setShowCascadeModal(true)} className="text-xs bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg font-bold hover:bg-indigo-200">Distribuir Excedente</button></div>
+        <div className="flex justify-between items-center mb-4"><h3 className="font-bold text-slate-900 font-title flex items-center gap-2"><Target size={18} className="text-slate-500"/> Próximos (Cascada)</h3><button onClick={() => setShowCascadeModal(true)} className="text-xs bg-primary/20 text-primary px-3 py-1.5 rounded-lg font-bold hover:bg-primary/20">Distribuir Excedente</button></div>
         <div className="bg-white rounded-3xl border-0 shadow-sm p-6">
           
           {pendingProjects.length === 0 ? (
@@ -564,11 +564,11 @@ export const ProjectsView = ({ data, methods }: any) => {
           ) : (
             <div className="space-y-3">
               {pendingProjects.map((p, index) => (
-                <div key={p.id} className="flex items-center justify-between p-3 border border-slate-100 rounded-lg hover:border-indigo-200 transition-colors bg-slate-50 group">
+                <div key={p.id} className="flex items-center justify-between p-3 border border-slate-100 rounded-lg hover:border-primary/30 transition-colors bg-slate-50 group">
                   <div className="flex-1">
                     <p className="font-bold text-slate-900 text-sm flex items-center gap-2">
                       {p.name}
-                      <button onClick={() => handleEditProject(p)} className="text-slate-500 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => handleEditProject(p)} className="text-slate-500 hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity">
                         <Edit2 size={12} />
                       </button>
                     </p>
@@ -576,10 +576,10 @@ export const ProjectsView = ({ data, methods }: any) => {
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="flex flex-col gap-1 mr-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => changePriority(p, 'up')} disabled={index === 0 && !activeProject} className="p-1 text-slate-500 hover:text-indigo-600 disabled:opacity-30"><ArrowUp size={14}/></button>
-                      <button onClick={() => changePriority(p, 'down')} disabled={index === pendingProjects.length - 1} className="p-1 text-slate-500 hover:text-indigo-600 disabled:opacity-30"><ArrowDown size={14}/></button>
+                      <button onClick={() => changePriority(p, 'up')} disabled={index === 0 && !activeProject} className="p-1 text-slate-500 hover:text-primary disabled:opacity-30"><ArrowUp size={14}/></button>
+                      <button onClick={() => changePriority(p, 'down')} disabled={index === pendingProjects.length - 1} className="p-1 text-slate-500 hover:text-primary disabled:opacity-30"><ArrowDown size={14}/></button>
                     </div>
-                    <button onClick={() => activateProject(p)} className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded hover:bg-indigo-100 transition-colors">
+                    <button onClick={() => activateProject(p)} className="text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded hover:bg-primary/20 transition-colors">
                       Activar
                     </button>
                   </div>
@@ -612,7 +612,7 @@ export const ProjectsView = ({ data, methods }: any) => {
                         <div>
                           <p className="text-sm font-bold text-slate-900 flex items-center gap-2">
                             {c.notes || 'Aportación'}
-                            <button onClick={() => handleEditContribution(c)} className="text-slate-500 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => handleEditContribution(c)} className="text-slate-500 hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity">
                               <Edit2 size={12} />
                             </button>
                           </p>
@@ -657,7 +657,7 @@ export const ProjectsView = ({ data, methods }: any) => {
             const aportes = distribuirEnCascada(pendingProjects.map(p => ({...p, targetAmount: p.targetAmount, currentAmount: p.savedAmount, priority: p.order})), excedente);
             aportes.forEach(a => { methods.updateProject(a.projectId, { savedAmount: (pendingProjects.find(p => p.id === a.projectId)?.savedAmount || 0) + a.aporte }); });
             setShowCascadeModal(false);
-          }} className="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg">Aplicar Cascada</button>
+          }} className="w-full bg-primary text-white font-bold py-3 rounded-lg">Aplicar Cascada</button>
         </div>
       </Modal>
     </div>

@@ -1,8 +1,9 @@
 import React, { useRef, useState, useMemo } from 'react';
 import { Card } from '../components/ui/Card';
 import { FormatCurrency, exportToCSV } from '../utils';
-import { useAppStore } from '../store/useAppStore';
-import { Download, BarChart2, Table as TableIcon } from 'lucide-react';
+import { Download, BarChart2, Table as TableIcon, Trash2, Edit2, AlertCircle } from 'lucide-react';
+import { Modal } from '../components/ui/Modal';
+import { Button } from '../components/ui/Button';
 
 const CATEGORY_COLORS = [
   'bg-emerald-500', 'bg-blue-500', 'bg-rose-500', 'bg-amber-500',
@@ -10,19 +11,15 @@ const CATEGORY_COLORS = [
   'bg-teal-500', 'bg-indigo-500', 'bg-fuchsia-500', 'bg-lime-500'
 ];
 
-export function HistoricalView() {
-  const expenses = useAppStore(state => state.expenses);
-  const incomes = useAppStore(state => state.incomes);
-  const users = useAppStore(state => state.users);
+export function HistoricalView({ data, methods }: any) {
+  const { expenses, incomes, users } = data;
 
-  const [exportStart, setExportStart] = useState('');
-  const [exportEnd, setExportEnd] = useState('');
-  
   const [deselectedUsers, setDeselectedUsers] = useState<Set<string>>(new Set());
   const [deselectedCategories, setDeselectedCategories] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'graph' | 'table'>('graph');
+  const [selectedRecords, setSelectedRecords] = useState<Set<string>>(new Set());
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  
 
   const categories = useMemo(() => {
     const cats = new Set<string>();
@@ -98,12 +95,20 @@ export function HistoricalView() {
     });
   }, [incomes, deselectedUsers, deselectedCategories]);
 
+  const detailedRecords = useMemo(() => {
+    const combined = [
+      ...filteredExpenses.map(e => ({ ...e, recordType: 'expense' })),
+      ...filteredIncomes.map(i => ({ ...i, recordType: 'income' }))
+    ];
+    return combined.sort((a, b) => {
+      const dateA = a.date || '';
+      const dateB = b.date || '';
+      return dateB.localeCompare(dateA); // Descending
+    });
+  }, [filteredExpenses, filteredIncomes]);
+
   const handleExportCSV = () => {
-    let filtered = filteredExpenses;
-    if (exportStart && exportEnd) {
-      filtered = filteredExpenses.filter(e => !e.date || (e.date >= exportStart && e.date <= exportEnd));
-    }
-    exportToCSV(filtered, 'historial_orbita2');
+    exportToCSV(detailedRecords, 'historial_orbita2');
   };
 
   const expensesByCategory = useMemo(() => {
@@ -178,11 +183,13 @@ export function HistoricalView() {
         </div>
         
         <div className="flex flex-col md:flex-row items-start md:items-center gap-4 bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-600 uppercase">Filtro Exportar:</span>
-            <input type="date" value={exportStart} onChange={e => setExportStart(e.target.value)} className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
-            <span className="text-slate-500">-</span>
-            <input type="date" value={exportEnd} onChange={e => setExportEnd(e.target.value)} className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:block">Periodo:</span>
+            <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-full flex-1 md:flex-none">
+              <input type="date" value={methods.dateRange?.start || ''} onChange={e => methods.setDateRange(e.target.value, methods.dateRange?.end || '')} className="px-3 py-2 bg-transparent text-sm font-medium text-slate-700 outline-none transition-all tabular-nums tracking-tight w-full" aria-label="Fecha inicial" />
+              <span className="text-slate-300 font-bold">-</span>
+              <input type="date" value={methods.dateRange?.end || ''} onChange={e => methods.setDateRange(methods.dateRange?.start || '', e.target.value)} className="px-3 py-2 bg-transparent text-sm font-medium text-slate-700 outline-none transition-all tabular-nums tracking-tight w-full" aria-label="Fecha final" />
+            </div>
           </div>
           <button
             onClick={handleExportCSV}
@@ -329,43 +336,114 @@ export function HistoricalView() {
             )}
           </>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600">
-              <thead className="bg-slate-50 text-slate-600 text-xs uppercase font-bold">
-                <tr>
-                  <th className="px-6 py-4 rounded-tl-xl">Mes</th>
-                  <th className="px-6 py-4 text-right">Movimientos</th>
-                  <th className="px-6 py-4 text-right">Ingresos</th>
-                  <th className="px-6 py-4 text-right">Gastos</th>
-                  <th className="px-6 py-4 text-right">Balance</th>
-                  <th className="px-6 py-4 text-right rounded-tr-xl">Margen</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {snapshots.length === 0 ? (
+          <div className="flex flex-col">
+            {selectedRecords.size > 0 && (
+              <div className="p-4 bg-indigo-50 border-b border-indigo-100 flex items-center gap-4">
+                <span className="text-sm font-bold text-indigo-800">{selectedRecords.size} seleccionado(s)</span>
+                {selectedRecords.size === 1 && (
+                  <button 
+                    onClick={() => {
+                      const id = Array.from(selectedRecords)[0];
+                      const record = detailedRecords.find(r => r.id === id);
+                      if (record) {
+                        if (record.recordType === 'expense') methods.handleOpenExpenseModal(record);
+                        else methods.handleOpenIncomeModal(record);
+                      }
+                    }}
+                    className="flex items-center gap-1 text-sm font-bold text-indigo-600 hover:text-indigo-800"
+                  >
+                    <Edit2 className="w-4 h-4" /> Editar
+                  </button>
+                )}
+                <button 
+                  onClick={() => setIsDeleteModalOpen(true)}
+                  className="flex items-center gap-1 text-sm font-bold text-rose-600 hover:text-rose-800"
+                >
+                  <Trash2 className="w-4 h-4" /> Eliminar
+                </button>
+              </div>
+            )}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-slate-600">
+                <thead className="bg-slate-50 text-slate-600 text-xs uppercase font-bold">
                   <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-slate-500 font-medium">
-                      No hay datos para mostrar
-                    </td>
+                    <th className="px-4 py-4 rounded-tl-xl w-10">
+                      <input 
+                        type="checkbox" 
+                        className="rounded border-slate-300"
+                        ref={input => {
+                          if (input) {
+                            const isAll = detailedRecords.length > 0 && detailedRecords.every(r => selectedRecords.has(r.id));
+                            input.indeterminate = selectedRecords.size > 0 && !isAll;
+                          }
+                        }}
+                        checked={detailedRecords.length > 0 && detailedRecords.every(r => selectedRecords.has(r.id))}
+                        onChange={() => {
+                          const isAll = detailedRecords.length > 0 && detailedRecords.every(r => selectedRecords.has(r.id));
+                          if (isAll) {
+                            setSelectedRecords(new Set());
+                          } else {
+                            setSelectedRecords(new Set(detailedRecords.map(r => r.id)));
+                          }
+                        }}
+                      />
+                    </th>
+                    <th className="px-6 py-4">Fecha</th>
+                    <th className="px-6 py-4">Tipo</th>
+                    <th className="px-6 py-4">Categoría / Fuente</th>
+                    <th className="px-6 py-4">Descripción</th>
+                    <th className="px-6 py-4 text-right">Monto</th>
+                    <th className="px-6 py-4 rounded-tr-xl">Registrado por</th>
                   </tr>
-                ) : (
-                  snapshots.map((snap, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4 font-bold text-slate-800">{snap.month}</td>
-                      <td className="px-6 py-4 text-right">{snap.count}</td>
-                      <td className="px-6 py-4 text-right text-emerald-600 font-mono font-medium">{FormatCurrency(snap.income)}</td>
-                      <td className="px-6 py-4 text-right font-mono font-medium text-slate-600">{FormatCurrency(snap.expense)}</td>
-                      <td className={`px-6 py-4 text-right font-mono font-bold ${snap.balance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                        {FormatCurrency(snap.balance)}
-                      </td>
-                      <td className={`px-6 py-4 text-right font-bold ${snap.margin >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                        {snap.margin.toFixed(1)}%
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {detailedRecords.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-8 text-center text-slate-500 font-medium">
+                        No hay datos para mostrar
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    detailedRecords.map((record) => {
+                      const userObj = users.find(u => u.id === (record.userId || record.paidBy || record.ownerUid));
+                      const userName = userObj ? userObj.name : 'Desconocido';
+                      const isSelected = selectedRecords.has(record.id);
+                      return (
+                        <tr key={record.id} className={`transition-colors ${isSelected ? 'bg-indigo-50/50' : 'hover:bg-slate-50'}`}>
+                          <td className="px-4 py-4">
+                            <input 
+                              type="checkbox" 
+                              className="rounded border-slate-300"
+                              checked={isSelected}
+                              onChange={() => {
+                                const newSet = new Set(selectedRecords);
+                                if (isSelected) newSet.delete(record.id);
+                                else newSet.add(record.id);
+                                setSelectedRecords(newSet);
+                              }}
+                            />
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">{record.date ? record.date.substring(0, 10) : ''}</td>
+                          <td className="px-6 py-4">
+                            <span className={`px-2 py-1 rounded-md text-xs font-bold ${record.recordType === 'income' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                              {record.recordType === 'income' ? 'Ingreso' : 'Gasto'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">{record.category || record.source || record.type || 'Otros'}</td>
+                          <td className="px-6 py-4 truncate max-w-xs">{record.description || '-'}</td>
+                          <td className="px-6 py-4 text-right font-mono font-medium">
+                            <span className={record.recordType === 'income' ? 'text-emerald-600' : 'text-slate-600'}>
+                              {record.recordType === 'income' ? '+' : '-'}{FormatCurrency(record.amount)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">{userName}</td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
         
@@ -417,6 +495,50 @@ export function HistoricalView() {
           </div>
         </Card>
       )}
+
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        title="Confirmar eliminación"
+      >
+        <div className="flex flex-col items-center justify-center py-6 text-center">
+          <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mb-4">
+            <AlertCircle size={24} />
+          </div>
+          <h3 className="text-lg font-bold text-slate-900 mb-2">
+            ¿Eliminar {selectedRecords.size} {selectedRecords.size === 1 ? 'registro' : 'registros'}?
+          </h3>
+          <p className="text-slate-600 mb-8 max-w-sm">
+            Esta acción no se puede deshacer. Los registros seleccionados serán eliminados permanentemente de tu historial.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 w-full">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setIsDeleteModalOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="danger"
+              className="flex-1"
+              onClick={() => {
+                selectedRecords.forEach(id => {
+                  const record = detailedRecords.find(r => r.id === id);
+                  if (record) {
+                    if (record.recordType === 'expense') methods.deleteExpense(id);
+                    else methods.deleteIncome(id);
+                  }
+                });
+                setSelectedRecords(new Set());
+                setIsDeleteModalOpen(false);
+              }}
+            >
+              Sí, eliminar
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

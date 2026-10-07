@@ -13,7 +13,9 @@ const LABEL_CLASS = 'block text-xs font-semibold text-slate-600 uppercase tracki
 const incomeSchema = z.object({
   userId: z.string().min(1, 'El aportador es obligatorio'),
   amount: z.number().min(0.01, 'El monto debe ser mayor a 0'),
-  type: z.enum(['Sueldo', 'Bono', 'Ventas', 'Inversiones', 'Otro']),
+  categoryId: z.string().optional(),
+  incomeCategoryType: z.enum(['Ordinario', 'Extraordinario']),
+  accountId: z.string().optional(),
   currency: z.enum(['MXN', 'USD']),
   date: z.string().min(1, 'La fecha es obligatoria'),
   source: z.string().optional(),
@@ -22,27 +24,35 @@ const incomeSchema = z.object({
 
 type IncomeFormData = z.infer<typeof incomeSchema>;
 
-export function IncomeForm({ initialData, users, currentUserId, onSubmit, onCancel }: {
+export function IncomeForm({ initialData, users, categories = [], accounts = [], currentUserId, onSubmit, onCancel, appContext = 'household' }: {
   initialData?: any;
   users: any[];
+  categories?: any[];
+  accounts?: any[];
   currentUserId: string;
   onSubmit: (data: any) => void;
   onCancel: () => void;
+  appContext?: 'personal' | 'household';
 }) {
+  const assetAccounts = accounts.filter(a => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT');
+  const incomeCategories = categories.filter(c => c.type === 'INCOME');
+
   const { register, handleSubmit, formState: { errors } } = useForm<IncomeFormData>({
     resolver: zodResolver(incomeSchema),
     defaultValues: initialData || {
       userId: users?.some(u => u.id === currentUserId) ? currentUserId : (users?.[0]?.id || ''),
       amount: 0,
-      type: 'Sueldo',
+      categoryId: '',
+      incomeCategoryType: 'Ordinario',
+      accountId: assetAccounts.length > 0 ? assetAccounts[0].id : '',
       currency: 'MXN',
       date: new Date().toISOString().split('T')[0],
-      isPrivate: false,
+      isPrivate: appContext === 'personal',
     },
   });
 
   const onFormSubmit = (data: IncomeFormData) => {
-    onSubmit(data);
+    onSubmit({ ...data, isPrivate: appContext === 'personal' });
   };
 
   return (
@@ -154,28 +164,67 @@ export function IncomeForm({ initialData, users, currentUserId, onSubmit, onCanc
         {errors.currency && <p id="income-currency-error" className="text-red-500 text-xs mt-1">{errors.currency.message}</p>}
       </div>
 
-      {/* Row 3: Tipo */}
+      {/* Row 3: Categoria y Tipo */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="income-categoryId" className={LABEL_CLASS}>
+            <span className="flex items-center gap-1.5">
+              <Tag size={11} />
+              Categoría
+            </span>
+          </label>
+          <select
+            id="income-categoryId"
+            className={INPUT_CLASS}
+            aria-invalid={!!errors.categoryId}
+            aria-describedby={errors.categoryId ? "income-categoryId-error" : undefined}
+            {...register('categoryId')}
+          >
+            <option value="">Ninguna</option>
+            {incomeCategories.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+          {errors.categoryId && <p id="income-categoryId-error" className="text-red-500 text-xs mt-1">{errors.categoryId.message}</p>}
+        </div>
+        <div>
+          <label htmlFor="income-incomeCategoryType" className={LABEL_CLASS}>
+            <span className="flex items-center gap-1.5">
+              Frecuencia
+            </span>
+          </label>
+          <select
+            id="income-incomeCategoryType"
+            className={INPUT_CLASS}
+            aria-invalid={!!errors.incomeCategoryType}
+            aria-describedby={errors.incomeCategoryType ? "income-incomeCategoryType-error" : undefined}
+            {...register('incomeCategoryType')}
+          >
+            <option value="Ordinario">Ordinario (Recurrente)</option>
+            <option value="Extraordinario">Extraordinario (Único)</option>
+          </select>
+          {errors.incomeCategoryType && <p id="income-incomeCategoryType-error" className="text-red-500 text-xs mt-1">{errors.incomeCategoryType.message}</p>}
+        </div>
+      </div>
+
+      {/* Row 3.5: Cuenta destino */}
       <div>
-        <label htmlFor="income-type" className={LABEL_CLASS}>
-          <span className="flex items-center gap-1.5">
-            <Tag size={11} />
-            Tipo de Ingreso
-          </span>
+        <label htmlFor="income-accountId" className={LABEL_CLASS}>
+          Cuenta de Destino
         </label>
         <select
-          id="income-type"
+          id="income-accountId"
           className={INPUT_CLASS}
-          aria-invalid={!!errors.type}
-          aria-describedby={errors.type ? "income-type-error" : undefined}
-          {...register('type')}
+          aria-invalid={!!errors.accountId}
+          aria-describedby={errors.accountId ? "income-accountId-error" : undefined}
+          {...register('accountId')}
         >
-          <option value="Sueldo">Sueldo / Salario</option>
-          <option value="Bono">Bono / Utilidades</option>
-          <option value="Ventas">Ventas / Negocio</option>
-          <option value="Inversiones">Retornos de Inversión</option>
-          <option value="Otro">Otro Ingreso</option>
+          {assetAccounts.map(a => (
+            <option key={a.id} value={a.id}>{a.name}</option>
+          ))}
+          {assetAccounts.length === 0 && <option value="">Sin cuentas de banco</option>}
         </select>
-        {errors.type && <p id="income-type-error" className="text-red-500 text-xs mt-1">{errors.type.message}</p>}
+        {errors.accountId && <p id="income-accountId-error" className="text-red-500 text-xs mt-1">{errors.accountId.message}</p>}
       </div>
 
       {/* Origen */}
@@ -192,30 +241,7 @@ export function IncomeForm({ initialData, users, currentUserId, onSubmit, onCanc
         />
       </div>
 
-      {/* Row 4: Privado toggle */}
-      <label 
-        htmlFor="income-isPrivate"
-        className="flex items-start gap-3 p-3 rounded-lg border border-slate-100 bg-slate-50 cursor-pointer group hover:bg-slate-100 transition-colors"
-      >
-        <div className="mt-0.5 flex items-center justify-center shrink-0">
-          <input 
-            type="checkbox" 
-            id="income-isPrivate"
-            className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 cursor-pointer"
-            aria-invalid={!!errors.isPrivate}
-            aria-describedby={errors.isPrivate ? "income-isPrivate-error" : undefined}
-            {...register('isPrivate')} 
-          />
-        </div>
-        <div>
-          <p className="text-sm font-medium text-slate-900 flex items-center gap-1.5">
-            <Lock size={12} className="text-slate-500" />
-            Ingreso Privado
-          </p>
-          <p className="text-xs text-slate-600 mt-0.5">No se contabiliza en el presupuesto compartido.</p>
-        </div>
-      </label>
-      {errors.isPrivate && <p id="income-isPrivate-error" className="text-red-500 text-xs mt-1">{errors.isPrivate.message}</p>}
+
 
       {/* Actions */}
       <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">

@@ -4,34 +4,39 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '../ui/Button';
 
+import { useAppStore } from '../../store/useAppStore';
+
 const budgetSchema = z.object({
-  category: z.string().min(1, 'La categoría es obligatoria'),
-  type: z.enum(['Necesidad', 'Deseo', 'Ahorro']),
-  shared: z.boolean(),
-  base: z.number().min(0, 'El monto base no puede ser negativo'),
-  rollover: z.number(),
-  spent: z.number().min(0),
+  categoryId: z.string().min(1, 'La categoría es obligatoria'),
+  base: z.number().min(0, 'El monto asignado no puede ser negativo'),
   icon: z.string().min(1, 'Obligatorio'),
+  shared: z.boolean().optional(),
 });
 
 type BudgetFormData = z.infer<typeof budgetSchema>;
 
-export function BudgetForm({ initialData, onSubmit, onCancel }) {
+export function BudgetForm({ initialData, onSubmit, onCancel, appContext = 'household' }) {
+  const categories = useAppStore(state => state.categories);
+  const expenseCategories = categories.filter(c => c.type === 'EXPENSE'); // Normally budgets are for expenses
+  
   const { register, handleSubmit, formState: { errors } } = useForm<BudgetFormData>({
     resolver: zodResolver(budgetSchema),
     defaultValues: initialData || {
-      category: '',
-      type: 'Necesidad',
-      shared: true,
+      categoryId: '',
       base: 0,
-      rollover: 0,
-      spent: 0,
-      icon: '🛒'
+      icon: '🛒',
+      shared: appContext === 'household'
     }
   });
 
   const onFormSubmit = (data: BudgetFormData) => {
-    onSubmit(data);
+    const selectedCategory = categories.find(c => c.id === data.categoryId);
+    onSubmit({ 
+      ...data, 
+      category: selectedCategory?.name || '', 
+      categoryName: selectedCategory?.name || '', 
+      shared: appContext === 'household' 
+    });
   };
 
   return (
@@ -50,78 +55,35 @@ export function BudgetForm({ initialData, onSubmit, onCancel }) {
           {errors.icon && <p id="budget-icon-error" className="text-red-500 text-xs mt-1">{errors.icon.message}</p>}
         </div>
         <div className="flex-1">
-          <label htmlFor="budget-category" className="block text-sm font-bold text-slate-700 mb-1">Categoría</label>
-          <input 
-            id="budget-category"
-            type="text"
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            placeholder="Ej. Supermercado"
-            aria-invalid={!!errors.category}
-            aria-describedby={errors.category ? "budget-category-error" : undefined}
-            {...register('category')}
-          />
-          {errors.category && <p id="budget-category-error" className="text-red-500 text-xs mt-1">{errors.category.message}</p>}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="budget-type" className="block text-sm font-bold text-slate-700 mb-1">Tipo de Presupuesto</label>
+          <label htmlFor="budget-categoryId" className="block text-sm font-bold text-slate-700 mb-1">Categoría</label>
           <select 
-            id="budget-type"
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-            aria-invalid={!!errors.type}
-            aria-describedby={errors.type ? "budget-type-error" : undefined}
-            {...register('type')}
+            id="budget-categoryId"
+            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            aria-invalid={!!errors.categoryId}
+            aria-describedby={errors.categoryId ? "budget-categoryId-error" : undefined}
+            {...register('categoryId')}
           >
-            <option value="Necesidad">Necesidad (50%)</option>
-            <option value="Deseo">Deseo (30%)</option>
-            <option value="Ahorro">Ahorro/Deuda (20%)</option>
+            <option value="">Seleccione una categoría...</option>
+            {expenseCategories.map(cat => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
           </select>
-          {errors.type && <p id="budget-type-error" className="text-red-500 text-xs mt-1">{errors.type.message}</p>}
-        </div>
-        <div>
-          <label htmlFor="budget-base" className="block text-sm font-bold text-slate-700 mb-1">Monto Base Mensual</label>
-          <input 
-            id="budget-base"
-            type="number"
-            step="0.01"
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-            aria-invalid={!!errors.base}
-            aria-describedby={errors.base ? "budget-base-error" : undefined}
-            {...register('base', { valueAsNumber: true })}
-          />
-          {errors.base && <p id="budget-base-error" className="text-red-500 text-xs mt-1">{errors.base.message}</p>}
+          {errors.categoryId && <p id="budget-categoryId-error" className="text-red-500 text-xs mt-1">{errors.categoryId.message}</p>}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="budget-rollover" className="block text-sm font-bold text-slate-700 mb-1">Acumulado Inicial</label>
-          <input 
-            id="budget-rollover"
-            type="number"
-            step="0.01"
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-            aria-invalid={!!errors.rollover}
-            aria-describedby={errors.rollover ? "budget-rollover-error" : undefined}
-            {...register('rollover', { valueAsNumber: true })}
-          />
-          {errors.rollover && <p id="budget-rollover-error" className="text-red-500 text-xs mt-1">{errors.rollover.message}</p>}
-        </div>
-        <div>
-          <label htmlFor="budget-spent" className="block text-sm font-bold text-slate-700 mb-1">Ya gastado</label>
-          <input 
-            id="budget-spent"
-            type="number"
-            step="0.01"
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-            aria-invalid={!!errors.spent}
-            aria-describedby={errors.spent ? "budget-spent-error" : undefined}
-            {...register('spent', { valueAsNumber: true })}
-          />
-          {errors.spent && <p id="budget-spent-error" className="text-red-500 text-xs mt-1">{errors.spent.message}</p>}
-        </div>
+      <div>
+        <label htmlFor="budget-base" className="block text-sm font-bold text-slate-700 mb-1">Monto Asignado (Mensual)</label>
+        <input 
+          id="budget-base"
+          type="number"
+          step="0.01"
+          className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+          aria-invalid={!!errors.base}
+          aria-describedby={errors.base ? "budget-base-error" : undefined}
+          {...register('base', { valueAsNumber: true })}
+        />
+        {errors.base && <p id="budget-base-error" className="text-red-500 text-xs mt-1">{errors.base.message}</p>}
       </div>
 
       <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">

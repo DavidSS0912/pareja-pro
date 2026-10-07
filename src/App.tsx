@@ -15,7 +15,8 @@ import {
   Target,
   User,
   Users,
-  Plus
+  Plus,
+  Settings
 } from 'lucide-react';
 import { Modal } from './components/ui/Modal';
 import { IncomeForm } from './components/forms/IncomeForm';
@@ -29,12 +30,13 @@ import { useShallow } from 'zustand/react/shallow';
 import { AuthView } from './views/AuthView';
 import { DashboardView } from './views/DashboardView';
 import { BudgetsView } from './views/BudgetsView';
-import { CardsView } from './views/CardsView';
+import { AccountsView } from './views/AccountsView';
 import { SettlementView } from './views/SettlementView';
 import { DebtSimulatorView } from './views/DebtSimulatorView';
 import { WealthView } from './views/WealthView';
 import { ProjectsView } from './views/ProjectsView';
 import { HistoricalView } from './views/HistoricalView';
+import { SettingsView } from './views/SettingsView';
 
 import { TermsView } from './views/TermsView';
 import { PrivacyPolicyView } from './views/PrivacyPolicyView';
@@ -71,12 +73,14 @@ export default function App() {
     dateRange: state.dateRange,
     expenses: state.expenses,
     budgets: state.budgets,
-    cards: state.cards,
     assets: state.assets,
     incomes: state.incomes,
     users: state.users,
     goals: state.goals,
     projects: state.projects,
+    categories: state.categories,
+    tags: state.tags,
+    accounts: state.accounts,
     contributions: state.contributions,
     setUser: state.setUser,
     setHouseId: state.setHouseId,
@@ -97,9 +101,10 @@ export default function App() {
     addBudget: state.addBudget,
     updateBudget: state.updateBudget,
     deleteBudget: state.deleteBudget,
-    addCard: state.addCard,
-    updateCard: state.updateCard,
-    deleteCard: state.deleteCard,
+    addAccount: state.addAccount,
+    updateAccount: state.updateAccount,
+    deleteAccount: state.deleteAccount,
+    payCreditCard: state.payCreditCard,
     addAsset: state.addAsset,
     updateAsset: state.updateAsset,
     deleteAsset: state.deleteAsset,
@@ -109,6 +114,8 @@ export default function App() {
     addGoal: state.addGoal,
     updateGoal: state.updateGoal,
     deleteGoal: state.deleteGoal,
+    fetchBudgetsForMonth: state.fetchBudgetsForMonth,
+    copyBudgetsFromPreviousMonth: state.copyBudgetsFromPreviousMonth,
   })));
   
   const methods = { ...data, handleOpenIncomeModal, handleOpenExpenseModal };
@@ -117,16 +124,54 @@ export default function App() {
   const filteredData = useMemo(() => {
     const start = dateRange?.start || '2000-01-01';
     const end = dateRange?.end || '2100-12-31';
-    const filterContext = (items) => {
+    // Firebase returns Timestamps as full ISO strings ("2026-09-30T05:00:00Z").
+    // We normalize to date-only ("2026-09-30") for correct string range comparison.
+    const toDateStr = (d: string | undefined | null): string | null =>
+      d ? d.slice(0, 10) : null;
+    const filterContext = (items: any[]) => {
        const userUid = user?.uid || '';
-       return filtrarPorContexto(items.map(i => ({...i, ownerUid: i.ownerUid || i.userId || i.paidBy, isShared: !i.isPrivate})), appContext, userUid);
+       return items.filter((i: any) => {
+         const ownerUid = i.ownerUid || i.userId || i.paidBy;
+         const isShared = !i.isPrivate;
+         if (appContext === 'personal') {
+           return ownerUid === userUid && !isShared;
+         }
+         return isShared;
+       });
+    };
+    const inDateRange = (date: string | undefined | null) => {
+      const d = toDateStr(date);
+      return !d || (d >= start && d <= end);
     };
     return {
       ...data,
-      incomes: filterContext(data.incomes.filter(i => !i.date || (i.date >= start && i.date <= end))).map(i => data.incomes.find(d => d.id === i.id)),
-      expenses: filterContext(data.expenses.filter(e => !e.date || (e.date >= start && e.date <= end))).map(i => data.expenses.find(d => d.id === i.id))
+      incomes: filterContext(data.incomes.filter(i => inDateRange(i.date))),
+      expenses: filterContext(data.expenses.filter(e => inDateRange(e.date))),
+      budgets: data.budgets.filter((b: any) => {
+        if (appContext === 'personal') {
+          return b.ownerType === 'USER_A' || b.ownerType === 'USER_B';
+        }
+        return b.ownerType === 'SHARED';
+      }),
+      accounts: (data.accounts || []).filter((a: any) => {
+        if (appContext === 'personal') {
+          return a.ownerType === 'USER_A' || a.ownerType === 'USER_B';
+        }
+        return a.ownerType === 'SHARED';
+      })
     };
   }, [data, dateRange, appContext, user]);
+
+  useEffect(() => {
+    const storedColor = localStorage.getItem('app_second_color');
+    if (storedColor) {
+      document.documentElement.style.setProperty('--second-color', storedColor);
+    }
+    const primaryColor = localStorage.getItem('app_primary_color');
+    if (primaryColor) {
+      document.documentElement.style.setProperty('--primary-color', primaryColor);
+    }
+  }, []);
 
   useEffect(() => {
     const unsub = authService.onAuthStateChange(async (fbUser) => {
@@ -250,7 +295,7 @@ export default function App() {
     const simplifiedDebt = simplificarDeudas(davidOwesZoe, zoeOwesDavid);
 
     const totalBudgeted = (filteredData.budgets || []).reduce((acc, curr) => acc + (Number(curr.base) || 0), 0);
-    const totalDebtAllocated = (filteredData.cards || []).reduce((acc, curr) => acc + (Number(curr.balance) || 0), 0);
+    const totalDebtAllocated = (filteredData.accounts || []).filter((a: any) => a.type === 'CREDIT_CARD' || a.type === 'LIABILITY').reduce((acc: any, curr: any) => acc + (Number(curr.balance) || 0), 0);
     const totalSavingsProjects = (filteredData.projects || []).reduce((acc, curr) => acc + (Number(curr.currentAmount) || 0), 0);
     const unallocated = totalIncome - (totalBudgeted + totalDebtAllocated + totalSavingsProjects);
 
@@ -260,7 +305,7 @@ export default function App() {
 
 
     const totalAssets = filteredData.assets.reduce((acc, curr) => acc + curr.value, 0);
-    const totalLiabilities = filteredData.cards.reduce((acc, curr) => acc + curr.balance, 0);
+    const totalLiabilities = (filteredData.accounts || []).filter((a: any) => a.type === 'CREDIT_CARD' || a.type === 'LIABILITY').reduce((acc: any, curr: any) => acc + (curr.balance || 0), 0);
     const activosLiquidos = (filteredData as any).accounts ? (filteredData as any).accounts.reduce((acc: any, curr: any) => acc + curr.balance, 0) : 0;
     const activosExternos = totalAssets;
     const netWorth = calcularPatrimonio(activosLiquidos, activosExternos, totalLiabilities);
@@ -276,7 +321,7 @@ export default function App() {
   }, [filteredData]);
 
   if (authLoading) {
-    return <div className="min-h-[100dvh] flex items-center justify-center bg-slate-50"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>;
+    return <div className="min-h-[100dvh] flex items-center justify-center bg-slate-50"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;
   }
 
   if (!user) {
@@ -286,13 +331,14 @@ export default function App() {
   const renderTab = () => {
     switch (activeTab) {
       case 'dashboard': return <DashboardView data={filteredData} calc={calc} methods={methods} />;
-      case 'budgets': return <BudgetsView data={filteredData} methods={methods} />;
-      case 'cards': return <CardsView data={filteredData} methods={methods} />;
+      case 'budgets': return <BudgetsView data={filteredData} methods={methods} appContext={appContext} />;
+      case 'cards': return <AccountsView data={filteredData} methods={methods} appContext={appContext} />;
       case 'settlement': return <SettlementView data={filteredData} calc={calc} methods={methods} />;
       case 'debts': return <DebtSimulatorView data={filteredData} />;
       case 'wealth': return <WealthView data={filteredData} calc={calc} methods={methods} />;
       case 'projects': return <ProjectsView data={filteredData} calc={calc} methods={methods} />;
-      case 'historical': return <HistoricalView />;
+      case 'historical': return <HistoricalView data={filteredData} methods={methods} />;
+      case 'settings': return <SettingsView />;
 
       case 'terms': return <TermsView />;
       case 'privacy': return <PrivacyPolicyView />;
@@ -302,13 +348,14 @@ export default function App() {
 
   const navItems = [
     { id: 'dashboard', icon: <Home size={20} />, label: 'Resumen' },
-    { id: 'budgets', icon: <PieChart size={20} />, label: 'Acumulado' },
-    { id: 'cards', icon: <CreditCard size={20} />, label: 'Tarjetas' },
+    { id: 'budgets', icon: <PieChart size={20} />, label: 'Presupuestos' },
+    { id: 'cards', icon: <CreditCard size={20} />, label: 'Fuentes de Ingreso' },
     { id: 'settlement', icon: <ArrowRightLeft size={20} />, label: 'Cuentas' },
     { id: 'debts', icon: <Flame size={20} />, label: 'Simulador' },
     { id: 'projects', icon: <Target size={20} />, label: 'Proyectos' },
     { id: 'wealth', icon: <Landmark size={20} />, label: 'Patrimonio' },
     { id: 'historical', icon: <BarChart3 size={20} />, label: 'Histórico' },
+    { id: 'settings', icon: <Settings size={20} />, label: 'Ajustes' },
 
   ];
 
@@ -319,7 +366,7 @@ export default function App() {
     return (
       <button 
         onClick={() => setAppContext(isPersonal ? 'household' : 'personal')}
-        className={`relative flex items-center justify-center w-10 h-10 rounded-full border-2 shadow-sm overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 ${isPersonal ? 'border-slate-200 bg-white' : 'border-indigo-500 bg-indigo-50'}`}
+        className={`relative flex items-center justify-center w-10 h-10 rounded-full border-2 shadow-sm overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 ${isPersonal ? 'border-slate-200 bg-white' : 'border-primary bg-primary/10'}`}
         title={isPersonal ? "Contexto: Personal" : "Contexto: Hogar"}
       >
         {isPersonal ? (
@@ -332,7 +379,7 @@ export default function App() {
           otherUser?.photoURL ? (
             <img src={otherUser.photoURL} alt="Hogar" className="w-full h-full object-cover" />
           ) : (
-            <Users size={20} className="text-indigo-600" />
+            <Users size={20} className="text-primary" />
           )
         )}
       </button>
@@ -354,7 +401,7 @@ export default function App() {
               onClick={() => setActiveTab(item.id)}
               className={`flex flex-col md:flex-row items-center gap-1 md:gap-3 p-3 md:px-4 md:py-3 rounded-2xl transition-all duration-200 flex-1 md:flex-none relative group ${
                 activeTab === item.id
-                  ? 'text-white font-medium bg-indigo-600 shadow-md'
+                  ? 'text-white font-medium bg-primary shadow-md'
                   : 'text-slate-400 font-normal hover:text-white hover:bg-slate-800'
               }`}
             >
@@ -366,7 +413,7 @@ export default function App() {
           ))}
           
           <div className="hidden md:block mt-auto pt-8 border-t border-slate-800">
-            <button onClick={() => { setShowInviteModal(true); handleInvite(); }} className="w-full flex items-center gap-3 p-3 rounded-2xl text-indigo-400 hover:bg-slate-800 transition-colors font-medium">
+            <button onClick={() => { setShowInviteModal(true); handleInvite(); }} className="w-full flex items-center gap-3 p-3 rounded-2xl text-primary hover:bg-slate-800 transition-colors font-medium">
               <UserPlus size={18} />
               <span className="text-sm">Invitar integrante</span>
             </button>
@@ -390,7 +437,7 @@ export default function App() {
           </div>
           <div className="flex items-center gap-3">
             {renderContextToggle()}
-            <button onClick={() => { setShowInviteModal(true); handleInvite(); }} className="p-2 text-indigo-600 bg-indigo-50 rounded-lg">
+            <button onClick={() => { setShowInviteModal(true); handleInvite(); }} className="p-2 text-primary bg-primary/10 rounded-lg">
               <UserPlus size={20} />
             </button>
           </div>
@@ -403,7 +450,7 @@ export default function App() {
            </div>
         </div>
 
-        {activeTab !== 'historical' && activeTab !== 'terms' && activeTab !== 'privacy' && activeTab !== 'cards' && activeTab !== 'debts' && activeTab !== 'wealth' && (
+        {activeTab !== 'settings' && activeTab !== 'historical' && activeTab !== 'terms' && activeTab !== 'privacy' && activeTab !== 'cards' && activeTab !== 'debts' && activeTab !== 'wealth' && (
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-3 md:p-4 rounded-2xl border border-transparent shadow-sm">
             <div className="flex items-center gap-3 w-full md:w-1/2">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:block">Periodo:</span>
@@ -417,10 +464,10 @@ export default function App() {
             </div>
             
             <div className="flex gap-2 w-full md:w-1/2 justify-end">
-              <button onClick={() => handleOpenExpenseModal()} className="flex-1 md:flex-none bg-rose-50 hover:bg-rose-100 text-rose-600 px-4 py-2.5 rounded-full text-sm font-bold flex items-center justify-center gap-2 transition-colors">
+              <button onClick={() => handleOpenExpenseModal()} className="flex-1 md:flex-none bg-secondary/10 hover:bg-secondary/20 text-secondary px-4 py-2.5 rounded-full text-sm font-bold flex items-center justify-center gap-2 transition-colors">
                 <Plus size={16} /> Nuevo Gasto
               </button>
-              <button onClick={() => handleOpenIncomeModal()} className="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm px-4 py-2.5 rounded-full text-sm font-bold flex items-center justify-center gap-2 transition-colors">
+              <button onClick={() => handleOpenIncomeModal()} className="flex-1 md:flex-none bg-primary hover:bg-primary/90 text-white shadow-sm px-4 py-2.5 rounded-full text-sm font-bold flex items-center justify-center gap-2 transition-colors">
                 <Plus size={16} /> Nuevo Ingreso
               </button>
             </div>
@@ -440,13 +487,13 @@ export default function App() {
             <p className="text-slate-500 mb-6">Comparte este enlace para que otra persona se una a tu misma cuenta y gestionen sus finanzas juntos.</p>
             {inviteLink ? (
               <div className="bg-slate-50 p-4 rounded-lg border border-[#E5E5E5] flex flex-col gap-3">
-                <code className="text-sm text-indigo-600 break-all">{inviteLink}</code>
-                <p className="text-xs font-bold text-indigo-600">¡Copiado al portapapeles!</p>
+                <code className="text-sm text-primary break-all">{inviteLink}</code>
+                <p className="text-xs font-bold text-primary">¡Copiado al portapapeles!</p>
               </div>
             ) : (
-              <div className="flex justify-center p-4"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div>
+              <div className="flex justify-center p-4"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
             )}
-            <button onClick={() => setShowInviteModal(false)} className="mt-8 w-full bg-slate-900 hover:bg-slate-800 text-white p-3 rounded-lg font-bold transition-colors">
+            <button onClick={() => setShowInviteModal(false)} className="mt-8 w-full bg-primary hover:bg-primary/90 text-white p-3 rounded-lg font-bold transition-colors">
               Cerrar
             </button>
           </div>
@@ -457,13 +504,13 @@ export default function App() {
       {joinHouseConfirm && (
         <div className="fixed inset-0 bg-slate-900/60 z-[100] flex items-center justify-center p-4">
           <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm max-w-md w-full relative text-center">
-            <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-6">
               <UserPlus size={32} />
             </div>
             <h2 className="text-2xl font-bold text-slate-900 mb-4 font-title">¡Te han invitado a una casa!</h2>
             <p className="text-slate-600 mb-8 font-medium">¿Deseas abandonar tu casa actual para unirte a esta nueva casa o mantenerte en tu casa actual?</p>
             <div className="flex flex-col gap-3">
-              <button onClick={() => handleJoinHouse(true)} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-lg font-bold transition-colors">
+              <button onClick={() => handleJoinHouse(true)} className="w-full bg-primary hover:bg-primary/90 text-white p-3 rounded-lg font-bold transition-colors">
                 Unirme a la nueva casa
               </button>
               <button onClick={() => handleJoinHouse(false)} className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 p-3 rounded-lg font-bold transition-colors">
@@ -485,7 +532,10 @@ export default function App() {
             key={editingIncome ? editingIncome.id : 'new-inc'}
             initialData={editingIncome} 
             users={data.users} 
+            categories={data.categories}
+            accounts={data.accounts}
             currentUserId={user?.uid}
+            appContext={appContext}
             onSubmit={(formData) => {
               if (editingIncome) methods.updateIncome(editingIncome.id, formData);
               else methods.addIncome(formData);
@@ -506,8 +556,12 @@ export default function App() {
             key={editingExpense ? editingExpense.id : 'new-exp'}
             initialData={editingExpense} 
             users={data.users} 
+            categories={data.categories}
+            accounts={data.accounts}
+            tags={data.tags}
             budgets={data.budgets || []}
             currentUserId={user?.uid}
+            appContext={appContext}
             onSubmit={(formData) => {
               if (editingExpense) methods.updateExpense(editingExpense.id, formData);
               else methods.addExpense(formData);

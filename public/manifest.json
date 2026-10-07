@@ -1,15 +1,15 @@
 {
-  "short_name": "Órbita2",
-  "name": "Órbita2 - Finanzas Colaborativas",
+  "short_name": "Orbita2",
+  "name": "Orbita2 - Finanzas Colaborativas",
   "icons": [
     {
-      "src": "/vite.svg",
+      "src": "/favicon.svg",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "/vite.svg",
+      "src": "/favicon.svg",
       "sizes": "512x512",
       "type": "image/svg+xml"
     }

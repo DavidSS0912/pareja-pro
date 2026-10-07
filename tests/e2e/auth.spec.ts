@@ -8,6 +8,6 @@ test('auth page should display login button', async ({ page }) => {
   await expect(loginBtn).toBeVisible();
 
   // Also check that the app title is there
-  const title = page.getByRole('heading', { name: 'Órbita2' });
+  const title = page.getByRole('heading', { name: 'Orbita2' });
   await expect(title).toBeVisible();
 });

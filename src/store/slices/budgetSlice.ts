@@ -1,7 +1,7 @@
 import { StateCreator } from 'zustand';
 import { RecordItem } from '../types';
 import { AuthSlice } from './authSlice';
-import { createBudget, updateBudgetAmount, OwnerType } from '../../lib/dataconnect';
+import { createBudget, updateBudget, deleteBudget as deleteBudgetMutation, OwnerType } from '../../lib/dataconnect';
 import { DataSlice } from './dataSlice';
 import { useToastStore } from '../useToastStore';
 
@@ -11,6 +11,7 @@ export interface BudgetSlice {
   addBudget: (item: any) => Promise<void>;
   updateBudget: (id: string, item: any) => Promise<void>;
   deleteBudget: (id: string) => Promise<void>;
+  copyBudgetsFromPreviousMonth: (currentPeriod: string) => Promise<void>;
 }
 
 export const createBudgetSlice: StateCreator<BudgetSlice & AuthSlice & DataSlice, [], [], BudgetSlice> = (set, get) => ({
@@ -20,19 +21,21 @@ export const createBudgetSlice: StateCreator<BudgetSlice & AuthSlice & DataSlice
     const state = get();
     const houseId = state.houseId || "00000000-0000-0000-0000-000000000000";
     
-    const optimisticBudget = { ...item, id: `temp-${Date.now()}` };
+    const optimisticOwnerType = (item.shared || item.type === 'SHARED') ? OwnerType.SHARED : OwnerType.USER_A;
+    const optimisticBudget = { ...item, ownerType: optimisticOwnerType, id: `temp-${Date.now()}` };
     set({ budgets: [optimisticBudget, ...state.budgets] });
     
     try {
       await createBudget({
         householdId: houseId,
-        categoryName: item.category || 'General',
+        categoryId: item.categoryId,
+        categoryName: item.categoryName || item.category || 'General',
+        period: item.period,
         assignedAmount: item.base || 0,
-        period: new Date().toISOString().slice(0, 7) + '-01',
-        ownerType: (item.shared || item.type === 'SHARED') ? OwnerType.SHARED : OwnerType.USER_A
+        ownerType: optimisticOwnerType
       });
       useToastStore.getState().addToast("Presupuesto agregado", "success");
-      if (state.houseId) await state.fetchDashboardData(state.houseId);
+      await state.fetchBudgetsForMonth(item.period);
     } catch(error) {
       console.error(error);
       useToastStore.getState().addToast("Error al agregar presupuesto", "error");
@@ -40,18 +43,108 @@ export const createBudgetSlice: StateCreator<BudgetSlice & AuthSlice & DataSlice
     }
   },
   updateBudget: async (id, item) => {
+    if (id.startsWith('temp-')) {
+      useToastStore.getState().addToast("Espera a que se guarde para editarlo", "warning");
+      return;
+    }
     const state = get();
+    const houseId = state.houseId;
+    if (!houseId) return;
+    const originalBudgets = state.budgets;
+    
+    // Optimistic update
+    const updatedBudgets = state.budgets.map(b => b.id === id ? { 
+      ...b, 
+      ...item, 
+      category: item.categoryName || item.category || b.category, 
+      base: item.base !== undefined ? item.base : (item.assignedAmount !== undefined ? item.assignedAmount : b.base),
+      ownerType: (item.shared || item.type === 'SHARED') ? OwnerType.SHARED : OwnerType.USER_A
+    } : b);
+    set({ budgets: updatedBudgets });
+
     try {
-      await updateBudgetAmount({
-        budgetId: id,
+      await updateBudget({
+        id: id,
+        householdId: houseId,
         assignedAmount: item.base !== undefined ? item.base : (item.assignedAmount || 0)
       });
       useToastStore.getState().addToast("Presupuesto actualizado", "success");
-      if (state.houseId) await state.fetchDashboardData(state.houseId);
+      await state.fetchBudgetsForMonth(item.period || updatedBudgets.find(b => b.id === id)?.period);
     } catch(error) {
       console.error(error);
       useToastStore.getState().addToast("Error al actualizar presupuesto", "error");
+      set({ budgets: originalBudgets });
     }
   },
-  deleteBudget: async (_id) => { useToastStore.getState().addToast("Eliminar no disponible", "error"); }
+  deleteBudget: async (id) => {
+    if (id.startsWith('temp-')) {
+      useToastStore.getState().addToast("Espera a que se guarde para eliminarlo", "warning");
+      return;
+    }
+    const state = get();
+    const houseId = state.houseId;
+    if (!houseId) return;
+    const originalBudgets = state.budgets;
+    const budgetToDelete = state.budgets.find((b) => b.id === id);
+    // Actualización optimista
+    set({ budgets: state.budgets.filter((b) => b.id !== id) });
+
+    try {
+      await deleteBudgetMutation({ id: id, householdId: houseId });
+      useToastStore.getState().addToast("Presupuesto eliminado", "success");
+      if (budgetToDelete?.period) await state.fetchBudgetsForMonth(budgetToDelete.period);
+    } catch(error) {
+      console.error(error);
+      useToastStore.getState().addToast("Error al eliminar presupuesto", "error");
+      // Rollback en caso de error
+      set({ budgets: originalBudgets });
+    }
+  },
+  copyBudgetsFromPreviousMonth: async (currentPeriod: string) => {
+    const state = get();
+    const houseId = state.houseId;
+    if (!houseId) return;
+
+    try {
+      // Calculate previous month
+      const [year, month] = currentPeriod.split('-');
+      const d = new Date(parseInt(year), parseInt(month) - 1, 1);
+      d.setMonth(d.getMonth() - 1);
+      const prevPeriod = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+
+      // fetch budgets from previous month using a direct call (or state.fetchBudgetsForMonth if it returns data, but we can just use the state if we cache it... wait, we only cache current month. Better to call API)
+      const { getBudgetsByMonth } = await import('../../lib/dataconnect');
+      const prevBudgetsRes = await getBudgetsByMonth({ householdId: houseId, period: prevPeriod });
+      const prevBudgets = prevBudgetsRes.data?.budgets || [];
+      
+      if (prevBudgets.length === 0) {
+        useToastStore.getState().addToast("No hay presupuestos en el mes anterior", "warning");
+        return;
+      }
+
+      // get current budgets to avoid duplicates
+      const currentBudgets = state.budgets;
+      
+      let copied = 0;
+      for (const pb of prevBudgets) {
+        if (!currentBudgets.find((cb) => cb.categoryName === pb.categoryName && cb.ownerType === pb.ownerType)) {
+          await createBudget({
+            householdId: houseId,
+            categoryId: pb.category.id,
+            categoryName: pb.categoryName,
+            period: currentPeriod,
+            assignedAmount: pb.assignedAmount,
+            ownerType: pb.ownerType
+          });
+          copied++;
+        }
+      }
+      
+      useToastStore.getState().addToast(copied > 0 ? `Se copiaron ${copied} presupuestos` : "Todos los presupuestos ya existen en este mes", "success");
+      await state.fetchBudgetsForMonth(currentPeriod);
+    } catch(error) {
+      console.error(error);
+      useToastStore.getState().addToast("Error al copiar presupuestos", "error");
+    }
+  }
 });

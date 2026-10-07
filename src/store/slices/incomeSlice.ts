@@ -2,6 +2,7 @@ import { StateCreator } from 'zustand';
 import { RecordItem } from '../types';
 import { AuthSlice } from './authSlice';
 import { DataSlice } from './dataSlice';
+import { AccountSlice } from './accountSlice';
 import { createJournalWithEntries, updateJournalWithEntries, seedDefaultAccounts, deleteJournal } from '../../lib/dataconnect';
 import { useToastStore } from '../useToastStore';
 
@@ -13,7 +14,7 @@ export interface IncomeSlice {
   deleteIncome: (id: string) => Promise<void>;
 }
 
-export const createIncomeSlice: StateCreator<IncomeSlice & AuthSlice & DataSlice, [], [], IncomeSlice> = (set, get) => ({
+export const createIncomeSlice: StateCreator<IncomeSlice & AuthSlice & DataSlice & AccountSlice, [], [], IncomeSlice> = (set, get) => ({
   incomes: [],
   setIncomes: (items) => set({ incomes: items }),
   addIncome: async (item) => {
@@ -21,7 +22,7 @@ export const createIncomeSlice: StateCreator<IncomeSlice & AuthSlice & DataSlice
     const houseId = state.houseId || "00000000-0000-0000-0000-000000000000";
 
     let incomeAccount = state.accounts?.find((a: any) => a.type === 'INCOME');
-    let assetAccount = state.accounts?.find((a: any) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT');
+    let assetAccount = item.accountId ? state.accounts?.find((a: any) => a.id === item.accountId) : state.accounts?.find((a: any) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT');
 
     // If accounts are missing, try to seed them and reload
     if (!incomeAccount || !assetAccount) {
@@ -56,13 +57,15 @@ export const createIncomeSlice: StateCreator<IncomeSlice & AuthSlice & DataSlice
       const response = await createJournalWithEntries({
         householdId: houseId,
         date: new Date(item.date).toISOString(),
-        description: item.type + (item.source ? ` - ${item.source}` : ''),
-        accountId1: incomeAccount.id,
-        amount1: item.amount,
-        prorataFactor1: 1.0,
-        accountId2: assetAccount.id,
-        amount2: -item.amount,
-        prorataFactor2: 1.0
+        description: "Ingreso" + (item.source ? ` - ${item.source}` : ''),
+        amount: item.amount,
+        debitAccountId: assetAccount.id,
+        creditAccountId: incomeAccount.id,
+        prorataFactor: 1.0,
+        ownerUid: item.userId || state.user?.uid || "unknown",
+        isShared: !item.isPrivate,
+        incomeCategoryType: item.incomeCategoryType,
+        categoryId: item.categoryId || null
       });
       const realId = response.data?.journal_insert?.id;
       if (realId) {
@@ -70,10 +73,12 @@ export const createIncomeSlice: StateCreator<IncomeSlice & AuthSlice & DataSlice
           incomes: s.incomes.map((i) => i.id === optimisticIncome.id ? { ...i, id: realId } : i)
         }));
       }
+      // Sync with real Firebase data so all fields (ownerUid, isPrivate, etc.) are accurate
       useToastStore.getState().addToast("Ingreso agregado correctamente", "success");
-      } catch(error) {
+      } catch(error: any) {
       console.error(error);
-      useToastStore.getState().addToast("Error al registrar el ingreso", "error");
+      useToastStore.getState().addToast(`Error: ${error.message || 'Desconocido'}`, "error");
+      alert("Error al registrar el ingreso: " + (error.message || JSON.stringify(error)));
       set((s) => ({ incomes: s.incomes.filter((i) => i.id !== optimisticIncome.id) }));
     }
   },
@@ -90,24 +95,27 @@ export const createIncomeSlice: StateCreator<IncomeSlice & AuthSlice & DataSlice
 
       // Note: unused houseId removed to pass linter
       const incomeAccount = state.accounts?.find((a: any) => a.type === 'INCOME');
-      const assetAccount = state.accounts?.find((a: any) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT');
+      const assetAccount = item.accountId ? state.accounts?.find((a: any) => a.id === item.accountId) : state.accounts?.find((a: any) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT');
 
       if (!incomeAccount || !assetAccount) {
         throw new Error("Cuentas contables no encontradas.");
       }
 
+      const houseId = state.houseId || "00000000-0000-0000-0000-000000000000";
       await updateJournalWithEntries({
         journalId: id,
+        householdId: houseId,
         date: new Date(item.date).toISOString(),
-        description: item.type + (item.source ? ` - ${item.source}` : ''),
-        accountId1: incomeAccount.id,
-        amount1: item.amount,
-        prorataFactor1: 1.0,
-        accountId2: assetAccount.id,
-        amount2: -item.amount,
-        prorataFactor2: 1.0
+        description: "Ingreso" + (item.source ? ` - ${item.source}` : ''),
+        amount: item.amount,
+        debitAccountId: assetAccount.id,
+        creditAccountId: incomeAccount.id,
+        prorataFactor: 1.0,
+        ownerUid: item.userId || state.user?.uid || "unknown",
+        isShared: !item.isPrivate,
+        incomeCategoryType: item.incomeCategoryType,
+        categoryId: item.categoryId || null
       });
-
       useToastStore.getState().addToast("Ingreso actualizado correctamente", "success");
       } catch (error: any) {
       console.error(error);
@@ -124,7 +132,9 @@ export const createIncomeSlice: StateCreator<IncomeSlice & AuthSlice & DataSlice
     
     try {
       if (!id.startsWith('temp-')) {
-        await deleteJournal({ journalId: id });
+        const houseId = state.houseId || "00000000-0000-0000-0000-000000000000";
+        await deleteJournal({ journalId: id, householdId: houseId });
+        await get().refreshIncomes();
         useToastStore.getState().addToast("Ingreso eliminado correctamente", "success");
         }
     } catch(error) {

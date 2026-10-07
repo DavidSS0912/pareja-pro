@@ -9,13 +9,12 @@ export const getOrCreateUserAndHouse = async (fbUser: any) => {
       const householdId = existing.data.user.householdId;
       console.log("Usuario encontrado en BD:", householdId);
       
-      // 2. Aseguramos que el hogar tenga cuentas contables por defecto
+      // 2. Ejecutar migración / deduplicación de cuentas
       try {
-        await seedDefaultAccounts({ householdId });
-        console.log("Cuentas contables verificadas/creadas para hogar existente:", householdId);
-      } catch (seedError) {
-        // Ignoramos el error si las cuentas ya existen (unique constraint violation)
-        console.log("seedDefaultAccounts: las cuentas ya existen o hubo un error menor:", seedError);
+        const { runAccountMigration } = await import('./accountMigrationService');
+        await runAccountMigration(householdId);
+      } catch (error) {
+        console.error("Error al ejecutar migración de cuentas:", error);
       }
       
       return householdId;

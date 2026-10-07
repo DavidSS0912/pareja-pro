@@ -2,7 +2,7 @@ import { StateCreator } from 'zustand';
 import { RecordItem } from '../types';
 import { AuthSlice } from './authSlice';
 import { DataSlice } from './dataSlice';
-import { createSavingsProject, updateProjectProgress } from '../../lib/dataconnect';
+import { createSavingsProject, updateProjectProgress, updateSavingsProject } from '../../lib/dataconnect';
 import { useToastStore } from '../useToastStore';
 
 export interface ProjectSlice {
@@ -34,7 +34,9 @@ export const createProjectSlice: StateCreator<ProjectSlice & AuthSlice & DataSli
         householdId: houseId,
         name: item.name,
         targetAmount: item.targetAmount || 0,
-        priority: item.priority || 1
+        priority: item.priority || 1,
+        monthlyQuota: item.monthlyQuota,
+        targetAccount: item.targetAccount
       });
       useToastStore.getState().addToast("Proyecto agregado exitosamente", "success");
       if (state.houseId) await state.fetchDashboardData(state.houseId);
@@ -46,18 +48,31 @@ export const createProjectSlice: StateCreator<ProjectSlice & AuthSlice & DataSli
   },
   updateProject: async (id, item) => {
     const state = get();
-    if (item.currentAmount !== undefined || item.savedAmount !== undefined) {
-      try {
+    try {
+      if (item.currentAmount !== undefined || item.savedAmount !== undefined) {
+        // update progress only
         await updateProjectProgress({
           projectId: id,
           amountToAdd: item.currentAmount !== undefined ? item.currentAmount : item.savedAmount
         });
-        useToastStore.getState().addToast("Progreso actualizado", "success");
-        if (state.houseId) await state.fetchDashboardData(state.houseId);
-      } catch(error) {
-        console.error(error);
-        useToastStore.getState().addToast("Error al actualizar progreso", "error");
+      } else {
+        // update fields
+        const isCompleted = item.status === 'completed' ? true : (item.status === 'pending' || item.status === 'active' ? false : undefined);
+        await updateSavingsProject({
+          projectId: id,
+          name: item.name,
+          targetAmount: item.targetAmount,
+          monthlyQuota: item.monthlyQuota,
+          targetAccount: item.targetAccount,
+          priority: item.priority,
+          isCompleted: isCompleted
+        });
       }
+      useToastStore.getState().addToast("Proyecto actualizado", "success");
+      if (state.houseId) await state.fetchDashboardData(state.houseId);
+    } catch(error) {
+      console.error(error);
+      useToastStore.getState().addToast("Error al actualizar proyecto", "error");
     }
   },
   deleteProject: async (_id) => { useToastStore.getState().addToast("Operación no disponible", "error"); },

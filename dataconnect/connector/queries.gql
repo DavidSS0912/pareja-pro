@@ -1,16 +1,32 @@
 query GetHouseholdAccounts($householdId: UUID!) @auth(level: USER) {
-  accounts(where: { householdId: { eq: $householdId } }) {
+  accounts(where: { 
+    householdId: { eq: $householdId },
+    household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
+  }) {
     id
     name
     type
     ownerType
+    cutDay
+    paymentDay
+    systemKey
+    creditLimit
+    color
+    isArchived
   }
 }
 
 query GetHouseholdNetBalances($householdId: UUID!) @auth(level: USER) {
-  entries(where: { journal: { householdId: { eq: $householdId } }, account: { type: { in: [ASSET, LIABILITY] } } }) {
+  entries(where: { 
+    journal: { 
+      householdId: { eq: $householdId },
+      household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
+    }, 
+    account: { type: { in: [ASSET, LIABILITY] } } 
+  }) {
     ownerUid
     amount
+    entryType
     account {
       id
       type
@@ -18,38 +34,66 @@ query GetHouseholdNetBalances($householdId: UUID!) @auth(level: USER) {
   }
 }
 
-query GetMonthBudgets($householdId: UUID!, $period: Date!) @auth(level: USER) {
+query GetBudgets($householdId: UUID!) @auth(level: USER) {
   budgets(where: {
     householdId: { eq: $householdId },
-    period: { eq: $period }
+    household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
   }) {
     id
     categoryName
     assignedAmount
-    period
     ownerType
+    period
+    categoryId
+    category { id name }
+  }
+}
+
+query GetBudgetsByMonth($householdId: UUID!, $period: Date!) @auth(level: USER) {
+  budgets(where: { 
+    householdId: { eq: $householdId }, 
+    period: { eq: $period },
+    household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
+  }) {
+    id
+    categoryName
+    category { id name }
+    ownerType
+    assignedAmount
+    period
   }
 }
 
 query GetUnassignedCash($householdId: UUID!) @auth(level: USER) {
-  unassignedCashes(where: { householdId: { eq: $householdId } }) {
+  unassignedCashV2s(where: { 
+    householdId: { eq: $householdId },
+    household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
+  }) {
     unassigned
   }
 }
 
 query GetSavingsProjects($householdId: UUID!) @auth(level: USER) {
-  savingsProjects(where: { householdId: { eq: $householdId } }, orderBy: { priority: ASC }) {
+  savingsProjects(where: { 
+    householdId: { eq: $householdId },
+    household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
+  }, orderBy: { priority: ASC }) {
     id
     name
     targetAmount
     currentAmount
     priority
     isCompleted
+    monthlyQuota
+    targetAccount
   }
 }
 
 query GetExternalAssets($householdId: UUID!) @auth(level: USER) {
-  externalAssets(where: { householdId: { eq: $householdId } }) {
+  externalAssets(where: { 
+    householdId: { eq: $householdId },
+    household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
+  }) {
     id
     name
     estimatedValue
@@ -58,7 +102,10 @@ query GetExternalAssets($householdId: UUID!) @auth(level: USER) {
 }
 
 query GetNetWorth($householdId: UUID!) @auth(level: USER) {
-  netWorthSnapshots(where: { householdId: { eq: $householdId } }) {
+  netWorthSnapshotV2s(where: { 
+    householdId: { eq: $householdId },
+    household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
+  }) {
     netWorth
   }
 }
@@ -77,7 +124,10 @@ query GetLatestRate($currency: String!) @auth(level: USER) {
 query GetExpensesByHousehold($householdId: UUID!) @auth(level: USER) {
   entries(
     where: { 
-      journal: { householdId: { eq: $householdId } }, 
+      journal: { 
+        householdId: { eq: $householdId },
+        household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
+      }, 
       account: { type: { eq: EXPENSE } } 
     },
     orderBy: { createdAt: DESC }
@@ -87,10 +137,23 @@ query GetExpensesByHousehold($householdId: UUID!) @auth(level: USER) {
     entryType
     createdAt
     ownerUid
+    isShared
     journal {
       id
       description
       date
+      isInternalTransfer
+      isMsi
+      msiMonthNumber
+      msiRefId
+      isRecurring
+      recurringFrequency
+      categoryId
+      category {
+        name
+        color
+      }
+      # Dataconnect no expande M2M fácilmente sin una subquery, pero podemos recuperar las JournalTag
     }
     account {
       name
@@ -101,7 +164,10 @@ query GetExpensesByHousehold($householdId: UUID!) @auth(level: USER) {
 query GetIncomesByHousehold($householdId: UUID!) @auth(level: USER) {
   entries(
     where: { 
-      journal: { householdId: { eq: $householdId } }, 
+      journal: { 
+        householdId: { eq: $householdId },
+        household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
+      }, 
       account: { type: { eq: INCOME } } 
     },
     orderBy: { createdAt: DESC }
@@ -111,10 +177,18 @@ query GetIncomesByHousehold($householdId: UUID!) @auth(level: USER) {
     entryType
     createdAt
     ownerUid
+    isShared
     journal {
       id
       description
       date
+      isInternalTransfer
+      incomeCategoryType
+      categoryId
+      category {
+        name
+        color
+      }
     }
     account {
       name
@@ -128,5 +202,81 @@ query GetCurrentUser @auth(level: USER) {
     email
     displayName
     householdId
+  }
+}
+
+query GetCategories($householdId: UUID!) @auth(level: USER) {
+  categories(where: { 
+    householdId: { eq: $householdId },
+    household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
+  }) {
+    id
+    name
+    type
+    color
+    ownerType
+  }
+}
+
+query GetTags($householdId: UUID!) @auth(level: USER) {
+  tags(where: { 
+    householdId: { eq: $householdId },
+    household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
+  }) {
+    id
+    name
+  }
+}
+
+query GetJournalTags($journalId: UUID!) @auth(level: USER) {
+  journalTags(where: { 
+    journalId: { eq: $journalId },
+    journal: { household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } } }
+  }) {
+    tag {
+      id
+      name
+    }
+  }
+}
+
+query GetSettlements($householdId: UUID!) @auth(level: USER) {
+  settlements(where: { 
+    householdId: { eq: $householdId },
+    household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
+  }, orderBy: { createdAt: DESC }) {
+    id
+    ownerType
+    amount
+    note
+    createdAt
+  }
+}
+
+query GetJournalBalanceV2($journalId: UUID!) @auth(level: USER) {
+  journalBalanceV2s(where: { 
+    journalId: { eq: $journalId },
+    journal: { household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } } }
+  }) {
+    diff
+  }
+}
+
+query NegativeEntries @auth(level: USER) {
+  entries(where: { amount: { lt: 0 } }) {
+    id
+    amount
+    entryType
+    journal {
+      id
+      description
+    }
+  }
+}
+
+query UnbalancedJournals @auth(level: USER) {
+  journalBalanceV2s(where: { diff: { ne: 0 } }) {
+    journalId
+    diff
   }
 }

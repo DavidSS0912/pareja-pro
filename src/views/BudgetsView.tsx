@@ -11,9 +11,17 @@ const normalize = (amount, currency) => {
   return currency === 'USD' ? amount * parseFloat(localStorage.getItem('exchangeRate') || '20') : amount;
 };
 
-export function BudgetsView({ data, methods }) {
+export function BudgetsView({ data, methods, appContext }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+  });
+
+  React.useEffect(() => {
+    methods.fetchBudgetsForMonth?.(selectedMonth);
+  }, [selectedMonth, methods.fetchBudgetsForMonth]);
 
   const handleOpenModal = (budget = null) => {
     setEditingBudget(budget);
@@ -26,12 +34,19 @@ export function BudgetsView({ data, methods }) {
   };
 
   const handleSubmit = (formData) => {
+    const dataWithPeriod = { ...formData, period: selectedMonth };
     if (editingBudget) {
-      methods.updateBudget(editingBudget.id, formData);
+      methods.updateBudget(editingBudget.id, dataWithPeriod);
     } else {
-      methods.addBudget(formData);
+      methods.addBudget(dataWithPeriod);
     }
     handleCloseModal();
+  };
+
+  const handleCopyPrevious = () => {
+    if (window.confirm('¿Copiar los presupuestos del mes anterior a este mes?')) {
+      methods.copyBudgetsFromPreviousMonth?.(selectedMonth);
+    }
   };
 
   const handleDelete = (id) => {
@@ -42,14 +57,31 @@ export function BudgetsView({ data, methods }) {
 
   return (
     <div className="space-y-6 animate-in">
-      <div className="flex justify-between items-end mb-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8">
         <div>
-          <h2 className="text-3xl font-black tracking-tight text-slate-800">Acumulado & Fondos</h2>
-          <p className="text-slate-600 mt-2 font-medium">Saldos arrastrados de meses anteriores.</p>
+          <h2 className="text-3xl font-black tracking-tight text-slate-800">Presupuestos</h2>
+          <p className="text-slate-600 mt-2 font-medium">Guía y plantillas de asignación de fondos.</p>
         </div>
-        <Button onClick={() => handleOpenModal()}>
-          <Plus size={18} className="mr-2" /> Nuevo Presupuesto
-        </Button>
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+          <input 
+            type="month" 
+            className="px-4 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-700 w-full sm:w-auto focus:ring-2 focus:ring-primary focus:border-primary"
+            value={selectedMonth.substring(0, 7)}
+            onChange={(e) => {
+              if (e.target.value) {
+                setSelectedMonth(`${e.target.value}-01`);
+              }
+            }}
+          />
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button variant="outline" onClick={handleCopyPrevious} className="flex-1 sm:flex-none whitespace-nowrap">
+              Copiar anterior
+            </Button>
+            <Button onClick={() => handleOpenModal()} className="flex-1 sm:flex-none whitespace-nowrap">
+              <Plus size={18} className="mr-2" /> Nuevo
+            </Button>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -58,27 +90,23 @@ export function BudgetsView({ data, methods }) {
             .filter(e => e.category === budget.category && !e.isPrivate)
             .reduce((acc, curr) => acc + normalize(curr.amount, curr.currency), 0);
           
-          // Fallback to budget.spent if no matching expenses found (for mock data compatibility)
-          const actualSpent = computedSpent > 0 ? computedSpent : budget.spent || 0;
-
-          const disponible = budget.base + (budget.rollover || 0);
+          const actualSpent = computedSpent > 0 ? computedSpent : 0;
+          const disponible = budget.base;
           const porcentaje = Math.min((actualSpent / disponible) * 100, 100) || 0;
           
-          let alertColor = budget.type === 'Ahorro' ? 'bg-indigo-500' : 'bg-emerald-500';
+          let alertColor = 'bg-emerald-500';
           let alertText = 'text-emerald-600';
-          if (budget.type !== 'Ahorro') {
-            if (porcentaje >= 100) {
-              alertColor = 'bg-rose-600';
-              alertText = 'text-rose-600 font-black';
-            } else if (porcentaje >= 80) {
-              alertColor = 'bg-amber-500';
-              alertText = 'text-amber-600 font-bold';
-            }
+          if (porcentaje >= 100) {
+            alertColor = 'bg-rose-600';
+            alertText = 'text-rose-600 font-black';
+          } else if (porcentaje >= 80) {
+            alertColor = 'bg-amber-500';
+            alertText = 'text-amber-600 font-bold';
           }
           
           return (
             <Card key={budget.id} className="hover:border-indigo-200 transition-colors group cursor-default relative">
-              <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute top-4 right-4 flex flex-col gap-2 z-20">
                 <button onClick={() => handleOpenModal(budget)} className="p-1.5 bg-white text-slate-600 hover:text-blue-600 rounded-lg shadow-sm border border-slate-100">
                   <Edit2 size={16} />
                 </button>
@@ -93,38 +121,22 @@ export function BudgetsView({ data, methods }) {
                 </div>
                 <div className="flex-1 pr-10">
                   <h3 className="font-bold text-slate-800 text-xl tracking-tight">{budget.category}</h3>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    <span className="text-[10px] uppercase font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded-md tracking-wider">
-                      {budget.type}
-                    </span>
-                    {budget.type === 'Ahorro' && (
-                      <span className="text-[10px] uppercase font-bold text-indigo-700 bg-indigo-100 px-2 py-1 rounded-md tracking-wider">
-                        Sinking Fund
-                      </span>
-                    )}
-                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 text-xs p-4 bg-slate-50 rounded-2xl mb-5 text-center border border-slate-100">
+              <div className="grid grid-cols-2 gap-2 text-xs p-4 bg-slate-50 rounded-2xl mb-5 text-center border border-slate-100">
                 <div>
-                  <span className="block text-slate-500 font-medium mb-1">Base Mes</span>
-                  <span className="font-bold text-slate-700">{FormatCurrency(budget.base)}</span>
-                </div>
-                <div className="border-x border-slate-200">
-                  <span className="block text-slate-500 font-medium mb-1">Acumulado</span>
-                  <span className={`font-bold ${budget.rollover >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {budget.rollover > 0 ? '+' : ''}{FormatCurrency(budget.rollover)}
-                  </span>
-                </div>
-                <div>
-                  <span className="block text-slate-500 font-medium mb-1">Total Disp.</span>
+                  <span className="block text-slate-500 font-medium mb-1">Presupuesto Mensual</span>
                   <span className="font-black text-slate-800">{FormatCurrency(disponible)}</span>
+                </div>
+                <div className="border-l border-slate-200">
+                  <span className="block text-slate-500 font-medium mb-1">Total Gastado</span>
+                  <span className="font-bold text-slate-700">{FormatCurrency(actualSpent)}</span>
                 </div>
               </div>
 
               <div className="flex justify-between text-sm mb-3 font-bold">
-                <span className="text-slate-600">Gastado: {FormatCurrency(actualSpent)}</span>
+                <span className="text-slate-600">Porcentaje: {porcentaje.toFixed(1)}%</span>
                 <span className={disponible - actualSpent < 0 ? 'text-rose-600' : alertText}>
                   Restante: {FormatCurrency(disponible - actualSpent)}
                 </span>
@@ -134,7 +146,7 @@ export function BudgetsView({ data, methods }) {
                   className={`h-full transition-all duration-1000 ease-out ${alertColor}`} 
                   style={{ width: `${porcentaje}%` }}
                 ></div>
-                {porcentaje >= 80 && budget.type !== 'Ahorro' && (
+                {porcentaje >= 80 && (
                   <div className="absolute top-0 right-0 h-full w-full bg-rose-500/20 animate-pulse pointer-events-none"></div>
                 )}
               </div>
@@ -151,7 +163,8 @@ export function BudgetsView({ data, methods }) {
         <BudgetForm 
           initialData={editingBudget} 
           onSubmit={handleSubmit} 
-          onCancel={handleCloseModal} 
+          onCancel={handleCloseModal}
+          appContext={appContext}
         />
       </Modal>
     </div>

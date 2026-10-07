@@ -13,19 +13,19 @@ export enum AccountType {
   LIABILITY = "LIABILITY",
   INCOME = "INCOME",
   EXPENSE = "EXPENSE",
-  EQUITY = "EQUITY"
-}
+  EQUITY = "EQUITY",
+};
 
 export enum EntryType {
   DEBIT = "DEBIT",
   CREDIT = "CREDIT",
-}
+};
 
 export enum OwnerType {
   USER_A = "USER_A",
   USER_B = "USER_B",
   SHARED = "SHARED",
-}
+};
 
 
 
@@ -34,9 +34,47 @@ export interface Account_Key {
   __typename?: 'Account_Key';
 }
 
+export interface AddTagToJournalData {
+  journalTag_insert: JournalTag_Key;
+}
+
+export interface AddTagToJournalVariables {
+  journalId: UUIDString;
+  tagId: UUIDString;
+}
+
+export interface ArchiveAccountData {
+  account_update?: Account_Key | null;
+}
+
+export interface ArchiveAccountVariables {
+  accountId: UUIDString;
+  isArchived: boolean;
+}
+
 export interface Budget_Key {
   id: UUIDString;
   __typename?: 'Budget_Key';
+}
+
+export interface Category_Key {
+  id: UUIDString;
+  __typename?: 'Category_Key';
+}
+
+export interface CreateAccountData {
+  account_insert: Account_Key;
+}
+
+export interface CreateAccountVariables {
+  householdId: UUIDString;
+  name: string;
+  type: AccountType;
+  ownerType: OwnerType;
+  cutDay?: number | null;
+  paymentDay?: number | null;
+  creditLimit?: number | null;
+  color?: string | null;
 }
 
 export interface CreateBudgetData {
@@ -45,9 +83,22 @@ export interface CreateBudgetData {
 
 export interface CreateBudgetVariables {
   householdId: UUIDString;
+  categoryId: UUIDString;
   categoryName: string;
-  assignedAmount: number;
+  ownerType: OwnerType;
   period: DateString;
+  assignedAmount: number;
+}
+
+export interface CreateCategoryData {
+  category_insert: Category_Key;
+}
+
+export interface CreateCategoryVariables {
+  name: string;
+  type: AccountType;
+  color?: string | null;
+  householdId: UUIDString;
   ownerType: OwnerType;
 }
 
@@ -78,20 +129,29 @@ export interface CreateHouseholdAndUserVariables {
 
 export interface CreateJournalWithEntriesData {
   journal_insert: Journal_Key;
-  entry1: Entry_Key;
-  entry2: Entry_Key;
+  debitEntry: Entry_Key;
+  creditEntry: Entry_Key;
 }
 
 export interface CreateJournalWithEntriesVariables {
   householdId: UUIDString;
   date: TimestampString;
   description: string;
-  accountId1: UUIDString;
-  amount1: number;
-  prorataFactor1: number;
-  accountId2: UUIDString;
-  amount2: number;
-  prorataFactor2: number;
+  amount: number;
+  debitAccountId: UUIDString;
+  creditAccountId: UUIDString;
+  prorataFactor: number;
+  ownerUid: string;
+  isShared: boolean;
+  isInternalTransfer?: boolean | null;
+  incomeCategoryType?: string | null;
+  isMsi?: boolean | null;
+  msiRefId?: string | null;
+  msiMonthNumber?: number | null;
+  isRecurring?: boolean | null;
+  recurringFrequency?: string | null;
+  recurringEndDate?: TimestampString | null;
+  categoryId?: UUIDString | null;
 }
 
 export interface CreateMsiExpenseData {
@@ -109,6 +169,9 @@ export interface CreateMsiExpenseVariables {
   expenseAccountId: UUIDString;
   prorataFactor: number;
   monthlyAmount: number;
+  categoryId?: UUIDString | null;
+  msiRefId?: string | null;
+  msiMonthNumber?: number | null;
 }
 
 export interface CreateSavingsProjectData {
@@ -120,6 +183,19 @@ export interface CreateSavingsProjectVariables {
   name: string;
   targetAmount: number;
   priority: number;
+  monthlyQuota?: number | null;
+  targetAccount?: string | null;
+}
+
+export interface CreateSettlementData {
+  settlement_insert: Settlement_Key;
+}
+
+export interface CreateSettlementVariables {
+  householdId: UUIDString;
+  ownerType: OwnerType;
+  amount: number;
+  note?: string | null;
 }
 
 export interface CreateSharedExpenseWithProrationData {
@@ -140,16 +216,76 @@ export interface CreateSharedExpenseWithProrationVariables {
   user2ExpenseAccountId: UUIDString;
   user1Amount: number;
   user2Amount: number;
-  payerAmount: number;
+  ownerUid: string;
+  isShared: boolean;
+  isMsi?: boolean | null;
+  msiRefId?: string | null;
+  msiMonthNumber?: number | null;
+  isRecurring?: boolean | null;
+  recurringFrequency?: string | null;
+  recurringEndDate?: TimestampString | null;
+  categoryId?: UUIDString | null;
+}
+
+export interface CreateTagData {
+  tag_insert: Tag_Key;
+}
+
+export interface CreateTagVariables {
+  name: string;
+  householdId: UUIDString;
+}
+
+export interface DeleteAccountData {
+  account_delete?: Account_Key | null;
+}
+
+export interface DeleteAccountVariables {
+  accountId: UUIDString;
+}
+
+export interface DeleteBudgetData {
+  budget_delete?: Budget_Key | null;
+}
+
+export interface DeleteBudgetVariables {
+  id: UUIDString;
+  householdId: UUIDString;
+}
+
+export interface DeleteCategoryData {
+  category_delete?: Category_Key | null;
+}
+
+export interface DeleteCategoryVariables {
+  id: UUIDString;
 }
 
 export interface DeleteJournalData {
+  journalTag_deleteMany: number;
   entry_deleteMany: number;
   journal_delete?: Journal_Key | null;
 }
 
 export interface DeleteJournalVariables {
   journalId: UUIDString;
+  householdId: UUIDString;
+}
+
+export interface DeleteSettlementData {
+  settlement_delete?: Settlement_Key | null;
+}
+
+export interface DeleteSettlementVariables {
+  id: UUIDString;
+}
+
+export interface DeleteTagData {
+  tag_delete?: Tag_Key | null;
+}
+
+export interface DeleteTagVariables {
+  id: UUIDString;
 }
 
 export interface Entry_Key {
@@ -168,6 +304,58 @@ export interface ExternalAsset_Key {
   __typename?: 'ExternalAsset_Key';
 }
 
+export interface GetBudgetsByMonthData {
+  budgets: ({
+    id: UUIDString;
+    categoryName: string;
+    category?: {
+      id: UUIDString;
+      name: string;
+    } & Category_Key;
+    ownerType: OwnerType;
+    assignedAmount: number;
+    period?: DateString | null;
+  } & Budget_Key)[];
+}
+
+export interface GetBudgetsByMonthVariables {
+  householdId: UUIDString;
+  period: DateString;
+}
+
+export interface GetBudgetsData {
+  budgets: ({
+    id: UUIDString;
+    categoryName: string;
+    assignedAmount: number;
+    ownerType: OwnerType;
+    period?: DateString | null;
+    categoryId?: UUIDString | null;
+    category?: {
+      id: UUIDString;
+      name: string;
+    } & Category_Key;
+  } & Budget_Key)[];
+}
+
+export interface GetBudgetsVariables {
+  householdId: UUIDString;
+}
+
+export interface GetCategoriesData {
+  categories: ({
+    id: UUIDString;
+    name: string;
+    type: AccountType;
+    color?: string | null;
+    ownerType: OwnerType;
+  } & Category_Key)[];
+}
+
+export interface GetCategoriesVariables {
+  householdId: UUIDString;
+}
+
 export interface GetCurrentUserData {
   user?: {
     uid: string;
@@ -184,14 +372,26 @@ export interface GetExpensesByHouseholdData {
     entryType: EntryType;
     createdAt: TimestampString;
     ownerUid: string;
+    isShared: boolean;
     journal: {
       id: UUIDString;
       description: string;
       date: TimestampString;
+      isInternalTransfer: boolean;
+      isMsi: boolean;
+      msiMonthNumber?: number | null;
+      msiRefId?: string | null;
+      isRecurring: boolean;
+      recurringFrequency?: string | null;
+      categoryId?: UUIDString | null;
+      category?: {
+        name: string;
+        color?: string | null;
+      };
     } & Journal_Key;
     account: {
       name: string;
-    }
+    };
   } & Entry_Key)[];
 }
 
@@ -218,6 +418,12 @@ export interface GetHouseholdAccountsData {
     name: string;
     type: AccountType;
     ownerType: OwnerType;
+    cutDay?: number | null;
+    paymentDay?: number | null;
+    systemKey?: string | null;
+    creditLimit?: number | null;
+    color?: string | null;
+    isArchived: boolean;
   } & Account_Key)[];
 }
 
@@ -229,6 +435,7 @@ export interface GetHouseholdNetBalancesData {
   entries: ({
     ownerUid: string;
     amount: number;
+    entryType: EntryType;
     account: {
       id: UUIDString;
       type: AccountType;
@@ -247,19 +454,62 @@ export interface GetIncomesByHouseholdData {
     entryType: EntryType;
     createdAt: TimestampString;
     ownerUid: string;
+    isShared: boolean;
     journal: {
       id: UUIDString;
       description: string;
       date: TimestampString;
+      isInternalTransfer: boolean;
+      incomeCategoryType?: string | null;
+      categoryId?: UUIDString | null;
+      category?: {
+        name: string;
+        color?: string | null;
+      };
     } & Journal_Key;
     account: {
       name: string;
-    }
+    };
   } & Entry_Key)[];
 }
 
 export interface GetIncomesByHouseholdVariables {
   householdId: UUIDString;
+}
+
+export interface GetJournalBalanceV2Data {
+  journalBalanceV2s: ({
+    diff?: number | null;
+  })[];
+}
+
+export interface GetJournalBalanceV2Variables {
+  journalId: UUIDString;
+}
+
+export interface GetJournalTagsData {
+  journalTags: ({
+    tag: {
+      id: UUIDString;
+      name: string;
+    } & Tag_Key;
+  })[];
+}
+
+export interface GetJournalTagsTestData {
+  journalTags: ({
+    tag: {
+      id: UUIDString;
+    } & Tag_Key;
+  })[];
+}
+
+export interface GetJournalTagsTestVariables {
+  journalId: UUIDString;
+}
+
+export interface GetJournalTagsVariables {
+  journalId: UUIDString;
 }
 
 export interface GetLatestRateData {
@@ -273,23 +523,8 @@ export interface GetLatestRateVariables {
   currency: string;
 }
 
-export interface GetMonthBudgetsData {
-  budgets: ({
-    id: UUIDString;
-    categoryName: string;
-    assignedAmount: number;
-    period: DateString;
-    ownerType: OwnerType;
-  } & Budget_Key)[];
-}
-
-export interface GetMonthBudgetsVariables {
-  householdId: UUIDString;
-  period: DateString;
-}
-
 export interface GetNetWorthData {
-  netWorthSnapshots: ({
+  netWorthSnapshotV2s: ({
     netWorth?: number | null;
   })[];
 }
@@ -306,6 +541,8 @@ export interface GetSavingsProjectsData {
     currentAmount: number;
     priority: number;
     isCompleted: boolean;
+    monthlyQuota?: number | null;
+    targetAccount?: string | null;
   } & SavingsProject_Key)[];
 }
 
@@ -313,8 +550,33 @@ export interface GetSavingsProjectsVariables {
   householdId: UUIDString;
 }
 
+export interface GetSettlementsData {
+  settlements: ({
+    id: UUIDString;
+    ownerType: OwnerType;
+    amount: number;
+    note?: string | null;
+    createdAt: TimestampString;
+  } & Settlement_Key)[];
+}
+
+export interface GetSettlementsVariables {
+  householdId: UUIDString;
+}
+
+export interface GetTagsData {
+  tags: ({
+    id: UUIDString;
+    name: string;
+  } & Tag_Key)[];
+}
+
+export interface GetTagsVariables {
+  householdId: UUIDString;
+}
+
 export interface GetUnassignedCashData {
-  unassignedCashes: ({
+  unassignedCashV2s: ({
     unassigned?: number | null;
   })[];
 }
@@ -328,9 +590,41 @@ export interface Household_Key {
   __typename?: 'Household_Key';
 }
 
+export interface JournalTag_Key {
+  journalId: UUIDString;
+  tagId: UUIDString;
+  __typename?: 'JournalTag_Key';
+}
+
 export interface Journal_Key {
   id: UUIDString;
   __typename?: 'Journal_Key';
+}
+
+export interface NegativeEntriesData {
+  entries: ({
+    id: UUIDString;
+    amount: number;
+    entryType: EntryType;
+    journal: {
+      id: UUIDString;
+      description: string;
+    } & Journal_Key;
+  } & Entry_Key)[];
+}
+
+export interface ReassignEntriesData {
+  entry_updateMany: number;
+}
+
+export interface ReassignEntriesVariables {
+  fromAccountId: UUIDString;
+  toAccountId: UUIDString;
+}
+
+export interface RecurringTemplate_Key {
+  id: UUIDString;
+  __typename?: 'RecurringTemplate_Key';
 }
 
 export interface SavingsProject_Key {
@@ -349,13 +643,65 @@ export interface SeedDefaultAccountsVariables {
   householdId: UUIDString;
 }
 
-export interface UpdateBudgetAmountData {
+export interface SetJournalTagsData {
+  journalTag_deleteMany: number;
+}
+
+export interface SetJournalTagsVariables {
+  journalId: UUIDString;
+  tagIds: UUIDString[];
+}
+
+export interface Settlement_Key {
+  id: UUIDString;
+  __typename?: 'Settlement_Key';
+}
+
+export interface Tag_Key {
+  id: UUIDString;
+  __typename?: 'Tag_Key';
+}
+
+export interface UnbalancedJournalsData {
+  journalBalanceV2s: ({
+    journalId?: UUIDString | null;
+    diff?: number | null;
+  })[];
+}
+
+export interface UpdateAccountData {
+  account_update?: Account_Key | null;
+}
+
+export interface UpdateAccountVariables {
+  accountId: UUIDString;
+  name: string;
+  type: AccountType;
+  ownerType: OwnerType;
+  cutDay?: number | null;
+  paymentDay?: number | null;
+  creditLimit?: number | null;
+  color?: string | null;
+}
+
+export interface UpdateBudgetData {
   budget_update?: Budget_Key | null;
 }
 
-export interface UpdateBudgetAmountVariables {
-  budgetId: UUIDString;
+export interface UpdateBudgetVariables {
+  id: UUIDString;
+  householdId: UUIDString;
   assignedAmount: number;
+}
+
+export interface UpdateCategoryData {
+  category_update?: Category_Key | null;
+}
+
+export interface UpdateCategoryVariables {
+  id: UUIDString;
+  name: string;
+  color?: string | null;
 }
 
 export interface UpdateExternalAssetData {
@@ -370,20 +716,24 @@ export interface UpdateExternalAssetVariables {
 export interface UpdateJournalWithEntriesData {
   journal_update?: Journal_Key | null;
   entry_deleteMany: number;
-  entry1: Entry_Key;
-  entry2: Entry_Key;
+  debitEntry: Entry_Key;
+  creditEntry: Entry_Key;
 }
 
 export interface UpdateJournalWithEntriesVariables {
   journalId: UUIDString;
+  householdId: UUIDString;
   date: TimestampString;
   description: string;
-  accountId1: UUIDString;
-  amount1: number;
-  prorataFactor1: number;
-  accountId2: UUIDString;
-  amount2: number;
-  prorataFactor2: number;
+  amount: number;
+  debitAccountId: UUIDString;
+  creditAccountId: UUIDString;
+  prorataFactor: number;
+  ownerUid: string;
+  isShared: boolean;
+  isInternalTransfer?: boolean | null;
+  incomeCategoryType?: string | null;
+  categoryId?: UUIDString | null;
 }
 
 export interface UpdateProjectProgressData {
@@ -393,6 +743,20 @@ export interface UpdateProjectProgressData {
 export interface UpdateProjectProgressVariables {
   projectId: UUIDString;
   amountToAdd: number;
+}
+
+export interface UpdateSavingsProjectData {
+  savingsProject_update?: SavingsProject_Key | null;
+}
+
+export interface UpdateSavingsProjectVariables {
+  projectId: UUIDString;
+  name?: string | null;
+  targetAmount?: number | null;
+  monthlyQuota?: number | null;
+  targetAccount?: string | null;
+  priority?: number | null;
+  isCompleted?: boolean | null;
 }
 
 export interface UpdateSharedExpenseWithProrationData {
@@ -405,6 +769,7 @@ export interface UpdateSharedExpenseWithProrationData {
 
 export interface UpdateSharedExpenseWithProrationVariables {
   journalId: UUIDString;
+  householdId: UUIDString;
   date: TimestampString;
   description: string;
   totalAmount: number;
@@ -414,7 +779,12 @@ export interface UpdateSharedExpenseWithProrationVariables {
   user2ExpenseAccountId: UUIDString;
   user1Amount: number;
   user2Amount: number;
-  payerAmount: number;
+  ownerUid: string;
+  isShared: boolean;
+  isRecurring?: boolean | null;
+  recurringFrequency?: string | null;
+  recurringEndDate?: TimestampString | null;
+  categoryId?: UUIDString | null;
 }
 
 export interface UpsertExchangeRateData {
@@ -480,17 +850,113 @@ export const createBudgetRef: CreateBudgetRef;
 export function createBudget(vars: CreateBudgetVariables): MutationPromise<CreateBudgetData, CreateBudgetVariables>;
 export function createBudget(dc: DataConnect, vars: CreateBudgetVariables): MutationPromise<CreateBudgetData, CreateBudgetVariables>;
 
-interface UpdateBudgetAmountRef {
+interface UpdateBudgetRef {
   /* Allow users to create refs without passing in DataConnect */
-  (vars: UpdateBudgetAmountVariables): MutationRef<UpdateBudgetAmountData, UpdateBudgetAmountVariables>;
+  (vars: UpdateBudgetVariables): MutationRef<UpdateBudgetData, UpdateBudgetVariables>;
   /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: UpdateBudgetAmountVariables): MutationRef<UpdateBudgetAmountData, UpdateBudgetAmountVariables>;
+  (dc: DataConnect, vars: UpdateBudgetVariables): MutationRef<UpdateBudgetData, UpdateBudgetVariables>;
   operationName: string;
 }
-export const updateBudgetAmountRef: UpdateBudgetAmountRef;
+export const updateBudgetRef: UpdateBudgetRef;
 
-export function updateBudgetAmount(vars: UpdateBudgetAmountVariables): MutationPromise<UpdateBudgetAmountData, UpdateBudgetAmountVariables>;
-export function updateBudgetAmount(dc: DataConnect, vars: UpdateBudgetAmountVariables): MutationPromise<UpdateBudgetAmountData, UpdateBudgetAmountVariables>;
+export function updateBudget(vars: UpdateBudgetVariables): MutationPromise<UpdateBudgetData, UpdateBudgetVariables>;
+export function updateBudget(dc: DataConnect, vars: UpdateBudgetVariables): MutationPromise<UpdateBudgetData, UpdateBudgetVariables>;
+
+interface DeleteBudgetRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: DeleteBudgetVariables): MutationRef<DeleteBudgetData, DeleteBudgetVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: DeleteBudgetVariables): MutationRef<DeleteBudgetData, DeleteBudgetVariables>;
+  operationName: string;
+}
+export const deleteBudgetRef: DeleteBudgetRef;
+
+export function deleteBudget(vars: DeleteBudgetVariables): MutationPromise<DeleteBudgetData, DeleteBudgetVariables>;
+export function deleteBudget(dc: DataConnect, vars: DeleteBudgetVariables): MutationPromise<DeleteBudgetData, DeleteBudgetVariables>;
+
+interface CreateAccountRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateAccountVariables): MutationRef<CreateAccountData, CreateAccountVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: CreateAccountVariables): MutationRef<CreateAccountData, CreateAccountVariables>;
+  operationName: string;
+}
+export const createAccountRef: CreateAccountRef;
+
+export function createAccount(vars: CreateAccountVariables): MutationPromise<CreateAccountData, CreateAccountVariables>;
+export function createAccount(dc: DataConnect, vars: CreateAccountVariables): MutationPromise<CreateAccountData, CreateAccountVariables>;
+
+interface UpdateAccountRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateAccountVariables): MutationRef<UpdateAccountData, UpdateAccountVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: UpdateAccountVariables): MutationRef<UpdateAccountData, UpdateAccountVariables>;
+  operationName: string;
+}
+export const updateAccountRef: UpdateAccountRef;
+
+export function updateAccount(vars: UpdateAccountVariables): MutationPromise<UpdateAccountData, UpdateAccountVariables>;
+export function updateAccount(dc: DataConnect, vars: UpdateAccountVariables): MutationPromise<UpdateAccountData, UpdateAccountVariables>;
+
+interface ArchiveAccountRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: ArchiveAccountVariables): MutationRef<ArchiveAccountData, ArchiveAccountVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: ArchiveAccountVariables): MutationRef<ArchiveAccountData, ArchiveAccountVariables>;
+  operationName: string;
+}
+export const archiveAccountRef: ArchiveAccountRef;
+
+export function archiveAccount(vars: ArchiveAccountVariables): MutationPromise<ArchiveAccountData, ArchiveAccountVariables>;
+export function archiveAccount(dc: DataConnect, vars: ArchiveAccountVariables): MutationPromise<ArchiveAccountData, ArchiveAccountVariables>;
+
+interface DeleteAccountRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: DeleteAccountVariables): MutationRef<DeleteAccountData, DeleteAccountVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: DeleteAccountVariables): MutationRef<DeleteAccountData, DeleteAccountVariables>;
+  operationName: string;
+}
+export const deleteAccountRef: DeleteAccountRef;
+
+export function deleteAccount(vars: DeleteAccountVariables): MutationPromise<DeleteAccountData, DeleteAccountVariables>;
+export function deleteAccount(dc: DataConnect, vars: DeleteAccountVariables): MutationPromise<DeleteAccountData, DeleteAccountVariables>;
+
+interface ReassignEntriesRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: ReassignEntriesVariables): MutationRef<ReassignEntriesData, ReassignEntriesVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: ReassignEntriesVariables): MutationRef<ReassignEntriesData, ReassignEntriesVariables>;
+  operationName: string;
+}
+export const reassignEntriesRef: ReassignEntriesRef;
+
+export function reassignEntries(vars: ReassignEntriesVariables): MutationPromise<ReassignEntriesData, ReassignEntriesVariables>;
+export function reassignEntries(dc: DataConnect, vars: ReassignEntriesVariables): MutationPromise<ReassignEntriesData, ReassignEntriesVariables>;
+
+interface CreateSettlementRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateSettlementVariables): MutationRef<CreateSettlementData, CreateSettlementVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: CreateSettlementVariables): MutationRef<CreateSettlementData, CreateSettlementVariables>;
+  operationName: string;
+}
+export const createSettlementRef: CreateSettlementRef;
+
+export function createSettlement(vars: CreateSettlementVariables): MutationPromise<CreateSettlementData, CreateSettlementVariables>;
+export function createSettlement(dc: DataConnect, vars: CreateSettlementVariables): MutationPromise<CreateSettlementData, CreateSettlementVariables>;
+
+interface DeleteSettlementRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: DeleteSettlementVariables): MutationRef<DeleteSettlementData, DeleteSettlementVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: DeleteSettlementVariables): MutationRef<DeleteSettlementData, DeleteSettlementVariables>;
+  operationName: string;
+}
+export const deleteSettlementRef: DeleteSettlementRef;
+
+export function deleteSettlement(vars: DeleteSettlementVariables): MutationPromise<DeleteSettlementData, DeleteSettlementVariables>;
+export function deleteSettlement(dc: DataConnect, vars: DeleteSettlementVariables): MutationPromise<DeleteSettlementData, DeleteSettlementVariables>;
 
 interface CreateSavingsProjectRef {
   /* Allow users to create refs without passing in DataConnect */
@@ -515,6 +981,18 @@ export const updateProjectProgressRef: UpdateProjectProgressRef;
 
 export function updateProjectProgress(vars: UpdateProjectProgressVariables): MutationPromise<UpdateProjectProgressData, UpdateProjectProgressVariables>;
 export function updateProjectProgress(dc: DataConnect, vars: UpdateProjectProgressVariables): MutationPromise<UpdateProjectProgressData, UpdateProjectProgressVariables>;
+
+interface UpdateSavingsProjectRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateSavingsProjectVariables): MutationRef<UpdateSavingsProjectData, UpdateSavingsProjectVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: UpdateSavingsProjectVariables): MutationRef<UpdateSavingsProjectData, UpdateSavingsProjectVariables>;
+  operationName: string;
+}
+export const updateSavingsProjectRef: UpdateSavingsProjectRef;
+
+export function updateSavingsProject(vars: UpdateSavingsProjectVariables): MutationPromise<UpdateSavingsProjectData, UpdateSavingsProjectVariables>;
+export function updateSavingsProject(dc: DataConnect, vars: UpdateSavingsProjectVariables): MutationPromise<UpdateSavingsProjectData, UpdateSavingsProjectVariables>;
 
 interface CreateExternalAssetRef {
   /* Allow users to create refs without passing in DataConnect */
@@ -612,6 +1090,90 @@ export const updateSharedExpenseWithProrationRef: UpdateSharedExpenseWithProrati
 export function updateSharedExpenseWithProration(vars: UpdateSharedExpenseWithProrationVariables): MutationPromise<UpdateSharedExpenseWithProrationData, UpdateSharedExpenseWithProrationVariables>;
 export function updateSharedExpenseWithProration(dc: DataConnect, vars: UpdateSharedExpenseWithProrationVariables): MutationPromise<UpdateSharedExpenseWithProrationData, UpdateSharedExpenseWithProrationVariables>;
 
+interface CreateCategoryRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateCategoryVariables): MutationRef<CreateCategoryData, CreateCategoryVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: CreateCategoryVariables): MutationRef<CreateCategoryData, CreateCategoryVariables>;
+  operationName: string;
+}
+export const createCategoryRef: CreateCategoryRef;
+
+export function createCategory(vars: CreateCategoryVariables): MutationPromise<CreateCategoryData, CreateCategoryVariables>;
+export function createCategory(dc: DataConnect, vars: CreateCategoryVariables): MutationPromise<CreateCategoryData, CreateCategoryVariables>;
+
+interface UpdateCategoryRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateCategoryVariables): MutationRef<UpdateCategoryData, UpdateCategoryVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: UpdateCategoryVariables): MutationRef<UpdateCategoryData, UpdateCategoryVariables>;
+  operationName: string;
+}
+export const updateCategoryRef: UpdateCategoryRef;
+
+export function updateCategory(vars: UpdateCategoryVariables): MutationPromise<UpdateCategoryData, UpdateCategoryVariables>;
+export function updateCategory(dc: DataConnect, vars: UpdateCategoryVariables): MutationPromise<UpdateCategoryData, UpdateCategoryVariables>;
+
+interface DeleteCategoryRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: DeleteCategoryVariables): MutationRef<DeleteCategoryData, DeleteCategoryVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: DeleteCategoryVariables): MutationRef<DeleteCategoryData, DeleteCategoryVariables>;
+  operationName: string;
+}
+export const deleteCategoryRef: DeleteCategoryRef;
+
+export function deleteCategory(vars: DeleteCategoryVariables): MutationPromise<DeleteCategoryData, DeleteCategoryVariables>;
+export function deleteCategory(dc: DataConnect, vars: DeleteCategoryVariables): MutationPromise<DeleteCategoryData, DeleteCategoryVariables>;
+
+interface CreateTagRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateTagVariables): MutationRef<CreateTagData, CreateTagVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: CreateTagVariables): MutationRef<CreateTagData, CreateTagVariables>;
+  operationName: string;
+}
+export const createTagRef: CreateTagRef;
+
+export function createTag(vars: CreateTagVariables): MutationPromise<CreateTagData, CreateTagVariables>;
+export function createTag(dc: DataConnect, vars: CreateTagVariables): MutationPromise<CreateTagData, CreateTagVariables>;
+
+interface DeleteTagRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: DeleteTagVariables): MutationRef<DeleteTagData, DeleteTagVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: DeleteTagVariables): MutationRef<DeleteTagData, DeleteTagVariables>;
+  operationName: string;
+}
+export const deleteTagRef: DeleteTagRef;
+
+export function deleteTag(vars: DeleteTagVariables): MutationPromise<DeleteTagData, DeleteTagVariables>;
+export function deleteTag(dc: DataConnect, vars: DeleteTagVariables): MutationPromise<DeleteTagData, DeleteTagVariables>;
+
+interface SetJournalTagsRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: SetJournalTagsVariables): MutationRef<SetJournalTagsData, SetJournalTagsVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: SetJournalTagsVariables): MutationRef<SetJournalTagsData, SetJournalTagsVariables>;
+  operationName: string;
+}
+export const setJournalTagsRef: SetJournalTagsRef;
+
+export function setJournalTags(vars: SetJournalTagsVariables): MutationPromise<SetJournalTagsData, SetJournalTagsVariables>;
+export function setJournalTags(dc: DataConnect, vars: SetJournalTagsVariables): MutationPromise<SetJournalTagsData, SetJournalTagsVariables>;
+
+interface AddTagToJournalRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: AddTagToJournalVariables): MutationRef<AddTagToJournalData, AddTagToJournalVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: AddTagToJournalVariables): MutationRef<AddTagToJournalData, AddTagToJournalVariables>;
+  operationName: string;
+}
+export const addTagToJournalRef: AddTagToJournalRef;
+
+export function addTagToJournal(vars: AddTagToJournalVariables): MutationPromise<AddTagToJournalData, AddTagToJournalVariables>;
+export function addTagToJournal(dc: DataConnect, vars: AddTagToJournalVariables): MutationPromise<AddTagToJournalData, AddTagToJournalVariables>;
+
 interface GetHouseholdAccountsRef {
   /* Allow users to create refs without passing in DataConnect */
   (vars: GetHouseholdAccountsVariables): QueryRef<GetHouseholdAccountsData, GetHouseholdAccountsVariables>;
@@ -636,17 +1198,29 @@ export const getHouseholdNetBalancesRef: GetHouseholdNetBalancesRef;
 export function getHouseholdNetBalances(vars: GetHouseholdNetBalancesVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdNetBalancesData, GetHouseholdNetBalancesVariables>;
 export function getHouseholdNetBalances(dc: DataConnect, vars: GetHouseholdNetBalancesVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdNetBalancesData, GetHouseholdNetBalancesVariables>;
 
-interface GetMonthBudgetsRef {
+interface GetBudgetsRef {
   /* Allow users to create refs without passing in DataConnect */
-  (vars: GetMonthBudgetsVariables): QueryRef<GetMonthBudgetsData, GetMonthBudgetsVariables>;
+  (vars: GetBudgetsVariables): QueryRef<GetBudgetsData, GetBudgetsVariables>;
   /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetMonthBudgetsVariables): QueryRef<GetMonthBudgetsData, GetMonthBudgetsVariables>;
+  (dc: DataConnect, vars: GetBudgetsVariables): QueryRef<GetBudgetsData, GetBudgetsVariables>;
   operationName: string;
 }
-export const getMonthBudgetsRef: GetMonthBudgetsRef;
+export const getBudgetsRef: GetBudgetsRef;
 
-export function getMonthBudgets(vars: GetMonthBudgetsVariables, options?: ExecuteQueryOptions): QueryPromise<GetMonthBudgetsData, GetMonthBudgetsVariables>;
-export function getMonthBudgets(dc: DataConnect, vars: GetMonthBudgetsVariables, options?: ExecuteQueryOptions): QueryPromise<GetMonthBudgetsData, GetMonthBudgetsVariables>;
+export function getBudgets(vars: GetBudgetsVariables, options?: ExecuteQueryOptions): QueryPromise<GetBudgetsData, GetBudgetsVariables>;
+export function getBudgets(dc: DataConnect, vars: GetBudgetsVariables, options?: ExecuteQueryOptions): QueryPromise<GetBudgetsData, GetBudgetsVariables>;
+
+interface GetBudgetsByMonthRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetBudgetsByMonthVariables): QueryRef<GetBudgetsByMonthData, GetBudgetsByMonthVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetBudgetsByMonthVariables): QueryRef<GetBudgetsByMonthData, GetBudgetsByMonthVariables>;
+  operationName: string;
+}
+export const getBudgetsByMonthRef: GetBudgetsByMonthRef;
+
+export function getBudgetsByMonth(vars: GetBudgetsByMonthVariables, options?: ExecuteQueryOptions): QueryPromise<GetBudgetsByMonthData, GetBudgetsByMonthVariables>;
+export function getBudgetsByMonth(dc: DataConnect, vars: GetBudgetsByMonthVariables, options?: ExecuteQueryOptions): QueryPromise<GetBudgetsByMonthData, GetBudgetsByMonthVariables>;
 
 interface GetUnassignedCashRef {
   /* Allow users to create refs without passing in DataConnect */
@@ -743,4 +1317,100 @@ export const getCurrentUserRef: GetCurrentUserRef;
 
 export function getCurrentUser(options?: ExecuteQueryOptions): QueryPromise<GetCurrentUserData, undefined>;
 export function getCurrentUser(dc: DataConnect, options?: ExecuteQueryOptions): QueryPromise<GetCurrentUserData, undefined>;
+
+interface GetCategoriesRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetCategoriesVariables): QueryRef<GetCategoriesData, GetCategoriesVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetCategoriesVariables): QueryRef<GetCategoriesData, GetCategoriesVariables>;
+  operationName: string;
+}
+export const getCategoriesRef: GetCategoriesRef;
+
+export function getCategories(vars: GetCategoriesVariables, options?: ExecuteQueryOptions): QueryPromise<GetCategoriesData, GetCategoriesVariables>;
+export function getCategories(dc: DataConnect, vars: GetCategoriesVariables, options?: ExecuteQueryOptions): QueryPromise<GetCategoriesData, GetCategoriesVariables>;
+
+interface GetTagsRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetTagsVariables): QueryRef<GetTagsData, GetTagsVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetTagsVariables): QueryRef<GetTagsData, GetTagsVariables>;
+  operationName: string;
+}
+export const getTagsRef: GetTagsRef;
+
+export function getTags(vars: GetTagsVariables, options?: ExecuteQueryOptions): QueryPromise<GetTagsData, GetTagsVariables>;
+export function getTags(dc: DataConnect, vars: GetTagsVariables, options?: ExecuteQueryOptions): QueryPromise<GetTagsData, GetTagsVariables>;
+
+interface GetJournalTagsRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetJournalTagsVariables): QueryRef<GetJournalTagsData, GetJournalTagsVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetJournalTagsVariables): QueryRef<GetJournalTagsData, GetJournalTagsVariables>;
+  operationName: string;
+}
+export const getJournalTagsRef: GetJournalTagsRef;
+
+export function getJournalTags(vars: GetJournalTagsVariables, options?: ExecuteQueryOptions): QueryPromise<GetJournalTagsData, GetJournalTagsVariables>;
+export function getJournalTags(dc: DataConnect, vars: GetJournalTagsVariables, options?: ExecuteQueryOptions): QueryPromise<GetJournalTagsData, GetJournalTagsVariables>;
+
+interface GetSettlementsRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetSettlementsVariables): QueryRef<GetSettlementsData, GetSettlementsVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetSettlementsVariables): QueryRef<GetSettlementsData, GetSettlementsVariables>;
+  operationName: string;
+}
+export const getSettlementsRef: GetSettlementsRef;
+
+export function getSettlements(vars: GetSettlementsVariables, options?: ExecuteQueryOptions): QueryPromise<GetSettlementsData, GetSettlementsVariables>;
+export function getSettlements(dc: DataConnect, vars: GetSettlementsVariables, options?: ExecuteQueryOptions): QueryPromise<GetSettlementsData, GetSettlementsVariables>;
+
+interface GetJournalBalanceV2Ref {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetJournalBalanceV2Variables): QueryRef<GetJournalBalanceV2Data, GetJournalBalanceV2Variables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetJournalBalanceV2Variables): QueryRef<GetJournalBalanceV2Data, GetJournalBalanceV2Variables>;
+  operationName: string;
+}
+export const getJournalBalanceV2Ref: GetJournalBalanceV2Ref;
+
+export function getJournalBalanceV2(vars: GetJournalBalanceV2Variables, options?: ExecuteQueryOptions): QueryPromise<GetJournalBalanceV2Data, GetJournalBalanceV2Variables>;
+export function getJournalBalanceV2(dc: DataConnect, vars: GetJournalBalanceV2Variables, options?: ExecuteQueryOptions): QueryPromise<GetJournalBalanceV2Data, GetJournalBalanceV2Variables>;
+
+interface NegativeEntriesRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): QueryRef<NegativeEntriesData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): QueryRef<NegativeEntriesData, undefined>;
+  operationName: string;
+}
+export const negativeEntriesRef: NegativeEntriesRef;
+
+export function negativeEntries(options?: ExecuteQueryOptions): QueryPromise<NegativeEntriesData, undefined>;
+export function negativeEntries(dc: DataConnect, options?: ExecuteQueryOptions): QueryPromise<NegativeEntriesData, undefined>;
+
+interface UnbalancedJournalsRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): QueryRef<UnbalancedJournalsData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): QueryRef<UnbalancedJournalsData, undefined>;
+  operationName: string;
+}
+export const unbalancedJournalsRef: UnbalancedJournalsRef;
+
+export function unbalancedJournals(options?: ExecuteQueryOptions): QueryPromise<UnbalancedJournalsData, undefined>;
+export function unbalancedJournals(dc: DataConnect, options?: ExecuteQueryOptions): QueryPromise<UnbalancedJournalsData, undefined>;
+
+interface GetJournalTagsTestRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetJournalTagsTestVariables): QueryRef<GetJournalTagsTestData, GetJournalTagsTestVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetJournalTagsTestVariables): QueryRef<GetJournalTagsTestData, GetJournalTagsTestVariables>;
+  operationName: string;
+}
+export const getJournalTagsTestRef: GetJournalTagsTestRef;
+
+export function getJournalTagsTest(vars: GetJournalTagsTestVariables, options?: ExecuteQueryOptions): QueryPromise<GetJournalTagsTestData, GetJournalTagsTestVariables>;
+export function getJournalTagsTest(dc: DataConnect, vars: GetJournalTagsTestVariables, options?: ExecuteQueryOptions): QueryPromise<GetJournalTagsTestData, GetJournalTagsTestVariables>;
 

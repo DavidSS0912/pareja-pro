@@ -1,6 +1,7 @@
 import React from 'react';
 import { authService } from '../services/authService';
-import { Wallet, LogIn } from 'lucide-react';
+import { LogIn } from 'lucide-react';
+import { OrbitaLogo } from '../components/ui/OrbitaLogo';
 
 export const AuthView = () => {
   const handleLogin = async () => {
@@ -19,11 +20,9 @@ export const AuthView = () => {
 
       <div className="bg-white border border-slate-100 shadow-lg rounded-2xl p-10 md:p-16 w-full max-w-md text-center relative z-10 mx-4">
         <div className="flex justify-center mb-8">
-          <div className="bg-indigo-600 p-4 rounded-2xl text-white">
-            <Wallet size={40} strokeWidth={1.5} />
-          </div>
+          <OrbitaLogo size={72} />
         </div>
-        <h1 className="text-4xl font-black tracking-tighter text-slate-900 mb-2">Órbita2</h1>
+        <h1 className="text-4xl font-black tracking-tighter text-slate-900 mb-2">Orbita2</h1>
         <p className="text-slate-600 font-medium mb-10 text-base">Finanzas en pareja, en órbita.</p>
 
         <button

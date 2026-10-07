@@ -8,33 +8,49 @@ import { GoalSlice } from './goalSlice';
 import { UserListSlice } from './userListSlice';
 import { ProjectSlice } from './projectSlice';
 import { AuthSlice } from './authSlice';
-import { getHouseholdNetBalances, getBudgets, getSavingsProjects, getExternalAssets, getExpensesByHousehold, getHouseholdAccounts, getIncomesByHousehold } from '../../lib/dataconnect';
+import { getHouseholdNetBalances, getBudgetsByMonth, getSavingsProjects, getExternalAssets, getExpensesByHousehold, getHouseholdAccounts, getIncomesByHousehold } from '../../lib/dataconnect';
 
 export interface DataSlice {
-  fetchDashboardData: (houseId: string) => Promise<void>;
+  fetchDashboardData: (houseId: string, month?: string) => Promise<void>;
+  fetchBudgetsForMonth: (month: string) => Promise<void>;
   refreshExpenses: () => Promise<void>;
   refreshIncomes: () => Promise<void>;
 }
 type CombinedSlices = ExpenseSlice & BudgetSlice & AccountSlice & AssetSlice & IncomeSlice & GoalSlice & UserListSlice & ProjectSlice & AuthSlice;
 
 export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], DataSlice> = (set, get) => ({
-  fetchDashboardData: async (houseId: string) => {
+  fetchDashboardData: async (houseId: string, month?: string) => {
     try {
+      const currentMonth = month || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-01`;
       const [balances, budgets, projects, assets, expensesData, incomesData] = await Promise.all([
         getHouseholdNetBalances({ householdId: houseId }),
-        getBudgets({ householdId: houseId }),
+        getBudgetsByMonth({ householdId: houseId, period: currentMonth }),
         getSavingsProjects({ householdId: houseId }),
         getExternalAssets({ householdId: houseId }),
         getExpensesByHousehold({ householdId: houseId }),
         getIncomesByHousehold({ householdId: houseId })
       ]);
+      const isDebitNature = (t: string) => t === 'ASSET' || t === 'EXPENSE';
+      const signed = (e: any) => (e.entryType === 'DEBIT') === isDebitNature(e.account.type) ? +e.amount : -e.amount;
+
       // Load accounts directly (not via entries, so they appear even without transactions)
       const accountsResult = await getHouseholdAccounts({ householdId: houseId });
       const mappedAccounts = accountsResult.data?.accounts || [];
       const legacyAccounts = balances.data?.entries 
         ? Array.from(new Map(balances.data.entries.map((e: any) => [e.account.id, e.account])).values()) 
         : [];
-      const allFetchedAccounts = Array.from(new Map([...mappedAccounts, ...legacyAccounts].map((a: any) => [a.id, a])).values());
+      
+      const balancesMap = new Map<string, number>();
+      if (balances.data?.entries) {
+        balances.data.entries.forEach((e: any) => {
+          const accId = e.account.id;
+          balancesMap.set(accId, (balancesMap.get(accId) || 0) + signed(e));
+        });
+      }
+
+      const allFetchedAccounts = Array.from(new Map([...mappedAccounts, ...legacyAccounts].map((a: any) => {
+        return [a.id, { ...a, balance: balancesMap.get(a.id) || 0 }];
+      })).values());
 
       const currentAccounts = get().accounts || [];
       const tempAccounts = currentAccounts.filter(a => a.id && typeof a.id === 'string' && a.id.startsWith('temp-'));
@@ -78,11 +94,11 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
       if (expensesData.data?.entries) {
         const mappedExpenses = Array.from(expensesData.data.entries.reduce((map: Map<string, any>, e: any) => {
           if (map.has(e.journal.id)) {
-            map.get(e.journal.id).amount += e.amount;
+            map.get(e.journal.id).amount += signed(e);
           } else {
             map.set(e.journal.id, {
               id: e.journal.id, // Use journal ID for deletion
-              amount: e.amount,
+              amount: signed(e),
               type: e.entryType,
               date: e.journal.date,
               description: e.journal.description,
@@ -110,11 +126,11 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
       if (incomesData.data?.entries) {
         const mappedIncomes = Array.from(incomesData.data.entries.reduce((map: Map<string, any>, e: any) => {
           if (map.has(e.journal.id)) {
-            map.get(e.journal.id).amount += Math.abs(e.amount);
+            map.get(e.journal.id).amount += signed(e);
           } else {
             map.set(e.journal.id, {
               id: e.journal.id, // Use journal ID for deletion
-              amount: Math.abs(e.amount),
+              amount: signed(e),
               type: e.journal.description,
               date: e.journal.date,
               userId: e.ownerUid,
@@ -134,6 +150,25 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
       console.error("Error fetching dashboard data from DataConnect", error);
     }
   },
+  fetchBudgetsForMonth: async (month: string) => {
+    const state = get();
+    const houseId = state.houseId;
+    if (!houseId) return;
+    try {
+      const budgets = await getBudgetsByMonth({ householdId: houseId, period: month });
+      if (budgets.data?.budgets) {
+        const mappedBudgets = budgets.data.budgets.map((b: any) => ({
+          ...b,
+          category: b.categoryName,
+          base: b.assignedAmount,
+          icon: '🛒'
+        }));
+        get().setBudgets(mappedBudgets as any);
+      }
+    } catch(e) {
+      console.error(e);
+    }
+  },
   refreshExpenses: async () => {
     const state = get();
     const houseId = state.houseId;
@@ -141,13 +176,16 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
     try {
       const expensesData = await getExpensesByHousehold({ householdId: houseId });
       if (expensesData.data?.entries) {
+        const isDebitNature = (t: string) => t === 'ASSET' || t === 'EXPENSE';
+        const signed = (e: any) => (e.entryType === 'DEBIT') === isDebitNature(e.account.type) ? +e.amount : -e.amount;
+        
         const mappedExpenses = Array.from(expensesData.data.entries.reduce((map: Map<string, any>, e: any) => {
           if (map.has(e.journal.id)) {
-            map.get(e.journal.id).amount += e.amount;
+            map.get(e.journal.id).amount += signed(e);
           } else {
             map.set(e.journal.id, {
               id: e.journal.id,
-              amount: e.amount,
+              amount: signed(e),
               type: e.entryType,
               date: e.journal.date,
               description: e.journal.description,
@@ -183,13 +221,16 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
     try {
       const incomesData = await getIncomesByHousehold({ householdId: houseId });
       if (incomesData.data?.entries) {
+        const isDebitNature = (t: string) => t === 'ASSET' || t === 'EXPENSE';
+        const signed = (e: any) => (e.entryType === 'DEBIT') === isDebitNature(e.account.type) ? +e.amount : -e.amount;
+
         const mappedIncomes = Array.from(incomesData.data.entries.reduce((map: Map<string, any>, e: any) => {
           if (map.has(e.journal.id)) {
-            map.get(e.journal.id).amount += Math.abs(e.amount);
+            map.get(e.journal.id).amount += signed(e);
           } else {
             map.set(e.journal.id, {
               id: e.journal.id,
-              amount: Math.abs(e.amount),
+              amount: signed(e),
               type: e.journal.description,
               date: e.journal.date,
               userId: e.ownerUid,

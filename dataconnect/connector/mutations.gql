@@ -2,34 +2,75 @@ mutation CreateJournalWithEntries(
   $householdId: UUID!,
   $date: Timestamp!,
   $description: String!,
-  $accountId1: UUID!,
-  $amount1: Float!,
-  $prorataFactor1: Float!,
-  $accountId2: UUID!,
-  $amount2: Float!,
-  $prorataFactor2: Float!
+  $amount: Float!,                 # SIEMPRE positivo
+  $debitAccountId: UUID!,
+  $creditAccountId: UUID!,
+  $prorataFactor: Float!,
+  $ownerUid: String!,
+  $isShared: Boolean!,
+  $isInternalTransfer: Boolean,
+  $incomeCategoryType: String,
+  $isMsi: Boolean,
+  $msiRefId: String,
+  $msiMonthNumber: Int,
+  $isRecurring: Boolean,
+  $recurringFrequency: String,
+  $recurringEndDate: Timestamp,
+  $categoryId: UUID
 ) @auth(level: USER) @transaction {
-  
+
+  # [VERIFICAR] Autorización: el usuario pertenece al hogar y las cuentas son de ese hogar
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El usuario no pertenece a este hogar") {
+      household { id }
+    }
+    debitAccount: account(id: $debitAccountId)
+      @check(expr: "this != null && this.household.id == vars.householdId && vars.amount > 0 && vars.debitAccountId != vars.creditAccountId",
+             message: "Cuenta de débito inválida, monto no positivo o cuentas iguales") {
+      household { id }
+    }
+    creditAccount: account(id: $creditAccountId)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "Cuenta de crédito inválida") {
+      household { id }
+    }
+  }
+
   journal_insert(data: {
     householdId: $householdId,
     date: $date,
-    description: $description
+    description: $description,
+    isInternalTransfer: $isInternalTransfer,
+    incomeCategoryType: $incomeCategoryType,
+    isMsi: $isMsi,
+    msiRefId: $msiRefId,
+    msiMonthNumber: $msiMonthNumber,
+    isRecurring: $isRecurring,
+    recurringFrequency: $recurringFrequency,
+    recurringEndDate: $recurringEndDate,
+    categoryId: $categoryId
   })
 
-  entry1: entry_insert(data: {
+  debitEntry: entry_insert(data: {
     journalId_expr: "response.journal_insert.id",
-    accountId: $accountId1,
-    amount: $amount1,
-    prorataFactor: $prorataFactor1,
-    ownerUid_expr: "auth.uid"
+    accountId: $debitAccountId,
+    amount: $amount,
+    prorataFactor: $prorataFactor,
+    ownerUid: $ownerUid,
+    isShared: $isShared,
+    entryType: DEBIT
   })
 
-  entry2: entry_insert(data: {
+  creditEntry: entry_insert(data: {
     journalId_expr: "response.journal_insert.id",
-    accountId: $accountId2,
-    amount: $amount2,
-    prorataFactor: $prorataFactor2,
-    ownerUid_expr: "auth.uid"
+    accountId: $creditAccountId,
+    amount: $amount,
+    prorataFactor: $prorataFactor,
+    ownerUid: $ownerUid,
+    isShared: $isShared,
+    entryType: CREDIT
   })
 }
 
@@ -44,21 +85,60 @@ mutation CreateSharedExpenseWithProration(
   $user2ExpenseAccountId: UUID!,
   $user1Amount: Float!,
   $user2Amount: Float!,
-  $payerAmount: Float!
+  $ownerUid: String!,
+  $isShared: Boolean!,
+  $isMsi: Boolean,
+  $msiRefId: String,
+  $msiMonthNumber: Int,
+  $isRecurring: Boolean,
+  $recurringFrequency: String,
+  $recurringEndDate: Timestamp,
+  $categoryId: UUID
 ) @auth(level: USER) @transaction {
+
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El usuario no pertenece a este hogar") {
+      household { id }
+    }
+    payerAccount: account(id: $payerAccountId)
+      @check(expr: "this != null && this.household.id == vars.householdId && vars.totalAmount > 0 && vars.user1Amount >= 0 && vars.user2Amount >= 0 && (vars.user1Amount + vars.user2Amount - vars.totalAmount) < 0.005 && (vars.user1Amount + vars.user2Amount - vars.totalAmount) > -0.005",
+             message: "Cuenta de pago inválida o el reparto no suma el total") {
+      household { id }
+    }
+    user1Account: account(id: $user1ExpenseAccountId)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "Cuenta de gasto 1 inválida") {
+      household { id }
+    }
+    user2Account: account(id: $user2ExpenseAccountId)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "Cuenta de gasto 2 inválida") {
+      household { id }
+    }
+  }
 
   journal_insert(data: {
     householdId: $householdId,
     date: $date,
-    description: $description
+    description: $description,
+    isMsi: $isMsi,
+    msiRefId: $msiRefId,
+    msiMonthNumber: $msiMonthNumber,
+    isRecurring: $isRecurring,
+    recurringFrequency: $recurringFrequency,
+    recurringEndDate: $recurringEndDate,
+    categoryId: $categoryId
   })
 
   payerEntry: entry_insert(data: {
     journalId_expr: "response.journal_insert.id",
     accountId: $payerAccountId,
-    amount: $payerAmount,
+    amount: $totalAmount,
     prorataFactor: $prorataFactor,
-    ownerUid_expr: "auth.uid",
+    ownerUid: $ownerUid,
+    isShared: $isShared,
     entryType: CREDIT
   })
 
@@ -67,7 +147,8 @@ mutation CreateSharedExpenseWithProration(
     accountId: $user1ExpenseAccountId,
     amount: $user1Amount,
     prorataFactor: $prorataFactor,
-    ownerUid_expr: "auth.uid",
+    ownerUid: $ownerUid,
+    isShared: $isShared,
     entryType: DEBIT
   })
 
@@ -76,7 +157,8 @@ mutation CreateSharedExpenseWithProration(
     accountId: $user2ExpenseAccountId,
     amount: $user2Amount,
     prorataFactor: $prorataFactor,
-    ownerUid_expr: "auth.uid",
+    ownerUid: $ownerUid,
+    isShared: $isShared,
     entryType: DEBIT
   })
 }
@@ -90,13 +172,19 @@ mutation CreateMsiExpense(
   $creditCardAccountId: UUID!,
   $expenseAccountId: UUID!,
   $prorataFactor: Float!,
-  $monthlyAmount: Float!
+  $monthlyAmount: Float!,
+  $categoryId: UUID,
+  $msiRefId: String,
+  $msiMonthNumber: Int
 ) @auth(level: USER) @transaction {
   journal_insert(data: {
     householdId: $householdId,
     date: $date,
     description: $description,
-    isMsi: true
+    isMsi: true,
+    categoryId: $categoryId,
+    msiRefId: $msiRefId,
+    msiMonthNumber: $msiMonthNumber
   })
   
   entry_insert(data: {
@@ -111,40 +199,184 @@ mutation CreateMsiExpense(
 
 mutation CreateBudget(
   $householdId: UUID!,
+  $categoryId: UUID!,
   $categoryName: String!,
-  $assignedAmount: Float!,
-  $period: Date!,
-  $ownerType: OwnerType!
-) @auth(level: USER) {
+  $ownerType: OwnerType!,
+  $period: Date!,                  # día 1 del mes, formato YYYY-MM-01
+  $assignedAmount: Float!
+) @auth(level: USER) @transaction {
+
+  query @redact {
+    # [VERIFICAR] vars.period como string y endsWith en CEL
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId && vars.assignedAmount >= 0 && string(vars.period).endsWith('-01')",
+             message: "Hogar inválido, monto negativo o periodo que no es día 1") {
+      household { id }
+    }
+    category(id: $categoryId)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "Categoría inválida") {
+      household { id }
+    }
+    # Evita duplicados mientras no exista el índice único
+    existing: budgets(where: {
+      householdId: { eq: $householdId },
+      categoryId: { eq: $categoryId },
+      ownerType: { eq: $ownerType },
+      period: { eq: $period }
+    }) @check(expr: "this.size() == 0",
+              message: "Ya existe un presupuesto para esa categoría, dueño y mes") {
+      id
+    }
+  }
+
   budget_insert(data: {
     householdId: $householdId,
+    categoryId: $categoryId,
     categoryName: $categoryName,
-    assignedAmount: $assignedAmount,
+    ownerType: $ownerType,
     period: $period,
-    ownerType: $ownerType
+    assignedAmount: $assignedAmount
   })
 }
 
-mutation UpdateBudgetAmount(
-  $budgetId: UUID!,
+# Solo se cambia el monto: categoría, dueño y mes no se editan
+mutation UpdateBudget(
+  $id: UUID!,
+  $householdId: UUID!,
   $assignedAmount: Float!
+) @auth(level: USER) @transaction {
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId && vars.assignedAmount >= 0",
+             message: "Hogar inválido o monto negativo") {
+      household { id }
+    }
+    budget(id: $id)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El presupuesto no pertenece a este hogar") {
+      household { id }
+    }
+  }
+  budget_update(id: $id, data: { assignedAmount: $assignedAmount })
+}
+
+mutation DeleteBudget($id: UUID!, $householdId: UUID!)
+@auth(level: USER) @transaction {
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El usuario no pertenece a este hogar") {
+      household { id }
+    }
+    budget(id: $id)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El presupuesto no pertenece a este hogar") {
+      household { id }
+    }
+  }
+  budget_delete(id: $id)
+}
+
+mutation CreateAccount(
+  $householdId: UUID!,
+  $name: String!,
+  $type: AccountType!,
+  $ownerType: OwnerType!,
+  $cutDay: Int,
+  $paymentDay: Int,
+  $creditLimit: Float,
+  $color: String
 ) @auth(level: USER) {
-  budget_update(id: $budgetId, data: {
-    assignedAmount: $assignedAmount
+  account_insert(data: {
+    householdId: $householdId,
+    name: $name,
+    type: $type,
+    ownerType: $ownerType,
+    cutDay: $cutDay,
+    paymentDay: $paymentDay,
+    creditLimit: $creditLimit,
+    color: $color
   })
+}
+
+mutation UpdateAccount(
+  $accountId: UUID!,
+  $name: String!,
+  $type: AccountType!,
+  $ownerType: OwnerType!,
+  $cutDay: Int,
+  $paymentDay: Int,
+  $creditLimit: Float,
+  $color: String
+) @auth(level: USER) {
+  account_update(id: $accountId, data: {
+    name: $name,
+    type: $type,
+    ownerType: $ownerType,
+    cutDay: $cutDay,
+    paymentDay: $paymentDay,
+    creditLimit: $creditLimit,
+    color: $color
+  })
+}
+
+mutation ArchiveAccount(
+  $accountId: UUID!,
+  $isArchived: Boolean!
+) @auth(level: USER) {
+  account_update(id: $accountId, data: {
+    isArchived: $isArchived
+  })
+}
+
+mutation DeleteAccount($accountId: UUID!) @auth(level: USER) {
+  account_delete(id: $accountId)
+}
+
+mutation ReassignEntries(
+  $fromAccountId: UUID!,
+  $toAccountId: UUID!
+) @auth(level: USER) @transaction {
+  entry_updateMany(
+    where: { accountId: { eq: $fromAccountId } },
+    data: { accountId: $toAccountId }
+  )
+}
+
+mutation CreateSettlement(
+  $householdId: UUID!,
+  $ownerType: OwnerType!,
+  $amount: Float!,
+  $note: String
+) @auth(level: USER) {
+  settlement_insert(data: {
+    householdId: $householdId,
+    ownerType: $ownerType,
+    amount: $amount,
+    note: $note
+  })
+}
+
+mutation DeleteSettlement($id: UUID!) @auth(level: USER) {
+  settlement_delete(id: $id)
 }
 
 mutation CreateSavingsProject(
   $householdId: UUID!,
   $name: String!,
   $targetAmount: Float!,
-  $priority: Int!
+  $priority: Int!,
+  $monthlyQuota: Float,
+  $targetAccount: String
 ) @auth(level: USER) {
   savingsProject_insert(data: {
     householdId: $householdId,
     name: $name,
     targetAmount: $targetAmount,
-    priority: $priority
+    priority: $priority,
+    monthlyQuota: $monthlyQuota,
+    targetAccount: $targetAccount
   })
 }
 
@@ -154,6 +386,25 @@ mutation UpdateProjectProgress(
 ) @auth(level: USER) {
   savingsProject_update(id: $projectId, data: {
     currentAmount: $amountToAdd
+  })
+}
+
+mutation UpdateSavingsProject(
+  $projectId: UUID!,
+  $name: String,
+  $targetAmount: Float,
+  $monthlyQuota: Float,
+  $targetAccount: String,
+  $priority: Int,
+  $isCompleted: Boolean
+) @auth(level: USER) {
+  savingsProject_update(id: $projectId, data: {
+    name: $name,
+    targetAmount: $targetAmount,
+    monthlyQuota: $monthlyQuota,
+    targetAccount: $targetAccount,
+    priority: $priority,
+    isCompleted: $isCompleted
   })
 }
 
@@ -211,6 +462,7 @@ mutation CreateHouseholdAndUser(
     name: "Banco / Efectivo",
     type: ASSET,
     ownerType: SHARED,
+    systemKey: "default_asset",
     householdId_expr: "response.household_insert.id"
   })
 
@@ -218,6 +470,7 @@ mutation CreateHouseholdAndUser(
     name: "Ingresos del Hogar",
     type: INCOME,
     ownerType: SHARED,
+    systemKey: "default_income",
     householdId_expr: "response.household_insert.id"
   })
 
@@ -225,6 +478,7 @@ mutation CreateHouseholdAndUser(
     name: "Gastos del Hogar",
     type: EXPENSE,
     ownerType: SHARED,
+    systemKey: "default_expense",
     householdId_expr: "response.household_insert.id"
   })
 
@@ -232,6 +486,7 @@ mutation CreateHouseholdAndUser(
     name: "Tarjetas de Crédito",
     type: LIABILITY,
     ownerType: SHARED,
+    systemKey: "default_liability",
     householdId_expr: "response.household_insert.id"
   })
 }
@@ -243,6 +498,7 @@ mutation SeedDefaultAccounts(
     name: "Banco / Efectivo",
     type: ASSET,
     ownerType: SHARED,
+    systemKey: "default_asset",
     householdId: $householdId
   })
 
@@ -250,6 +506,7 @@ mutation SeedDefaultAccounts(
     name: "Ingresos del Hogar",
     type: INCOME,
     ownerType: SHARED,
+    systemKey: "default_income",
     householdId: $householdId
   })
 
@@ -257,6 +514,7 @@ mutation SeedDefaultAccounts(
     name: "Gastos del Hogar",
     type: EXPENSE,
     ownerType: SHARED,
+    systemKey: "default_expense",
     householdId: $householdId
   })
 
@@ -264,54 +522,111 @@ mutation SeedDefaultAccounts(
     name: "Tarjetas de Crédito",
     type: LIABILITY,
     ownerType: SHARED,
+    systemKey: "default_liability",
     householdId: $householdId
   })
 }
 
 mutation DeleteJournal(
-  $journalId: UUID!
+  $journalId: UUID!,
+  $householdId: UUID!
 ) @auth(level: USER) @transaction {
+  
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El usuario no pertenece a este hogar") {
+      household { id }
+    }
+    journal(id: $journalId)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El journal no pertenece a este hogar") {
+      household { id }
+    }
+    reversals: journals(where: { reversalOfId: { eq: $journalId } })
+      @check(expr: "this.size() == 0", message: "El journal tiene reversas asociadas") {
+      id
+    }
+  }
+
+  journalTag_deleteMany(where: { journalId: { eq: $journalId } })
   entry_deleteMany(where: { journalId: { eq: $journalId } })
   journal_delete(id: $journalId)
 }
 
 mutation UpdateJournalWithEntries(
   $journalId: UUID!,
+  $householdId: UUID!,
   $date: Timestamp!,
   $description: String!,
-  $accountId1: UUID!,
-  $amount1: Float!,
-  $prorataFactor1: Float!,
-  $accountId2: UUID!,
-  $amount2: Float!,
-  $prorataFactor2: Float!
+  $amount: Float!,
+  $debitAccountId: UUID!,
+  $creditAccountId: UUID!,
+  $prorataFactor: Float!,
+  $ownerUid: String!,
+  $isShared: Boolean!,
+  $isInternalTransfer: Boolean,
+  $incomeCategoryType: String,
+  $categoryId: UUID
 ) @auth(level: USER) @transaction {
+
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El usuario no pertenece a este hogar") {
+      household { id }
+    }
+    journal(id: $journalId)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El journal no pertenece a este hogar") {
+      household { id }
+    }
+    debitAccount: account(id: $debitAccountId)
+      @check(expr: "this != null && this.household.id == vars.householdId && vars.amount > 0 && vars.debitAccountId != vars.creditAccountId",
+             message: "Cuenta de débito inválida, monto no positivo o cuentas iguales") {
+      household { id }
+    }
+    creditAccount: account(id: $creditAccountId)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "Cuenta de crédito inválida") {
+      household { id }
+    }
+  }
+
   journal_update(id: $journalId, data: {
     date: $date,
-    description: $description
+    description: $description,
+    isInternalTransfer: $isInternalTransfer,
+    incomeCategoryType: $incomeCategoryType,
+    categoryId: $categoryId
   })
 
   entry_deleteMany(where: { journalId: { eq: $journalId } })
 
-  entry1: entry_insert(data: {
+  debitEntry: entry_insert(data: {
     journalId: $journalId,
-    accountId: $accountId1,
-    amount: $amount1,
-    prorataFactor: $prorataFactor1,
-    ownerUid_expr: "auth.uid"
+    accountId: $debitAccountId,
+    amount: $amount,
+    prorataFactor: $prorataFactor,
+    ownerUid: $ownerUid,
+    isShared: $isShared,
+    entryType: DEBIT
   })
 
-  entry2: entry_insert(data: {
+  creditEntry: entry_insert(data: {
     journalId: $journalId,
-    accountId: $accountId2,
-    amount: $amount2,
-    prorataFactor: $prorataFactor2,
-    ownerUid_expr: "auth.uid"
+    accountId: $creditAccountId,
+    amount: $amount,
+    prorataFactor: $prorataFactor,
+    ownerUid: $ownerUid,
+    isShared: $isShared,
+    entryType: CREDIT
   })
 }
 
 mutation UpdateSharedExpenseWithProration(
   $journalId: UUID!,
+  $householdId: UUID!,
   $date: Timestamp!,
   $description: String!,
   $totalAmount: Float!,
@@ -321,12 +636,49 @@ mutation UpdateSharedExpenseWithProration(
   $user2ExpenseAccountId: UUID!,
   $user1Amount: Float!,
   $user2Amount: Float!,
-  $payerAmount: Float!
+  $ownerUid: String!,
+  $isShared: Boolean!,
+  $isRecurring: Boolean,
+  $recurringFrequency: String,
+  $recurringEndDate: Timestamp,
+  $categoryId: UUID
 ) @auth(level: USER) @transaction {
+
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El usuario no pertenece a este hogar") {
+      household { id }
+    }
+    journal(id: $journalId)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El journal no pertenece a este hogar") {
+      household { id }
+    }
+    payerAccount: account(id: $payerAccountId)
+      @check(expr: "this != null && this.household.id == vars.householdId && vars.totalAmount > 0 && vars.user1Amount >= 0 && vars.user2Amount >= 0 && (vars.user1Amount + vars.user2Amount - vars.totalAmount) < 0.005 && (vars.user1Amount + vars.user2Amount - vars.totalAmount) > -0.005",
+             message: "Cuenta de pago inválida o el reparto no suma el total") {
+      household { id }
+    }
+    user1Account: account(id: $user1ExpenseAccountId)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "Cuenta de gasto 1 inválida") {
+      household { id }
+    }
+    user2Account: account(id: $user2ExpenseAccountId)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "Cuenta de gasto 2 inválida") {
+      household { id }
+    }
+  }
 
   journal_update(id: $journalId, data: {
     date: $date,
-    description: $description
+    description: $description,
+    isRecurring: $isRecurring,
+    recurringFrequency: $recurringFrequency,
+    recurringEndDate: $recurringEndDate,
+    categoryId: $categoryId
   })
 
   entry_deleteMany(where: { journalId: { eq: $journalId } })
@@ -334,9 +686,10 @@ mutation UpdateSharedExpenseWithProration(
   payerEntry: entry_insert(data: {
     journalId: $journalId,
     accountId: $payerAccountId,
-    amount: $payerAmount,
+    amount: $totalAmount,
     prorataFactor: $prorataFactor,
-    ownerUid_expr: "auth.uid",
+    ownerUid: $ownerUid,
+    isShared: $isShared,
     entryType: CREDIT
   })
 
@@ -345,7 +698,8 @@ mutation UpdateSharedExpenseWithProration(
     accountId: $user1ExpenseAccountId,
     amount: $user1Amount,
     prorataFactor: $prorataFactor,
-    ownerUid_expr: "auth.uid",
+    ownerUid: $ownerUid,
+    isShared: $isShared,
     entryType: DEBIT
   })
 
@@ -354,7 +708,79 @@ mutation UpdateSharedExpenseWithProration(
     accountId: $user2ExpenseAccountId,
     amount: $user2Amount,
     prorataFactor: $prorataFactor,
-    ownerUid_expr: "auth.uid",
+    ownerUid: $ownerUid,
+    isShared: $isShared,
     entryType: DEBIT
+  })
+}
+
+# -----------------
+# CATEGORIAS Y TAGS
+# -----------------
+
+mutation CreateCategory(
+  $name: String!,
+  $type: AccountType!,
+  $color: String,
+  $householdId: UUID!,
+  $ownerType: OwnerType!
+) @auth(level: USER) {
+  category_insert(data: {
+    name: $name,
+    type: $type,
+    color: $color,
+    householdId: $householdId,
+    ownerType: $ownerType
+  })
+}
+
+mutation UpdateCategory(
+  $id: UUID!,
+  $name: String!,
+  $color: String
+) @auth(level: USER) {
+  category_update(id: $id, data: {
+    name: $name,
+    color: $color
+  })
+}
+
+mutation DeleteCategory($id: UUID!) @auth(level: USER) {
+  category_delete(id: $id)
+}
+
+mutation CreateTag(
+  $name: String!,
+  $householdId: UUID!
+) @auth(level: USER) {
+  tag_insert(data: {
+    name: $name,
+    householdId: $householdId
+  })
+}
+
+mutation DeleteTag($id: UUID!) @auth(level: USER) {
+  tag_delete(id: $id)
+}
+
+mutation SetJournalTags(
+  $journalId: UUID!,
+  $tagIds: [UUID!]!
+) @auth(level: USER) @transaction {
+  journalTag_deleteMany(where: { journalId: { eq: $journalId } })
+  # Para insertar múltiples se requeriría hacerlo por SDK, o insertar uno por uno. 
+  # Sin embargo, en Dataconnect Data Connect GraphQL por ahora no hay soporte nativo masivo
+  # para tablas de join desde mutaciones sin usar variables _insertMany (que requieren sintaxis específica).
+  # Para simplificar en esta mutación, la eliminación asegura la limpieza. 
+  # La creación se puede hacer iterando del lado del cliente.
+}
+
+mutation AddTagToJournal(
+  $journalId: UUID!,
+  $tagId: UUID!
+) @auth(level: USER) {
+  journalTag_insert(data: {
+    journalId: $journalId,
+    tagId: $tagId
   })
 }

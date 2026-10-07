@@ -1,21 +1,17 @@
 import React, { useState, useMemo } from 'react';
-import { PieChart, TrendingUp, Plus, Trash2, Edit2, Lock, Wallet, ArrowDownRight, ArrowUpRight, AlertTriangle, Target } from 'lucide-react';
+import { PieChart, TrendingUp, Trash2, Edit2, Lock, ArrowDownRight, ArrowUpRight, AlertTriangle, Target } from 'lucide-react';
+import { OrbitaLogo } from '../components/ui/OrbitaLogo';
 import { PieChart as PieChartRecharts, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
-import { IncomeForm } from '../components/forms/IncomeForm';
-import { ExpenseForm } from '../components/forms/ExpenseForm';
 import { FormatCurrency } from '../utils';
 import { PaymentCalendar } from '../components/PaymentCalendar';
 import { useAppStore } from '../store/useAppStore';
 
 export function DashboardView({ data, calc, methods }) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingIncome, setEditingIncome] = useState(null);
-  
-  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
-  const [editingExpense, setEditingExpense] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{id: string, type: 'income'|'expense'} | null>(null);
+  const [movementFilter, setMovementFilter] = useState<'all' | 'income' | 'expense'>('all');
 
   const allExpenses = useAppStore(state => state.expenses);
   const dateRange = useAppStore(state => state.dateRange);
@@ -71,49 +67,43 @@ export function DashboardView({ data, calc, methods }) {
   }, [data.incomes, data.expenses, data.users, currentUserId]);
 
 
-  const handleOpenModal = (income = null) => {
-    setEditingIncome(income);
-    setIsModalOpen(true);
+  const handleDelete = (id, type) => {
+    setDeleteConfirm({ id, type });
   };
 
-  const handleCloseModal = () => {
-    setEditingIncome(null);
-    setIsModalOpen(false);
-  };
-
-  const handleOpenExpenseModal = (expense = null) => {
-    setEditingExpense(expense);
-    setIsExpenseModalOpen(true);
-  };
-
-  const handleCloseExpenseModal = () => {
-    setEditingExpense(null);
-    setIsExpenseModalOpen(false);
-  };
-
-  const handleSubmit = (formData) => {
-    if (editingIncome) {
-      methods.updateIncome(editingIncome.id, formData);
-    } else {
-      methods.addIncome(formData);
-    }
-    handleCloseModal();
-  };
-
-  const handleExpenseSubmit = (formData) => {
-    if (editingExpense) {
-      methods.updateExpense(editingExpense.id, formData);
-    } else {
-      methods.addExpense(formData);
-    }
-    handleCloseExpenseModal();
-  };
-
-  const handleDelete = (id) => {
-    if (window.confirm('¿Estás seguro de eliminar este ingreso?')) {
-      methods.deleteIncome(id);
+  const confirmDelete = () => {
+    if (deleteConfirm) {
+      if (deleteConfirm.type === 'income' && methods.deleteIncome) {
+        methods.deleteIncome(deleteConfirm.id);
+      } else if (deleteConfirm.type === 'expense' && methods.deleteExpense) {
+        methods.deleteExpense(deleteConfirm.id);
+      }
+      setDeleteConfirm(null);
     }
   };
+
+  const allMovements = useMemo(() => {
+    const incomes = relevantIncomes.map(i => ({ ...i, movementType: 'income' }));
+    const expenses = relevantExpenses.map(e => ({ ...e, movementType: 'expense' }));
+    
+    let combined = [...incomes, ...expenses];
+    
+    // Sort by date descending
+    combined.sort((a, b) => {
+      const dateA = a.date ? new Date(a.date).getTime() : 0;
+      const dateB = b.date ? new Date(b.date).getTime() : 0;
+      return dateB - dateA;
+    });
+
+    if (movementFilter === 'income') {
+      return combined.filter(m => m.movementType === 'income');
+    }
+    if (movementFilter === 'expense') {
+      return combined.filter(m => m.movementType === 'expense');
+    }
+    
+    return combined;
+  }, [relevantIncomes, relevantExpenses, movementFilter]);
 
   const prevMonthExpense = useMemo(() => {
     const startObj = dateRange?.start ? new Date(dateRange.start) : new Date();
@@ -212,7 +202,7 @@ export function DashboardView({ data, calc, methods }) {
           <Card className="bg-gradient-to-br from-indigo-50 to-white border-indigo-100">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-title font-bold text-indigo-950 flex items-center gap-2">
-                <Wallet size={18} className="text-indigo-600"/> Mi Casa
+                <OrbitaLogo size={18} className="text-indigo-600"/> Mi Casa
               </h2>
             </div>
             
@@ -326,32 +316,50 @@ export function DashboardView({ data, calc, methods }) {
           </Card>
         </div>
 
-        {/* DESGLOSE DE INGRESOS */}
+        {/* DESGLOSE DE MOVIMIENTOS */}
         <div className="lg:col-span-2 space-y-6">
           <Card className="h-full">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-title font-bold text-slate-900">Desglose de Ingresos</h2>
-              <div className="flex gap-2">
-                <Button size="sm" className="bg-rose-600 hover:bg-rose-700 text-white shadow-sm" onClick={() => handleOpenExpenseModal()}>
-                  <Plus size={16} className="mr-1" /> Nuevo Gasto
-                </Button>
-                <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm" onClick={() => handleOpenModal()}>
-                  <Plus size={16} className="mr-1" /> Nuevo Ingreso
-                </Button>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+              <h2 className="text-lg font-title font-bold text-slate-900">Desglose de Movimientos</h2>
+              
+              <div className="flex bg-slate-100 p-1 rounded-lg self-start sm:self-auto">
+                <button 
+                  onClick={() => setMovementFilter('all')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${movementFilter === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  Todos
+                </button>
+                <button 
+                  onClick={() => setMovementFilter('income')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${movementFilter === 'income' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-emerald-600'}`}
+                >
+                  Ingresos
+                </button>
+                <button 
+                  onClick={() => setMovementFilter('expense')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${movementFilter === 'expense' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-500 hover:text-red-600'}`}
+                >
+                  Gastos
+                </button>
               </div>
             </div>
             
-            {relevantIncomes.length === 0 ? (
+            {allMovements.length === 0 ? (
               <div className="text-center py-12 text-slate-400">
-                No hay ingresos registrados en este periodo.
+                No hay movimientos registrados en este periodo con el filtro actual.
               </div>
             ) : (
-              <div className="space-y-3">
-                {relevantIncomes.map(income => {
-                  const user = data.users.find(u => u.id === income.userId);
+              <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 pb-2">
+                {allMovements.map(mov => {
+                  const user = data.users.find(u => u.id === mov.userId);
+                  const isIncome = mov.movementType === 'income';
+                  
                   return (
-                    <div key={income.id} className="flex justify-between items-center p-3.5 bg-slate-50/50 rounded-xl border border-slate-100 hover:bg-white hover:shadow-sm transition-all group">
+                    <div key={`${mov.movementType}-${mov.id}`} className="flex justify-between items-center p-3.5 bg-slate-50/50 rounded-xl border border-slate-100 hover:bg-white hover:shadow-sm transition-all group">
                       <div className="flex items-center gap-3">
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-sm border border-white overflow-hidden ${isIncome ? 'bg-emerald-100' : 'bg-red-100'}`}>
+                           {isIncome ? <ArrowUpRight size={16} className="text-emerald-600" /> : <ArrowDownRight size={16} className="text-red-600" />}
+                        </div>
                         <div className={`w-9 h-9 rounded-full ${user?.avatar || 'bg-slate-200'} flex items-center justify-center text-slate-700 font-bold text-xs shadow-sm border border-white overflow-hidden`}>
                           {user?.photoURL ? (
                             <img 
@@ -366,32 +374,35 @@ export function DashboardView({ data, calc, methods }) {
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <p className="font-medium text-slate-900 text-sm">{income.type}</p>
-                            {income.isPrivate && (
-                              <span title="Ingreso Privado" className="flex">
+                            <p className="font-medium text-slate-900 text-sm">{mov.type || mov.name || mov.category || 'Movimiento'}</p>
+                            {mov.isPrivate && (
+                              <span title="Privado" className="flex">
                                 <Lock size={12} className="text-amber-500" />
                               </span>
                             )}
                           </div>
                           <p className="text-xs text-slate-500 mt-0.5">
-                            {user?.name} &bull; {income.date ? income.date.split('T')[0].split('-').reverse().join('/') : 'Sin fecha'}
+                            {user?.name} &bull; {mov.date ? mov.date.split('T')[0].split('-').reverse().join('/') : 'Sin fecha'}
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="text-right">
-                          <p className="font-semibold text-emerald-600 tabular-nums tracking-tight">
-                            {FormatCurrency(income.amount)}
+                          <p className={`font-semibold tabular-nums tracking-tight ${isIncome ? 'text-emerald-600' : 'text-slate-900'}`}>
+                            {isIncome ? '+' : '-'}{FormatCurrency(mov.amount)}
                           </p>
-                          {income.currency && income.currency !== 'MXN' && (
-                            <p className="text-[10px] text-slate-400 font-medium">{income.currency}</p>
+                          {mov.currency && mov.currency !== 'MXN' && (
+                            <p className="text-[10px] text-slate-400 font-medium">{mov.currency}</p>
                           )}
                         </div>
                         <div className="flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => handleOpenModal(income)} className="text-slate-400 hover:text-indigo-600 transition-colors p-1 bg-slate-100 rounded-md">
+                          <button onClick={() => {
+                            if (isIncome && methods.handleOpenIncomeModal) methods.handleOpenIncomeModal(mov);
+                            if (!isIncome && methods.handleOpenExpenseModal) methods.handleOpenExpenseModal(mov);
+                          }} className="text-slate-400 hover:text-indigo-600 transition-colors p-1 bg-slate-100 rounded-md">
                             <Edit2 size={12} />
                           </button>
-                          <button onClick={() => handleDelete(income.id)} className="text-slate-400 hover:text-red-600 transition-colors p-1 bg-slate-100 rounded-md">
+                          <button onClick={() => handleDelete(mov.id, mov.movementType)} className="text-slate-400 hover:text-red-600 transition-colors p-1 bg-slate-100 rounded-md">
                             <Trash2 size={12} />
                           </button>
                         </div>
@@ -406,42 +417,25 @@ export function DashboardView({ data, calc, methods }) {
       </div>
 
       <div className="mt-6">
-        <PaymentCalendar expenses={relevantExpenses} />
+        <PaymentCalendar expenses={relevantExpenses} accounts={data.accounts || []} />
       </div>
 
       <Modal 
-        isOpen={isModalOpen} 
-        onClose={handleCloseModal} 
-        title={editingIncome ? "Editar Ingreso" : "Nuevo Ingreso"}
+        isOpen={!!deleteConfirm} 
+        onClose={() => setDeleteConfirm(null)} 
+        title="Confirmar eliminación"
       >
-        {isModalOpen && (
-          <IncomeForm 
-            key={editingIncome ? editingIncome.id : 'new'}
-            initialData={editingIncome} 
-            users={data.users} 
-            currentUserId={currentUserId}
-            onSubmit={handleSubmit} 
-            onCancel={handleCloseModal} 
-          />
-        )}
-      </Modal>
-
-      <Modal 
-        isOpen={isExpenseModalOpen} 
-        onClose={handleCloseExpenseModal} 
-        title={editingExpense ? "Editar Gasto" : "Nuevo Gasto"}
-      >
-        {isExpenseModalOpen && (
-          <ExpenseForm 
-            key={editingExpense ? editingExpense.id : 'new-exp'}
-            initialData={editingExpense} 
-            users={data.users} 
-            budgets={data.budgets || []}
-            currentUserId={currentUserId}
-            onSubmit={handleExpenseSubmit} 
-            onCancel={handleCloseExpenseModal} 
-          />
-        )}
+        <div className="p-4">
+          <p className="text-slate-700 mb-6 text-center">¿Estás seguro de que deseas eliminar este {deleteConfirm?.type === 'income' ? 'ingreso' : 'gasto'}? Esta acción no se puede deshacer.</p>
+          <div className="flex gap-3 justify-end">
+            <Button variant="secondary" onClick={() => setDeleteConfirm(null)}>
+              Cancelar
+            </Button>
+            <Button variant="danger" className="bg-red-600 text-white hover:bg-red-700" onClick={confirmDelete}>
+              Eliminar
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

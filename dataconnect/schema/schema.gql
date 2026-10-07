@@ -2,6 +2,7 @@
 enum AccountType { ASSET LIABILITY INCOME EXPENSE EQUITY }
 enum OwnerType { USER_A USER_B SHARED }
 enum EntryType { DEBIT CREDIT }
+enum RecurrenceFrequency { SEMANAL MENSUAL ANUAL }
 
 # Hogar (Tenant principal)
 type Household @table {
@@ -24,6 +25,12 @@ type Account @table {
   type: AccountType!
   ownerType: OwnerType!
   household: Household!
+  cutDay: Int
+  paymentDay: Int
+  systemKey: String
+  creditLimit: Float @col(dataType: "numeric(14,2)")
+  color: String
+  isArchived: Boolean! @default(value: false)
   createdAt: Timestamp! @default(expr: "request.time")
 }
 
@@ -32,17 +39,38 @@ type Journal @table {
   date: Timestamp!
   description: String!
   dueDate: Timestamp
+  
+  # Funcionalidades avanzadas
+  isInternalTransfer: Boolean! @default(value: false)
+  incomeCategoryType: String   # "Ordinario" o "Extraordinario"
+  
+  # Gestión de MSI
   isMsi: Boolean! @default(value: false)
+  msiRefId: String             # Id para agrupar todas las cuotas del mismo MSI
+  msiMonthNumber: Int          # Número de la cuota (1, 2, 3...)
+  
+  # Gestión de Recurrentes
+  isRecurring: Boolean! @default(value: false)
+  recurringFrequency: String   # Ej. "MENSUAL", "SEMANAL", "ANUAL"
+  recurringEndDate: Timestamp  # Límite para gasto recurrente
+  
+  category: Category           # Relación opcional
+  
   household: Household!
   createdAt: Timestamp! @default(expr: "request.time")
+  
+  # Nuevos campos opcionales Fase 0
+  isReversed: Boolean! @default(value: false)
+  reversalOf: Journal
+  generatedFrom: RecurringTemplate
 }
 
 # Asiento atómico (debe/haber)
-type Entry @table {
+type Entry @table @index(fields: ["journalId"]) @index(fields: ["accountId", "journalId"]) {
   journal: Journal!
   account: Account!
-  amount: Float!
-  prorataFactor: Float!
+  amount: Float! @col(dataType: "numeric(14,2)")
+  prorataFactor: Float! @col(dataType: "numeric(14,6)")
   ownerUid: String!
   isShared: Boolean! @default(value: false)
   authDate: Timestamp
@@ -74,17 +102,20 @@ type AccountBalance @view(sql: """
   balance: Float
 }
 
-# Presupuesto mensual por categoría
-type Budget @table @index(fields: ["householdId", "period"]) {
+# Presupuesto mensual por categoría (plantilla permanente)
+type Budget @table @index(fields: ["householdId", "categoryName", "ownerType"]) @index(fields: ["householdId", "period"]) {
   categoryName: String!
-  assignedAmount: Float!
-  period: Date!          # Mes del presupuesto (ej. 2026-10-01)
+  assignedAmount: Float! @col(dataType: "numeric(14,2)")
   household: Household!
   ownerType: OwnerType!  # Si es personal o compartido
   createdAt: Timestamp! @default(expr: "request.time")
+  
+  # Nuevos campos opcionales Fase 0
+  period: Date
+  category: Category
 }
 
-# Vista: Dinero sin asignar del mes actual
+# Vista: Dinero sin asignar
 type UnassignedCash @view(sql: """
   SELECT
     h.id as household_id,
@@ -94,28 +125,41 @@ type UnassignedCash @view(sql: """
   LEFT JOIN account a ON a.household_id = h.id
   LEFT JOIN entry e ON e.account_id = a.id
   LEFT JOIN budget b ON b.household_id = h.id
-    AND DATE_TRUNC('month', b.period) = DATE_TRUNC('month', NOW())
   GROUP BY h.id
 """) {
   household: Household @unique
   unassigned: Float
 }
 
+# Tabla de liquidaciones para Reset
+type Settlement @table {
+  household: Household!
+  ownerType: OwnerType!
+  amount: Float! @col(dataType: "numeric(14,2)")
+  note: String
+  createdAt: Timestamp! @default(expr: "request.time")
+}
+
 # Proyecto de Ahorro (cuenta de capital, no presupuesto operativo)
 type SavingsProject @table {
   name: String!
-  targetAmount: Float!          # Meta de capitalización
-  currentAmount: Float!         @default(value: 0.0)
+  targetAmount: Float!          @col(dataType: "numeric(14,2)")
+  currentAmount: Float!         @default(value: 0.0) @col(dataType: "numeric(14,2)")
   priority: Int!                # Orden en la cascada (1 = primero)
   isCompleted: Boolean!         @default(value: false)
+  monthlyQuota: Float           @col(dataType: "numeric(14,2)")
+  targetAccount: String
   household: Household!
   createdAt: Timestamp!         @default(expr: "request.time")
+  
+  # Nuevo campo opcional Fase 0
+  account: Account
 }
 
 # Activo externo/ilíquido (casa, auto, inversiones externas)
 type ExternalAsset @table {
   name: String!
-  estimatedValue: Float!
+  estimatedValue: Float! @col(dataType: "numeric(14,2)")
   assetType: String!            # ej: "inmueble", "vehiculo", "inversion"
   household: Household!
   lastUpdated: Timestamp!       @default(expr: "request.time")
@@ -137,11 +181,142 @@ type NetWorthSnapshot @view(sql: """
   netWorth: Float
 }
 
+# Categoría personalizada para gastos/ingresos
+type Category @table {
+  name: String!
+  type: AccountType!          # EXPENSE o INCOME
+  color: String               # Opcional, para UI
+  household: Household!
+  ownerType: OwnerType!
+  createdAt: Timestamp! @default(expr: "request.time")
+}
+
+# Etiquetas para agrupaciones transversales
+type Tag @table {
+  name: String!
+  household: Household!
+  createdAt: Timestamp! @default(expr: "request.time")
+}
+
+# Relación muchos-a-muchos entre Journal y Tag
+type JournalTag @table(key: ["journal", "tag"]) {
+  journal: Journal!
+  tag: Tag!
+}
+
 # Tabla de Tipos de Cambio diarios (fuente: Banxico)
 type ExchangeRate @table(key: ["currency", "date"]) {
   currency: String!   @col(dataType: "varchar(3)")  # ej. "USD", "EUR"
-  rate: Float!                                        # Tasa vs MXN
+  rate: Float!        @col(dataType: "numeric(14,6)")
   date: Date!                                         # Fecha del tipo de cambio
   source: String!     @default(value: "BANXICO")
   createdAt: Timestamp! @default(expr: "request.time")
+}
+
+# -------------------------------------------------------------------------
+# FASE 0: EXPANSIÓN SEGURA (Sólo campos y vistas aditivas)
+# -------------------------------------------------------------------------
+
+type RecurringTemplate @table {
+  description: String!
+  debitAccount: Account!
+  creditAccount: Account!
+  amount: Float! @col(dataType: "numeric(14,2)")
+  category: Category
+  ownerType: OwnerType!
+  frequency: RecurrenceFrequency!
+  startDate: Date!
+  nextDate: Date!
+  isActive: Boolean! @default(value: true)
+  household: Household!
+  createdAt: Timestamp! @default(expr: "request.time")
+}
+
+type JournalBalanceV2 @view(sql: """
+  SELECT
+    journal_id,
+    SUM(CASE WHEN entry_type = 'DEBIT' THEN amount ELSE -amount END) as diff
+  FROM entry
+  GROUP BY journal_id
+""") {
+  journal: Journal @unique
+  diff: Float
+}
+
+type AccountBalanceV2 @view(sql: """
+  SELECT
+    account_id,
+    COALESCE(SUM(CASE WHEN entry_type = 'DEBIT' THEN amount ELSE -amount END), 0) as balance
+  FROM entry
+  GROUP BY account_id
+""") {
+  account: Account @unique
+  balance: Float
+}
+
+type UnassignedCashV2 @view(sql: """
+  SELECT
+    h.id as household_id,
+    COALESCE(inc.net_income, 0) - COALESCE(budg.total_budget, 0) as unassigned
+  FROM household h
+  LEFT JOIN (
+    SELECT a.household_id,
+           SUM(CASE WHEN e.entry_type = 'CREDIT' THEN e.amount ELSE -e.amount END) as net_income
+    FROM account a
+    JOIN entry e ON e.account_id = a.id
+    WHERE a.type = 'INCOME'
+    GROUP BY a.household_id
+  ) inc ON inc.household_id = h.id
+  LEFT JOIN (
+    SELECT household_id, SUM(assigned_amount) as total_budget
+    FROM budget
+    GROUP BY household_id
+  ) budg ON budg.household_id = h.id
+""") {
+  household: Household @unique
+  unassigned: Float
+}
+
+type NetWorthSnapshotV2 @view(sql: """
+  SELECT
+    h.id as household_id,
+    COALESCE(ass.total_asset, 0) + COALESCE(ext.total_ext, 0) - COALESCE(lia.total_liability, 0) as net_worth
+  FROM household h
+  LEFT JOIN (
+    SELECT a.household_id, SUM(CASE WHEN e.entry_type = 'DEBIT' THEN e.amount ELSE -e.amount END) as total_asset
+    FROM account a JOIN entry e ON e.account_id = a.id
+    WHERE a.type = 'ASSET' GROUP BY a.household_id
+  ) ass ON ass.household_id = h.id
+  LEFT JOIN (
+    SELECT a.household_id, SUM(CASE WHEN e.entry_type = 'CREDIT' THEN e.amount ELSE -e.amount END) as total_liability
+    FROM account a JOIN entry e ON e.account_id = a.id
+    WHERE a.type = 'LIABILITY' GROUP BY a.household_id
+  ) lia ON lia.household_id = h.id
+  LEFT JOIN (
+    SELECT household_id, SUM(estimated_value) as total_ext
+    FROM external_asset GROUP BY household_id
+  ) ext ON ext.household_id = h.id
+""") {
+  household: Household @unique
+  netWorth: Float
+}
+
+type SavingsProjectBalance @view(sql: """
+  SELECT
+    sp.id as savings_project_id,
+    COALESCE(SUM(
+      CASE
+        WHEN a.type IN ('ASSET', 'EXPENSE') THEN
+          CASE WHEN e.entry_type = 'DEBIT' THEN e.amount ELSE -e.amount END
+        ELSE
+          CASE WHEN e.entry_type = 'CREDIT' THEN e.amount ELSE -e.amount END
+      END
+    ), 0) as balance
+  FROM savings_project sp
+  LEFT JOIN account a ON a.id = sp.account_id
+  LEFT JOIN entry e ON e.account_id = a.id
+  GROUP BY sp.id
+""") {
+  savingsProject: SavingsProject @unique
+  balance: Float
 }
