@@ -1,5 +1,8 @@
+/// <reference types="vite/client" />
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, connectAuthEmulator } from "firebase/auth";
+import { getDataConnect, connectDataConnectEmulator } from "firebase/data-connect";
+import { connectorConfig } from "./lib/dataconnect";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCpNwMBegGWdKoR2SE5Ntm-DbN0omTYybY",
@@ -14,3 +17,30 @@ const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
+export const dataConnect = getDataConnect(app, connectorConfig);
+
+if (import.meta.env.DEV) {
+  if (import.meta.env.VITE_USE_PROD !== 'true') {
+    connectAuthEmulator(auth, "http://127.0.0.1:9099");
+    connectDataConnectEmulator(dataConnect, "127.0.0.1", 9399);
+    console.log("Conectado a los emuladores de Firebase (Auth 9099, DataConnect 9399).");
+    
+    // Create a visible badge
+    const badge = document.createElement('div');
+    badge.textContent = 'EMULADOR';
+    badge.style.position = 'fixed';
+    badge.style.bottom = '10px';
+    badge.style.right = '10px';
+    badge.style.backgroundColor = '#ef4444';
+    badge.style.color = 'white';
+    badge.style.padding = '8px 16px';
+    badge.style.borderRadius = '8px';
+    badge.style.fontWeight = 'bold';
+    badge.style.zIndex = '9999';
+    badge.style.pointerEvents = 'none';
+    badge.style.boxShadow = '0 4px 6px -1px rgb(0 0 0 / 0.1)';
+    document.body.appendChild(badge);
+  } else {
+    console.warn("⚠️ CONECTADO A PRODUCCIÓN DESDE LOCAL ⚠️");
+  }
+}

@@ -213,6 +213,7 @@ export default function App() {
         }
       } catch (error) {
         console.error("Error setting up user:", error);
+        setGlobalError(error instanceof Error ? error : new Error(String(error)));
       } finally {
         setAuthLoading(false);
       }
@@ -220,12 +221,28 @@ export default function App() {
     return () => unsub();
   }, [setUser, setHouseId, setAuthLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const [globalError, setGlobalError] = useState<Error | null>(null);
+
   useEffect(() => {
     if (houseId) {
-      fetchDashboardData(houseId);
-      refreshSettings();
+      const loadData = async () => {
+        try {
+          await Promise.all([
+            fetchDashboardData(houseId),
+            refreshSettings()
+          ]);
+        } catch (error) {
+          console.error("Error loading global data:", error);
+          setGlobalError(error instanceof Error ? error : new Error(String(error)));
+        }
+      };
+      loadData();
     }
   }, [houseId, fetchDashboardData, refreshSettings]);
+
+  if (globalError) {
+    throw globalError; // Let ErrorBoundary catch it
+  }
 
   const handleJoinHouse = async (accept: boolean) => {
     if (accept && joinHouseConfirm && user) {
