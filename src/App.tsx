@@ -116,10 +116,11 @@ export default function App() {
     deleteGoal: state.deleteGoal,
     fetchBudgetsForMonth: state.fetchBudgetsForMonth,
     copyBudgetsFromPreviousMonth: state.copyBudgetsFromPreviousMonth,
+    refreshSettings: state.refreshSettings,
   })));
   
   const methods = { ...data, handleOpenIncomeModal, handleOpenExpenseModal };
-  const { user, houseId, authLoading, setUser, setHouseId, setAuthLoading, fetchDashboardData, dateRange, setDateRange } = data;
+  const { user, houseId, authLoading, setUser, setHouseId, setAuthLoading, fetchDashboardData, refreshSettings, dateRange, setDateRange } = data;
 
   const filteredData = useMemo(() => {
     const start = dateRange?.start || '2000-01-01';
@@ -222,8 +223,9 @@ export default function App() {
   useEffect(() => {
     if (houseId) {
       fetchDashboardData(houseId);
+      refreshSettings();
     }
-  }, [houseId, fetchDashboardData]);
+  }, [houseId, fetchDashboardData, refreshSettings]);
 
   const handleJoinHouse = async (accept: boolean) => {
     if (accept && joinHouseConfirm && user) {
