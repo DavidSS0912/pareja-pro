@@ -34,7 +34,6 @@ export function BudgetForm({ initialData, onSubmit, onCancel, appContext = 'hous
     onSubmit({ 
       ...data, 
       category: selectedCategory?.name || '', 
-      categoryName: selectedCategory?.name || '', 
       shared: appContext === 'household' 
     });
   };

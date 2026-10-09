@@ -40,7 +40,6 @@ query GetBudgets($householdId: UUID!) @auth(level: USER) {
     household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
   }) {
     id
-    categoryName
     assignedAmount
     ownerType
     period
@@ -56,7 +55,6 @@ query GetBudgetsByMonth($householdId: UUID!, $period: Date!) @auth(level: USER) 
     household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
   }) {
     id
-    categoryName
     category { id name }
     ownerType
     assignedAmount

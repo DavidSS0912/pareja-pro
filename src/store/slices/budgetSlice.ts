@@ -29,7 +29,6 @@ export const createBudgetSlice: StateCreator<BudgetSlice & AuthSlice & DataSlice
       await createBudget({
         householdId: houseId,
         categoryId: item.categoryId,
-        categoryName: item.categoryName || item.category || 'General',
         period: item.period,
         assignedAmount: item.base || 0,
         ownerType: optimisticOwnerType
@@ -56,7 +55,7 @@ export const createBudgetSlice: StateCreator<BudgetSlice & AuthSlice & DataSlice
     const updatedBudgets = state.budgets.map(b => b.id === id ? { 
       ...b, 
       ...item, 
-      category: item.categoryName || item.category || b.category, 
+      category: item.category?.name || item.category || b.category, 
       base: item.base !== undefined ? item.base : (item.assignedAmount !== undefined ? item.assignedAmount : b.base),
       ownerType: (item.shared || item.type === 'SHARED') ? OwnerType.SHARED : OwnerType.USER_A
     } : b);
@@ -127,11 +126,10 @@ export const createBudgetSlice: StateCreator<BudgetSlice & AuthSlice & DataSlice
       
       let copied = 0;
       for (const pb of prevBudgets) {
-        if (!currentBudgets.find((cb) => cb.categoryName === pb.categoryName && cb.ownerType === pb.ownerType)) {
+        if (!currentBudgets.find((cb) => cb.category?.id === pb.category?.id && cb.ownerType === pb.ownerType)) {
           await createBudget({
             householdId: houseId,
             categoryId: pb.category.id,
-            categoryName: pb.categoryName,
             period: currentPeriod,
             assignedAmount: pb.assignedAmount,
             ownerType: pb.ownerType

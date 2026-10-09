@@ -84,7 +84,6 @@ export interface CreateBudgetData {
 export interface CreateBudgetVariables {
   householdId: UUIDString;
   categoryId: UUIDString;
-  categoryName: string;
   ownerType: OwnerType;
   period: DateString;
   assignedAmount: number;
@@ -307,14 +306,13 @@ export interface ExternalAsset_Key {
 export interface GetBudgetsByMonthData {
   budgets: ({
     id: UUIDString;
-    categoryName: string;
-    category?: {
+    category: {
       id: UUIDString;
       name: string;
     } & Category_Key;
     ownerType: OwnerType;
     assignedAmount: number;
-    period?: DateString | null;
+    period: DateString;
   } & Budget_Key)[];
 }
 
@@ -326,12 +324,11 @@ export interface GetBudgetsByMonthVariables {
 export interface GetBudgetsData {
   budgets: ({
     id: UUIDString;
-    categoryName: string;
     assignedAmount: number;
     ownerType: OwnerType;
-    period?: DateString | null;
-    categoryId?: UUIDString | null;
-    category?: {
+    period: DateString;
+    categoryId: UUIDString;
+    category: {
       id: UUIDString;
       name: string;
     } & Category_Key;
@@ -494,18 +491,6 @@ export interface GetJournalTagsData {
       name: string;
     } & Tag_Key;
   })[];
-}
-
-export interface GetJournalTagsTestData {
-  journalTags: ({
-    tag: {
-      id: UUIDString;
-    } & Tag_Key;
-  })[];
-}
-
-export interface GetJournalTagsTestVariables {
-  journalId: UUIDString;
 }
 
 export interface GetJournalTagsVariables {
@@ -1401,16 +1386,4 @@ export const unbalancedJournalsRef: UnbalancedJournalsRef;
 
 export function unbalancedJournals(options?: ExecuteQueryOptions): QueryPromise<UnbalancedJournalsData, undefined>;
 export function unbalancedJournals(dc: DataConnect, options?: ExecuteQueryOptions): QueryPromise<UnbalancedJournalsData, undefined>;
-
-interface GetJournalTagsTestRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetJournalTagsTestVariables): QueryRef<GetJournalTagsTestData, GetJournalTagsTestVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetJournalTagsTestVariables): QueryRef<GetJournalTagsTestData, GetJournalTagsTestVariables>;
-  operationName: string;
-}
-export const getJournalTagsTestRef: GetJournalTagsTestRef;
-
-export function getJournalTagsTest(vars: GetJournalTagsTestVariables, options?: ExecuteQueryOptions): QueryPromise<GetJournalTagsTestData, GetJournalTagsTestVariables>;
-export function getJournalTagsTest(dc: DataConnect, vars: GetJournalTagsTestVariables, options?: ExecuteQueryOptions): QueryPromise<GetJournalTagsTestData, GetJournalTagsTestVariables>;
 

@@ -103,16 +103,13 @@ type AccountBalance @view(sql: """
 }
 
 # Presupuesto mensual por categoría (plantilla permanente)
-type Budget @table @index(fields: ["householdId", "categoryName", "ownerType"]) @index(fields: ["householdId", "period"]) {
-  categoryName: String!
+type Budget @table @index(fields: ["householdId", "categoryId", "ownerType", "period"]) {
   assignedAmount: Float! @col(dataType: "numeric(14,2)")
   household: Household!
   ownerType: OwnerType!  # Si es personal o compartido
   createdAt: Timestamp! @default(expr: "request.time")
-  
-  # Nuevos campos opcionales Fase 0
-  period: Date
-  category: Category
+  period: Date!
+  category: Category!
 }
 
 # Vista: Dinero sin asignar

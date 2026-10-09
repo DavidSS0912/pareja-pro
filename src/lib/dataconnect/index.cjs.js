@@ -747,18 +747,3 @@ exports.unbalancedJournals = function unbalancedJournals(dcOrOptions, options) {
   return executeQuery(unbalancedJournalsRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
 }
 ;
-
-const getJournalTagsTestRef = (dcOrVars, vars) => {
-  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
-  dcInstance._useGeneratedSdk();
-  return queryRef(dcInstance, 'GetJournalTagsTest', inputVars);
-}
-getJournalTagsTestRef.operationName = 'GetJournalTagsTest';
-exports.getJournalTagsTestRef = getJournalTagsTestRef;
-
-exports.getJournalTagsTest = function getJournalTagsTest(dcOrVars, varsOrOptions, options) {
-  
-  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
-  return executeQuery(getJournalTagsTestRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
-}
-;

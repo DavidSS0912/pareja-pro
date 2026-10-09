@@ -200,7 +200,6 @@ mutation CreateMsiExpense(
 mutation CreateBudget(
   $householdId: UUID!,
   $categoryId: UUID!,
-  $categoryName: String!,
   $ownerType: OwnerType!,
   $period: Date!,                  # día 1 del mes, formato YYYY-MM-01
   $assignedAmount: Float!
@@ -233,7 +232,6 @@ mutation CreateBudget(
   budget_insert(data: {
     householdId: $householdId,
     categoryId: $categoryId,
-    categoryName: $categoryName,
     ownerType: $ownerType,
     period: $period,
     assignedAmount: $assignedAmount

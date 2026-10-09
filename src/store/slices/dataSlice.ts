@@ -60,7 +60,7 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
       if (budgets.data?.budgets) {
         const mappedBudgets = budgets.data.budgets.map((b: any) => ({
           ...b,
-          category: b.categoryName,
+          category: b.category?.name,
           base: b.assignedAmount,
           icon: '🛒' // default icon for now, ideally store in category or local state
         }));
@@ -159,7 +159,7 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
       if (budgets.data?.budgets) {
         const mappedBudgets = budgets.data.budgets.map((b: any) => ({
           ...b,
-          category: b.categoryName,
+          category: b.category?.name,
           base: b.assignedAmount,
           icon: '🛒'
         }));
