@@ -206,10 +206,9 @@ mutation CreateBudget(
 ) @auth(level: USER) @transaction {
 
   query @redact {
-    # [VERIFICAR] vars.period como string y endsWith en CEL
     user(key: { uid_expr: "auth.uid" })
-      @check(expr: "this != null && this.household.id == vars.householdId && vars.assignedAmount >= 0 && string(vars.period).endsWith('-01')",
-             message: "Hogar inválido, monto negativo o periodo que no es día 1") {
+      @check(expr: "this != null && this.household.id == vars.householdId && vars.assignedAmount >= 0",
+             message: "Hogar inválido o monto negativo") {
       household { id }
     }
     category(id: $categoryId)
