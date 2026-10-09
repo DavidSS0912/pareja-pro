@@ -262,7 +262,7 @@ query GetJournalBalanceV2($journalId: UUID!) @auth(level: USER) {
   }
 }
 
-query NegativeEntries @auth(level: USER) {
+query NegativeEntries @auth(level: NO_ACCESS) {
   entries(where: { amount: { lt: 0 } }) {
     id
     amount
@@ -274,7 +274,7 @@ query NegativeEntries @auth(level: USER) {
   }
 }
 
-query UnbalancedJournals @auth(level: USER) {
+query UnbalancedJournals @auth(level: NO_ACCESS) {
   journalBalanceV2s(where: { diff: { ne: 0 } }) {
     journalId
     diff
