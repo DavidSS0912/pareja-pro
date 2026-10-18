@@ -823,7 +823,14 @@ mutation CreateCategory(
   $color: String,
   $householdId: UUID!,
   $ownerType: OwnerType!
-) @auth(level: USER) {
+) @auth(level: USER) @transaction {
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El usuario no pertenece a este hogar") {
+      household { id }
+    }
+  }
   category_insert(data: {
     name: $name,
     type: $type,
@@ -835,37 +842,108 @@ mutation CreateCategory(
 
 mutation UpdateCategory(
   $id: UUID!,
+  $householdId: UUID!,
   $name: String!,
   $color: String
-) @auth(level: USER) {
+) @auth(level: USER) @transaction {
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El usuario no pertenece a este hogar") {
+      household { id }
+    }
+    category(id: $id)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "La categoría no pertenece a este hogar") {
+      household { id }
+    }
+  }
   category_update(id: $id, data: {
     name: $name,
     color: $color
   })
 }
 
-mutation DeleteCategory($id: UUID!) @auth(level: USER) {
+mutation DeleteCategory(
+  $id: UUID!,
+  $householdId: UUID!
+) @auth(level: USER) @transaction {
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El usuario no pertenece a este hogar") {
+      household { id }
+    }
+    category(id: $id)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "La categoría no pertenece a este hogar") {
+      household { id }
+    }
+  }
   category_delete(id: $id)
 }
 
 mutation CreateTag(
   $name: String!,
   $householdId: UUID!
-) @auth(level: USER) {
+) @auth(level: USER) @transaction {
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El usuario no pertenece a este hogar") {
+      household { id }
+    }
+  }
   tag_insert(data: {
     name: $name,
     householdId: $householdId
   })
 }
 
-mutation DeleteTag($id: UUID!) @auth(level: USER) {
+mutation DeleteTag(
+  $id: UUID!,
+  $householdId: UUID!
+) @auth(level: USER) @transaction {
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El usuario no pertenece a este hogar") {
+      household { id }
+    }
+    tag(id: $id)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "La etiqueta no pertenece a este hogar") {
+      household { id }
+    }
+  }
   tag_delete(id: $id)
 }
 
 mutation SetJournalTags(
   $journalId: UUID!,
+  $householdId: UUID!,
   $tagIds: [UUID!]!
 ) @auth(level: USER) @transaction {
+  # [VERIFICAR] Validación de pertenencia al hogar para journal y lista de tagIds
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El usuario no pertenece a este hogar") {
+      household { id }
+    }
+    journal(id: $journalId)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El journal no pertenece a este hogar") {
+      household { id }
+    }
+    validTags: tags(where: {
+      id: { in: $tagIds },
+      householdId: { eq: $householdId }
+    }) @check(expr: "this.size() == vars.tagIds.size()",
+              message: "Una o más etiquetas no pertenecen a este hogar") {
+      id
+    }
+  }
   journalTag_deleteMany(where: { journalId: { eq: $journalId } })
   # Para insertar múltiples se requeriría hacerlo por SDK, o insertar uno por uno. 
   # Sin embargo, en Dataconnect Data Connect GraphQL por ahora no hay soporte nativo masivo
@@ -876,8 +954,26 @@ mutation SetJournalTags(
 
 mutation AddTagToJournal(
   $journalId: UUID!,
+  $householdId: UUID!,
   $tagId: UUID!
-) @auth(level: USER) {
+) @auth(level: USER) @transaction {
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El usuario no pertenece a este hogar") {
+      household { id }
+    }
+    journal(id: $journalId)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El journal no pertenece a este hogar") {
+      household { id }
+    }
+    tag(id: $tagId)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "La etiqueta no pertenece a este hogar") {
+      household { id }
+    }
+  }
   journalTag_insert(data: {
     journalId: $journalId,
     tagId: $tagId

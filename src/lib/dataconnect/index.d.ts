@@ -40,6 +40,7 @@ export interface AddTagToJournalData {
 
 export interface AddTagToJournalVariables {
   journalId: UUIDString;
+  householdId: UUIDString;
   tagId: UUIDString;
 }
 
@@ -240,6 +241,7 @@ export interface DeleteCategoryData {
 
 export interface DeleteCategoryVariables {
   id: UUIDString;
+  householdId: UUIDString;
 }
 
 export interface DeleteJournalData {
@@ -267,6 +269,7 @@ export interface DeleteTagData {
 
 export interface DeleteTagVariables {
   id: UUIDString;
+  householdId: UUIDString;
 }
 
 export interface Entry_Key {
@@ -620,6 +623,7 @@ export interface SetJournalTagsData {
 
 export interface SetJournalTagsVariables {
   journalId: UUIDString;
+  householdId: UUIDString;
   tagIds: UUIDString[];
 }
 
@@ -671,6 +675,7 @@ export interface UpdateCategoryData {
 
 export interface UpdateCategoryVariables {
   id: UUIDString;
+  householdId: UUIDString;
   name: string;
   color?: string | null;
 }

@@ -73,9 +73,12 @@ export const createSettingsSlice: StateCreator<SettingsSlice & AuthSlice & DataS
   },
 
   updateCategoryItem: async (id, name, color) => {
+    const houseId = get().houseId;
+    if (!houseId) return;
     try {
       await updateCategory({
         id,
+        householdId: houseId,
         name,
         color: color || null
       });
@@ -88,8 +91,10 @@ export const createSettingsSlice: StateCreator<SettingsSlice & AuthSlice & DataS
   },
 
   deleteCategoryItem: async (id) => {
+    const houseId = get().houseId;
+    if (!houseId) return;
     try {
-      await deleteCategory({ id });
+      await deleteCategory({ id, householdId: houseId });
       await get().refreshSettings();
       useToastStore.getState().addToast("Categoría eliminada", "success");
     } catch (e) {
@@ -117,8 +122,10 @@ export const createSettingsSlice: StateCreator<SettingsSlice & AuthSlice & DataS
   },
 
   deleteTagItem: async (id) => {
+    const houseId = get().houseId;
+    if (!houseId) return;
     try {
-      await deleteTag({ id });
+      await deleteTag({ id, householdId: houseId });
       await get().refreshSettings();
       useToastStore.getState().addToast("Etiqueta eliminada", "success");
     } catch (e) {

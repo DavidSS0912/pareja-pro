@@ -5411,6 +5411,7 @@ The `UpdateCategory` mutation requires an argument of type `UpdateCategoryVariab
 ```typescript
 export interface UpdateCategoryVariables {
   id: UUIDString;
+  householdId: UUIDString;
   name: string;
   color?: string | null;
 }
@@ -5433,6 +5434,7 @@ import { connectorConfig, updateCategory, UpdateCategoryVariables } from '@parej
 // The `UpdateCategory` mutation requires an argument of type `UpdateCategoryVariables`:
 const updateCategoryVars: UpdateCategoryVariables = {
   id: ..., 
+  householdId: ..., 
   name: ..., 
   color: ..., // optional
 };
@@ -5441,7 +5443,7 @@ const updateCategoryVars: UpdateCategoryVariables = {
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await updateCategory(updateCategoryVars);
 // Variables can be defined inline as well.
-const { data } = await updateCategory({ id: ..., name: ..., color: ..., });
+const { data } = await updateCategory({ id: ..., householdId: ..., name: ..., color: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -5465,6 +5467,7 @@ import { connectorConfig, updateCategoryRef, UpdateCategoryVariables } from '@pa
 // The `UpdateCategory` mutation requires an argument of type `UpdateCategoryVariables`:
 const updateCategoryVars: UpdateCategoryVariables = {
   id: ..., 
+  householdId: ..., 
   name: ..., 
   color: ..., // optional
 };
@@ -5472,7 +5475,7 @@ const updateCategoryVars: UpdateCategoryVariables = {
 // Call the `updateCategoryRef()` function to get a reference to the mutation.
 const ref = updateCategoryRef(updateCategoryVars);
 // Variables can be defined inline as well.
-const ref = updateCategoryRef({ id: ..., name: ..., color: ..., });
+const ref = updateCategoryRef({ id: ..., householdId: ..., name: ..., color: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -5526,6 +5529,7 @@ The `DeleteCategory` mutation requires an argument of type `DeleteCategoryVariab
 ```typescript
 export interface DeleteCategoryVariables {
   id: UUIDString;
+  householdId: UUIDString;
 }
 ```
 ### Return Type
@@ -5546,13 +5550,14 @@ import { connectorConfig, deleteCategory, DeleteCategoryVariables } from '@parej
 // The `DeleteCategory` mutation requires an argument of type `DeleteCategoryVariables`:
 const deleteCategoryVars: DeleteCategoryVariables = {
   id: ..., 
+  householdId: ..., 
 };
 
 // Call the `deleteCategory()` function to execute the mutation.
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await deleteCategory(deleteCategoryVars);
 // Variables can be defined inline as well.
-const { data } = await deleteCategory({ id: ..., });
+const { data } = await deleteCategory({ id: ..., householdId: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -5576,12 +5581,13 @@ import { connectorConfig, deleteCategoryRef, DeleteCategoryVariables } from '@pa
 // The `DeleteCategory` mutation requires an argument of type `DeleteCategoryVariables`:
 const deleteCategoryVars: DeleteCategoryVariables = {
   id: ..., 
+  householdId: ..., 
 };
 
 // Call the `deleteCategoryRef()` function to get a reference to the mutation.
 const ref = deleteCategoryRef(deleteCategoryVars);
 // Variables can be defined inline as well.
-const ref = deleteCategoryRef({ id: ..., });
+const ref = deleteCategoryRef({ id: ..., householdId: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -5747,6 +5753,7 @@ The `DeleteTag` mutation requires an argument of type `DeleteTagVariables`, whic
 ```typescript
 export interface DeleteTagVariables {
   id: UUIDString;
+  householdId: UUIDString;
 }
 ```
 ### Return Type
@@ -5767,13 +5774,14 @@ import { connectorConfig, deleteTag, DeleteTagVariables } from '@pareja-pro/data
 // The `DeleteTag` mutation requires an argument of type `DeleteTagVariables`:
 const deleteTagVars: DeleteTagVariables = {
   id: ..., 
+  householdId: ..., 
 };
 
 // Call the `deleteTag()` function to execute the mutation.
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await deleteTag(deleteTagVars);
 // Variables can be defined inline as well.
-const { data } = await deleteTag({ id: ..., });
+const { data } = await deleteTag({ id: ..., householdId: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -5797,12 +5805,13 @@ import { connectorConfig, deleteTagRef, DeleteTagVariables } from '@pareja-pro/d
 // The `DeleteTag` mutation requires an argument of type `DeleteTagVariables`:
 const deleteTagVars: DeleteTagVariables = {
   id: ..., 
+  householdId: ..., 
 };
 
 // Call the `deleteTagRef()` function to get a reference to the mutation.
 const ref = deleteTagRef(deleteTagVars);
 // Variables can be defined inline as well.
-const ref = deleteTagRef({ id: ..., });
+const ref = deleteTagRef({ id: ..., householdId: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -5856,6 +5865,7 @@ The `SetJournalTags` mutation requires an argument of type `SetJournalTagsVariab
 ```typescript
 export interface SetJournalTagsVariables {
   journalId: UUIDString;
+  householdId: UUIDString;
   tagIds: UUIDString[];
 }
 ```
@@ -5877,6 +5887,7 @@ import { connectorConfig, setJournalTags, SetJournalTagsVariables } from '@parej
 // The `SetJournalTags` mutation requires an argument of type `SetJournalTagsVariables`:
 const setJournalTagsVars: SetJournalTagsVariables = {
   journalId: ..., 
+  householdId: ..., 
   tagIds: ..., 
 };
 
@@ -5884,7 +5895,7 @@ const setJournalTagsVars: SetJournalTagsVariables = {
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await setJournalTags(setJournalTagsVars);
 // Variables can be defined inline as well.
-const { data } = await setJournalTags({ journalId: ..., tagIds: ..., });
+const { data } = await setJournalTags({ journalId: ..., householdId: ..., tagIds: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -5908,13 +5919,14 @@ import { connectorConfig, setJournalTagsRef, SetJournalTagsVariables } from '@pa
 // The `SetJournalTags` mutation requires an argument of type `SetJournalTagsVariables`:
 const setJournalTagsVars: SetJournalTagsVariables = {
   journalId: ..., 
+  householdId: ..., 
   tagIds: ..., 
 };
 
 // Call the `setJournalTagsRef()` function to get a reference to the mutation.
 const ref = setJournalTagsRef(setJournalTagsVars);
 // Variables can be defined inline as well.
-const ref = setJournalTagsRef({ journalId: ..., tagIds: ..., });
+const ref = setJournalTagsRef({ journalId: ..., householdId: ..., tagIds: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -5968,6 +5980,7 @@ The `AddTagToJournal` mutation requires an argument of type `AddTagToJournalVari
 ```typescript
 export interface AddTagToJournalVariables {
   journalId: UUIDString;
+  householdId: UUIDString;
   tagId: UUIDString;
 }
 ```
@@ -5989,6 +6002,7 @@ import { connectorConfig, addTagToJournal, AddTagToJournalVariables } from '@par
 // The `AddTagToJournal` mutation requires an argument of type `AddTagToJournalVariables`:
 const addTagToJournalVars: AddTagToJournalVariables = {
   journalId: ..., 
+  householdId: ..., 
   tagId: ..., 
 };
 
@@ -5996,7 +6010,7 @@ const addTagToJournalVars: AddTagToJournalVariables = {
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await addTagToJournal(addTagToJournalVars);
 // Variables can be defined inline as well.
-const { data } = await addTagToJournal({ journalId: ..., tagId: ..., });
+const { data } = await addTagToJournal({ journalId: ..., householdId: ..., tagId: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -6020,13 +6034,14 @@ import { connectorConfig, addTagToJournalRef, AddTagToJournalVariables } from '@
 // The `AddTagToJournal` mutation requires an argument of type `AddTagToJournalVariables`:
 const addTagToJournalVars: AddTagToJournalVariables = {
   journalId: ..., 
+  householdId: ..., 
   tagId: ..., 
 };
 
 // Call the `addTagToJournalRef()` function to get a reference to the mutation.
 const ref = addTagToJournalRef(addTagToJournalVars);
 // Variables can be defined inline as well.
-const ref = addTagToJournalRef({ journalId: ..., tagId: ..., });
+const ref = addTagToJournalRef({ journalId: ..., householdId: ..., tagId: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);

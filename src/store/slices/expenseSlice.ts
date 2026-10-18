@@ -112,7 +112,7 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
           if (item.tags && item.tags.length > 0) {
             for (const tagId of item.tags) {
               try {
-                await addTagToJournal({ journalId: realId, tagId });
+                await addTagToJournal({ journalId: realId, householdId: houseId, tagId });
               } catch (tagErr) {
                 console.error("Error al asignar tag", tagErr);
               }
@@ -188,10 +188,10 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
 
       if (item.tags !== undefined) {
         // Eliminar existentes
-        await setJournalTags({ journalId: id, tagIds: [] });
+        await setJournalTags({ journalId: id, householdId: houseId, tagIds: [] });
         // Agregar nuevos
         for (const tagId of item.tags) {
-           await addTagToJournal({ journalId: id, tagId });
+           await addTagToJournal({ journalId: id, householdId: houseId, tagId });
         }
       }
 

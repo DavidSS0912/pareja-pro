@@ -29,7 +29,16 @@ import {
   getSavingsProjects,
   createExternalAsset,
   updateExternalAsset,
-  getExternalAssets
+  getExternalAssets,
+  updateCategory,
+  deleteCategory,
+  getCategories,
+  createTag,
+  deleteTag,
+  getTags,
+  setJournalTags,
+  addTagToJournal,
+  getJournalTags
 } from '../src/lib/dataconnect/esm/index.esm.js';
 
 const app = initializeApp({
@@ -684,7 +693,7 @@ async function run() {
       email: email1,
       displayName: 'User 1 Duplicate'
     });
-  }, /duplicate key|unique constraint|already exists|SQL query error/i, async () => {
+  }, /unique constraint/, async () => {
     const currUser = await getCurrentUser(dc, { fetchPolicy: 'SERVER_ONLY' });
     const accsAfter = await getHouseholdAccounts(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
     if (currUser.data.user?.householdId !== householdId || accsAfter.data.accounts.length !== accsBefore16_10.data.accounts.length) {
@@ -846,6 +855,255 @@ async function run() {
       throw new Error("Alien modificó el activo externo de la víctima!");
     }
     console.log("✅ Verificado: El activo externo de la víctima no cambió.");
+  });
+
+  // ==== FAMILIA CATEGORÍAS Y ETIQUETAS ====
+  let catTempId = '';
+  await expectSuccess('CASO 18.1: Crear y actualizar categoría exitosamente', async () => {
+    const res = await createCategory(dc, {
+      householdId,
+      name: 'Categoría Temporal',
+      type: 'EXPENSE',
+      color: '#ff0000',
+      ownerType: 'SHARED'
+    });
+    catTempId = res.data.category_insert.id;
+    await updateCategory(dc, {
+      id: catTempId,
+      householdId,
+      name: 'Categoría Temporal Editada',
+      color: '#00ff00'
+    });
+    const cats = await getCategories(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const updated = cats.data.categories.find(c => c.id === catTempId);
+    if (!updated || updated.name !== 'Categoría Temporal Editada' || updated.color !== '#00ff00') {
+      throw new Error("La categoría no se creó o actualizó correctamente.");
+    }
+  });
+
+  await expectRejected('CASO 18.2: Alien crea categoría en hogar ajeno', async () => {
+    await createCategory(alienDc, {
+      householdId,
+      name: 'Categoría Alien',
+      type: 'EXPENSE',
+      ownerType: 'SHARED'
+    });
+  }, /El usuario no pertenece a este hogar/, async () => {
+    const cats = await getCategories(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (cats.data.categories.some(c => c.name === 'Categoría Alien')) {
+      throw new Error("Alien creó una categoría en el hogar de la víctima!");
+    }
+    console.log("✅ Verificado: No se creó ninguna categoría ajena.");
+  });
+
+  await expectRejected('CASO 18.3: Alien actualiza categoría ajena con su propio hogar', async () => {
+    await updateCategory(alienDc, {
+      id: catTempId,
+      householdId: alienHouseholdId,
+      name: 'Categoría Hackeada',
+      color: '#000000'
+    });
+  }, /La categoría no pertenece a este hogar/, async () => {
+    const cats = await getCategories(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const victimCat = cats.data.categories.find(c => c.id === catTempId);
+    if (!victimCat || victimCat.name !== 'Categoría Temporal Editada') {
+      throw new Error("Alien modificó la categoría de la víctima!");
+    }
+    console.log("✅ Verificado: La categoría de la víctima no cambió.");
+  });
+
+  await expectRejected('CASO 18.4: Alien borra categoría ajena con su propio hogar', async () => {
+    await deleteCategory(alienDc, {
+      id: catTempId,
+      householdId: alienHouseholdId
+    });
+  }, /La categoría no pertenece a este hogar/, async () => {
+    const cats = await getCategories(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (!cats.data.categories.find(c => c.id === catTempId)) {
+      throw new Error("Alien borró la categoría de la víctima!");
+    }
+    console.log("✅ Verificado: La categoría de la víctima sigue existiendo.");
+  });
+
+  await expectSuccess('CASO 18.5: Borrar categoría usada en Journal y Budget y verificar efecto', async () => {
+    const bRes = await createBudget(dc, {
+      householdId,
+      categoryId: catTempId,
+      period: '2026-09-01',
+      assignedAmount: 300,
+      ownerType: 'SHARED'
+    });
+    const tempBudgetId = bRes.data.budget_insert.id;
+
+    await updateSharedExpenseWithProration(dc, {
+      journalId: journalIdShared,
+      householdId,
+      date: new Date().toISOString(),
+      description: 'Gasto Compartido Editado',
+      totalAmount: 120,
+      prorataFactor: 0.5,
+      payerAccountId,
+      user1ExpenseAccountId: user1ExpenseId,
+      user2ExpenseAccountId: user2ExpenseId,
+      user1Amount: 60,
+      user2Amount: 60,
+      ownerUid,
+      isShared: true,
+      categoryId: catTempId
+    });
+
+    await deleteCategory(dc, {
+      id: catTempId,
+      householdId
+    });
+
+    const cats = await getCategories(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (cats.data.categories.find(c => c.id === catTempId)) {
+      throw new Error("La categoría no fue eliminada.");
+    }
+    const exps = await getExpensesByHousehold(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const sharedEntry = exps.data.entries.find(e => e.journal.id === journalIdShared);
+    const budgetsAfter = await getBudgets(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const budgetAfter = budgetsAfter.data.budgets.find(b => b.id === tempBudgetId);
+    if (!sharedEntry || sharedEntry.journal.categoryId !== null || budgetAfter !== undefined) {
+      throw new Error(`Efecto inesperado tras DeleteCategory: journalExists=${!!sharedEntry}, journalCat=${sharedEntry?.journal.categoryId}, budgetExists=${!!budgetAfter}`);
+    }
+  });
+
+  let tagTempId = '';
+  let alienTagId = '';
+  await expectSuccess('CASO 18.6: Crear etiqueta exitosamente', async () => {
+    const res = await createTag(dc, {
+      householdId,
+      name: 'Viaje2026'
+    });
+    tagTempId = res.data.tag_insert.id;
+    const tagsRes = await getTags(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (!tagsRes.data.tags.some(t => t.id === tagTempId && t.name === 'Viaje2026')) {
+      throw new Error("La etiqueta no se creó correctamente.");
+    }
+    const alienTagRes = await createTag(alienDc, {
+      householdId: alienHouseholdId,
+      name: 'TagPropioAlien'
+    });
+    alienTagId = alienTagRes.data.tag_insert.id;
+  });
+
+  await expectRejected('CASO 18.7: Alien crea etiqueta en hogar ajeno', async () => {
+    await createTag(alienDc, {
+      householdId,
+      name: 'TagAlienInvasor'
+    });
+  }, /El usuario no pertenece a este hogar/, async () => {
+    const tagsRes = await getTags(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (tagsRes.data.tags.some(t => t.name === 'TagAlienInvasor')) {
+      throw new Error("Alien creó una etiqueta en el hogar de la víctima!");
+    }
+    console.log("✅ Verificado: No se creó ninguna etiqueta ajena.");
+  });
+
+  await expectSuccess('CASO 18.8: Asignar etiqueta a Journal exitosamente (AddTagToJournal)', async () => {
+    await addTagToJournal(dc, {
+      journalId: journalIdShared,
+      householdId,
+      tagId: tagTempId
+    });
+    const jTags = await getJournalTags(dc, { journalId: journalIdShared, householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (!jTags.data.journalTags.some(jt => jt.tag.id === tagTempId)) {
+      throw new Error("La etiqueta no se asoció al journal.");
+    }
+  });
+
+  await expectRejected('CASO 18.9: Alien asigna etiqueta a Journal ajeno con su propio hogar', async () => {
+    await addTagToJournal(alienDc, {
+      journalId: journalIdShared,
+      householdId: alienHouseholdId,
+      tagId: alienTagId
+    });
+  }, /El journal no pertenece a este hogar/, async () => {
+    const jTags = await getJournalTags(dc, { journalId: journalIdShared, householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (jTags.data.journalTags.some(jt => jt.tag.id === alienTagId) || jTags.data.journalTags.length !== 1) {
+      throw new Error("Alien modificó las etiquetas del journal de la víctima!");
+    }
+    console.log("✅ Verificado: Las etiquetas del journal de la víctima no cambiaron.");
+  });
+
+  await expectRejected('CASO 18.9b: Usuario asigna etiqueta ajena a su propio Journal (debe fallar)', async () => {
+    await addTagToJournal(dc, {
+      journalId: journalIdShared,
+      householdId,
+      tagId: alienTagId
+    });
+  }, /La etiqueta no pertenece a este hogar/, async () => {
+    const jTags = await getJournalTags(dc, { journalId: journalIdShared, householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (jTags.data.journalTags.some(jt => jt.tag.id === alienTagId) || jTags.data.journalTags.length !== 1) {
+      throw new Error("Se asoció una etiqueta ajena al journal!");
+    }
+    console.log("✅ Verificado: No se asoció la etiqueta ajena.");
+  });
+
+  await expectRejected('CASO 18.10: Alien ejecuta SetJournalTags sobre Journal ajeno con su propio hogar', async () => {
+    await setJournalTags(alienDc, {
+      journalId: journalIdShared,
+      householdId: alienHouseholdId,
+      tagIds: []
+    });
+  }, /El journal no pertenece a este hogar/, async () => {
+    const jTags = await getJournalTags(dc, { journalId: journalIdShared, householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (jTags.data.journalTags.length !== 1 || jTags.data.journalTags[0].tag.id !== tagTempId) {
+      throw new Error("Alien borró las etiquetas del journal de la víctima!");
+    }
+    console.log("✅ Verificado: Las etiquetas del journal de la víctima siguen intactas.");
+  });
+
+  await expectRejected('CASO 18.10b: SetJournalTags con tagIds ajenos sobre Journal propio (debe fallar)', async () => {
+    await setJournalTags(dc, {
+      journalId: journalIdShared,
+      householdId,
+      tagIds: [tagTempId, alienTagId]
+    });
+  }, /Una o más etiquetas no pertenecen a este hogar/, async () => {
+    const jTags = await getJournalTags(dc, { journalId: journalIdShared, householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (jTags.data.journalTags.length !== 1) {
+      throw new Error("SetJournalTags eliminó las etiquetas pese a recibir tagIds inválidos!");
+    }
+    console.log("✅ Verificado: Las etiquetas del journal no se borraron.");
+  });
+
+  await expectSuccess('CASO 18.11: SetJournalTags exitoso con etiquetas válidas del hogar', async () => {
+    await setJournalTags(dc, {
+      journalId: journalIdShared,
+      householdId,
+      tagIds: [tagTempId]
+    });
+    const jTags = await getJournalTags(dc, { journalId: journalIdShared, householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (jTags.data.journalTags.length !== 0) {
+      throw new Error("SetJournalTags no limpió las etiquetas del journal.");
+    }
+  });
+
+  await expectRejected('CASO 18.12: Alien borra etiqueta ajena con su propio hogar', async () => {
+    await deleteTag(alienDc, {
+      id: tagTempId,
+      householdId: alienHouseholdId
+    });
+  }, /La etiqueta no pertenece a este hogar/, async () => {
+    const tagsRes = await getTags(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (!tagsRes.data.tags.some(t => t.id === tagTempId)) {
+      throw new Error("Alien borró la etiqueta de la víctima!");
+    }
+    console.log("✅ Verificado: La etiqueta de la víctima sigue existiendo.");
+  });
+
+  await expectSuccess('CASO 18.13: Borrar etiqueta exitoso', async () => {
+    await deleteTag(dc, {
+      id: tagTempId,
+      householdId
+    });
+    const tagsRes = await getTags(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (tagsRes.data.tags.some(t => t.id === tagTempId)) {
+      throw new Error("La etiqueta no fue eliminada.");
+    }
   });
 
   if (globalHasErrors) {
