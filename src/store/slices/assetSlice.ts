@@ -28,11 +28,14 @@ export const createAssetSlice: StateCreator<AssetSlice & AuthSlice & DataSlice, 
   },
   updateAsset: async (id, item) => {
     const state = get();
+    const houseId = state.houseId;
+    if (!houseId) return;
     await updateExternalAsset({
       assetId: id,
+      householdId: houseId,
       estimatedValue: item.value !== undefined ? item.value : 0
     });
-    if (state.houseId) await state.fetchDashboardData(state.houseId);
+    await state.fetchDashboardData(houseId);
   },
   deleteAsset: async (_id) => {}
 });

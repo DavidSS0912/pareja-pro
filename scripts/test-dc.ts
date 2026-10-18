@@ -22,7 +22,14 @@ import {
   deleteAccount,
   reassignEntries,
   getHouseholdAccounts,
-  getCurrentUser
+  getCurrentUser,
+  createSavingsProject,
+  updateSavingsProject,
+  updateProjectProgress,
+  getSavingsProjects,
+  createExternalAsset,
+  updateExternalAsset,
+  getExternalAssets
 } from '../src/lib/dataconnect/esm/index.esm.js';
 
 const app = initializeApp({
@@ -684,6 +691,161 @@ async function run() {
       throw new Error("El hogar del usuario o sus cuentas cambiaron tras el segundo CreateHouseholdAndUser!");
     }
     console.log("✅ Verificado: El hogar del usuario y sus cuentas permanecen intactos.");
+  });
+
+  // ==== FAMILIA AHORROS Y ACTIVOS ====
+  let projectId = '';
+  await expectSuccess('CASO 17.1: Crear proyecto de ahorro exitoso', async () => {
+    const res = await createSavingsProject(dc, {
+      householdId,
+      name: 'Fondo de Emergencia',
+      targetAmount: 10000,
+      priority: 1,
+      monthlyQuota: 1000,
+      targetAccount: 'Banco'
+    });
+    projectId = res.data.savingsProject_insert.id;
+    const projs = await getSavingsProjects(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const created = projs.data.savingsProjects.find(p => p.id === projectId);
+    if (!created || created.name !== 'Fondo de Emergencia' || created.targetAmount !== 10000) {
+      throw new Error("El proyecto de ahorro no se creó correctamente.");
+    }
+  });
+
+  await expectRejected('CASO 17.2: Alien crea proyecto de ahorro en hogar ajeno', async () => {
+    await createSavingsProject(alienDc, {
+      householdId,
+      name: 'Proyecto Alien',
+      targetAmount: 5000,
+      priority: 2
+    });
+  }, /El usuario no pertenece a este hogar o el monto objetivo es negativo/, async () => {
+    const projs = await getSavingsProjects(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (projs.data.savingsProjects.some(p => p.name === 'Proyecto Alien') || projs.data.savingsProjects.length !== 1) {
+      throw new Error("Alien creó un proyecto en el hogar de la víctima!");
+    }
+    console.log("✅ Verificado: No se creó ningún proyecto ajeno en el hogar de la víctima.");
+  });
+
+  await expectSuccess('CASO 17.3: Editar proyecto de ahorro exitoso', async () => {
+    await updateSavingsProject(dc, {
+      projectId,
+      householdId,
+      name: 'Fondo de Emergencia Editado',
+      targetAmount: 12000,
+      monthlyQuota: 1200,
+      targetAccount: 'CETES',
+      priority: 1,
+      isCompleted: false
+    });
+    const projs = await getSavingsProjects(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const updated = projs.data.savingsProjects.find(p => p.id === projectId);
+    if (!updated || updated.name !== 'Fondo de Emergencia Editado' || updated.targetAmount !== 12000) {
+      throw new Error("El proyecto de ahorro no se actualizó correctamente.");
+    }
+  });
+
+  await expectRejected('CASO 17.4: Alien edita proyecto de ahorro ajeno con su propio hogar', async () => {
+    await updateSavingsProject(alienDc, {
+      projectId,
+      householdId: alienHouseholdId,
+      name: 'Proyecto Hackeado',
+      targetAmount: 1
+    });
+  }, /El proyecto de ahorro no pertenece a este hogar/, async () => {
+    const projs = await getSavingsProjects(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const victimProj = projs.data.savingsProjects.find(p => p.id === projectId);
+    if (!victimProj || victimProj.name !== 'Fondo de Emergencia Editado' || victimProj.targetAmount !== 12000) {
+      throw new Error("Alien modificó el proyecto de ahorro de la víctima!");
+    }
+    console.log("✅ Verificado: El proyecto de ahorro de la víctima no cambió.");
+  });
+
+  await expectSuccess('CASO 17.5: Actualizar progreso de proyecto de ahorro exitoso', async () => {
+    await updateProjectProgress(dc, {
+      projectId,
+      householdId,
+      amountToAdd: 2500
+    });
+    const projs = await getSavingsProjects(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const updated = projs.data.savingsProjects.find(p => p.id === projectId);
+    if (!updated || updated.currentAmount !== 2500) {
+      throw new Error("El progreso del proyecto de ahorro no se actualizó correctamente.");
+    }
+  });
+
+  await expectRejected('CASO 17.6: Alien actualiza progreso de proyecto ajeno con su propio hogar', async () => {
+    await updateProjectProgress(alienDc, {
+      projectId,
+      householdId: alienHouseholdId,
+      amountToAdd: 99999
+    });
+  }, /El proyecto de ahorro no pertenece a este hogar/, async () => {
+    const projs = await getSavingsProjects(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const victimProj = projs.data.savingsProjects.find(p => p.id === projectId);
+    if (!victimProj || victimProj.currentAmount !== 2500) {
+      throw new Error("Alien modificó el progreso del proyecto de la víctima!");
+    }
+    console.log("✅ Verificado: El progreso del proyecto de la víctima no cambió.");
+  });
+
+  let assetId = '';
+  await expectSuccess('CASO 17.7: Crear activo externo exitoso', async () => {
+    const res = await createExternalAsset(dc, {
+      householdId,
+      name: 'Auto Familiar',
+      estimatedValue: 200000,
+      assetType: 'vehiculo'
+    });
+    assetId = res.data.externalAsset_insert.id;
+    const assets = await getExternalAssets(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const created = assets.data.externalAssets.find(a => a.id === assetId);
+    if (!created || created.name !== 'Auto Familiar' || created.estimatedValue !== 200000) {
+      throw new Error("El activo externo no se creó correctamente.");
+    }
+  });
+
+  await expectRejected('CASO 17.8: Alien crea activo externo en hogar ajeno', async () => {
+    await createExternalAsset(alienDc, {
+      householdId,
+      name: 'Activo Alien',
+      estimatedValue: 50000,
+      assetType: 'inmueble'
+    });
+  }, /El usuario no pertenece a este hogar o el valor estimado es negativo/, async () => {
+    const assets = await getExternalAssets(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (assets.data.externalAssets.some(a => a.name === 'Activo Alien') || assets.data.externalAssets.length !== 1) {
+      throw new Error("Alien creó un activo externo en el hogar de la víctima!");
+    }
+    console.log("✅ Verificado: No se creó ningún activo externo ajeno en el hogar de la víctima.");
+  });
+
+  await expectSuccess('CASO 17.9: Actualizar valor estimado de activo externo exitoso', async () => {
+    await updateExternalAsset(dc, {
+      assetId,
+      householdId,
+      estimatedValue: 185000
+    });
+    const assets = await getExternalAssets(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const updated = assets.data.externalAssets.find(a => a.id === assetId);
+    if (!updated || updated.estimatedValue !== 185000) {
+      throw new Error("El activo externo no se actualizó correctamente.");
+    }
+  });
+
+  await expectRejected('CASO 17.10: Alien actualiza activo externo ajeno con su propio hogar', async () => {
+    await updateExternalAsset(alienDc, {
+      assetId,
+      householdId: alienHouseholdId,
+      estimatedValue: 1
+    });
+  }, /El activo externo no pertenece a este hogar/, async () => {
+    const assets = await getExternalAssets(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const victimAsset = assets.data.externalAssets.find(a => a.id === assetId);
+    if (!victimAsset || victimAsset.estimatedValue !== 185000) {
+      throw new Error("Alien modificó el activo externo de la víctima!");
+    }
+    console.log("✅ Verificado: El activo externo de la víctima no cambió.");
   });
 
   if (globalHasErrors) {

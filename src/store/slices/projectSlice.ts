@@ -48,11 +48,14 @@ export const createProjectSlice: StateCreator<ProjectSlice & AuthSlice & DataSli
   },
   updateProject: async (id, item) => {
     const state = get();
+    const houseId = state.houseId;
+    if (!houseId) return;
     try {
       if (item.currentAmount !== undefined || item.savedAmount !== undefined) {
         // update progress only
         await updateProjectProgress({
           projectId: id,
+          householdId: houseId,
           amountToAdd: item.currentAmount !== undefined ? item.currentAmount : item.savedAmount
         });
       } else {
@@ -60,6 +63,7 @@ export const createProjectSlice: StateCreator<ProjectSlice & AuthSlice & DataSli
         const isCompleted = item.status === 'completed' ? true : (item.status === 'pending' || item.status === 'active' ? false : undefined);
         await updateSavingsProject({
           projectId: id,
+          householdId: houseId,
           name: item.name,
           targetAmount: item.targetAmount,
           monthlyQuota: item.monthlyQuota,
@@ -69,7 +73,7 @@ export const createProjectSlice: StateCreator<ProjectSlice & AuthSlice & DataSli
         });
       }
       useToastStore.getState().addToast("Proyecto actualizado", "success");
-      if (state.houseId) await state.fetchDashboardData(state.houseId);
+      await state.fetchDashboardData(houseId);
     } catch(error) {
       console.error(error);
       useToastStore.getState().addToast("Error al actualizar proyecto", "error");
@@ -82,13 +86,16 @@ export const createProjectSlice: StateCreator<ProjectSlice & AuthSlice & DataSli
   addContribution: async (_item) => { useToastStore.getState().addToast("Operación no disponible", "error"); },
   addContributionAndUpdateProject: async (c, p) => {
     const state = get();
+    const houseId = state.houseId;
+    if (!houseId) return;
     try {
       await updateProjectProgress({
         projectId: p.id,
+        householdId: houseId,
         amountToAdd: c.amount
       });
       useToastStore.getState().addToast("Aportación registrada", "success");
-      if (state.houseId) await state.fetchDashboardData(state.houseId);
+      await state.fetchDashboardData(houseId);
     } catch(error) {
       console.error(error);
       useToastStore.getState().addToast("Error al registrar aportación", "error");

@@ -3977,6 +3977,7 @@ The `UpdateProjectProgress` mutation requires an argument of type `UpdateProject
 ```typescript
 export interface UpdateProjectProgressVariables {
   projectId: UUIDString;
+  householdId: UUIDString;
   amountToAdd: number;
 }
 ```
@@ -3998,6 +3999,7 @@ import { connectorConfig, updateProjectProgress, UpdateProjectProgressVariables 
 // The `UpdateProjectProgress` mutation requires an argument of type `UpdateProjectProgressVariables`:
 const updateProjectProgressVars: UpdateProjectProgressVariables = {
   projectId: ..., 
+  householdId: ..., 
   amountToAdd: ..., 
 };
 
@@ -4005,7 +4007,7 @@ const updateProjectProgressVars: UpdateProjectProgressVariables = {
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await updateProjectProgress(updateProjectProgressVars);
 // Variables can be defined inline as well.
-const { data } = await updateProjectProgress({ projectId: ..., amountToAdd: ..., });
+const { data } = await updateProjectProgress({ projectId: ..., householdId: ..., amountToAdd: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -4029,13 +4031,14 @@ import { connectorConfig, updateProjectProgressRef, UpdateProjectProgressVariabl
 // The `UpdateProjectProgress` mutation requires an argument of type `UpdateProjectProgressVariables`:
 const updateProjectProgressVars: UpdateProjectProgressVariables = {
   projectId: ..., 
+  householdId: ..., 
   amountToAdd: ..., 
 };
 
 // Call the `updateProjectProgressRef()` function to get a reference to the mutation.
 const ref = updateProjectProgressRef(updateProjectProgressVars);
 // Variables can be defined inline as well.
-const ref = updateProjectProgressRef({ projectId: ..., amountToAdd: ..., });
+const ref = updateProjectProgressRef({ projectId: ..., householdId: ..., amountToAdd: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -4089,6 +4092,7 @@ The `UpdateSavingsProject` mutation requires an argument of type `UpdateSavingsP
 ```typescript
 export interface UpdateSavingsProjectVariables {
   projectId: UUIDString;
+  householdId: UUIDString;
   name?: string | null;
   targetAmount?: number | null;
   monthlyQuota?: number | null;
@@ -4115,6 +4119,7 @@ import { connectorConfig, updateSavingsProject, UpdateSavingsProjectVariables } 
 // The `UpdateSavingsProject` mutation requires an argument of type `UpdateSavingsProjectVariables`:
 const updateSavingsProjectVars: UpdateSavingsProjectVariables = {
   projectId: ..., 
+  householdId: ..., 
   name: ..., // optional
   targetAmount: ..., // optional
   monthlyQuota: ..., // optional
@@ -4127,7 +4132,7 @@ const updateSavingsProjectVars: UpdateSavingsProjectVariables = {
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await updateSavingsProject(updateSavingsProjectVars);
 // Variables can be defined inline as well.
-const { data } = await updateSavingsProject({ projectId: ..., name: ..., targetAmount: ..., monthlyQuota: ..., targetAccount: ..., priority: ..., isCompleted: ..., });
+const { data } = await updateSavingsProject({ projectId: ..., householdId: ..., name: ..., targetAmount: ..., monthlyQuota: ..., targetAccount: ..., priority: ..., isCompleted: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -4151,6 +4156,7 @@ import { connectorConfig, updateSavingsProjectRef, UpdateSavingsProjectVariables
 // The `UpdateSavingsProject` mutation requires an argument of type `UpdateSavingsProjectVariables`:
 const updateSavingsProjectVars: UpdateSavingsProjectVariables = {
   projectId: ..., 
+  householdId: ..., 
   name: ..., // optional
   targetAmount: ..., // optional
   monthlyQuota: ..., // optional
@@ -4162,7 +4168,7 @@ const updateSavingsProjectVars: UpdateSavingsProjectVariables = {
 // Call the `updateSavingsProjectRef()` function to get a reference to the mutation.
 const ref = updateSavingsProjectRef(updateSavingsProjectVars);
 // Variables can be defined inline as well.
-const ref = updateSavingsProjectRef({ projectId: ..., name: ..., targetAmount: ..., monthlyQuota: ..., targetAccount: ..., priority: ..., isCompleted: ..., });
+const ref = updateSavingsProjectRef({ projectId: ..., householdId: ..., name: ..., targetAmount: ..., monthlyQuota: ..., targetAccount: ..., priority: ..., isCompleted: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -4334,6 +4340,7 @@ The `UpdateExternalAsset` mutation requires an argument of type `UpdateExternalA
 ```typescript
 export interface UpdateExternalAssetVariables {
   assetId: UUIDString;
+  householdId: UUIDString;
   estimatedValue: number;
 }
 ```
@@ -4355,6 +4362,7 @@ import { connectorConfig, updateExternalAsset, UpdateExternalAssetVariables } fr
 // The `UpdateExternalAsset` mutation requires an argument of type `UpdateExternalAssetVariables`:
 const updateExternalAssetVars: UpdateExternalAssetVariables = {
   assetId: ..., 
+  householdId: ..., 
   estimatedValue: ..., 
 };
 
@@ -4362,7 +4370,7 @@ const updateExternalAssetVars: UpdateExternalAssetVariables = {
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await updateExternalAsset(updateExternalAssetVars);
 // Variables can be defined inline as well.
-const { data } = await updateExternalAsset({ assetId: ..., estimatedValue: ..., });
+const { data } = await updateExternalAsset({ assetId: ..., householdId: ..., estimatedValue: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -4386,13 +4394,14 @@ import { connectorConfig, updateExternalAssetRef, UpdateExternalAssetVariables }
 // The `UpdateExternalAsset` mutation requires an argument of type `UpdateExternalAssetVariables`:
 const updateExternalAssetVars: UpdateExternalAssetVariables = {
   assetId: ..., 
+  householdId: ..., 
   estimatedValue: ..., 
 };
 
 // Call the `updateExternalAssetRef()` function to get a reference to the mutation.
 const ref = updateExternalAssetRef(updateExternalAssetVars);
 // Variables can be defined inline as well.
-const ref = updateExternalAssetRef({ assetId: ..., estimatedValue: ..., });
+const ref = updateExternalAssetRef({ assetId: ..., householdId: ..., estimatedValue: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);

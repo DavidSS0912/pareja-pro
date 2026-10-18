@@ -408,7 +408,14 @@ mutation CreateSavingsProject(
   $priority: Int!,
   $monthlyQuota: Float,
   $targetAccount: String
-) @auth(level: USER) {
+) @auth(level: USER) @transaction {
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId && vars.targetAmount >= 0",
+             message: "El usuario no pertenece a este hogar o el monto objetivo es negativo") {
+      household { id }
+    }
+  }
   savingsProject_insert(data: {
     householdId: $householdId,
     name: $name,
@@ -421,8 +428,21 @@ mutation CreateSavingsProject(
 
 mutation UpdateProjectProgress(
   $projectId: UUID!,
+  $householdId: UUID!,
   $amountToAdd: Float!
-) @auth(level: USER) {
+) @auth(level: USER) @transaction {
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId && vars.amountToAdd >= 0",
+             message: "El usuario no pertenece a este hogar o el monto es negativo") {
+      household { id }
+    }
+    savingsProject(id: $projectId)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El proyecto de ahorro no pertenece a este hogar") {
+      household { id }
+    }
+  }
   savingsProject_update(id: $projectId, data: {
     currentAmount: $amountToAdd
   })
@@ -430,13 +450,26 @@ mutation UpdateProjectProgress(
 
 mutation UpdateSavingsProject(
   $projectId: UUID!,
+  $householdId: UUID!,
   $name: String,
   $targetAmount: Float,
   $monthlyQuota: Float,
   $targetAccount: String,
   $priority: Int,
   $isCompleted: Boolean
-) @auth(level: USER) {
+) @auth(level: USER) @transaction {
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El usuario no pertenece a este hogar") {
+      household { id }
+    }
+    savingsProject(id: $projectId)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El proyecto de ahorro no pertenece a este hogar") {
+      household { id }
+    }
+  }
   savingsProject_update(id: $projectId, data: {
     name: $name,
     targetAmount: $targetAmount,
@@ -452,7 +485,14 @@ mutation CreateExternalAsset(
   $name: String!,
   $estimatedValue: Float!,
   $assetType: String!
-) @auth(level: USER) {
+) @auth(level: USER) @transaction {
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId && vars.estimatedValue >= 0",
+             message: "El usuario no pertenece a este hogar o el valor estimado es negativo") {
+      household { id }
+    }
+  }
   externalAsset_insert(data: {
     householdId: $householdId,
     name: $name,
@@ -463,8 +503,21 @@ mutation CreateExternalAsset(
 
 mutation UpdateExternalAsset(
   $assetId: UUID!,
+  $householdId: UUID!,
   $estimatedValue: Float!
-) @auth(level: USER) {
+) @auth(level: USER) @transaction {
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId && vars.estimatedValue >= 0",
+             message: "El usuario no pertenece a este hogar o el valor estimado es negativo") {
+      household { id }
+    }
+    externalAsset(id: $assetId)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El activo externo no pertenece a este hogar") {
+      household { id }
+    }
+  }
   externalAsset_update(id: $assetId, data: {
     estimatedValue: $estimatedValue
   })
