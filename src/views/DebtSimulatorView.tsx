@@ -8,13 +8,15 @@ export function DebtSimulatorView({ data }) {
   const [strategy, setStrategy] = useState('avalanche');
   const [pagoExtra, setPagoExtra] = useState(1000);
   
-  const activeCards = data.cards.filter(c => c.balance > 0).map(c => ({
-    id: c.id,
-    nombre: c.name,
-    saldoActual: c.balance,
-    apr: c.interestRate / 100,
-    pagoMinimo: c.balance * 0.05 // default 5% minimum payment
-  }));
+  const activeCards = (data.accounts || [])
+    .filter((c: any) => (c.type === 'LIABILITY' || c.type === 'CREDIT_CARD') && Number(c.balance || 0) > 0)
+    .map((c: any) => ({
+      id: c.id,
+      nombre: c.name,
+      saldoActual: Number(c.balance || 0),
+      apr: (Number(c.interestRate) || 0) / 100,
+      pagoMinimo: Number(c.balance || 0) * 0.05 // default 5% minimum payment
+    }));
   const sortedDebts = strategy === 'avalanche' ? ordenarAvalancha(activeCards) : ordenarBolaDNieve(activeCards);
   const { meses, totalInteresPagado } = proyectarLiquidacion(sortedDebts, pagoExtra);
 

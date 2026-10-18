@@ -30,3 +30,6 @@ dist-ssr
 playwright-report/
 test-results/
 
+# Firebase & DataConnect emulator
+.firebase/
+dataconnect/.dataconnect/

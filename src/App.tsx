@@ -493,7 +493,7 @@ export default function App() {
           </div>
         )}
 
-        <ErrorBoundary>
+        <ErrorBoundary key={activeTab}>
           {renderTab()}
         </ErrorBoundary>
       </main>

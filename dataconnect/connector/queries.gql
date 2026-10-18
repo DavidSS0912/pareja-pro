@@ -1,7 +1,11 @@
 query GetHouseholdAccounts($householdId: UUID!) @auth(level: USER) {
+  user(key: { uid_expr: "auth.uid" })
+    @redact
+    @check(expr: "this != null && this.household.id == vars.householdId", message: "El recurso no pertenece a este hogar") {
+    household { id }
+  }
   accounts(where: { 
     householdId: { eq: $householdId },
-    household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
   }) {
     id
     name
@@ -17,10 +21,14 @@ query GetHouseholdAccounts($householdId: UUID!) @auth(level: USER) {
 }
 
 query GetHouseholdNetBalances($householdId: UUID!) @auth(level: USER) {
+  user(key: { uid_expr: "auth.uid" })
+    @redact
+    @check(expr: "this != null && this.household.id == vars.householdId", message: "El recurso no pertenece a este hogar") {
+    household { id }
+  }
   entries(where: { 
     journal: { 
       householdId: { eq: $householdId },
-      household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
     }, 
     account: { type: { in: [ASSET, LIABILITY] } } 
   }) {
@@ -35,9 +43,20 @@ query GetHouseholdNetBalances($householdId: UUID!) @auth(level: USER) {
 }
 
 query GetBudgets($householdId: UUID!) @auth(level: USER) {
+  user(key: { uid_expr: "auth.uid" })
+    @redact
+    @check(expr: "this != null && this.household.id == vars.householdId", message: "El recurso no pertenece a este hogar") {
+    household { id }
+  }
   budgets(where: {
     householdId: { eq: $householdId },
-    household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
+    household: {
+      users_on_household: {
+        exist: {
+          uid: { eq_expr: "auth.uid" }
+        }
+      }
+    }
   }) {
     id
     assignedAmount
@@ -49,10 +68,14 @@ query GetBudgets($householdId: UUID!) @auth(level: USER) {
 }
 
 query GetBudgetsByMonth($householdId: UUID!, $period: Date!) @auth(level: USER) {
+  user(key: { uid_expr: "auth.uid" })
+    @redact
+    @check(expr: "this != null && this.household.id == vars.householdId", message: "El recurso no pertenece a este hogar") {
+    household { id }
+  }
   budgets(where: { 
     householdId: { eq: $householdId }, 
     period: { eq: $period },
-    household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
   }) {
     id
     category { id name }
@@ -63,18 +86,26 @@ query GetBudgetsByMonth($householdId: UUID!, $period: Date!) @auth(level: USER) 
 }
 
 query GetUnassignedCash($householdId: UUID!) @auth(level: USER) {
+  user(key: { uid_expr: "auth.uid" })
+    @redact
+    @check(expr: "this != null && this.household.id == vars.householdId", message: "El recurso no pertenece a este hogar") {
+    household { id }
+  }
   unassignedCashV2s(where: { 
     householdId: { eq: $householdId },
-    household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
   }) {
     unassigned
   }
 }
 
 query GetSavingsProjects($householdId: UUID!) @auth(level: USER) {
+  user(key: { uid_expr: "auth.uid" })
+    @redact
+    @check(expr: "this != null && this.household.id == vars.householdId", message: "El recurso no pertenece a este hogar") {
+    household { id }
+  }
   savingsProjects(where: { 
     householdId: { eq: $householdId },
-    household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
   }, orderBy: { priority: ASC }) {
     id
     name
@@ -88,9 +119,13 @@ query GetSavingsProjects($householdId: UUID!) @auth(level: USER) {
 }
 
 query GetExternalAssets($householdId: UUID!) @auth(level: USER) {
+  user(key: { uid_expr: "auth.uid" })
+    @redact
+    @check(expr: "this != null && this.household.id == vars.householdId", message: "El recurso no pertenece a este hogar") {
+    household { id }
+  }
   externalAssets(where: { 
     householdId: { eq: $householdId },
-    household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
   }) {
     id
     name
@@ -100,9 +135,13 @@ query GetExternalAssets($householdId: UUID!) @auth(level: USER) {
 }
 
 query GetNetWorth($householdId: UUID!) @auth(level: USER) {
+  user(key: { uid_expr: "auth.uid" })
+    @redact
+    @check(expr: "this != null && this.household.id == vars.householdId", message: "El recurso no pertenece a este hogar") {
+    household { id }
+  }
   netWorthSnapshotV2s(where: { 
     householdId: { eq: $householdId },
-    household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
   }) {
     netWorth
   }
@@ -120,11 +159,15 @@ query GetLatestRate($currency: String!) @auth(level: USER) {
 }
 
 query GetExpensesByHousehold($householdId: UUID!) @auth(level: USER) {
+  user(key: { uid_expr: "auth.uid" })
+    @redact
+    @check(expr: "this != null && this.household.id == vars.householdId", message: "El recurso no pertenece a este hogar") {
+    household { id }
+  }
   entries(
     where: { 
       journal: { 
         householdId: { eq: $householdId },
-        household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
       }, 
       account: { type: { eq: EXPENSE } } 
     },
@@ -160,11 +203,15 @@ query GetExpensesByHousehold($householdId: UUID!) @auth(level: USER) {
 }
 
 query GetIncomesByHousehold($householdId: UUID!) @auth(level: USER) {
+  user(key: { uid_expr: "auth.uid" })
+    @redact
+    @check(expr: "this != null && this.household.id == vars.householdId", message: "El recurso no pertenece a este hogar") {
+    household { id }
+  }
   entries(
     where: { 
       journal: { 
         householdId: { eq: $householdId },
-        household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
       }, 
       account: { type: { eq: INCOME } } 
     },
@@ -204,9 +251,13 @@ query GetCurrentUser @auth(level: USER) {
 }
 
 query GetCategories($householdId: UUID!) @auth(level: USER) {
+  user(key: { uid_expr: "auth.uid" })
+    @redact
+    @check(expr: "this != null && this.household.id == vars.householdId", message: "El recurso no pertenece a este hogar") {
+    household { id }
+  }
   categories(where: { 
     householdId: { eq: $householdId },
-    household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
   }) {
     id
     name
@@ -217,19 +268,24 @@ query GetCategories($householdId: UUID!) @auth(level: USER) {
 }
 
 query GetTags($householdId: UUID!) @auth(level: USER) {
+  user(key: { uid_expr: "auth.uid" })
+    @redact
+    @check(expr: "this != null && this.household.id == vars.householdId", message: "El recurso no pertenece a este hogar") {
+    household { id }
+  }
   tags(where: { 
     householdId: { eq: $householdId },
-    household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
   }) {
     id
     name
   }
 }
 
-query GetJournalTags($journalId: UUID!) @auth(level: USER) {
+query GetJournalTags($journalId: UUID!, $householdId: UUID!) @auth(level: USER) {
+  user(key: { uid_expr: "auth.uid" }) @redact @check(expr: "this != null && this.household.id == vars.householdId", message: "El recurso no pertenece a este hogar") { household { id } }
   journalTags(where: { 
     journalId: { eq: $journalId },
-    journal: { household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } } }
+    journal: { householdId: { eq: $householdId } }
   }) {
     tag {
       id
@@ -239,9 +295,13 @@ query GetJournalTags($journalId: UUID!) @auth(level: USER) {
 }
 
 query GetSettlements($householdId: UUID!) @auth(level: USER) {
+  user(key: { uid_expr: "auth.uid" })
+    @redact
+    @check(expr: "this != null && this.household.id == vars.householdId", message: "El recurso no pertenece a este hogar") {
+    household { id }
+  }
   settlements(where: { 
     householdId: { eq: $householdId },
-    household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
   }, orderBy: { createdAt: DESC }) {
     id
     ownerType
@@ -251,10 +311,11 @@ query GetSettlements($householdId: UUID!) @auth(level: USER) {
   }
 }
 
-query GetJournalBalanceV2($journalId: UUID!) @auth(level: USER) {
+query GetJournalBalanceV2($journalId: UUID!, $householdId: UUID!) @auth(level: USER) {
+  user(key: { uid_expr: "auth.uid" }) @redact @check(expr: "this != null && this.household.id == vars.householdId", message: "El recurso no pertenece a este hogar") { household { id } }
   journalBalanceV2s(where: { 
     journalId: { eq: $journalId },
-    journal: { household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } } }
+    journal: { householdId: { eq: $householdId } }
   }) {
     diff
   }

@@ -482,6 +482,7 @@ export interface GetJournalBalanceV2Data {
 
 export interface GetJournalBalanceV2Variables {
   journalId: UUIDString;
+  householdId: UUIDString;
 }
 
 export interface GetJournalTagsData {
@@ -495,6 +496,7 @@ export interface GetJournalTagsData {
 
 export interface GetJournalTagsVariables {
   journalId: UUIDString;
+  householdId: UUIDString;
 }
 
 export interface GetLatestRateData {

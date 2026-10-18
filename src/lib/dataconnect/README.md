@@ -1772,6 +1772,7 @@ The `GetJournalTags` query requires an argument of type `GetJournalTagsVariables
 ```typescript
 export interface GetJournalTagsVariables {
   journalId: UUIDString;
+  householdId: UUIDString;
 }
 ```
 ### Return Type
@@ -1797,13 +1798,14 @@ import { connectorConfig, getJournalTags, GetJournalTagsVariables } from '@parej
 // The `GetJournalTags` query requires an argument of type `GetJournalTagsVariables`:
 const getJournalTagsVars: GetJournalTagsVariables = {
   journalId: ..., 
+  householdId: ..., 
 };
 
 // Call the `getJournalTags()` function to execute the query.
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await getJournalTags(getJournalTagsVars);
 // Variables can be defined inline as well.
-const { data } = await getJournalTags({ journalId: ..., });
+const { data } = await getJournalTags({ journalId: ..., householdId: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -1827,12 +1829,13 @@ import { connectorConfig, getJournalTagsRef, GetJournalTagsVariables } from '@pa
 // The `GetJournalTags` query requires an argument of type `GetJournalTagsVariables`:
 const getJournalTagsVars: GetJournalTagsVariables = {
   journalId: ..., 
+  householdId: ..., 
 };
 
 // Call the `getJournalTagsRef()` function to get a reference to the query.
 const ref = getJournalTagsRef(getJournalTagsVars);
 // Variables can be defined inline as well.
-const ref = getJournalTagsRef({ journalId: ..., });
+const ref = getJournalTagsRef({ journalId: ..., householdId: ..., });
 
 // You can also pass in a `DataConnect` instance to the `QueryRef` function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -2001,6 +2004,7 @@ The `GetJournalBalanceV2` query requires an argument of type `GetJournalBalanceV
 ```typescript
 export interface GetJournalBalanceV2Variables {
   journalId: UUIDString;
+  householdId: UUIDString;
 }
 ```
 ### Return Type
@@ -2023,13 +2027,14 @@ import { connectorConfig, getJournalBalanceV2, GetJournalBalanceV2Variables } fr
 // The `GetJournalBalanceV2` query requires an argument of type `GetJournalBalanceV2Variables`:
 const getJournalBalanceV2Vars: GetJournalBalanceV2Variables = {
   journalId: ..., 
+  householdId: ..., 
 };
 
 // Call the `getJournalBalanceV2()` function to execute the query.
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await getJournalBalanceV2(getJournalBalanceV2Vars);
 // Variables can be defined inline as well.
-const { data } = await getJournalBalanceV2({ journalId: ..., });
+const { data } = await getJournalBalanceV2({ journalId: ..., householdId: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -2053,12 +2058,13 @@ import { connectorConfig, getJournalBalanceV2Ref, GetJournalBalanceV2Variables }
 // The `GetJournalBalanceV2` query requires an argument of type `GetJournalBalanceV2Variables`:
 const getJournalBalanceV2Vars: GetJournalBalanceV2Variables = {
   journalId: ..., 
+  householdId: ..., 
 };
 
 // Call the `getJournalBalanceV2Ref()` function to get a reference to the query.
 const ref = getJournalBalanceV2Ref(getJournalBalanceV2Vars);
 // Variables can be defined inline as well.
-const ref = getJournalBalanceV2Ref({ journalId: ..., });
+const ref = getJournalBalanceV2Ref({ journalId: ..., householdId: ..., });
 
 // You can also pass in a `DataConnect` instance to the `QueryRef` function.
 const dataConnect = getDataConnect(connectorConfig);

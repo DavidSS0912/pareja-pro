@@ -99,13 +99,13 @@ export function WealthView({ data, calc, methods }) {
             Pasivos <span className="ml-auto text-red-600 tabular-nums font-medium text-base">-{FormatCurrency(calc.totalLiabilities)}</span>
           </h3>
           <div className="space-y-3">
-            {data.cards.map(debt => (
+            {(data.accounts || []).filter((a: any) => a.type === 'LIABILITY' || a.type === 'CREDIT_CARD').map((debt: any) => (
               <div key={debt.id} className="flex justify-between items-center p-3 bg-rose-50/50 rounded-xl border border-rose-100/50 hover:bg-rose-50 transition-colors">
                 <div>
                   <p className="font-medium text-slate-900">{debt.name}</p>
-                  <p className="text-xs text-slate-600 mt-0.5">Tarjeta de Crédito</p>
+                  <p className="text-xs text-slate-600 mt-0.5">{debt.type === 'CREDIT_CARD' ? 'Tarjeta de Crédito' : 'Pasivo / Préstamo'}</p>
                 </div>
-                <p className="font-semibold text-red-600 tabular-nums tracking-tight">{FormatCurrency(debt.balance)}</p>
+                <p className="font-semibold text-red-600 tabular-nums tracking-tight">{FormatCurrency(debt.balance || 0)}</p>
               </div>
             ))}
           </div>
