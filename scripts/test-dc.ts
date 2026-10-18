@@ -14,7 +14,8 @@ import {
   updateBudget, 
   deleteBudget, 
   createCategory,
-  getBudgets
+  getBudgets,
+  getExpensesByHousehold
 } from '../src/lib/dataconnect/esm/index.esm.js';
 
 const app = initializeApp({
@@ -145,7 +146,7 @@ async function run() {
       ownerUid,
       isShared: true
     });
-  }, /Unauthorized|Permission|not in household|permission denied|El recurso no pertenece/i);
+  }, /El usuario no pertenece a este hogar/);
 
   await expectRejected('CASO 3: Monto negativo (debe fallar)', async () => {
     await createSharedExpenseWithProration(dc, {
@@ -189,7 +190,7 @@ async function run() {
       journalId: journalIdShared,
       householdId: alienHouseholdId 
     });
-  }, /Unauthorized|Permission|not in household|permission denied|El recurso no pertenece|not found/i, async () => {
+  }, /El journal no pertenece a este hogar/, async () => {
     // Verificar que el journal NO fue borrado regresando al Usuario 1
     await signInWithEmailAndPassword(auth, email1, 'password123');
     const balance = await getJournalBalanceV2(dc, { journalId: journalIdShared, householdId });
@@ -334,7 +335,7 @@ async function run() {
       assignedAmount: 500,
       ownerType: 'SHARED'
     });
-  }, /Unauthorized|Permission|not in household|permission denied|El recurso no pertenece/i);
+  }, /Hogar inválido o monto negativo/);
 
   await expectRejected('CASO 14: Alien actualiza presupuesto ajeno', async () => {
     await updateBudget(alienDc, {
@@ -342,7 +343,7 @@ async function run() {
       householdId: alienHouseholdId,
       assignedAmount: 1500
     });
-  }, /Unauthorized|Permission|not in household|permission denied|El recurso no pertenece|not found/i, async () => {
+  }, /El presupuesto no pertenece a este hogar/, async () => {
     const budgets = await getBudgets(dc, { householdId });
     const b = budgets.data.budgets.find(b => b.id === budgetId);
     if (!b || b.assignedAmount !== 1000) throw new Error("Alien modificó el presupuesto!");
@@ -354,7 +355,7 @@ async function run() {
       id: budgetId,
       householdId: alienHouseholdId 
     });
-  }, /Unauthorized|Permission|not in household|permission denied|El recurso no pertenece|not found/i, async () => {
+  }, /El presupuesto no pertenece a este hogar/, async () => {
     const budgets = await getBudgets(dc, { householdId });
     if (!budgets.data.budgets.find(b => b.id === budgetId)) throw new Error("Alien borró el presupuesto!");
     console.log("✅ Verificado: El presupuesto sigue existiendo.");
@@ -372,7 +373,29 @@ async function run() {
       ownerUid,
       isShared: false
     });
-  }, /Unauthorized|Permission|not in household|permission denied|El recurso no pertenece/i);
+  }, /El usuario no pertenece a este hogar/);
+
+  const expensesBefore15_1b = await getExpensesByHousehold(dc, { householdId });
+  const countBefore15_1b = expensesBefore15_1b.data.entries.length;
+  await expectRejected('CASO 15.1b: Alien crea Journal en su propio hogar con cuentas de la víctima', async () => {
+    await createJournalWithEntries(alienDc, {
+      householdId: alienHouseholdId,
+      date: new Date().toISOString(),
+      description: 'Alien Ingreso Cuentas Ajenas',
+      amount: 100,
+      debitAccountId: payerAccountId,
+      creditAccountId: user1ExpenseId,
+      prorataFactor: 0.5,
+      ownerUid,
+      isShared: false
+    });
+  }, /Cuenta de débito inválida, monto no positivo o cuentas iguales/, async () => {
+    const expensesAfter = await getExpensesByHousehold(dc, { householdId });
+    if (expensesAfter.data.entries.length !== countBefore15_1b || expensesAfter.data.entries.some(e => e.journal.description === 'Alien Ingreso Cuentas Ajenas')) {
+      throw new Error("Se crearon asientos en las cuentas de la víctima!");
+    }
+    console.log("✅ Verificado: No se creó ningún asiento en las cuentas de la víctima.");
+  });
 
   await expectRejected('CASO 15.2: Alien edita Journal ajeno', async () => {
     await updateJournalWithEntries(alienDc, {
@@ -387,7 +410,29 @@ async function run() {
       ownerUid,
       isShared: false
     });
-  }, /Unauthorized|Permission|not in household|permission denied|El recurso no pertenece/i);
+  }, /El usuario no pertenece a este hogar/);
+
+  await expectRejected('CASO 15.2b: Alien edita Journal ajeno usando su propio hogar', async () => {
+    await updateJournalWithEntries(alienDc, {
+      journalId: journalIdShared,
+      householdId: alienHouseholdId,
+      date: new Date().toISOString(),
+      description: 'Alien Edit Propio Hogar',
+      amount: 150,
+      debitAccountId: payerAccountId,
+      creditAccountId: user1ExpenseId,
+      prorataFactor: 0.5,
+      ownerUid,
+      isShared: false
+    });
+  }, /El journal no pertenece a este hogar/, async () => {
+    const expensesAfter = await getExpensesByHousehold(dc, { householdId });
+    const sharedEntries = expensesAfter.data.entries.filter(e => e.journal.id === journalIdShared);
+    if (sharedEntries.length === 0 || sharedEntries[0].journal.description !== 'Gasto Compartido Editado') {
+      throw new Error("El journal de la víctima fue modificado!");
+    }
+    console.log("✅ Verificado: El journal de la víctima no cambió.");
+  });
 
   await expectRejected('CASO 15.3: Alien crea Gasto Compartido en hogar ajeno', async () => {
     await createSharedExpenseWithProration(alienDc, {
@@ -404,7 +449,32 @@ async function run() {
       ownerUid,
       isShared: true
     });
-  }, /Unauthorized|Permission|not in household|permission denied|El recurso no pertenece/i);
+  }, /El usuario no pertenece a este hogar/);
+
+  const expensesBefore15_3b = await getExpensesByHousehold(dc, { householdId });
+  const countBefore15_3b = expensesBefore15_3b.data.entries.length;
+  await expectRejected('CASO 15.3b: Alien crea Gasto Compartido en su propio hogar con cuentas de la víctima', async () => {
+    await createSharedExpenseWithProration(alienDc, {
+      householdId: alienHouseholdId,
+      date: new Date().toISOString(),
+      description: 'Alien Shared Cuentas Ajenas',
+      totalAmount: 100,
+      prorataFactor: 0.5,
+      payerAccountId,
+      user1ExpenseAccountId: user1ExpenseId,
+      user2ExpenseAccountId: user2ExpenseId,
+      user1Amount: 50,
+      user2Amount: 50,
+      ownerUid,
+      isShared: true
+    });
+  }, /Cuenta de pago inválida o el reparto no suma el total/, async () => {
+    const expensesAfter = await getExpensesByHousehold(dc, { householdId });
+    if (expensesAfter.data.entries.length !== countBefore15_3b || expensesAfter.data.entries.some(e => e.journal.description === 'Alien Shared Cuentas Ajenas')) {
+      throw new Error("Se crearon gastos compartidos en las cuentas de la víctima!");
+    }
+    console.log("✅ Verificado: No se creó ningún gasto compartido en las cuentas de la víctima.");
+  });
 
   await expectRejected('CASO 15.4: Alien edita Gasto Compartido ajeno', async () => {
     await updateSharedExpenseWithProration(alienDc, {
@@ -422,7 +492,32 @@ async function run() {
       ownerUid,
       isShared: true
     });
-  }, /Unauthorized|Permission|not in household|permission denied|El recurso no pertenece/i);
+  }, /El usuario no pertenece a este hogar/);
+
+  await expectRejected('CASO 15.4b: Alien edita Gasto Compartido ajeno usando su propio hogar', async () => {
+    await updateSharedExpenseWithProration(alienDc, {
+      journalId: journalIdShared,
+      householdId: alienHouseholdId,
+      date: new Date().toISOString(),
+      description: 'Alien Shared Edit Propio Hogar',
+      totalAmount: 120,
+      prorataFactor: 0.5,
+      payerAccountId,
+      user1ExpenseAccountId: user1ExpenseId,
+      user2ExpenseAccountId: user2ExpenseId,
+      user1Amount: 60,
+      user2Amount: 60,
+      ownerUid,
+      isShared: true
+    });
+  }, /El journal no pertenece a este hogar/, async () => {
+    const expensesAfter = await getExpensesByHousehold(dc, { householdId });
+    const sharedEntries = expensesAfter.data.entries.filter(e => e.journal.id === journalIdShared);
+    if (sharedEntries.length === 0 || sharedEntries[0].journal.description !== 'Gasto Compartido Editado') {
+      throw new Error("El gasto compartido de la víctima fue modificado!");
+    }
+    console.log("✅ Verificado: El gasto compartido de la víctima no cambió.");
+  });
 
   if (globalHasErrors) {
     console.error('\n⚠️ Hubo errores en las pruebas.');

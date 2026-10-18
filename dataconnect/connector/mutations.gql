@@ -163,40 +163,6 @@ mutation CreateSharedExpenseWithProration(
   })
 }
 
-mutation CreateMsiExpense(
-  $householdId: UUID!,
-  $date: Timestamp!,
-  $description: String!,
-  $totalAmount: Float!,
-  $months: Int!,
-  $creditCardAccountId: UUID!,
-  $expenseAccountId: UUID!,
-  $prorataFactor: Float!,
-  $monthlyAmount: Float!,
-  $categoryId: UUID,
-  $msiRefId: String,
-  $msiMonthNumber: Int
-) @auth(level: USER) @transaction {
-  journal_insert(data: {
-    householdId: $householdId,
-    date: $date,
-    description: $description,
-    isMsi: true,
-    categoryId: $categoryId,
-    msiRefId: $msiRefId,
-    msiMonthNumber: $msiMonthNumber
-  })
-  
-  entry_insert(data: {
-    journalId_expr: "response.journal_insert.id",
-    accountId: $creditCardAccountId,
-    amount: $totalAmount,
-    prorataFactor: $prorataFactor,
-    ownerUid_expr: "auth.uid",
-    entryType: CREDIT
-  })
-}
-
 mutation CreateBudget(
   $householdId: UUID!,
   $categoryId: UUID!,
@@ -346,7 +312,7 @@ mutation CreateSettlement(
   $ownerType: OwnerType!,
   $amount: Float!,
   $note: String
-) @auth(level: USER) {
+) @auth(level: NO_ACCESS) {
   settlement_insert(data: {
     householdId: $householdId,
     ownerType: $ownerType,
@@ -355,7 +321,7 @@ mutation CreateSettlement(
   })
 }
 
-mutation DeleteSettlement($id: UUID!) @auth(level: USER) {
+mutation DeleteSettlement($id: UUID!) @auth(level: NO_ACCESS) {
   settlement_delete(id: $id)
 }
 

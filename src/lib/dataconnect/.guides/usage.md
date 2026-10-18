@@ -14,7 +14,7 @@ If a user is not using a supported framework, they can use the generated SDK dir
 Here's an example of how to use it with the first 5 operations:
 
 ```js
-import { createJournalWithEntries, createSharedExpenseWithProration, createMsiExpense, createBudget, updateBudget, deleteBudget, createAccount, updateAccount, archiveAccount, deleteAccount } from '@pareja-pro/dataconnect';
+import { createJournalWithEntries, createSharedExpenseWithProration, createBudget, updateBudget, deleteBudget, createAccount, updateAccount, archiveAccount, deleteAccount, reassignEntries } from '@pareja-pro/dataconnect';
 
 
 // Operation CreateJournalWithEntries:  For variables, look at type CreateJournalWithEntriesVars in ../index.d.ts
@@ -22,9 +22,6 @@ const { data } = await CreateJournalWithEntries(dataConnect, createJournalWithEn
 
 // Operation CreateSharedExpenseWithProration:  For variables, look at type CreateSharedExpenseWithProrationVars in ../index.d.ts
 const { data } = await CreateSharedExpenseWithProration(dataConnect, createSharedExpenseWithProrationVars);
-
-// Operation CreateMsiExpense:  For variables, look at type CreateMsiExpenseVars in ../index.d.ts
-const { data } = await CreateMsiExpense(dataConnect, createMsiExpenseVars);
 
 // Operation CreateBudget:  For variables, look at type CreateBudgetVars in ../index.d.ts
 const { data } = await CreateBudget(dataConnect, createBudgetVars);
@@ -46,6 +43,9 @@ const { data } = await ArchiveAccount(dataConnect, archiveAccountVars);
 
 // Operation DeleteAccount:  For variables, look at type DeleteAccountVars in ../index.d.ts
 const { data } = await DeleteAccount(dataConnect, deleteAccountVars);
+
+// Operation ReassignEntries:  For variables, look at type ReassignEntriesVars in ../index.d.ts
+const { data } = await ReassignEntries(dataConnect, reassignEntriesVars);
 
 
 ```

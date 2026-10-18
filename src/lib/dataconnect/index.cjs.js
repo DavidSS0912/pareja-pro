@@ -57,20 +57,6 @@ exports.createSharedExpenseWithProration = function createSharedExpenseWithProra
 }
 ;
 
-const createMsiExpenseRef = (dcOrVars, vars) => {
-  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'CreateMsiExpense', inputVars);
-}
-createMsiExpenseRef.operationName = 'CreateMsiExpense';
-exports.createMsiExpenseRef = createMsiExpenseRef;
-
-exports.createMsiExpense = function createMsiExpense(dcOrVars, vars) {
-  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
-  return executeMutation(createMsiExpenseRef(dcInstance, inputVars));
-}
-;
-
 const createBudgetRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();

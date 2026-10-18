@@ -153,26 +153,6 @@ export interface CreateJournalWithEntriesVariables {
   categoryId?: UUIDString | null;
 }
 
-export interface CreateMsiExpenseData {
-  journal_insert: Journal_Key;
-  entry_insert: Entry_Key;
-}
-
-export interface CreateMsiExpenseVariables {
-  householdId: UUIDString;
-  date: TimestampString;
-  description: string;
-  totalAmount: number;
-  months: number;
-  creditCardAccountId: UUIDString;
-  expenseAccountId: UUIDString;
-  prorataFactor: number;
-  monthlyAmount: number;
-  categoryId?: UUIDString | null;
-  msiRefId?: string | null;
-  msiMonthNumber?: number | null;
-}
-
 export interface CreateSavingsProjectData {
   savingsProject_insert: SavingsProject_Key;
 }
@@ -812,18 +792,6 @@ export const createSharedExpenseWithProrationRef: CreateSharedExpenseWithProrati
 
 export function createSharedExpenseWithProration(vars: CreateSharedExpenseWithProrationVariables): MutationPromise<CreateSharedExpenseWithProrationData, CreateSharedExpenseWithProrationVariables>;
 export function createSharedExpenseWithProration(dc: DataConnect, vars: CreateSharedExpenseWithProrationVariables): MutationPromise<CreateSharedExpenseWithProrationData, CreateSharedExpenseWithProrationVariables>;
-
-interface CreateMsiExpenseRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: CreateMsiExpenseVariables): MutationRef<CreateMsiExpenseData, CreateMsiExpenseVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: CreateMsiExpenseVariables): MutationRef<CreateMsiExpenseData, CreateMsiExpenseVariables>;
-  operationName: string;
-}
-export const createMsiExpenseRef: CreateMsiExpenseRef;
-
-export function createMsiExpense(vars: CreateMsiExpenseVariables): MutationPromise<CreateMsiExpenseData, CreateMsiExpenseVariables>;
-export function createMsiExpense(dc: DataConnect, vars: CreateMsiExpenseVariables): MutationPromise<CreateMsiExpenseData, CreateMsiExpenseVariables>;
 
 interface CreateBudgetRef {
   /* Allow users to create refs without passing in DataConnect */

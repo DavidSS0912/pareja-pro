@@ -48,18 +48,6 @@ export function createSharedExpenseWithProration(dcOrVars, vars) {
   return executeMutation(createSharedExpenseWithProrationRef(dcInstance, inputVars));
 }
 
-export const createMsiExpenseRef = (dcOrVars, vars) => {
-  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'CreateMsiExpense', inputVars);
-}
-createMsiExpenseRef.operationName = 'CreateMsiExpense';
-
-export function createMsiExpense(dcOrVars, vars) {
-  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
-  return executeMutation(createMsiExpenseRef(dcInstance, inputVars));
-}
-
 export const createBudgetRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();
