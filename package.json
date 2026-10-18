@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "emulators": "npx firebase emulators:start --project orbita2-f8aa1",
+    "emulators": "npx firebase emulators:start --project demo-pareja-pro",
     "build": "tsc && vite build",
     "lint": "oxlint",
     "preview": "vite preview",

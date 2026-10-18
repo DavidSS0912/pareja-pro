@@ -3151,8 +3151,8 @@ The `UpdateAccount` mutation requires an argument of type `UpdateAccountVariable
 ```typescript
 export interface UpdateAccountVariables {
   accountId: UUIDString;
+  householdId: UUIDString;
   name: string;
-  type: AccountType;
   ownerType: OwnerType;
   cutDay?: number | null;
   paymentDay?: number | null;
@@ -3178,8 +3178,8 @@ import { connectorConfig, updateAccount, UpdateAccountVariables } from '@pareja-
 // The `UpdateAccount` mutation requires an argument of type `UpdateAccountVariables`:
 const updateAccountVars: UpdateAccountVariables = {
   accountId: ..., 
+  householdId: ..., 
   name: ..., 
-  type: ..., 
   ownerType: ..., 
   cutDay: ..., // optional
   paymentDay: ..., // optional
@@ -3191,7 +3191,7 @@ const updateAccountVars: UpdateAccountVariables = {
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await updateAccount(updateAccountVars);
 // Variables can be defined inline as well.
-const { data } = await updateAccount({ accountId: ..., name: ..., type: ..., ownerType: ..., cutDay: ..., paymentDay: ..., creditLimit: ..., color: ..., });
+const { data } = await updateAccount({ accountId: ..., householdId: ..., name: ..., ownerType: ..., cutDay: ..., paymentDay: ..., creditLimit: ..., color: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -3215,8 +3215,8 @@ import { connectorConfig, updateAccountRef, UpdateAccountVariables } from '@pare
 // The `UpdateAccount` mutation requires an argument of type `UpdateAccountVariables`:
 const updateAccountVars: UpdateAccountVariables = {
   accountId: ..., 
+  householdId: ..., 
   name: ..., 
-  type: ..., 
   ownerType: ..., 
   cutDay: ..., // optional
   paymentDay: ..., // optional
@@ -3227,7 +3227,7 @@ const updateAccountVars: UpdateAccountVariables = {
 // Call the `updateAccountRef()` function to get a reference to the mutation.
 const ref = updateAccountRef(updateAccountVars);
 // Variables can be defined inline as well.
-const ref = updateAccountRef({ accountId: ..., name: ..., type: ..., ownerType: ..., cutDay: ..., paymentDay: ..., creditLimit: ..., color: ..., });
+const ref = updateAccountRef({ accountId: ..., householdId: ..., name: ..., ownerType: ..., cutDay: ..., paymentDay: ..., creditLimit: ..., color: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -3281,6 +3281,7 @@ The `ArchiveAccount` mutation requires an argument of type `ArchiveAccountVariab
 ```typescript
 export interface ArchiveAccountVariables {
   accountId: UUIDString;
+  householdId: UUIDString;
   isArchived: boolean;
 }
 ```
@@ -3302,6 +3303,7 @@ import { connectorConfig, archiveAccount, ArchiveAccountVariables } from '@parej
 // The `ArchiveAccount` mutation requires an argument of type `ArchiveAccountVariables`:
 const archiveAccountVars: ArchiveAccountVariables = {
   accountId: ..., 
+  householdId: ..., 
   isArchived: ..., 
 };
 
@@ -3309,7 +3311,7 @@ const archiveAccountVars: ArchiveAccountVariables = {
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await archiveAccount(archiveAccountVars);
 // Variables can be defined inline as well.
-const { data } = await archiveAccount({ accountId: ..., isArchived: ..., });
+const { data } = await archiveAccount({ accountId: ..., householdId: ..., isArchived: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -3333,13 +3335,14 @@ import { connectorConfig, archiveAccountRef, ArchiveAccountVariables } from '@pa
 // The `ArchiveAccount` mutation requires an argument of type `ArchiveAccountVariables`:
 const archiveAccountVars: ArchiveAccountVariables = {
   accountId: ..., 
+  householdId: ..., 
   isArchived: ..., 
 };
 
 // Call the `archiveAccountRef()` function to get a reference to the mutation.
 const ref = archiveAccountRef(archiveAccountVars);
 // Variables can be defined inline as well.
-const ref = archiveAccountRef({ accountId: ..., isArchived: ..., });
+const ref = archiveAccountRef({ accountId: ..., householdId: ..., isArchived: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -3393,6 +3396,7 @@ The `DeleteAccount` mutation requires an argument of type `DeleteAccountVariable
 ```typescript
 export interface DeleteAccountVariables {
   accountId: UUIDString;
+  householdId: UUIDString;
 }
 ```
 ### Return Type
@@ -3413,13 +3417,14 @@ import { connectorConfig, deleteAccount, DeleteAccountVariables } from '@pareja-
 // The `DeleteAccount` mutation requires an argument of type `DeleteAccountVariables`:
 const deleteAccountVars: DeleteAccountVariables = {
   accountId: ..., 
+  householdId: ..., 
 };
 
 // Call the `deleteAccount()` function to execute the mutation.
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await deleteAccount(deleteAccountVars);
 // Variables can be defined inline as well.
-const { data } = await deleteAccount({ accountId: ..., });
+const { data } = await deleteAccount({ accountId: ..., householdId: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -3443,12 +3448,13 @@ import { connectorConfig, deleteAccountRef, DeleteAccountVariables } from '@pare
 // The `DeleteAccount` mutation requires an argument of type `DeleteAccountVariables`:
 const deleteAccountVars: DeleteAccountVariables = {
   accountId: ..., 
+  householdId: ..., 
 };
 
 // Call the `deleteAccountRef()` function to get a reference to the mutation.
 const ref = deleteAccountRef(deleteAccountVars);
 // Variables can be defined inline as well.
-const ref = deleteAccountRef({ accountId: ..., });
+const ref = deleteAccountRef({ accountId: ..., householdId: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -3501,8 +3507,10 @@ The `ReassignEntries` mutation requires an argument of type `ReassignEntriesVari
 
 ```typescript
 export interface ReassignEntriesVariables {
+  householdId: UUIDString;
   fromAccountId: UUIDString;
   toAccountId: UUIDString;
+  accountType: AccountType;
 }
 ```
 ### Return Type
@@ -3522,15 +3530,17 @@ import { connectorConfig, reassignEntries, ReassignEntriesVariables } from '@par
 
 // The `ReassignEntries` mutation requires an argument of type `ReassignEntriesVariables`:
 const reassignEntriesVars: ReassignEntriesVariables = {
+  householdId: ..., 
   fromAccountId: ..., 
   toAccountId: ..., 
+  accountType: ..., 
 };
 
 // Call the `reassignEntries()` function to execute the mutation.
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await reassignEntries(reassignEntriesVars);
 // Variables can be defined inline as well.
-const { data } = await reassignEntries({ fromAccountId: ..., toAccountId: ..., });
+const { data } = await reassignEntries({ householdId: ..., fromAccountId: ..., toAccountId: ..., accountType: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -3553,14 +3563,16 @@ import { connectorConfig, reassignEntriesRef, ReassignEntriesVariables } from '@
 
 // The `ReassignEntries` mutation requires an argument of type `ReassignEntriesVariables`:
 const reassignEntriesVars: ReassignEntriesVariables = {
+  householdId: ..., 
   fromAccountId: ..., 
   toAccountId: ..., 
+  accountType: ..., 
 };
 
 // Call the `reassignEntriesRef()` function to get a reference to the mutation.
 const ref = reassignEntriesRef(reassignEntriesVars);
 // Variables can be defined inline as well.
-const ref = reassignEntriesRef({ fromAccountId: ..., toAccountId: ..., });
+const ref = reassignEntriesRef({ householdId: ..., fromAccountId: ..., toAccountId: ..., accountType: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);

@@ -250,7 +250,14 @@ mutation CreateAccount(
   $paymentDay: Int,
   $creditLimit: Float,
   $color: String
-) @auth(level: USER) {
+) @auth(level: USER) @transaction {
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El usuario no pertenece a este hogar") {
+      household { id }
+    }
+  }
   account_insert(data: {
     householdId: $householdId,
     name: $name,
@@ -265,17 +272,28 @@ mutation CreateAccount(
 
 mutation UpdateAccount(
   $accountId: UUID!,
+  $householdId: UUID!,
   $name: String!,
-  $type: AccountType!,
   $ownerType: OwnerType!,
   $cutDay: Int,
   $paymentDay: Int,
   $creditLimit: Float,
   $color: String
-) @auth(level: USER) {
+) @auth(level: USER) @transaction {
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El usuario no pertenece a este hogar") {
+      household { id }
+    }
+    account(id: $accountId)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "La cuenta no pertenece a este hogar") {
+      household { id }
+    }
+  }
   account_update(id: $accountId, data: {
     name: $name,
-    type: $type,
     ownerType: $ownerType,
     cutDay: $cutDay,
     paymentDay: $paymentDay,
@@ -286,21 +304,79 @@ mutation UpdateAccount(
 
 mutation ArchiveAccount(
   $accountId: UUID!,
+  $householdId: UUID!,
   $isArchived: Boolean!
-) @auth(level: USER) {
+) @auth(level: USER) @transaction {
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El usuario no pertenece a este hogar") {
+      household { id }
+    }
+    account(id: $accountId)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "La cuenta no pertenece a este hogar") {
+      household { id }
+    }
+  }
   account_update(id: $accountId, data: {
     isArchived: $isArchived
   })
 }
 
-mutation DeleteAccount($accountId: UUID!) @auth(level: USER) {
+mutation DeleteAccount(
+  $accountId: UUID!,
+  $householdId: UUID!
+) @auth(level: USER) @transaction {
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El usuario no pertenece a este hogar") {
+      household { id }
+    }
+    account(id: $accountId)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "La cuenta no pertenece a este hogar") {
+      household { id }
+    }
+    accountEntries: entries(where: { accountId: { eq: $accountId } })
+      @check(expr: "this.size() == 0",
+             message: "La cuenta tiene asientos asociados y no puede eliminarse") {
+      id
+    }
+  }
   account_delete(id: $accountId)
 }
 
 mutation ReassignEntries(
+  $householdId: UUID!,
   $fromAccountId: UUID!,
-  $toAccountId: UUID!
+  $toAccountId: UUID!,
+  $accountType: AccountType!
 ) @auth(level: USER) @transaction {
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El usuario no pertenece a este hogar") {
+      household { id }
+    }
+    fromAccounts: accounts(where: {
+      id: { eq: $fromAccountId },
+      householdId: { eq: $householdId },
+      type: { eq: $accountType }
+    }) @check(expr: "this.size() == 1 && vars.fromAccountId != vars.toAccountId",
+              message: "Cuenta de origen inválida, de distinto tipo o igual a la de destino") {
+      id
+    }
+    toAccounts: accounts(where: {
+      id: { eq: $toAccountId },
+      householdId: { eq: $householdId },
+      type: { eq: $accountType }
+    }) @check(expr: "this.size() == 1",
+              message: "Cuenta de destino inválida o de distinto tipo") {
+      id
+    }
+  }
   entry_updateMany(
     where: { accountId: { eq: $fromAccountId } },
     data: { accountId: $toAccountId }
@@ -457,6 +533,13 @@ mutation CreateHouseholdAndUser(
 mutation SeedDefaultAccounts(
   $householdId: UUID!
 ) @auth(level: USER) @transaction {
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El usuario no pertenece a este hogar") {
+      household { id }
+    }
+  }
   assetAccount: account_insert(data: {
     name: "Banco / Efectivo",
     type: ASSET,

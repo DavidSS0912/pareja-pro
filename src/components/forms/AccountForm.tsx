@@ -62,7 +62,8 @@ export function AccountForm({ initialData, users, onSubmit, onCancel, appContext
           <label htmlFor="account-type" className="block text-sm font-bold text-slate-700 mb-1">Tipo</label>
           <select 
             id="account-type"
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+            disabled={!!initialData}
+            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 disabled:opacity-60"
             aria-invalid={!!errors.type}
             aria-describedby={errors.type ? "account-type-error" : undefined}
             {...register('type')}

@@ -15,7 +15,14 @@ import {
   deleteBudget, 
   createCategory,
   getBudgets,
-  getExpensesByHousehold
+  getExpensesByHousehold,
+  createAccount,
+  updateAccount,
+  archiveAccount,
+  deleteAccount,
+  reassignEntries,
+  getHouseholdAccounts,
+  getCurrentUser
 } from '../src/lib/dataconnect/esm/index.esm.js';
 
 const app = initializeApp({
@@ -517,6 +524,166 @@ async function run() {
       throw new Error("El gasto compartido de la víctima fue modificado!");
     }
     console.log("✅ Verificado: El gasto compartido de la víctima no cambió.");
+  });
+
+  // ==== FAMILIA CUENTAS ====
+  let extraAssetId = '';
+  let extraExpenseId = '';
+  await expectSuccess('CASO 16.1: Crear y editar cuenta exitosamente', async () => {
+    const res1 = await createAccount(dc, {
+      householdId,
+      name: 'Cuenta Temporal',
+      type: 'ASSET',
+      ownerType: 'SHARED',
+      color: 'bg-slate-800'
+    });
+    extraAssetId = res1.data.account_insert.id;
+
+    const res2 = await createAccount(dc, {
+      householdId,
+      name: 'Gasto Temporal 2',
+      type: 'EXPENSE',
+      ownerType: 'SHARED',
+      color: 'bg-slate-800'
+    });
+    extraExpenseId = res2.data.account_insert.id;
+
+    await updateAccount(dc, {
+      accountId: extraAssetId,
+      householdId,
+      name: 'Cuenta Temporal Editada',
+      ownerType: 'SHARED',
+      color: 'bg-blue-800'
+    });
+
+    const accs = await getHouseholdAccounts(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const updated = accs.data.accounts.find(a => a.id === extraAssetId);
+    if (!updated || updated.name !== 'Cuenta Temporal Editada') {
+      throw new Error("La cuenta no se actualizó correctamente.");
+    }
+  });
+
+  await expectRejected('CASO 16.2: Alien edita cuenta ajena con su propio hogar', async () => {
+    await updateAccount(alienDc, {
+      accountId: payerAccountId,
+      householdId: alienHouseholdId,
+      name: 'Hackeada',
+      ownerType: 'SHARED'
+    });
+  }, /La cuenta no pertenece a este hogar/, async () => {
+    const accs = await getHouseholdAccounts(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const victimAcc = accs.data.accounts.find(a => a.id === payerAccountId);
+    if (!victimAcc || victimAcc.name === 'Hackeada') throw new Error("Alien modificó la cuenta de la víctima!");
+    console.log("✅ Verificado: La cuenta de la víctima no cambió de nombre.");
+  });
+
+  await expectRejected('CASO 16.3: Alien archiva cuenta ajena con su propio hogar', async () => {
+    await archiveAccount(alienDc, {
+      accountId: payerAccountId,
+      householdId: alienHouseholdId,
+      isArchived: true
+    });
+  }, /La cuenta no pertenece a este hogar/, async () => {
+    const accs = await getHouseholdAccounts(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const victimAcc = accs.data.accounts.find(a => a.id === payerAccountId);
+    if (!victimAcc || victimAcc.isArchived !== false) throw new Error("Alien archivó la cuenta de la víctima!");
+    console.log("✅ Verificado: La cuenta de la víctima sigue activa.");
+  });
+
+  await expectRejected('CASO 16.4: Alien borra cuenta ajena con su propio hogar', async () => {
+    await deleteAccount(alienDc, {
+      accountId: extraAssetId,
+      householdId: alienHouseholdId
+    });
+  }, /La cuenta no pertenece a este hogar/, async () => {
+    const accs = await getHouseholdAccounts(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (!accs.data.accounts.find(a => a.id === extraAssetId)) throw new Error("Alien borró la cuenta de la víctima!");
+    console.log("✅ Verificado: La cuenta de la víctima sigue existiendo.");
+  });
+
+  const alienAssetId = hh2.data.assetAccount.id;
+  await expectRejected('CASO 16.5: Alien reasigna asientos de cuenta ajena con su propio hogar', async () => {
+    await reassignEntries(alienDc, {
+      householdId: alienHouseholdId,
+      fromAccountId: payerAccountId,
+      toAccountId: alienAssetId,
+      accountType: 'ASSET'
+    });
+  }, /Cuenta de origen inválida, de distinto tipo o igual a la de destino/, async () => {
+    const balanceRes = await getJournalBalanceV2(dc, { journalId: journalIdShared, householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const diff = balanceRes.data.journalBalanceV2s[0]?.diff;
+    if (Math.abs(diff) > 0.005) throw new Error("Los asientos de la víctima fueron alterados!");
+    console.log("✅ Verificado: Los asientos de la víctima no cambiaron.");
+  });
+
+  await expectRejected('CASO 16.6: Borrar cuenta con asientos asociados (debe fallar)', async () => {
+    await deleteAccount(dc, {
+      accountId: payerAccountId,
+      householdId
+    });
+  }, /La cuenta tiene asientos asociados y no puede eliminarse/, async () => {
+    const accs = await getHouseholdAccounts(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (!accs.data.accounts.find(a => a.id === payerAccountId)) throw new Error("Se borró una cuenta con asientos!");
+    console.log("✅ Verificado: La cuenta con asientos sigue existiendo.");
+  });
+
+  await expectRejected('CASO 16.7: Reasignar asientos entre cuentas de distinto tipo (debe fallar)', async () => {
+    await reassignEntries(dc, {
+      householdId,
+      fromAccountId: user1ExpenseId,
+      toAccountId: payerAccountId,
+      accountType: 'EXPENSE'
+    });
+  }, /Cuenta de destino inválida o de distinto tipo/, async () => {
+    const expensesAfter = await getExpensesByHousehold(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (expensesAfter.data.entries.length === 0) throw new Error("Los asientos de gasto cambiaron de cuenta!");
+    console.log("✅ Verificado: Los asientos no cambiaron ante tipos distintos.");
+  });
+
+  await expectSuccess('CASO 16.8: Reasignar asientos válido entre cuentas del mismo tipo', async () => {
+    await reassignEntries(dc, {
+      householdId,
+      fromAccountId: user1ExpenseId,
+      toAccountId: extraExpenseId,
+      accountType: 'EXPENSE'
+    });
+    const expensesAfter = await getExpensesByHousehold(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (!expensesAfter.data.entries.every(e => e.account.name === 'Gasto Temporal 2')) {
+      throw new Error("Los asientos no se reasignaron a la cuenta destino.");
+    }
+    // Regresar asientos a user1ExpenseId para dejar limpio
+    await reassignEntries(dc, {
+      householdId,
+      fromAccountId: extraExpenseId,
+      toAccountId: user1ExpenseId,
+      accountType: 'EXPENSE'
+    });
+  });
+
+  await expectSuccess('CASO 16.9: Borrar cuenta vacía exitoso', async () => {
+    await deleteAccount(dc, {
+      accountId: extraAssetId,
+      householdId
+    });
+    const accs = await getHouseholdAccounts(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (accs.data.accounts.find(a => a.id === extraAssetId)) {
+      throw new Error("La cuenta vacía no fue eliminada.");
+    }
+  });
+
+  const accsBefore16_10 = await getHouseholdAccounts(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+  await expectRejected('CASO 16.10: CreateHouseholdAndUser por segunda vez con el mismo usuario (debe fallar)', async () => {
+    await createHouseholdAndUser(dc, {
+      email: email1,
+      displayName: 'User 1 Duplicate'
+    });
+  }, /duplicate key|unique constraint|already exists|SQL query error/i, async () => {
+    const currUser = await getCurrentUser(dc, { fetchPolicy: 'SERVER_ONLY' });
+    const accsAfter = await getHouseholdAccounts(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (currUser.data.user?.householdId !== householdId || accsAfter.data.accounts.length !== accsBefore16_10.data.accounts.length) {
+      throw new Error("El hogar del usuario o sus cuentas cambiaron tras el segundo CreateHouseholdAndUser!");
+    }
+    console.log("✅ Verificado: El hogar del usuario y sus cuentas permanecen intactos.");
   });
 
   if (globalHasErrors) {

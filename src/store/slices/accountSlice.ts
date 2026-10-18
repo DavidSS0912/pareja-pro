@@ -62,29 +62,32 @@ export const createAccountSlice: StateCreator<AccountSlice & AuthSlice, [], [], 
     } : a);
     set({ accounts: updatedAccounts });
 
+    const houseId = (get() as any).houseId;
+    if (!houseId) return;
+
     try {
       await updateAccount({
         accountId: id,
+        householdId: houseId,
         name: item.name,
-        type: item.type,
         ownerType: updatedOwnerType,
         cutDay: item.cutDay,
         paymentDay: item.paymentDay,
         creditLimit: item.creditLimit,
         color: item.color || 'bg-slate-800'
       });
-      const houseId = (get() as any).houseId;
-      if (houseId) (get() as any).fetchDashboardData?.(houseId);
+      (get() as any).fetchDashboardData?.(houseId);
     } catch (e) {
       console.error(e);
       set({ accounts: originalAccounts });
     }
   },
   archiveAccount: async (id, isArchived) => {
+    const houseId = (get() as any).houseId;
+    if (!houseId) return;
     try {
-      await archiveAccount({ accountId: id, isArchived });
-      const houseId = (get() as any).houseId;
-      if (houseId) (get() as any).fetchDashboardData?.(houseId);
+      await archiveAccount({ accountId: id, householdId: houseId, isArchived });
+      (get() as any).fetchDashboardData?.(houseId);
     } catch (e) {
       console.error(e);
     }
@@ -92,14 +95,15 @@ export const createAccountSlice: StateCreator<AccountSlice & AuthSlice, [], [], 
   deleteAccount: async (id) => {
     if (id.startsWith('temp-')) return;
     const state = get();
+    const houseId = (state as any).houseId;
+    if (!houseId) return;
     const originalAccounts = state.accounts;
     
     set({ accounts: state.accounts.filter((a) => a.id !== id) });
 
     try {
-      await deleteAccount({ accountId: id });
-      const houseId = (get() as any).houseId;
-      if (houseId) (get() as any).fetchDashboardData?.(houseId);
+      await deleteAccount({ accountId: id, householdId: houseId });
+      (get() as any).fetchDashboardData?.(houseId);
     } catch (e) {
       console.error(e);
       set({ accounts: originalAccounts });

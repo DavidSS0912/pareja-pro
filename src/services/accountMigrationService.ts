@@ -46,12 +46,14 @@ export const runAccountMigration = async (householdId: string) => {
         for (const duplicate of duplicates) {
           // Reasignar entries de la cuenta duplicada a la cuenta canónica
           await reassignEntries({
+            householdId,
             fromAccountId: duplicate.id,
-            toAccountId: canonicalAccount.id
+            toAccountId: canonicalAccount.id,
+            accountType: canonicalAccount.type
           });
           
           // Borrar cuenta duplicada
-          await deleteAccount({ accountId: duplicate.id });
+          await deleteAccount({ accountId: duplicate.id, householdId });
           accountsDeleted++;
         }
         accountsMigrated++;
