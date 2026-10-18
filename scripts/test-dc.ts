@@ -925,7 +925,8 @@ async function run() {
     console.log("✅ Verificado: La categoría de la víctima sigue existiendo.");
   });
 
-  await expectSuccess('CASO 18.5: Borrar categoría usada en Journal y Budget y verificar efecto', async () => {
+  let tempBudgetId = '';
+  await expectRejected('CASO 18.5a: Borrar categoría con presupuestos asociados (debe fallar)', async () => {
     const bRes = await createBudget(dc, {
       householdId,
       categoryId: catTempId,
@@ -933,7 +934,7 @@ async function run() {
       assignedAmount: 300,
       ownerType: 'SHARED'
     });
-    const tempBudgetId = bRes.data.budget_insert.id;
+    tempBudgetId = bRes.data.budget_insert.id;
 
     await updateSharedExpenseWithProration(dc, {
       journalId: journalIdShared,
@@ -956,18 +957,36 @@ async function run() {
       id: catTempId,
       householdId
     });
+  }, /La categoría tiene presupuestos asociados y no puede eliminarse/, async () => {
+    const cats = await getCategories(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const budgetsAfter = await getBudgets(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (!cats.data.categories.some(c => c.id === catTempId) || !budgetsAfter.data.budgets.some(b => b.id === tempBudgetId)) {
+      throw new Error("La categoría o sus presupuestos se eliminaron pese al check!");
+    }
+    console.log("✅ Verificado: La categoría y sus presupuestos siguen existiendo.");
+  });
+
+  await expectSuccess('CASO 18.5b: Borrar categoría sin presupuestos asociados (éxito)', async () => {
+    await deleteBudget(dc, {
+      id: tempBudgetId,
+      householdId
+    });
+
+    await deleteCategory(dc, {
+      id: catTempId,
+      householdId
+    });
 
     const cats = await getCategories(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
     if (cats.data.categories.find(c => c.id === catTempId)) {
-      throw new Error("La categoría no fue eliminada.");
+      throw new Error("La categoría sin presupuestos no fue eliminada.");
     }
     const exps = await getExpensesByHousehold(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
     const sharedEntry = exps.data.entries.find(e => e.journal.id === journalIdShared);
-    const budgetsAfter = await getBudgets(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
-    const budgetAfter = budgetsAfter.data.budgets.find(b => b.id === tempBudgetId);
-    if (!sharedEntry || sharedEntry.journal.categoryId !== null || budgetAfter !== undefined) {
-      throw new Error(`Efecto inesperado tras DeleteCategory: journalExists=${!!sharedEntry}, journalCat=${sharedEntry?.journal.categoryId}, budgetExists=${!!budgetAfter}`);
+    if (!sharedEntry || sharedEntry.journal.categoryId !== null) {
+      throw new Error(`Efecto inesperado tras DeleteCategory: journalExists=${!!sharedEntry}, journalCat=${sharedEntry?.journal.categoryId}`);
     }
+    console.log("✅ Verificado: Categoría sin presupuestos eliminada y journal conserva categoryId=null.");
   });
 
   let tagTempId = '';
@@ -1104,6 +1123,125 @@ async function run() {
     if (tagsRes.data.tags.some(t => t.id === tagTempId)) {
       throw new Error("La etiqueta no fue eliminada.");
     }
+  });
+
+  // ==== VALIDACIÓN DE PERIOD DÍA 1 Y $categoryId EN JOURNALS ====
+  await expectRejected('CASO 18.14: Crear presupuesto con period que no es día 1 (debe fallar)', async () => {
+    await createBudget(dc, {
+      householdId,
+      categoryId,
+      period: '2026-10-15',
+      assignedAmount: 500,
+      ownerType: 'SHARED'
+    });
+  }, /El periodo del presupuesto debe ser el día 1 del mes/, async () => {
+    const budgetsAfter = await getBudgets(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (budgetsAfter.data.budgets.some(b => b.period === '2026-10-15')) {
+      throw new Error("Se creó un presupuesto con fecha distinta al día 1!");
+    }
+    console.log("✅ Verificado: No se creó el presupuesto con period distinto al día 1.");
+  });
+
+  const alienCatRes = await createCategory(alienDc, {
+    householdId: alienHouseholdId,
+    name: 'CatPropiaAlien',
+    type: 'EXPENSE',
+    ownerType: 'SHARED'
+  });
+  const alienCategoryId = alienCatRes.data.category_insert.id;
+
+  await expectRejected('CASO 18.15a: CreateJournalWithEntries con categoryId de otro hogar (debe fallar)', async () => {
+    await createJournalWithEntries(dc, {
+      householdId,
+      date: new Date().toISOString(),
+      description: 'Journal con Cat Ajena',
+      amount: 50,
+      debitAccountId: user1ExpenseId,
+      creditAccountId: payerAccountId,
+      prorataFactor: 0.5,
+      ownerUid,
+      isShared: false,
+      categoryId: alienCategoryId
+    });
+  }, /La categoría no pertenece a este hogar/, async () => {
+    const exps = await getExpensesByHousehold(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (exps.data.entries.some(e => e.journal.description === 'Journal con Cat Ajena')) {
+      throw new Error("Se creó un journal con categoría de otro hogar!");
+    }
+    console.log("✅ Verificado: CreateJournalWithEntries rechazó categoría ajena.");
+  });
+
+  await expectRejected('CASO 18.15b: UpdateJournalWithEntries con categoryId de otro hogar (debe fallar)', async () => {
+    await updateJournalWithEntries(dc, {
+      journalId: journalIdShared,
+      householdId,
+      date: new Date().toISOString(),
+      description: 'Journal Editado con Cat Ajena',
+      amount: 120,
+      debitAccountId: user1ExpenseId,
+      creditAccountId: payerAccountId,
+      prorataFactor: 0.5,
+      ownerUid,
+      isShared: false,
+      categoryId: alienCategoryId
+    });
+  }, /La categoría no pertenece a este hogar/, async () => {
+    const exps = await getExpensesByHousehold(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const sharedEntry = exps.data.entries.find(e => e.journal.id === journalIdShared);
+    if (sharedEntry?.journal.categoryId === alienCategoryId) {
+      throw new Error("UpdateJournalWithEntries asignó categoría de otro hogar!");
+    }
+    console.log("✅ Verificado: UpdateJournalWithEntries rechazó categoría ajena.");
+  });
+
+  await expectRejected('CASO 18.15c: CreateSharedExpenseWithProration con categoryId de otro hogar (debe fallar)', async () => {
+    await createSharedExpenseWithProration(dc, {
+      householdId,
+      date: new Date().toISOString(),
+      description: 'Gasto Compartido con Cat Ajena',
+      totalAmount: 100,
+      prorataFactor: 0.5,
+      payerAccountId,
+      user1ExpenseAccountId: user1ExpenseId,
+      user2ExpenseAccountId: user2ExpenseId,
+      user1Amount: 50,
+      user2Amount: 50,
+      ownerUid,
+      isShared: true,
+      categoryId: alienCategoryId
+    });
+  }, /La categoría no pertenece a este hogar/, async () => {
+    const exps = await getExpensesByHousehold(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (exps.data.entries.some(e => e.journal.description === 'Gasto Compartido con Cat Ajena')) {
+      throw new Error("CreateSharedExpenseWithProration permitió categoría de otro hogar!");
+    }
+    console.log("✅ Verificado: CreateSharedExpenseWithProration rechazó categoría ajena.");
+  });
+
+  await expectRejected('CASO 18.15d: UpdateSharedExpenseWithProration con categoryId de otro hogar (debe fallar)', async () => {
+    await updateSharedExpenseWithProration(dc, {
+      journalId: journalIdShared,
+      householdId,
+      date: new Date().toISOString(),
+      description: 'Gasto Compartido Editado Cat Ajena',
+      totalAmount: 120,
+      prorataFactor: 0.5,
+      payerAccountId,
+      user1ExpenseAccountId: user1ExpenseId,
+      user2ExpenseAccountId: user2ExpenseId,
+      user1Amount: 60,
+      user2Amount: 60,
+      ownerUid,
+      isShared: true,
+      categoryId: alienCategoryId
+    });
+  }, /La categoría no pertenece a este hogar/, async () => {
+    const exps = await getExpensesByHousehold(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const sharedEntry = exps.data.entries.find(e => e.journal.id === journalIdShared);
+    if (sharedEntry?.journal.categoryId === alienCategoryId) {
+      throw new Error("UpdateSharedExpenseWithProration asignó categoría de otro hogar!");
+    }
+    console.log("✅ Verificado: UpdateSharedExpenseWithProration rechazó categoría ajena.");
   });
 
   if (globalHasErrors) {

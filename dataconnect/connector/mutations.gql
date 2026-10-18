@@ -16,7 +16,7 @@ mutation CreateJournalWithEntries(
   $isRecurring: Boolean,
   $recurringFrequency: String,
   $recurringEndDate: Timestamp,
-  $categoryId: UUID
+  $categoryId: UUID = null
 ) @auth(level: USER) @transaction {
 
   # [VERIFICAR] Autorización: el usuario pertenece al hogar y las cuentas son de ese hogar
@@ -35,6 +35,13 @@ mutation CreateJournalWithEntries(
       @check(expr: "this != null && this.household.id == vars.householdId",
              message: "Cuenta de crédito inválida") {
       household { id }
+    }
+    validCategory: categories(where: {
+      id: { eq: $categoryId },
+      householdId: { eq: $householdId }
+    }) @check(expr: "vars.categoryId == null || this.size() == 1",
+              message: "La categoría no pertenece a este hogar") {
+      id
     }
   }
 
@@ -93,7 +100,7 @@ mutation CreateSharedExpenseWithProration(
   $isRecurring: Boolean,
   $recurringFrequency: String,
   $recurringEndDate: Timestamp,
-  $categoryId: UUID
+  $categoryId: UUID = null
 ) @auth(level: USER) @transaction {
 
   query @redact {
@@ -116,6 +123,13 @@ mutation CreateSharedExpenseWithProration(
       @check(expr: "this != null && this.household.id == vars.householdId",
              message: "Cuenta de gasto 2 inválida") {
       household { id }
+    }
+    validCategory: categories(where: {
+      id: { eq: $categoryId },
+      householdId: { eq: $householdId }
+    }) @check(expr: "vars.categoryId == null || this.size() == 1",
+              message: "La categoría no pertenece a este hogar") {
+      id
     }
   }
 
@@ -181,6 +195,12 @@ mutation CreateBudget(
       @check(expr: "this != null && this.household.id == vars.householdId",
              message: "Categoría inválida") {
       household { id }
+    }
+    # [VERIFICAR] Validar que period sea el día 1 del mes (YYYY-MM-01)
+    periodCheck: user(key: { uid_expr: "auth.uid" })
+      @check(expr: "string(vars.period).endsWith('-01') || string(vars.period).contains('-01T')",
+             message: "El periodo del presupuesto debe ser el día 1 del mes") {
+      uid
     }
     # Evita duplicados mientras no exista el índice único
     existing: budgets(where: {
@@ -666,7 +686,7 @@ mutation UpdateJournalWithEntries(
   $isShared: Boolean!,
   $isInternalTransfer: Boolean,
   $incomeCategoryType: String,
-  $categoryId: UUID
+  $categoryId: UUID = null
 ) @auth(level: USER) @transaction {
 
   query @redact {
@@ -689,6 +709,13 @@ mutation UpdateJournalWithEntries(
       @check(expr: "this != null && this.household.id == vars.householdId",
              message: "Cuenta de crédito inválida") {
       household { id }
+    }
+    validCategory: categories(where: {
+      id: { eq: $categoryId },
+      householdId: { eq: $householdId }
+    }) @check(expr: "vars.categoryId == null || this.size() == 1",
+              message: "La categoría no pertenece a este hogar") {
+      id
     }
   }
 
@@ -740,7 +767,7 @@ mutation UpdateSharedExpenseWithProration(
   $isRecurring: Boolean,
   $recurringFrequency: String,
   $recurringEndDate: Timestamp,
-  $categoryId: UUID
+  $categoryId: UUID = null
 ) @auth(level: USER) @transaction {
 
   query @redact {
@@ -768,6 +795,13 @@ mutation UpdateSharedExpenseWithProration(
       @check(expr: "this != null && this.household.id == vars.householdId",
              message: "Cuenta de gasto 2 inválida") {
       household { id }
+    }
+    validCategory: categories(where: {
+      id: { eq: $categoryId },
+      householdId: { eq: $householdId }
+    }) @check(expr: "vars.categoryId == null || this.size() == 1",
+              message: "La categoría no pertenece a este hogar") {
+      id
     }
   }
 
@@ -878,6 +912,11 @@ mutation DeleteCategory(
       @check(expr: "this != null && this.household.id == vars.householdId",
              message: "La categoría no pertenece a este hogar") {
       household { id }
+    }
+    categoryBudgets: budgets(where: { categoryId: { eq: $id } })
+      @check(expr: "this.size() == 0",
+             message: "La categoría tiene presupuestos asociados y no puede eliminarse") {
+      id
     }
   }
   category_delete(id: $id)
