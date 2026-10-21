@@ -1,3 +1,4 @@
+import { QueryFetchPolicy } from 'firebase/data-connect';
 import { getHouseholdAccounts, reassignEntries, deleteAccount, seedDefaultAccounts } from '../lib/dataconnect';
 
 export const runAccountMigration = async (householdId: string) => {
@@ -9,7 +10,7 @@ export const runAccountMigration = async (householdId: string) => {
 
   try {
     console.log("Iniciando migración de cuentas (deduplicación)...");
-    const { data } = await getHouseholdAccounts({ householdId });
+    const { data } = await getHouseholdAccounts({ householdId }, { fetchPolicy: QueryFetchPolicy.SERVER_ONLY });
     
     if (!data || !data.accounts) return;
 

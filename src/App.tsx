@@ -25,7 +25,7 @@ import { OrbitaLogo } from './components/ui/OrbitaLogo';
 import { authService } from './services/authService';
 import { getOrCreateUserAndHouse, checkInvitation, acceptInvitation, createInvitation } from './services/userService';
 
-import { useAppStore } from './store/useAppStore';
+import { useAppStore, resetAppStore } from './store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
 import { AuthView } from './views/AuthView';
 import { DashboardView } from './views/DashboardView';
@@ -178,6 +178,10 @@ export default function App() {
     const unsub = authService.onAuthStateChange(async (fbUser) => {
       try {
         if (fbUser) {
+          const currentUid = useAppStore.getState().user?.uid;
+          if (currentUid && currentUid !== fbUser.uid) {
+            resetAppStore();
+          }
           setUser({ uid: fbUser.uid, email: fbUser.email, displayName: fbUser.displayName, photoURL: fbUser.photoURL });
           
           const currentHouseId = await getOrCreateUserAndHouse(fbUser);
@@ -208,8 +212,7 @@ export default function App() {
             }
           }
         } else {
-          setUser(null);
-          setHouseId(null);
+          resetAppStore();
         }
       } catch (error) {
         console.error("Error setting up user:", error);

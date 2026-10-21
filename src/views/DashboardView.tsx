@@ -374,7 +374,7 @@ export function DashboardView({ data, calc, methods }) {
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <p className="font-medium text-slate-900 text-sm">{mov.type || mov.name || mov.category || 'Movimiento'}</p>
+                            <p className="font-medium text-slate-900 text-sm">{mov.description || mov.desc || mov.type || mov.name || mov.category || 'Movimiento'}</p>
                             {mov.isPrivate && (
                               <span title="Privado" className="flex">
                                 <Lock size={12} className="text-amber-500" />

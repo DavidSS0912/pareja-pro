@@ -87,7 +87,12 @@ export function BudgetsView({ data, methods, appContext }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {data.budgets.map(budget => {
           const computedSpent = data.expenses
-            .filter(e => e.category === budget.category && !e.isPrivate)
+            .filter(e => {
+              const matchesCategory = Boolean(budget.categoryId && e.categoryId === budget.categoryId);
+              const matchesPeriod = String(e.date || '').substring(0, 7) === String(budget.period || selectedMonth).substring(0, 7);
+              const matchesOwner = (!budget.ownerType || budget.ownerType === 'SHARED') ? !e.isPrivate : Boolean(e.isPrivate);
+              return matchesCategory && matchesPeriod && matchesOwner;
+            })
             .reduce((acc, curr) => acc + normalize(curr.amount, curr.currency), 0);
           
           const actualSpent = computedSpent > 0 ? computedSpent : 0;

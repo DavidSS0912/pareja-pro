@@ -1,6 +1,7 @@
 import { StateCreator } from 'zustand';
 import { RecordItem } from '../types';
 import { AuthSlice } from './authSlice';
+import { QueryFetchPolicy } from 'firebase/data-connect';
 import { createBudget, updateBudget, deleteBudget as deleteBudgetMutation, OwnerType } from '../../lib/dataconnect';
 import { DataSlice } from './dataSlice';
 import { useToastStore } from '../useToastStore';
@@ -34,7 +35,7 @@ export const createBudgetSlice: StateCreator<BudgetSlice & AuthSlice & DataSlice
         ownerType: optimisticOwnerType
       });
       useToastStore.getState().addToast("Presupuesto agregado", "success");
-      await state.fetchBudgetsForMonth(item.period);
+      await get().fetchBudgetsForMonth(item.period);
     } catch(error) {
       console.error(error);
       useToastStore.getState().addToast("Error al agregar presupuesto", "error");
@@ -68,7 +69,8 @@ export const createBudgetSlice: StateCreator<BudgetSlice & AuthSlice & DataSlice
         assignedAmount: item.base !== undefined ? item.base : (item.assignedAmount || 0)
       });
       useToastStore.getState().addToast("Presupuesto actualizado", "success");
-      await state.fetchBudgetsForMonth(item.period || updatedBudgets.find(b => b.id === id)?.period);
+      const targetPeriod = item.period || updatedBudgets.find(b => b.id === id)?.period;
+      if (targetPeriod) await get().fetchBudgetsForMonth(targetPeriod);
     } catch(error) {
       console.error(error);
       useToastStore.getState().addToast("Error al actualizar presupuesto", "error");
@@ -91,7 +93,7 @@ export const createBudgetSlice: StateCreator<BudgetSlice & AuthSlice & DataSlice
     try {
       await deleteBudgetMutation({ id: id, householdId: houseId });
       useToastStore.getState().addToast("Presupuesto eliminado", "success");
-      if (budgetToDelete?.period) await state.fetchBudgetsForMonth(budgetToDelete.period);
+      if (budgetToDelete?.period) await get().fetchBudgetsForMonth(budgetToDelete.period);
     } catch(error) {
       console.error(error);
       useToastStore.getState().addToast("Error al eliminar presupuesto", "error");
@@ -111,9 +113,11 @@ export const createBudgetSlice: StateCreator<BudgetSlice & AuthSlice & DataSlice
       d.setMonth(d.getMonth() - 1);
       const prevPeriod = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
 
-      // fetch budgets from previous month using a direct call (or state.fetchBudgetsForMonth if it returns data, but we can just use the state if we cache it... wait, we only cache current month. Better to call API)
       const { getBudgetsByMonth } = await import('../../lib/dataconnect');
-      const prevBudgetsRes = await getBudgetsByMonth({ householdId: houseId, period: prevPeriod });
+      const prevBudgetsRes = await getBudgetsByMonth(
+        { householdId: houseId, period: prevPeriod },
+        { fetchPolicy: QueryFetchPolicy.SERVER_ONLY }
+      );
       const prevBudgets = prevBudgetsRes.data?.budgets || [];
       
       if (prevBudgets.length === 0) {
@@ -122,11 +126,11 @@ export const createBudgetSlice: StateCreator<BudgetSlice & AuthSlice & DataSlice
       }
 
       // get current budgets to avoid duplicates
-      const currentBudgets = state.budgets;
+      const currentBudgets = get().budgets;
       
       let copied = 0;
       for (const pb of prevBudgets) {
-        if (!currentBudgets.find((cb) => cb.category?.id === pb.category?.id && cb.ownerType === pb.ownerType)) {
+        if (!currentBudgets.find((cb) => (cb.categoryId || cb.category?.id) === pb.category?.id && cb.ownerType === pb.ownerType)) {
           await createBudget({
             householdId: houseId,
             categoryId: pb.category.id,
@@ -139,7 +143,7 @@ export const createBudgetSlice: StateCreator<BudgetSlice & AuthSlice & DataSlice
       }
       
       useToastStore.getState().addToast(copied > 0 ? `Se copiaron ${copied} presupuestos` : "Todos los presupuestos ya existen en este mes", "success");
-      await state.fetchBudgetsForMonth(currentPeriod);
+      await get().fetchBudgetsForMonth(currentPeriod);
     } catch(error) {
       console.error(error);
       useToastStore.getState().addToast("Error al copiar presupuestos", "error");

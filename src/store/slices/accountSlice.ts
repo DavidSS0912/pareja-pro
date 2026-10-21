@@ -2,6 +2,7 @@ import { StateCreator } from 'zustand';
 import { RecordItem } from '../types';
 import { AuthSlice } from './authSlice';
 import { createAccount, updateAccount, deleteAccount, archiveAccount, createJournalWithEntries, OwnerType } from '../../lib/dataconnect';
+import { useToastStore } from '../useToastStore';
 
 export interface AccountSlice {
   accounts: any[];
@@ -21,7 +22,6 @@ export const createAccountSlice: StateCreator<AccountSlice & AuthSlice, [], [], 
     if (!houseId) return;
     
     const state = get();
-    const originalAccounts = state.accounts;
     const isUserA = !(state as any).users || (state as any).users.length === 0 || (state as any).users[0].id === state.user?.uid;
     const optimisticOwnerType = item.shared ? OwnerType.SHARED : (isUserA ? OwnerType.USER_A : OwnerType.USER_B);
     const optimisticAccount = { ...item, ownerType: optimisticOwnerType, id: `temp-${Date.now()}` };
@@ -38,11 +38,11 @@ export const createAccountSlice: StateCreator<AccountSlice & AuthSlice, [], [], 
         creditLimit: item.creditLimit,
         color: item.color || 'bg-slate-800'
       });
-      // Optionally trigger a refetch of accounts
-      (get() as any).fetchDashboardData?.(houseId);
+      await (get() as any).fetchDashboardData?.(houseId);
     } catch (e) {
       console.error(e);
-      set({ accounts: originalAccounts });
+      set((s) => ({ accounts: s.accounts.filter((a) => a.id !== optimisticAccount.id) }));
+      useToastStore.getState().addToast("Error al crear la cuenta", "error");
     }
   },
   updateAccount: async (id, item) => {
@@ -76,7 +76,7 @@ export const createAccountSlice: StateCreator<AccountSlice & AuthSlice, [], [], 
         creditLimit: item.creditLimit,
         color: item.color || 'bg-slate-800'
       });
-      (get() as any).fetchDashboardData?.(houseId);
+      await (get() as any).fetchDashboardData?.(houseId);
     } catch (e) {
       console.error(e);
       set({ accounts: originalAccounts });
@@ -87,7 +87,7 @@ export const createAccountSlice: StateCreator<AccountSlice & AuthSlice, [], [], 
     if (!houseId) return;
     try {
       await archiveAccount({ accountId: id, householdId: houseId, isArchived });
-      (get() as any).fetchDashboardData?.(houseId);
+      await (get() as any).fetchDashboardData?.(houseId);
     } catch (e) {
       console.error(e);
     }
@@ -103,7 +103,7 @@ export const createAccountSlice: StateCreator<AccountSlice & AuthSlice, [], [], 
 
     try {
       await deleteAccount({ accountId: id, householdId: houseId });
-      (get() as any).fetchDashboardData?.(houseId);
+      await (get() as any).fetchDashboardData?.(houseId);
     } catch (e) {
       console.error(e);
       set({ accounts: originalAccounts });
@@ -125,7 +125,7 @@ export const createAccountSlice: StateCreator<AccountSlice & AuthSlice, [], [], 
         isShared: isShared,
         isInternalTransfer: true
       });
-      (get() as any).fetchDashboardData?.(houseId);
+      await (get() as any).fetchDashboardData?.(houseId);
     } catch (e) {
       console.error(e);
       throw e;

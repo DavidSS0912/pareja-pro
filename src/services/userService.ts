@@ -1,9 +1,10 @@
+import { QueryFetchPolicy } from 'firebase/data-connect';
 import { getCurrentUser, createHouseholdAndUser, seedDefaultAccounts } from '../lib/dataconnect';
 
 export const getOrCreateUserAndHouse = async (fbUser: any) => {
   try {
     // 1. Intentamos obtener el usuario actual de la BD
-    const existing = await getCurrentUser();
+    const existing = await getCurrentUser({ fetchPolicy: QueryFetchPolicy.SERVER_ONLY });
     
     if (existing.data.user && existing.data.user.householdId) {
       const householdId = existing.data.user.householdId;

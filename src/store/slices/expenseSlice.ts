@@ -3,7 +3,7 @@ import { RecordItem } from '../types';
 import { AuthSlice } from './authSlice';
 import { DataSlice } from './dataSlice';
 import { AccountSlice } from './accountSlice';
-import { createSharedExpenseWithProration, deleteJournal } from '../../lib/dataconnect';
+import { createSharedExpenseWithProration, deleteJournal, seedDefaultAccounts } from '../../lib/dataconnect';
 import { useToastStore } from '../useToastStore';
 
 export interface ExpenseSlice {
@@ -21,8 +21,24 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
     const state = get();
     const houseId = state.houseId || "00000000-0000-0000-0000-000000000000";
 
-    const expenseAccounts = state.accounts?.filter((a: any) => a.type === 'EXPENSE') || [];
-    const assetAccounts = state.accounts?.filter((a: any) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT' || a.type === 'LIABILITY') || [];
+    let expenseAccounts = state.accounts?.filter((a: any) => a.type === 'EXPENSE') || [];
+    let assetAccounts = state.accounts?.filter((a: any) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT' || a.type === 'LIABILITY') || [];
+
+    if (expenseAccounts.length === 0 || assetAccounts.length === 0) {
+      try {
+        useToastStore.getState().addToast("Configurando cuentas contables...", "info");
+        await seedDefaultAccounts({ householdId: houseId });
+        if (state.houseId) await get().fetchDashboardData(state.houseId);
+        const updatedState = get();
+        expenseAccounts = updatedState.accounts?.filter((a: any) => a.type === 'EXPENSE') || [];
+        assetAccounts = updatedState.accounts?.filter((a: any) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT' || a.type === 'LIABILITY') || [];
+      } catch (seedError) {
+        console.warn("seedDefaultAccounts falló (puede que ya existan):", seedError);
+        const updatedState = get();
+        expenseAccounts = updatedState.accounts?.filter((a: any) => a.type === 'EXPENSE') || [];
+        assetAccounts = updatedState.accounts?.filter((a: any) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT' || a.type === 'LIABILITY') || [];
+      }
+    }
 
     if (expenseAccounts.length === 0 || assetAccounts.length === 0) {
       useToastStore.getState().addToast("No se encontraron cuentas de EXPENSE o ASSET.", "error");
@@ -50,6 +66,8 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
 
     const optimisticExpenses = [];
     const msiRefId = isMsi ? Date.now().toString() : null;
+    const expenseDesc = item.desc || item.category || 'Gasto';
+    const resolvedOwner = item.paidBy || item.userId || state.user?.uid || "unknown";
     
     for (let i = 0; i < msiCount; i++) {
       let expenseDate = new Date(item.date);
@@ -58,6 +76,11 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
       }
       optimisticExpenses.push({
         ...item,
+        desc: expenseDesc,
+        description: expenseDesc,
+        userId: resolvedOwner,
+        ownerUid: resolvedOwner,
+        paidBy: resolvedOwner,
         id: `temp-${Date.now()}-${i}`,
         amount: amountPerMonth,
         date: expenseDate.toISOString(),
@@ -67,7 +90,7 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
       });
     }
 
-    set({ expenses: [...optimisticExpenses, ...state.expenses] });
+    set((s) => ({ expenses: [...optimisticExpenses, ...s.expenses] }));
 
     try {
       useToastStore.getState().addToast("Agregando gasto...", "info");
@@ -90,7 +113,7 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
           user2ExpenseAccountId: user2ExpenseAccountId,
           user1Amount: baseUser1Amount,
           user2Amount: baseUser2Amount,
-          ownerUid: item.paidBy || item.userId || state.user?.uid || "unknown",
+          ownerUid: resolvedOwner,
           isShared: !item.isPrivate,
           isMsi: isMsi,
           msiRefId: msiRefId,
@@ -122,6 +145,8 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
       }
 
       useToastStore.getState().addToast("Gasto(s) agregado(s) correctamente", "success");
+      const currentHouseId = get().houseId;
+      if (currentHouseId) await get().fetchDashboardData(currentHouseId);
     } catch (error: any) {
       console.error(error);
       useToastStore.getState().addToast(`Error: ${error.message || 'Desconocido'}`, "error");
@@ -155,10 +180,12 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
     const user1Amount = user1Cents / 100;
     const user2Amount = (totalCents - user1Cents) / 100;
 
+    const expenseDesc = item.desc || item.category || 'Gasto';
+    const resolvedOwner = item.paidBy || item.userId || state.user?.uid || "unknown";
     // Optimistic update
     const previousExpenses = [...state.expenses];
     set((s) => ({
-      expenses: s.expenses.map((e) => e.id === id ? { ...e, ...item } : e)
+      expenses: s.expenses.map((e) => e.id === id ? { ...e, ...item, desc: expenseDesc, description: expenseDesc, userId: resolvedOwner, ownerUid: resolvedOwner, paidBy: resolvedOwner } : e)
     }));
 
     try {
@@ -178,7 +205,7 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
         user2ExpenseAccountId: user2ExpenseAccountId,
         user1Amount: user1Amount,
         user2Amount: user2Amount,
-        ownerUid: item.paidBy || item.userId || state.user?.uid || "unknown",
+        ownerUid: resolvedOwner,
         isShared: !item.isPrivate,
         isRecurring: item.isRecurring || false,
         recurringFrequency: item.recurringFrequency || null,
@@ -196,6 +223,8 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
       }
 
       useToastStore.getState().addToast("Gasto actualizado correctamente", "success");
+      const currentHouseId = get().houseId;
+      if (currentHouseId) await get().fetchDashboardData(currentHouseId);
       
     } catch (error: any) {
       console.error(error);
@@ -216,7 +245,9 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
         await deleteJournal({ journalId: id, householdId: houseId });
         await get().refreshExpenses();
         useToastStore.getState().addToast("Gasto eliminado correctamente", "success");
-        }
+        const currentHouseId = get().houseId;
+        if (currentHouseId) await get().fetchDashboardData(currentHouseId);
+      }
     } catch(error) {
       console.error(error);
       useToastStore.getState().addToast("Error al eliminar el gasto", "error");

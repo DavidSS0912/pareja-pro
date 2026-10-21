@@ -1,8 +1,11 @@
 import { StateCreator } from 'zustand';
 import { AuthSlice } from './authSlice';
 import { DataSlice } from './dataSlice';
+import { QueryFetchPolicy } from 'firebase/data-connect';
 import { getCategories, getTags, createCategory, updateCategory, deleteCategory, createTag, deleteTag } from '../../lib/dataconnect';
 import { useToastStore } from '../useToastStore';
+
+const SERVER_ONLY = { fetchPolicy: QueryFetchPolicy.SERVER_ONLY };
 
 export interface Category {
   id: string;
@@ -39,8 +42,8 @@ export const createSettingsSlice: StateCreator<SettingsSlice & AuthSlice & DataS
     
     try {
       const [catsRes, tagsRes] = await Promise.all([
-        getCategories({ householdId: houseId }),
-        getTags({ householdId: houseId })
+        getCategories({ householdId: houseId }, SERVER_ONLY),
+        getTags({ householdId: houseId }, SERVER_ONLY)
       ]);
       set({ 
         categories: (catsRes.data?.categories || []) as Category[], 
