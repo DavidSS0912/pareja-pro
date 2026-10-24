@@ -21,6 +21,7 @@ import {
 import { Modal } from './components/ui/Modal';
 import { IncomeForm } from './components/forms/IncomeForm';
 import { ExpenseForm } from './components/forms/ExpenseForm';
+import { MovementForm } from './components/forms/MovementForm';
 import { OrbitaLogo } from './components/ui/OrbitaLogo';
 import { authService } from './services/authService';
 import { getOrCreateUserAndHouse, checkInvitation, acceptInvitation, createInvitation } from './services/userService';
@@ -54,6 +55,7 @@ export default function App() {
   const [editingIncome, setEditingIncome] = useState(null);
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
+  const [isMovementModalOpen, setIsMovementModalOpen] = useState(false);
 
   const handleOpenIncomeModal = (income = null) => {
     setEditingIncome(income);
@@ -486,6 +488,9 @@ export default function App() {
             </div>
             
             <div className="flex gap-2 w-full md:w-1/2 justify-end">
+              <button onClick={() => setIsMovementModalOpen(true)} className="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm px-4 py-2.5 rounded-full text-sm font-bold flex items-center justify-center gap-2 transition-colors">
+                <Plus size={16} /> Nuevo Movimiento
+              </button>
               <button onClick={() => handleOpenExpenseModal()} className="flex-1 md:flex-none bg-secondary/10 hover:bg-secondary/20 text-secondary px-4 py-2.5 rounded-full text-sm font-bold flex items-center justify-center gap-2 transition-colors">
                 <Plus size={16} /> Nuevo Gasto
               </button>
@@ -590,6 +595,40 @@ export default function App() {
               setIsExpenseModalOpen(false);
             }} 
             onCancel={() => setIsExpenseModalOpen(false)} 
+          />
+        )}
+      </Modal>
+
+      {/* Modal for Unified Movement (F3.1) */}
+      <Modal
+        isOpen={isMovementModalOpen}
+        onClose={() => setIsMovementModalOpen(false)}
+        title="Nuevo Movimiento"
+      >
+        {isMovementModalOpen && (
+          <MovementForm
+            categories={data.categories}
+            accounts={data.accounts}
+            currentUserId={user?.uid}
+            appContext={appContext}
+            onSubmit={async (action) => {
+              if (action.type === 'EXPENSE') {
+                await methods.addExpense(action.payload);
+              } else if (action.type === 'INCOME') {
+                await methods.addIncome(action.payload);
+              } else if (action.type === 'TRANSFER') {
+                await methods.payCreditCard(
+                  action.payload.sourceAccountId,
+                  action.payload.targetAccountId,
+                  action.payload.amount,
+                  action.payload.date,
+                  action.payload.ownerUid,
+                  action.payload.isShared
+                );
+              }
+              setIsMovementModalOpen(false);
+            }}
+            onCancel={() => setIsMovementModalOpen(false)}
           />
         )}
       </Modal>
