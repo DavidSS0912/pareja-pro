@@ -3,6 +3,7 @@ import {
   MovementAction,
   buildMovementAction,
   validateMovement,
+  getTodayLocalISO,
 } from '../../services/movementService';
 import { Button } from '../ui/Button';
 import { ArrowLeftRight, ArrowDownLeft, ArrowUpRight, AlertCircle } from 'lucide-react';
@@ -31,13 +32,21 @@ export function MovementForm({
 }: MovementFormProps) {
   const [type, setType] = useState<'EXPENSE' | 'INCOME' | 'TRANSFER'>('EXPENSE');
   const [amount, setAmount] = useState<string>('');
-  const [date, setDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState<string>(() => getTodayLocalISO());
   const [categoryId, setCategoryId] = useState<string>('');
   const [sourceAccountId, setSourceAccountId] = useState<string>('');
   const [targetAccountId, setTargetAccountId] = useState<string>('');
   const [note, setNote] = useState<string>('');
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  const handleTypeChange = (newType: 'EXPENSE' | 'INCOME' | 'TRANSFER') => {
+    setType(newType);
+    setFormError(null);
+    setCategoryId('');
+    setSourceAccountId('');
+    setTargetAccountId('');
+  };
 
   // Filtrado de catálogos según la modalidad
   const expenseCategories = categories.filter((c) => c.type === 'EXPENSE' || !c.type);
@@ -104,10 +113,7 @@ export function MovementForm({
       <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-xl">
         <button
           type="button"
-          onClick={() => {
-            setType('EXPENSE');
-            setFormError(null);
-          }}
+          onClick={() => handleTypeChange('EXPENSE')}
           className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
             type === 'EXPENSE'
               ? 'bg-white text-secondary shadow-sm'
@@ -118,10 +124,7 @@ export function MovementForm({
         </button>
         <button
           type="button"
-          onClick={() => {
-            setType('INCOME');
-            setFormError(null);
-          }}
+          onClick={() => handleTypeChange('INCOME')}
           className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
             type === 'INCOME'
               ? 'bg-white text-primary shadow-sm'
@@ -132,10 +135,7 @@ export function MovementForm({
         </button>
         <button
           type="button"
-          onClick={() => {
-            setType('TRANSFER');
-            setFormError(null);
-          }}
+          onClick={() => handleTypeChange('TRANSFER')}
           className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
             type === 'TRANSFER'
               ? 'bg-white text-indigo-600 shadow-sm'

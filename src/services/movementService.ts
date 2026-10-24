@@ -10,6 +10,20 @@
 
 export const MAX_AMOUNT_NUMERIC_14_2 = 999999999999.99;
 
+export interface LocalDateLike {
+  getFullYear(): number;
+  getMonth(): number;
+  getDate(): number;
+}
+
+export function getTodayLocalISO(now?: Date | LocalDateLike): string {
+  const d = now || new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export interface MovementContextFlags {
   isPrivate: boolean;
   isShared: boolean;
@@ -38,6 +52,22 @@ export function validateAmount(raw: number | string | null | undefined): AmountV
     return { valid: false, error: 'El monto es obligatorio' };
   }
 
+  // Comprobar decimales sin aritmética flotante usando la representación en cadena
+  // Nota: expresiones como (0.1 + 0.2) en JS producen "0.30000000000000004" (>2 decimales)
+  const parts = rawStr.split('.');
+  if (parts.length > 2) {
+    return { valid: false, error: 'Formato de número inválido' };
+  }
+  if (parts.length === 2 && parts[1].length > 2) {
+    return { valid: false, error: 'El monto no puede tener más de 2 decimales' };
+  }
+
+  // Patrón estricto: solo dígitos con punto decimal opcional y máximo 2 decimales
+  // Rechaza notación científica (1e-7, 1e3), signos explícitos (+5, -5) y formatos no válidos
+  if (!/^\d+(\.\d{1,2})?$/.test(rawStr)) {
+    return { valid: false, error: 'Formato de número inválido' };
+  }
+
   const num = typeof raw === 'number' ? raw : Number(rawStr);
   if (Number.isNaN(num) || !Number.isFinite(num)) {
     return { valid: false, error: 'El monto no es un número válido' };
@@ -49,16 +79,6 @@ export function validateAmount(raw: number | string | null | undefined): AmountV
 
   if (num > MAX_AMOUNT_NUMERIC_14_2) {
     return { valid: false, error: `El monto excede el límite máximo permitido (${MAX_AMOUNT_NUMERIC_14_2})` };
-  }
-
-  // Comprobar decimales sin aritmética flotante usando la representación en cadena
-  // Nota: expresiones como (0.1 + 0.2) en JS producen "0.30000000000000004" (>2 decimales)
-  const parts = rawStr.split('.');
-  if (parts.length > 2) {
-    return { valid: false, error: 'Formato de número inválido' };
-  }
-  if (parts.length === 2 && parts[1].length > 2) {
-    return { valid: false, error: 'El monto no puede tener más de 2 decimales' };
   }
 
   return { valid: true, amount: num };
@@ -94,9 +114,25 @@ export function validateMovement(input: MovementValidationInput): MovementValida
     return { valid: false, error: amountRes.error };
   }
 
-  // 3. Validación de fecha
+  // 3. Validación de fecha y existencia en el calendario
   if (!input.date || typeof input.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(input.date)) {
     return { valid: false, error: 'La fecha es obligatoria y debe tener formato YYYY-MM-DD' };
+  }
+
+  const [yearStr, monthStr, dayStr] = input.date.split('-');
+  const year = Number(yearStr);
+  const month = Number(monthStr);
+  const day = Number(dayStr);
+  if (month < 1 || month > 12 || day < 1 || day > 31) {
+    return { valid: false, error: 'La fecha no es válida en el calendario' };
+  }
+  const dateObj = new Date(year, month - 1, day);
+  if (
+    dateObj.getFullYear() !== year ||
+    dateObj.getMonth() !== month - 1 ||
+    dateObj.getDate() !== day
+  ) {
+    return { valid: false, error: 'La fecha no es válida en el calendario' };
   }
 
   // 4. Validación por modalidad

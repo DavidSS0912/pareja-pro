@@ -4,6 +4,7 @@ import {
   validateMovement,
   buildMovementAction,
   resolveMovementContext,
+  getTodayLocalISO,
   MAX_AMOUNT_NUMERIC_14_2,
 } from '../services/movementService';
 
@@ -41,6 +42,27 @@ describe('movementService - validateAmount', () => {
     const resOver = validateAmount(overLimit);
     expect(resOver.valid).toBe(false);
     expect(resOver.error).toContain('límite máximo');
+  });
+
+  it('rechaza notación científica, signos explícitos y formatos inválidos (1e-7, 1e3, -5, +5)', () => {
+    expect(validateAmount('1e-7').valid).toBe(false);
+    expect(validateAmount('1e3').valid).toBe(false);
+    expect(validateAmount('-5').valid).toBe(false);
+    expect(validateAmount('+5').valid).toBe(false);
+  });
+});
+
+describe('movementService - getTodayLocalISO', () => {
+  it('obtiene la fecha local YYYY-MM-DD usando getFullYear/getMonth/getDate independientemente de UTC', () => {
+    // Objeto Date-like cuyo getDate local es el día 23 y toISOString devuelve el día 24
+    const mockDate = {
+      getFullYear: () => 2026,
+      getMonth: () => 9, // Octubre (0-indexed)
+      getDate: () => 23,
+      toISOString: () => '2026-10-24T03:00:00.000Z',
+    };
+
+    expect(getTodayLocalISO(mockDate as any)).toBe('2026-10-23');
   });
 });
 
@@ -133,6 +155,16 @@ describe('movementService - validaciones de usuario y modalidades', () => {
       targetAccountId: 'acc-bank-2',
     };
     expect(validateMovement(transferDiffAcc).valid).toBe(true);
+  });
+
+  it('rechaza fechas que no existen en el calendario (2026-02-31, 2026-13-01)', () => {
+    const invalidFeb = validateMovement({ ...baseValidExpense, date: '2026-02-31' });
+    expect(invalidFeb.valid).toBe(false);
+    expect(invalidFeb.error).toBe('La fecha no es válida en el calendario');
+
+    const invalidMonth = validateMovement({ ...baseValidExpense, date: '2026-13-01' });
+    expect(invalidMonth.valid).toBe(false);
+    expect(invalidMonth.error).toBe('La fecha no es válida en el calendario');
   });
 });
 
