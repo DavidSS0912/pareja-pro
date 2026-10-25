@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -7,39 +7,89 @@ import { Button } from '../ui/Button';
 const accountSchema = z.object({
   name: z.string().min(1, 'Obligatorio'),
   type: z.enum(['ASSET', 'LIABILITY']),
-  shared: z.boolean(),
-  creditLimit: z.number().optional(),
-  cutDay: z.number().min(1).max(31).optional(),
-  paymentDay: z.number().min(1).max(31).optional(),
-  color: z.string().optional()
+  shared: z.boolean().optional(),
+  creditLimit: z.number().nullable().optional(),
+  cutDay: z.number().min(1).max(31).nullable().optional(),
+  paymentDay: z.number().min(1).max(31).nullable().optional(),
+  color: z.string().nullable().optional(),
+  initialBalance: z.number().optional()
 });
 
-type AccountFormData = z.infer<typeof accountSchema>;
+export type AccountFormData = z.infer<typeof accountSchema>;
 
-export function AccountForm({ initialData, users, onSubmit, onCancel, appContext = 'household' }) {
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<AccountFormData>({
+export interface AccountFormProps {
+  initialData?: any;
+  users?: any[];
+  onSubmit: (data: any) => void;
+  onCancel: () => void;
+  appContext?: string;
+}
+
+const defaultValues: AccountFormData = {
+  name: '',
+  type: 'LIABILITY',
+  shared: false,
+  creditLimit: 0,
+  cutDay: 1,
+  paymentDay: 1,
+  color: 'bg-gradient-to-br from-slate-700 to-slate-900',
+  initialBalance: 0
+};
+
+export function AccountForm({
+  initialData,
+  users: _users,
+  onSubmit,
+  onCancel,
+  appContext = 'household'
+}: AccountFormProps) {
+  const {
+    register,
+    handleSubmit,
+    watch,
+    reset,
+    formState: { errors }
+  } = useForm<AccountFormData>({
     resolver: zodResolver(accountSchema),
-    defaultValues: initialData || {
-      name: '',
-      type: 'LIABILITY',
-      shared: false,
-      creditLimit: 0,
-      cutDay: 1,
-      paymentDay: 1,
-      color: 'bg-gradient-to-br from-slate-700 to-slate-900'
-    }
+    defaultValues: initialData || defaultValues
   });
+
+  useEffect(() => {
+    if (initialData) reset(initialData);
+    else reset(defaultValues);
+  }, [initialData, reset]);
 
   const selectedType = watch('type');
 
   const onFormSubmit = (data: AccountFormData) => {
+    const finalType = (initialData?.type || data.type) as 'ASSET' | 'LIABILITY';
+    const isAsset = finalType === 'ASSET';
+
+    const payload: any = {
+      ...data,
+      type: finalType,
+      shared: appContext === 'household'
+    };
+
     // If it's an asset, ensure creditLimit and cutDay/paymentDay are null or 0
-    if (data.type === 'ASSET') {
-      data.creditLimit = 0;
-      data.cutDay = undefined;
-      data.paymentDay = undefined;
+    if (isAsset) {
+      payload.creditLimit = 0;
+      payload.cutDay = undefined;
+      payload.paymentDay = undefined;
     }
-    onSubmit({ ...data, shared: appContext === 'household' });
+
+    if (!initialData) {
+      const parsedBalance = typeof data.initialBalance === 'number' && !isNaN(data.initialBalance)
+        ? data.initialBalance
+        : (data.initialBalance !== undefined && data.initialBalance !== null && !isNaN(Number(data.initialBalance))
+            ? Number(data.initialBalance)
+            : 0);
+      payload.initialBalance = parsedBalance;
+    } else {
+      delete payload.initialBalance;
+    }
+
+    onSubmit(payload);
   };
 
   return (
@@ -74,6 +124,35 @@ export function AccountForm({ initialData, users, onSubmit, onCancel, appContext
           {errors.type && <p id="account-type-error" className="text-red-500 text-xs mt-1">{errors.type.message}</p>}
         </div>
       </div>
+
+      {!initialData && (
+        <div className="grid grid-cols-1 gap-4">
+          <div>
+            <label htmlFor="account-initialBalance" className="block text-sm font-bold text-slate-700 mb-1">
+              {selectedType === 'ASSET' ? 'Saldo Inicial ($)' : 'Deuda Inicial ($)'}
+            </label>
+            <input 
+              id="account-initialBalance"
+              type="number"
+              step="any"
+              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+              placeholder="0"
+              aria-invalid={!!errors.initialBalance}
+              aria-describedby={errors.initialBalance ? "account-initialBalance-error" : undefined}
+              {...register('initialBalance', { 
+                valueAsNumber: true,
+                setValueAs: (v) => (v === '' || v === null || (typeof v === 'number' && isNaN(v)) ? 0 : Number(v))
+              })}
+            />
+            <p className="text-xs text-slate-500 mt-1">
+              {selectedType === 'ASSET' 
+                ? 'Saldo de apertura con el que arranca esta cuenta de débito/efectivo.'
+                : 'Monto de deuda actual acumulada al día de hoy en la tarjeta.'}
+            </p>
+            {errors.initialBalance && <p id="account-initialBalance-error" className="text-red-500 text-xs mt-1">{errors.initialBalance.message}</p>}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4">
         <div>
