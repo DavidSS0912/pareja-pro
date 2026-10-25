@@ -9,13 +9,27 @@ import { UserListSlice } from './userListSlice';
 import { ProjectSlice } from './projectSlice';
 import { AuthSlice } from './authSlice';
 import { QueryFetchPolicy } from 'firebase/data-connect';
-import { getHouseholdNetBalances, getBudgetsByMonth, getSavingsProjects, getExternalAssets, getExpensesByHousehold, getHouseholdAccounts, getIncomesByHousehold } from '../../lib/dataconnect';
+import {
+  getHouseholdNetBalances,
+  getBudgetsByMonth,
+  getSavingsProjects,
+  getExternalAssets,
+  getExpensesByHousehold,
+  getHouseholdAccounts,
+  getIncomesByHousehold,
+  getInternalTransfersByHousehold
+} from '../../lib/dataconnect';
 import { mergeAccountsWithBalances } from '../../services/accountService';
+import { Transfer } from '../types';
+
+export type { Transfer };
 
 const SERVER_ONLY = { fetchPolicy: QueryFetchPolicy.SERVER_ONLY };
 
 export interface DataSlice {
   selectedBudgetMonth?: string;
+  transfers: Transfer[];
+  setTransfers: (transfers: Transfer[]) => void;
   fetchDashboardData: (houseId: string, month?: string) => Promise<void>;
   fetchBudgetsForMonth: (month: string) => Promise<void>;
   refreshExpenses: () => Promise<void>;
@@ -25,16 +39,19 @@ type CombinedSlices = ExpenseSlice & BudgetSlice & AccountSlice & AssetSlice & I
 
 export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], DataSlice> = (set, get) => ({
   selectedBudgetMonth: undefined,
+  transfers: [],
+  setTransfers: (transfers) => set({ transfers }),
   fetchDashboardData: async (houseId: string, month?: string) => {
     try {
       const currentMonth = month || get().selectedBudgetMonth || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-01`;
-      const [balances, budgets, projects, assets, expensesData, incomesData] = await Promise.all([
+      const [balances, budgets, projects, assets, expensesData, incomesData, transfersData] = await Promise.all([
         getHouseholdNetBalances({ householdId: houseId }, SERVER_ONLY),
         getBudgetsByMonth({ householdId: houseId, period: currentMonth }, SERVER_ONLY),
         getSavingsProjects({ householdId: houseId }, SERVER_ONLY),
         getExternalAssets({ householdId: houseId }, SERVER_ONLY),
         getExpensesByHousehold({ householdId: houseId }, SERVER_ONLY),
-        getIncomesByHousehold({ householdId: houseId }, SERVER_ONLY)
+        getIncomesByHousehold({ householdId: houseId }, SERVER_ONLY),
+        getInternalTransfersByHousehold({ householdId: houseId }, SERVER_ONLY)
       ]);
       const isDebitNature = (t: string) => t === 'ASSET' || t === 'EXPENSE' || t === 'BANK_ACCOUNT';
       const signed = (e: any, fallbackType = 'EXPENSE') => (e.entryType === 'DEBIT') === isDebitNature(e.account?.type || fallbackType) ? +e.amount : -e.amount;
@@ -47,6 +64,14 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
 
       const mergedAccounts = mergeAccountsWithBalances(serverAccounts, balanceEntries, currentAccounts);
       get().setAccounts(mergedAccounts as any);
+      if (accountsResult.data?.householdUsers) {
+        const mappedUsers = accountsResult.data.householdUsers.map((u: any) => ({
+          id: u.uid,
+          name: u.displayName || u.email,
+          email: u.email
+        }));
+        get().setUsers(mappedUsers);
+      }
       if (budgets.data?.budgets) {
         const mappedBudgets = budgets.data.budgets.map((b: any) => ({
           ...b,
@@ -150,6 +175,26 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
         const tempIncomes = currentIncomes.filter(i => i.id.startsWith('temp-'));
         const mergedIncomes = [...tempIncomes, ...mappedIncomes.filter((mi: any) => !tempIncomes.find(ti => ti.id === mi.id))];
         get().setIncomes(mergedIncomes);
+      }
+      if (transfersData.data?.journals) {
+        const mappedTransfers: Transfer[] = transfersData.data.journals.map((j: any) => {
+          const creditEntry = j.entries_on_journal?.find((e: any) => e.entryType === 'CREDIT');
+          const debitEntry = j.entries_on_journal?.find((e: any) => e.entryType === 'DEBIT');
+          const isCardPayment = debitEntry?.account?.type === 'LIABILITY';
+
+          return {
+            id: j.id,
+            date: j.date,
+            amount: debitEntry?.amount ?? creditEntry?.amount ?? 0,
+            description: j.description,
+            sourceAccountId: creditEntry?.account?.id || '',
+            sourceAccountName: creditEntry?.account?.name || '',
+            targetAccountId: debitEntry?.account?.id || '',
+            targetAccountName: debitEntry?.account?.name || '',
+            type: isCardPayment ? 'CARD_PAYMENT' : 'TRANSFER'
+          };
+        });
+        get().setTransfers(mappedTransfers);
       }
     } catch (error) {
       console.error("Error fetching dashboard data from DataConnect", error);
