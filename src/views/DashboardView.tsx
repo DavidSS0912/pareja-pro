@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { PieChart, TrendingUp, Trash2, Edit2, Lock, ArrowDownRight, ArrowUpRight, AlertTriangle, Target } from 'lucide-react';
+import { PieChart, TrendingUp, Trash2, Edit2, Lock, ArrowDownRight, ArrowUpRight, ArrowLeftRight, AlertTriangle, Target } from 'lucide-react';
 import { OrbitaLogo } from '../components/ui/OrbitaLogo';
 import { PieChart as PieChartRecharts, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card } from '../components/ui/Card';
@@ -11,7 +11,7 @@ import { useAppStore } from '../store/useAppStore';
 
 export function DashboardView({ data, calc, methods }) {
   const [deleteConfirm, setDeleteConfirm] = useState<{id: string, type: 'income'|'expense'} | null>(null);
-  const [movementFilter, setMovementFilter] = useState<'all' | 'income' | 'expense'>('all');
+  const [movementFilter, setMovementFilter] = useState<'all' | 'income' | 'expense' | 'transfer'>('all');
 
   const allExpenses = useAppStore(state => state.expenses);
   const dateRange = useAppStore(state => state.dateRange);
@@ -85,8 +85,15 @@ export function DashboardView({ data, calc, methods }) {
   const allMovements = useMemo(() => {
     const incomes = relevantIncomes.map(i => ({ ...i, movementType: 'income' }));
     const expenses = relevantExpenses.map(e => ({ ...e, movementType: 'expense' }));
+    const transfers = (data.transfers || []).map((t: any) => ({
+      ...t,
+      movementType: 'transfer',
+      isTransfer: true,
+      desc: t.description || (t.type === 'CARD_PAYMENT' ? 'Pago de Tarjeta' : 'Transferencia'),
+      category: `${t.sourceAccountName || 'Origen'} → ${t.targetAccountName || 'Destino'}`
+    }));
     
-    let combined = [...incomes, ...expenses];
+    let combined = [...incomes, ...expenses, ...transfers];
     
     // Sort by date descending
     combined.sort((a, b) => {
@@ -101,9 +108,12 @@ export function DashboardView({ data, calc, methods }) {
     if (movementFilter === 'expense') {
       return combined.filter(m => m.movementType === 'expense');
     }
+    if (movementFilter === 'transfer') {
+      return combined.filter(m => m.movementType === 'transfer');
+    }
     
     return combined;
-  }, [relevantIncomes, relevantExpenses, movementFilter]);
+  }, [relevantIncomes, relevantExpenses, data.transfers, movementFilter]);
 
   const prevMonthExpense = useMemo(() => {
     const startObj = dateRange?.start ? new Date(dateRange.start) : new Date();
@@ -341,6 +351,12 @@ export function DashboardView({ data, calc, methods }) {
                 >
                   Gastos
                 </button>
+                <button 
+                  onClick={() => setMovementFilter('transfer')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${movementFilter === 'transfer' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-indigo-600'}`}
+                >
+                  Transferencias
+                </button>
               </div>
             </div>
             
@@ -351,16 +367,23 @@ export function DashboardView({ data, calc, methods }) {
             ) : (
               <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 pb-2">
                 {allMovements.map(mov => {
-                  const user = data.users.find(u => u.id === mov.userId);
+                  const user = data.users.find(u => u.id === (mov.userId || mov.ownerUid));
                   const isIncome = mov.movementType === 'income';
+                  const isTransfer = mov.movementType === 'transfer';
                   
                   return (
                     <div key={`${mov.movementType}-${mov.id}`} className="flex justify-between items-center p-3.5 bg-slate-50/50 rounded-xl border border-slate-100 hover:bg-white hover:shadow-sm transition-all group">
                       <div className="flex items-center gap-3">
-                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-sm border border-white overflow-hidden ${isIncome ? 'bg-emerald-100' : 'bg-red-100'}`}>
-                           {isIncome ? <ArrowUpRight size={16} className="text-emerald-600" /> : <ArrowDownRight size={16} className="text-red-600" />}
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-sm border border-white overflow-hidden ${isIncome ? 'bg-emerald-100' : isTransfer ? 'bg-indigo-100' : 'bg-red-100'}`}>
+                           {isIncome ? (
+                             <ArrowUpRight size={16} className="text-emerald-600" />
+                           ) : isTransfer ? (
+                             <ArrowLeftRight size={16} className="text-indigo-600" />
+                           ) : (
+                             <ArrowDownRight size={16} className="text-red-600" />
+                           )}
                         </div>
-                        <div className={`w-9 h-9 rounded-full ${user?.avatar || 'bg-slate-200'} flex items-center justify-center text-slate-700 font-bold text-xs shadow-sm border border-white overflow-hidden`}>
+                        <div className={`w-9 h-9 rounded-full ${user?.avatar || (isTransfer ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-700')} flex items-center justify-center font-bold text-xs shadow-sm border border-white overflow-hidden`}>
                           {user?.photoURL ? (
                             <img 
                               src={user.photoURL} 
@@ -369,12 +392,17 @@ export function DashboardView({ data, calc, methods }) {
                               className="w-full h-full object-cover" 
                             />
                           ) : (
-                            user?.name?.[0]
+                            user?.name?.[0] || (isTransfer ? '⇄' : 'U')
                           )}
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
                             <p className="font-medium text-slate-900 text-sm">{mov.description || mov.desc || mov.type || mov.name || mov.category || 'Movimiento'}</p>
+                            {isTransfer && (
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${mov.type === 'CARD_PAYMENT' ? 'bg-purple-100 text-purple-700' : 'bg-indigo-100 text-indigo-700'}`}>
+                                {mov.type === 'CARD_PAYMENT' ? 'Pago TDC' : 'Transferencia'}
+                              </span>
+                            )}
                             {mov.isPrivate && (
                               <span title="Privado" className="flex">
                                 <Lock size={12} className="text-amber-500" />
@@ -382,30 +410,35 @@ export function DashboardView({ data, calc, methods }) {
                             )}
                           </div>
                           <p className="text-xs text-slate-500 mt-0.5">
-                            {user?.name} &bull; {mov.date ? mov.date.split('T')[0].split('-').reverse().join('/') : 'Sin fecha'}
+                            {isTransfer 
+                              ? `${mov.sourceAccountName || 'Origen'} → ${mov.targetAccountName || 'Destino'} • ${mov.date ? mov.date.split('T')[0].split('-').reverse().join('/') : 'Sin fecha'}`
+                              : `${user?.name || 'Usuario'} • ${mov.date ? mov.date.split('T')[0].split('-').reverse().join('/') : 'Sin fecha'}`
+                            }
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="text-right">
-                          <p className={`font-semibold tabular-nums tracking-tight ${isIncome ? 'text-emerald-600' : 'text-slate-900'}`}>
-                            {isIncome ? '+' : '-'}{FormatCurrency(mov.amount)}
+                          <p className={`font-semibold tabular-nums tracking-tight ${isIncome ? 'text-emerald-600' : isTransfer ? 'text-indigo-600' : 'text-slate-900'}`}>
+                            {isIncome ? '+' : isTransfer ? '' : '-'}{FormatCurrency(mov.amount)}
                           </p>
                           {mov.currency && mov.currency !== 'MXN' && (
                             <p className="text-[10px] text-slate-400 font-medium">{mov.currency}</p>
                           )}
                         </div>
-                        <div className="flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => {
-                            if (isIncome && methods.handleOpenIncomeModal) methods.handleOpenIncomeModal(mov);
-                            if (!isIncome && methods.handleOpenExpenseModal) methods.handleOpenExpenseModal(mov);
-                          }} className="text-slate-400 hover:text-indigo-600 transition-colors p-1 bg-slate-100 rounded-md">
-                            <Edit2 size={12} />
-                          </button>
-                          <button onClick={() => handleDelete(mov.id, mov.movementType)} className="text-slate-400 hover:text-red-600 transition-colors p-1 bg-slate-100 rounded-md">
-                            <Trash2 size={12} />
-                          </button>
-                        </div>
+                        {!isTransfer && (
+                          <div className="flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => {
+                              if (isIncome && methods.handleOpenIncomeModal) methods.handleOpenIncomeModal(mov);
+                              if (!isIncome && methods.handleOpenExpenseModal) methods.handleOpenExpenseModal(mov);
+                            }} className="text-slate-400 hover:text-indigo-600 transition-colors p-1 bg-slate-100 rounded-md">
+                              <Edit2 size={12} />
+                            </button>
+                            <button onClick={() => handleDelete(mov.id, mov.movementType)} className="text-slate-400 hover:text-red-600 transition-colors p-1 bg-slate-100 rounded-md">
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
