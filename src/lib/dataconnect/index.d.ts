@@ -407,6 +407,11 @@ export interface GetHouseholdAccountsData {
     color?: string | null;
     isArchived: boolean;
   } & Account_Key)[];
+  householdUsers: ({
+    uid: string;
+    email: string;
+    displayName?: string | null;
+  } & User_Key)[];
 }
 
 export interface GetHouseholdAccountsVariables {
@@ -456,6 +461,32 @@ export interface GetIncomesByHouseholdData {
 }
 
 export interface GetIncomesByHouseholdVariables {
+  householdId: UUIDString;
+}
+
+export interface GetInternalTransfersByHouseholdData {
+  journals: ({
+    id: UUIDString;
+    date: TimestampString;
+    description: string;
+    isInternalTransfer: boolean;
+    createdAt: TimestampString;
+    entries_on_journal: ({
+      id: UUIDString;
+      amount: number;
+      entryType: EntryType;
+      ownerUid: string;
+      isShared: boolean;
+      account: {
+        id: UUIDString;
+        name: string;
+        type: AccountType;
+      } & Account_Key;
+    } & Entry_Key)[];
+  } & Journal_Key)[];
+}
+
+export interface GetInternalTransfersByHouseholdVariables {
   householdId: UUIDString;
 }
 
@@ -1272,6 +1303,18 @@ export const getIncomesByHouseholdRef: GetIncomesByHouseholdRef;
 
 export function getIncomesByHousehold(vars: GetIncomesByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetIncomesByHouseholdData, GetIncomesByHouseholdVariables>;
 export function getIncomesByHousehold(dc: DataConnect, vars: GetIncomesByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetIncomesByHouseholdData, GetIncomesByHouseholdVariables>;
+
+interface GetInternalTransfersByHouseholdRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetInternalTransfersByHouseholdVariables): QueryRef<GetInternalTransfersByHouseholdData, GetInternalTransfersByHouseholdVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetInternalTransfersByHouseholdVariables): QueryRef<GetInternalTransfersByHouseholdData, GetInternalTransfersByHouseholdVariables>;
+  operationName: string;
+}
+export const getInternalTransfersByHouseholdRef: GetInternalTransfersByHouseholdRef;
+
+export function getInternalTransfersByHousehold(vars: GetInternalTransfersByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetInternalTransfersByHouseholdData, GetInternalTransfersByHouseholdVariables>;
+export function getInternalTransfersByHousehold(dc: DataConnect, vars: GetInternalTransfersByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetInternalTransfersByHouseholdData, GetInternalTransfersByHouseholdVariables>;
 
 interface GetCurrentUserRef {
   /* Allow users to create refs without passing in DataConnect */

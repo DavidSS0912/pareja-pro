@@ -614,6 +614,21 @@ exports.getIncomesByHousehold = function getIncomesByHousehold(dcOrVars, varsOrO
 }
 ;
 
+const getInternalTransfersByHouseholdRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetInternalTransfersByHousehold', inputVars);
+}
+getInternalTransfersByHouseholdRef.operationName = 'GetInternalTransfersByHousehold';
+exports.getInternalTransfersByHouseholdRef = getInternalTransfersByHouseholdRef;
+
+exports.getInternalTransfersByHousehold = function getInternalTransfersByHousehold(dcOrVars, varsOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
+  return executeQuery(getInternalTransfersByHouseholdRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
+}
+;
+
 const getCurrentUserRef = (dc) => {
   const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
   dcInstance._useGeneratedSdk();

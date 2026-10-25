@@ -19,6 +19,7 @@ This README will guide you through the process of using the generated JavaScript
   - [*GetLatestRate*](#getlatestrate)
   - [*GetExpensesByHousehold*](#getexpensesbyhousehold)
   - [*GetIncomesByHousehold*](#getincomesbyhousehold)
+  - [*GetInternalTransfersByHousehold*](#getinternaltransfersbyhousehold)
   - [*GetCurrentUser*](#getcurrentuser)
   - [*GetCategories*](#getcategories)
   - [*GetTags*](#gettags)
@@ -159,6 +160,11 @@ export interface GetHouseholdAccountsData {
     color?: string | null;
     isArchived: boolean;
   } & Account_Key)[];
+  householdUsers: ({
+    uid: string;
+    email: string;
+    displayName?: string | null;
+  } & User_Key)[];
 }
 ```
 ### Using `GetHouseholdAccounts`'s action shortcut function
@@ -183,11 +189,13 @@ const dataConnect = getDataConnect(connectorConfig);
 const { data } = await getHouseholdAccounts(dataConnect, getHouseholdAccountsVars);
 
 console.log(data.accounts);
+console.log(data.householdUsers);
 
 // Or, you can use the `Promise` API.
 getHouseholdAccounts(getHouseholdAccountsVars).then((response) => {
   const data = response.data;
   console.log(data.accounts);
+  console.log(data.householdUsers);
 });
 ```
 
@@ -216,11 +224,13 @@ const ref = getHouseholdAccountsRef(dataConnect, getHouseholdAccountsVars);
 const { data } = await executeQuery(ref);
 
 console.log(data.accounts);
+console.log(data.householdUsers);
 
 // Or, you can use the `Promise` API.
 executeQuery(ref).then((response) => {
   const data = response.data;
   console.log(data.accounts);
+  console.log(data.householdUsers);
 });
 ```
 
@@ -1410,6 +1420,133 @@ console.log(data.entries);
 executeQuery(ref).then((response) => {
   const data = response.data;
   console.log(data.entries);
+});
+```
+
+## GetInternalTransfersByHousehold
+You can execute the `GetInternalTransfersByHousehold` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+getInternalTransfersByHousehold(vars: GetInternalTransfersByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetInternalTransfersByHouseholdData, GetInternalTransfersByHouseholdVariables>;
+
+interface GetInternalTransfersByHouseholdRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetInternalTransfersByHouseholdVariables): QueryRef<GetInternalTransfersByHouseholdData, GetInternalTransfersByHouseholdVariables>;
+}
+export const getInternalTransfersByHouseholdRef: GetInternalTransfersByHouseholdRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
+```typescript
+getInternalTransfersByHousehold(dc: DataConnect, vars: GetInternalTransfersByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetInternalTransfersByHouseholdData, GetInternalTransfersByHouseholdVariables>;
+
+interface GetInternalTransfersByHouseholdRef {
+  ...
+  (dc: DataConnect, vars: GetInternalTransfersByHouseholdVariables): QueryRef<GetInternalTransfersByHouseholdData, GetInternalTransfersByHouseholdVariables>;
+}
+export const getInternalTransfersByHouseholdRef: GetInternalTransfersByHouseholdRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the getInternalTransfersByHouseholdRef:
+```typescript
+const name = getInternalTransfersByHouseholdRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `GetInternalTransfersByHousehold` query requires an argument of type `GetInternalTransfersByHouseholdVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface GetInternalTransfersByHouseholdVariables {
+  householdId: UUIDString;
+}
+```
+### Return Type
+Recall that executing the `GetInternalTransfersByHousehold` query returns a `QueryPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `GetInternalTransfersByHouseholdData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface GetInternalTransfersByHouseholdData {
+  journals: ({
+    id: UUIDString;
+    date: TimestampString;
+    description: string;
+    isInternalTransfer: boolean;
+    createdAt: TimestampString;
+    entries_on_journal: ({
+      id: UUIDString;
+      amount: number;
+      entryType: EntryType;
+      ownerUid: string;
+      isShared: boolean;
+      account: {
+        id: UUIDString;
+        name: string;
+        type: AccountType;
+      } & Account_Key;
+    } & Entry_Key)[];
+  } & Journal_Key)[];
+}
+```
+### Using `GetInternalTransfersByHousehold`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, getInternalTransfersByHousehold, GetInternalTransfersByHouseholdVariables } from '@pareja-pro/dataconnect';
+
+// The `GetInternalTransfersByHousehold` query requires an argument of type `GetInternalTransfersByHouseholdVariables`:
+const getInternalTransfersByHouseholdVars: GetInternalTransfersByHouseholdVariables = {
+  householdId: ..., 
+};
+
+// Call the `getInternalTransfersByHousehold()` function to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await getInternalTransfersByHousehold(getInternalTransfersByHouseholdVars);
+// Variables can be defined inline as well.
+const { data } = await getInternalTransfersByHousehold({ householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await getInternalTransfersByHousehold(dataConnect, getInternalTransfersByHouseholdVars);
+
+console.log(data.journals);
+
+// Or, you can use the `Promise` API.
+getInternalTransfersByHousehold(getInternalTransfersByHouseholdVars).then((response) => {
+  const data = response.data;
+  console.log(data.journals);
+});
+```
+
+### Using `GetInternalTransfersByHousehold`'s `QueryRef` function
+
+```typescript
+import { getDataConnect, executeQuery } from 'firebase/data-connect';
+import { connectorConfig, getInternalTransfersByHouseholdRef, GetInternalTransfersByHouseholdVariables } from '@pareja-pro/dataconnect';
+
+// The `GetInternalTransfersByHousehold` query requires an argument of type `GetInternalTransfersByHouseholdVariables`:
+const getInternalTransfersByHouseholdVars: GetInternalTransfersByHouseholdVariables = {
+  householdId: ..., 
+};
+
+// Call the `getInternalTransfersByHouseholdRef()` function to get a reference to the query.
+const ref = getInternalTransfersByHouseholdRef(getInternalTransfersByHouseholdVars);
+// Variables can be defined inline as well.
+const ref = getInternalTransfersByHouseholdRef({ householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the `QueryRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = getInternalTransfersByHouseholdRef(dataConnect, getInternalTransfersByHouseholdVars);
+
+// Call `executeQuery()` on the reference to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeQuery(ref);
+
+console.log(data.journals);
+
+// Or, you can use the `Promise` API.
+executeQuery(ref).then((response) => {
+  const data = response.data;
+  console.log(data.journals);
 });
 ```
 

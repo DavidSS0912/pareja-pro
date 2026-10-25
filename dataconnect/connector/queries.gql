@@ -18,6 +18,11 @@ query GetHouseholdAccounts($householdId: UUID!) @auth(level: USER) {
     color
     isArchived
   }
+  householdUsers: users(where: { householdId: { eq: $householdId } }) {
+    uid
+    email
+    displayName
+  }
 }
 
 query GetHouseholdNetBalances($householdId: UUID!) @auth(level: USER) {
@@ -237,6 +242,39 @@ query GetIncomesByHousehold($householdId: UUID!) @auth(level: USER) {
     }
     account {
       name
+    }
+  }
+}
+
+query GetInternalTransfersByHousehold($householdId: UUID!) @auth(level: USER) {
+  user(key: { uid_expr: "auth.uid" })
+    @redact
+    @check(expr: "this != null && this.household.id == vars.householdId", message: "El recurso no pertenece a este hogar") {
+    household { id }
+  }
+  journals(
+    where: { 
+      householdId: { eq: $householdId },
+      isInternalTransfer: { eq: true }
+    },
+    orderBy: { createdAt: DESC }
+  ) {
+    id
+    date
+    description
+    isInternalTransfer
+    createdAt
+    entries_on_journal {
+      id
+      amount
+      entryType
+      ownerUid
+      isShared
+      account {
+        id
+        name
+        type
+      }
     }
   }
 }
