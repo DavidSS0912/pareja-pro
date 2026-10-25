@@ -6,6 +6,7 @@ import {
   normalizeTags,
   getLastUsedAccountId,
   saveLastUsedAccountId,
+  calculateMsiInstallmentDate,
   type ExpenseAdvancedOptions,
   type KeyValueStorage,
   type MovementMode,
@@ -496,5 +497,56 @@ describe('movementOptions - Validación de monto (validateAmount)', () => {
     const resStr = validateAmount('-5');
     expect(resStr.valid).toBe(false);
     expect(resStr.error).toBe('El monto debe ser mayor a cero');
+  });
+});
+
+describe('calculateMsiInstallmentDate - Clamping al último día del mes correspondiente', () => {
+  const toISODate = (d: Date) => d.toISOString().split('T')[0];
+
+  it('Día 31: compra el 31 de octubre genera cuota 1 en 31-oct, cuota 2 en 30-nov, cuota 3 en 31-dic y cuota 5 en 28-feb (2027)', () => {
+    const baseDate = '2026-10-31';
+
+    // Cuota 1 (mes 0): 31 de octubre
+    const c1 = calculateMsiInstallmentDate(baseDate, 0);
+    expect(toISODate(c1)).toBe('2026-10-31');
+
+    // Cuota 2 (mes 1): noviembre tiene 30 días -> debe caer estrictamente en 2026-11-30
+    const c2 = calculateMsiInstallmentDate(baseDate, 1);
+    expect(toISODate(c2)).toBe('2026-11-30');
+
+    // Cuota 3 (mes 2): diciembre tiene 31 días -> 2026-12-31
+    const c3 = calculateMsiInstallmentDate(baseDate, 2);
+    expect(toISODate(c3)).toBe('2026-12-31');
+
+    // Cuota 4 (mes 3): enero 2027 tiene 31 días -> 2027-01-31
+    const c4 = calculateMsiInstallmentDate(baseDate, 3);
+    expect(toISODate(c4)).toBe('2027-01-31');
+
+    // Cuota 5 (mes 4): febrero 2027 (no bisiesto) tiene 28 días -> 2027-02-28
+    const c5 = calculateMsiInstallmentDate(baseDate, 4);
+    expect(toISODate(c5)).toBe('2027-02-28');
+  });
+
+  it('Día 31 en año bisiesto: compra el 31 de enero 2028 genera cuota 2 en 29-feb-2028', () => {
+    const baseDate = '2028-01-31';
+    const c2 = calculateMsiInstallmentDate(baseDate, 1);
+    expect(toISODate(c2)).toBe('2028-02-29');
+  });
+
+  it('Día 30: compra el 30 de agosto genera cuota 2 en 30-sep y cuota en febrero en 28-feb (2027)', () => {
+    const baseDate = '2026-08-30';
+    const cSep = calculateMsiInstallmentDate(baseDate, 1);
+    expect(toISODate(cSep)).toBe('2026-09-30');
+
+    const cFeb = calculateMsiInstallmentDate(baseDate, 6);
+    expect(toISODate(cFeb)).toBe('2027-02-28');
+  });
+
+  it('Día 29: compra el 29 de enero genera 28-feb en año común (2026) y 29-feb en año bisiesto (2028)', () => {
+    const cFeb2026 = calculateMsiInstallmentDate('2026-01-29', 1);
+    expect(toISODate(cFeb2026)).toBe('2026-02-28');
+
+    const cFeb2028 = calculateMsiInstallmentDate('2028-01-29', 1);
+    expect(toISODate(cFeb2028)).toBe('2028-02-29');
   });
 });

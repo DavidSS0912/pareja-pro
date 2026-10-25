@@ -413,3 +413,72 @@ export function buildMovementAction(input: MovementValidationInput): MovementAct
     },
   };
 }
+
+/**
+ * Calcula la fecha de una cuota de MSI con clamp al último día del mes correspondiente.
+ * Si la compra se hace el 31 de octubre:
+ * - Cuota 1 (offset 0): 31 de octubre
+ * - Cuota 2 (offset 1): 30 de noviembre (noviembre solo tiene 30 días)
+ * - Cuota 3 (offset 2): 31 de diciembre
+ * - En febrero: 28 de febrero (o 29 si bisiesto)
+ */
+export function calculateMsiInstallmentDate(
+  baseDate: string | Date,
+  monthOffset: number
+): Date {
+  let year: number;
+  let month: number; // 1-12
+  let day: number;
+  let hours = 0;
+  let minutes = 0;
+  let seconds = 0;
+  let ms = 0;
+
+  if (typeof baseDate === 'string') {
+    const trimmed = baseDate.trim();
+    const match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+      year = parseInt(match[1], 10);
+      month = parseInt(match[2], 10);
+      day = parseInt(match[3], 10);
+      if (trimmed.includes('T')) {
+        const parsed = new Date(trimmed);
+        if (!isNaN(parsed.getTime())) {
+          hours = parsed.getUTCHours();
+          minutes = parsed.getUTCMinutes();
+          seconds = parsed.getUTCSeconds();
+          ms = parsed.getUTCMilliseconds();
+        }
+      }
+    } else {
+      const parsed = new Date(trimmed);
+      year = parsed.getUTCFullYear();
+      month = parsed.getUTCMonth() + 1;
+      day = parsed.getUTCDate();
+      hours = parsed.getUTCHours();
+      minutes = parsed.getUTCMinutes();
+      seconds = parsed.getUTCSeconds();
+      ms = parsed.getUTCMilliseconds();
+    }
+  } else {
+    year = baseDate.getUTCFullYear();
+    month = baseDate.getUTCMonth() + 1;
+    day = baseDate.getUTCDate();
+    hours = baseDate.getUTCHours();
+    minutes = baseDate.getUTCMinutes();
+    seconds = baseDate.getUTCSeconds();
+    ms = baseDate.getUTCMilliseconds();
+  }
+
+  const totalMonths = year * 12 + (month - 1) + monthOffset;
+  const targetYear = Math.floor(totalMonths / 12);
+  const targetMonth = ((totalMonths % 12) + 12) % 12 + 1; // 1-12
+
+  // Último día de targetMonth en targetYear:
+  // Date.UTC(targetYear, targetMonth, 0) da el día 0 de targetMonth+1 (0-indexed: targetMonth), o sea el último día de targetMonth
+  const daysInTargetMonth = new Date(Date.UTC(targetYear, targetMonth, 0)).getUTCDate();
+  const targetDay = Math.min(day, daysInTargetMonth);
+
+  return new Date(Date.UTC(targetYear, targetMonth - 1, targetDay, hours, minutes, seconds, ms));
+}
+

@@ -5,6 +5,7 @@ import { DataSlice } from './dataSlice';
 import { AccountSlice } from './accountSlice';
 import { createSharedExpenseWithProration, deleteJournal, seedDefaultAccounts } from '../../lib/dataconnect';
 import { useToastStore } from '../useToastStore';
+import { calculateMsiInstallmentDate } from '../../services/movementService';
 
 export interface ExpenseSlice {
   expenses: RecordItem[];
@@ -54,10 +55,29 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
     const msiCount = isMsi && item.msiCount && item.msiCount > 0 ? item.msiCount : 1;
     const amountPerMonth = item.amount / msiCount;
 
+    const resolvedOwner = item.paidBy || item.userId || state.user?.uid || "unknown";
+    const isShared = item.isShared !== undefined ? item.isShared : !item.isPrivate;
+
     const totalCents = Math.round(amountPerMonth * 100);
     let user1Cents = totalCents;
     
-    if (item.splitType === '50/50' || item.splitType === 'proporcional') {
+    if (!isShared) {
+      const users = (state as any).users || [];
+      const isSecondUser = users.length > 1 && (users[1]?.id === resolvedOwner || users[1]?.uid === resolvedOwner);
+      if (isSecondUser) {
+        user1Cents = 0;
+      } else {
+        user1Cents = totalCents;
+      }
+    } else if (item.splitType === 'individual') {
+      const users = (state as any).users || [];
+      const isSecondUser = users.length > 1 && (users[1]?.id === resolvedOwner || users[1]?.uid === resolvedOwner);
+      if (isSecondUser) {
+        user1Cents = 0;
+      } else {
+        user1Cents = totalCents;
+      }
+    } else if (item.splitType === '50/50' || item.splitType === 'proporcional') {
       user1Cents = Math.round(totalCents / 2);
     }
     
@@ -67,13 +87,9 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
     const optimisticExpenses = [];
     const msiRefId = isMsi ? Date.now().toString() : null;
     const expenseDesc = item.desc || item.category || 'Gasto';
-    const resolvedOwner = item.paidBy || item.userId || state.user?.uid || "unknown";
     
     for (let i = 0; i < msiCount; i++) {
-      let expenseDate = new Date(item.date);
-      if (i > 0) {
-        expenseDate.setMonth(expenseDate.getMonth() + i);
-      }
+      const expenseDate = calculateMsiInstallmentDate(item.date, i);
       optimisticExpenses.push({
         ...item,
         desc: expenseDesc,
@@ -97,10 +113,7 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
       const { createSharedExpenseWithProration, addTagToJournal } = await import('../../lib/dataconnect');
 
       for (let i = 0; i < msiCount; i++) {
-        let expenseDate = new Date(item.date);
-        if (i > 0) {
-          expenseDate.setMonth(expenseDate.getMonth() + i);
-        }
+        const expenseDate = calculateMsiInstallmentDate(item.date, i);
 
         const response = await createSharedExpenseWithProration({
           householdId: houseId,
@@ -114,7 +127,7 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
           user1Amount: baseUser1Amount,
           user2Amount: baseUser2Amount,
           ownerUid: resolvedOwner,
-          isShared: !item.isPrivate,
+          isShared: isShared,
           isMsi: isMsi,
           msiRefId: msiRefId,
           msiMonthNumber: isMsi ? i + 1 : null,
@@ -150,8 +163,8 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
     } catch (error: any) {
       console.error(error);
       useToastStore.getState().addToast(`Error: ${error.message || 'Desconocido'}`, "error");
-      alert("Error al agregar gasto: " + (error.message || JSON.stringify(error)));
       set((s) => ({ expenses: s.expenses.filter((e) => !e.id.startsWith('temp-')) }));
+      throw error;
     }
   },
   updateExpense: async (id, item) => {
@@ -169,11 +182,30 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
     const user1ExpenseAccountId = expenseAccounts[0].id;
     const user2ExpenseAccountId = expenseAccounts.length > 1 ? expenseAccounts[1].id : expenseAccounts[0].id;
 
+    const resolvedOwner = item.paidBy || item.userId || state.user?.uid || "unknown";
+    const isShared = item.isShared !== undefined ? item.isShared : !item.isPrivate;
+
     const houseId = state.houseId || "00000000-0000-0000-0000-000000000000";
     const totalCents = Math.round(item.amount * 100);
     let user1Cents = totalCents;
     
-    if (item.splitType === '50/50' || item.splitType === 'proporcional') {
+    if (!isShared) {
+      const users = (state as any).users || [];
+      const isSecondUser = users.length > 1 && (users[1]?.id === resolvedOwner || users[1]?.uid === resolvedOwner);
+      if (isSecondUser) {
+        user1Cents = 0;
+      } else {
+        user1Cents = totalCents;
+      }
+    } else if (item.splitType === 'individual') {
+      const users = (state as any).users || [];
+      const isSecondUser = users.length > 1 && (users[1]?.id === resolvedOwner || users[1]?.uid === resolvedOwner);
+      if (isSecondUser) {
+        user1Cents = 0;
+      } else {
+        user1Cents = totalCents;
+      }
+    } else if (item.splitType === '50/50' || item.splitType === 'proporcional') {
       user1Cents = Math.round(totalCents / 2);
     }
     
@@ -181,7 +213,6 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
     const user2Amount = (totalCents - user1Cents) / 100;
 
     const expenseDesc = item.desc || item.category || 'Gasto';
-    const resolvedOwner = item.paidBy || item.userId || state.user?.uid || "unknown";
     // Optimistic update
     const previousExpenses = [...state.expenses];
     set((s) => ({
@@ -206,7 +237,7 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
         user1Amount: user1Amount,
         user2Amount: user2Amount,
         ownerUid: resolvedOwner,
-        isShared: !item.isPrivate,
+        isShared: isShared,
         isRecurring: item.isRecurring || false,
         recurringFrequency: item.recurringFrequency || null,
         recurringEndDate: item.recurringEndDate ? new Date(item.recurringEndDate).toISOString() : null,

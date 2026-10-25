@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useAppStore } from '../store/useAppStore';
-import { buildMovementAction } from '../services/movementService';
+import { buildMovementAction, calculateMsiInstallmentDate } from '../services/movementService';
 import {
   createSharedExpenseWithProration,
   createJournalWithEntries,
@@ -72,10 +72,9 @@ describe('movementContract - OLEADA B (T-1 a T-5) Contract Tests', () => {
       // expenseSlice.ts:55, 109 -> amountPerMonth = item.amount / msiCount (300 / 3 = 100)
       expect(callArgs.totalAmount).toBe(100);
 
-      // expenseSlice.ts:100-103, 107 -> cálculo de fecha por cada cuota
-      let d = new Date('2026-10-21');
-      if (i > 0) d.setMonth(d.getMonth() + i);
-      expect(callArgs.date).toBe(d.toISOString());
+      // expenseSlice.ts:100-103, 107 -> cálculo de fecha por cada cuota con clamping
+      const expectedDate = calculateMsiInstallmentDate('2026-10-21', i);
+      expect(callArgs.date).toBe(expectedDate.toISOString());
 
       // expenseSlice.ts:57-65, 114-115 -> división 50/50 baseUser1Amount / baseUser2Amount
       expect(callArgs.user1Amount).toBe(50);
@@ -90,6 +89,30 @@ describe('movementContract - OLEADA B (T-1 a T-5) Contract Tests', () => {
         expect(callArgs.msiRefId).toBe(firstMsiRefId);
       }
     }
+  });
+
+  it('T-1bis: MSI con compra en fin de mes (2026-10-31) genera cuotas con clamp al 30 de noviembre y 31 de diciembre', async () => {
+    const action = buildMovementAction({
+      type: 'EXPENSE',
+      amount: 300,
+      date: '2026-10-31',
+      currentUserId: 'usr-contract-1',
+      categoryId: 'cat-1',
+      categoryName: 'Mueble',
+      sourceAccountId: 'acc-bank',
+      options: { isMsi: true, msiCount: 3 },
+    });
+
+    await useAppStore.getState().addExpense(action.payload);
+
+    expect(createSharedExpenseWithProration).toHaveBeenCalledTimes(3);
+    const call1 = (createSharedExpenseWithProration as any).mock.calls[0][0];
+    const call2 = (createSharedExpenseWithProration as any).mock.calls[1][0];
+    const call3 = (createSharedExpenseWithProration as any).mock.calls[2][0];
+
+    expect(call1.date).toBe('2026-10-31T00:00:00.000Z');
+    expect(call2.date).toBe('2026-11-30T00:00:00.000Z');
+    expect(call3.date).toBe('2026-12-31T00:00:00.000Z');
   });
 
   // T-2: Ampliar prueba de control con argumentos completos de expenseSlice.ts
@@ -157,7 +180,7 @@ describe('movementContract - OLEADA B (T-1 a T-5) Contract Tests', () => {
       );
     });
 
-    it('Subtest B: Gasto en appContext: "personal" con options: { splitType: "individual" } produce reparto 50/50 e isShared: false (expenseSlice.ts:60-65, 117)', async () => {
+    it('Subtest B: Gasto en appContext: "personal" con options: { splitType: "individual" } asigna 100% al usuario pagador e isShared: false', async () => {
       const action = buildMovementAction({
         type: 'EXPENSE',
         amount: 100,
@@ -175,11 +198,42 @@ describe('movementContract - OLEADA B (T-1 a T-5) Contract Tests', () => {
       expect(createSharedExpenseWithProration).toHaveBeenCalledTimes(1);
       expect(createSharedExpenseWithProration).toHaveBeenCalledWith(
         expect.objectContaining({
-          user1Amount: 50,
-          user2Amount: 50,
+          user1Amount: 100,
+          user2Amount: 0,
+          totalAmount: 100,
           isShared: false,
         })
       );
+    });
+  });
+
+  // Estandarización de Errores (sin alert y con throw uniforme)
+  describe('Estandarización de Errores en Slices (sin alert y con throw uniforme)', () => {
+    it('addExpense relanza el error (throw) cuando createSharedExpenseWithProration falla', async () => {
+      (createSharedExpenseWithProration as any).mockRejectedValueOnce(new Error('Network failure'));
+      const action = buildMovementAction({
+        type: 'EXPENSE',
+        amount: 100,
+        date: '2026-10-21',
+        currentUserId: 'usr-contract-1',
+        categoryId: 'cat-1',
+        sourceAccountId: 'acc-bank',
+      });
+      await expect(useAppStore.getState().addExpense(action.payload)).rejects.toThrow('Network failure');
+    });
+
+    it('addIncome relanza el error (throw) cuando createJournalWithEntries falla', async () => {
+      (createJournalWithEntries as any).mockRejectedValueOnce(new Error('Network failure'));
+      const action = buildMovementAction({
+        type: 'INCOME',
+        amount: 500,
+        date: '2026-10-21',
+        currentUserId: 'usr-contract-1',
+        targetAccountId: 'acc-bank',
+        categoryId: 'cat-salary',
+      });
+      if (action.type !== 'INCOME') throw new Error('Expected INCOME action');
+      await expect(useAppStore.getState().addIncome(action.payload)).rejects.toThrow('Network failure');
     });
   });
 

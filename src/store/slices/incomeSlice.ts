@@ -83,8 +83,8 @@ export const createIncomeSlice: StateCreator<IncomeSlice & AuthSlice & DataSlice
     } catch(error: any) {
       console.error(error);
       useToastStore.getState().addToast(`Error: ${error.message || 'Desconocido'}`, "error");
-      alert("Error al registrar el ingreso: " + (error.message || JSON.stringify(error)));
       set((s) => ({ incomes: s.incomes.filter((i) => i.id !== optimisticIncome.id) }));
+      throw error;
     }
   },
   updateIncome: async (id, item) => {
