@@ -3,7 +3,7 @@ import { Plus, Edit2, Trash2, CreditCard } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { AccountForm } from '../components/forms/AccountForm';
-import { PaymentForm } from '../components/forms/PaymentForm';
+import { MovementForm } from '../components/forms/MovementForm';
 import { FormatCurrency } from '../utils';
 
 export function AccountsView({ data, methods, appContext }) {
@@ -40,20 +40,6 @@ export function AccountsView({ data, methods, appContext }) {
       methods.addAccount(formData);
     }
     handleCloseModal();
-  };
-
-  const handlePaymentSubmit = (formData) => {
-    if (payingAccount) {
-      methods.payCreditCard(
-        formData.sourceAccountId,
-        payingAccount.id,
-        formData.amount,
-        formData.date,
-        data.user?.uid || 'unknown',
-        payingAccount.ownerType === 'SHARED'
-      );
-    }
-    handleClosePaymentModal();
   };
 
   const handleDelete = (id) => {
@@ -166,14 +152,36 @@ export function AccountsView({ data, methods, appContext }) {
       <Modal
         isOpen={isPaymentModalOpen}
         onClose={handleClosePaymentModal}
-        title="Registrar Pago a Tarjeta"
+        title="Pagar Tarjeta"
       >
-        <PaymentForm
-          targetAccount={payingAccount}
-          assetAccounts={assetAccounts}
-          onSubmit={handlePaymentSubmit}
-          onCancel={handleClosePaymentModal}
-        />
+        {isPaymentModalOpen && (
+          <MovementForm
+            initialMode="transfer"
+            initialTargetAccountId={payingAccount?.id}
+            categories={data.categories}
+            accounts={data.accounts}
+            currentUserId={data.user?.uid || ''}
+            appContext={appContext}
+            onSubmit={async (action) => {
+              if (action.type === 'TRANSFER') {
+                await methods.payCreditCard(
+                  action.payload.sourceAccountId,
+                  action.payload.targetAccountId,
+                  action.payload.amount,
+                  action.payload.date,
+                  action.payload.ownerUid,
+                  action.payload.isShared
+                );
+              } else if (action.type === 'EXPENSE') {
+                await methods.addExpense(action.payload);
+              } else if (action.type === 'INCOME') {
+                await methods.addIncome(action.payload);
+              }
+              handleClosePaymentModal();
+            }}
+            onCancel={handleClosePaymentModal}
+          />
+        )}
       </Modal>
     </div>
   );

@@ -3,29 +3,35 @@ import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
-import { ExpenseForm } from '../components/forms/ExpenseForm';
+import { MovementForm } from '../components/forms/MovementForm';
 import { FormatCurrency, exportToCSV } from '../utils';
 import { Download } from 'lucide-react';
 
 export function SettlementView({ data, calc, methods }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingExpense, setEditingExpense] = useState(null);
 
-  const handleOpenModal = (expense = null) => {
-    setEditingExpense(expense);
+  const handleOpenModal = (_expense: any = null) => {
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
-    setEditingExpense(null);
     setIsModalOpen(false);
   };
 
-  const handleSubmit = (formData) => {
-    if (editingExpense) {
-      methods.updateExpense(editingExpense.id, formData);
-    } else {
-      methods.addExpense(formData);
+  const handleMovementSubmit = async (action) => {
+    if (action.type === 'EXPENSE') {
+      await methods.addExpense(action.payload);
+    } else if (action.type === 'INCOME') {
+      await methods.addIncome(action.payload);
+    } else if (action.type === 'TRANSFER') {
+      await methods.payCreditCard(
+        action.payload.sourceAccountId,
+        action.payload.targetAccountId,
+        action.payload.amount,
+        action.payload.date,
+        action.payload.ownerUid,
+        action.payload.isShared
+      );
     }
     handleCloseModal();
   };
@@ -139,16 +145,18 @@ export function SettlementView({ data, calc, methods }) {
       <Modal 
         isOpen={isModalOpen} 
         onClose={handleCloseModal} 
-        title={editingExpense ? "Editar Gasto" : "Nuevo Gasto"}
+        title="Nuevo Gasto"
       >
-        <ExpenseForm 
-          initialData={editingExpense} 
-          users={data.users}
-          budgets={data.budgets}
-          currentUserId={data.user?.uid || ''}
-          onSubmit={handleSubmit} 
-          onCancel={handleCloseModal} 
-        />
+        {isModalOpen && (
+          <MovementForm 
+            initialMode="expense"
+            categories={data.categories}
+            accounts={data.accounts}
+            currentUserId={data.user?.uid || ''}
+            onSubmit={handleMovementSubmit} 
+            onCancel={handleCloseModal} 
+          />
+        )}
       </Modal>
 
       <div className="mt-8 text-xs text-slate-500 text-center px-4">

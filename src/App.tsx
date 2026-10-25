@@ -19,8 +19,6 @@ import {
   Settings
 } from 'lucide-react';
 import { Modal } from './components/ui/Modal';
-import { IncomeForm } from './components/forms/IncomeForm';
-import { ExpenseForm } from './components/forms/ExpenseForm';
 import { MovementForm } from './components/forms/MovementForm';
 import { OrbitaLogo } from './components/ui/OrbitaLogo';
 import { authService } from './services/authService';
@@ -50,22 +48,13 @@ export default function App() {
   const [inviteLink, setInviteLink] = useState('');
   const [joinHouseConfirm, setJoinHouseConfirm] = useState<string | null>(null);
   const [appContext, setAppContext] = useState<any>('household');
-
-  const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
-  const [editingIncome, setEditingIncome] = useState(null);
-  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
-  const [editingExpense, setEditingExpense] = useState(null);
   const [isMovementModalOpen, setIsMovementModalOpen] = useState(false);
 
-  const handleOpenIncomeModal = (income = null) => {
-    setEditingIncome(income);
-    setIsIncomeModalOpen(true);
+  const handleOpenMovementModal = () => {
+    setIsMovementModalOpen(true);
   };
-
-  const handleOpenExpenseModal = (expense = null) => {
-    setEditingExpense(expense);
-    setIsExpenseModalOpen(true);
-  };
+  const handleOpenIncomeModal = handleOpenMovementModal;
+  const handleOpenExpenseModal = handleOpenMovementModal;
 
 
   const data = useAppStore(useShallow(state => ({
@@ -121,7 +110,7 @@ export default function App() {
     refreshSettings: state.refreshSettings,
   })));
   
-  const methods = { ...data, handleOpenIncomeModal, handleOpenExpenseModal };
+  const methods = { ...data, handleOpenMovementModal, handleOpenIncomeModal, handleOpenExpenseModal };
   const { user, houseId, authLoading, setUser, setHouseId, setAuthLoading, fetchDashboardData, refreshSettings, dateRange, setDateRange } = data;
 
   const filteredData = useMemo(() => {
@@ -491,12 +480,6 @@ export default function App() {
               <button onClick={() => setIsMovementModalOpen(true)} className="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm px-4 py-2.5 rounded-full text-sm font-bold flex items-center justify-center gap-2 transition-colors">
                 <Plus size={16} /> Nuevo Movimiento
               </button>
-              <button onClick={() => handleOpenExpenseModal()} className="flex-1 md:flex-none bg-secondary/10 hover:bg-secondary/20 text-secondary px-4 py-2.5 rounded-full text-sm font-bold flex items-center justify-center gap-2 transition-colors">
-                <Plus size={16} /> Nuevo Gasto
-              </button>
-              <button onClick={() => handleOpenIncomeModal()} className="flex-1 md:flex-none bg-primary hover:bg-primary/90 text-white shadow-sm px-4 py-2.5 rounded-full text-sm font-bold flex items-center justify-center gap-2 transition-colors">
-                <Plus size={16} /> Nuevo Ingreso
-              </button>
             </div>
           </div>
         )}
@@ -548,56 +531,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Modals for Income and Expense */}
-      <Modal 
-        isOpen={isIncomeModalOpen} 
-        onClose={() => setIsIncomeModalOpen(false)} 
-        title={editingIncome ? "Editar Ingreso" : "Nuevo Ingreso"}
-      >
-        {isIncomeModalOpen && (
-          <IncomeForm 
-            key={editingIncome ? editingIncome.id : 'new-inc'}
-            initialData={editingIncome} 
-            users={data.users} 
-            categories={data.categories}
-            accounts={data.accounts}
-            currentUserId={user?.uid}
-            appContext={appContext}
-            onSubmit={(formData) => {
-              if (editingIncome) methods.updateIncome(editingIncome.id, formData);
-              else methods.addIncome(formData);
-              setIsIncomeModalOpen(false);
-            }} 
-            onCancel={() => setIsIncomeModalOpen(false)} 
-          />
-        )}
-      </Modal>
 
-      <Modal 
-        isOpen={isExpenseModalOpen} 
-        onClose={() => setIsExpenseModalOpen(false)} 
-        title={editingExpense ? "Editar Gasto" : "Nuevo Gasto"}
-      >
-        {isExpenseModalOpen && (
-          <ExpenseForm 
-            key={editingExpense ? editingExpense.id : 'new-exp'}
-            initialData={editingExpense} 
-            users={data.users} 
-            categories={data.categories}
-            accounts={data.accounts}
-            tags={data.tags}
-            budgets={data.budgets || []}
-            currentUserId={user?.uid}
-            appContext={appContext}
-            onSubmit={(formData) => {
-              if (editingExpense) methods.updateExpense(editingExpense.id, formData);
-              else methods.addExpense(formData);
-              setIsExpenseModalOpen(false);
-            }} 
-            onCancel={() => setIsExpenseModalOpen(false)} 
-          />
-        )}
-      </Modal>
 
       {/* Modal for Unified Movement (F3.1) */}
       <Modal

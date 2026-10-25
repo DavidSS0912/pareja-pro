@@ -24,6 +24,10 @@ export interface MovementFormProps {
   accounts?: Array<{ id: string; name: string; type?: string }>;
   currentUserId?: string | null;
   appContext?: string;
+  initialMode?: 'expense' | 'income' | 'transfer' | 'EXPENSE' | 'INCOME' | 'TRANSFER';
+  initialType?: 'EXPENSE' | 'INCOME' | 'TRANSFER';
+  initialSourceAccountId?: string;
+  initialTargetAccountId?: string;
   onSubmit: (action: MovementAction) => void | Promise<void>;
   onCancel: () => void;
 }
@@ -49,15 +53,26 @@ export function MovementForm({
   accounts = [],
   currentUserId,
   appContext = 'household',
+  initialMode,
+  initialType,
+  initialSourceAccountId,
+  initialTargetAccountId,
   onSubmit,
   onCancel,
 }: MovementFormProps) {
-  const [type, setType] = useState<'EXPENSE' | 'INCOME' | 'TRANSFER'>('EXPENSE');
+  const resolvedInitialType: 'EXPENSE' | 'INCOME' | 'TRANSFER' = (() => {
+    const raw = (initialMode || initialType || '').toUpperCase();
+    if (raw === 'INCOME') return 'INCOME';
+    if (raw === 'TRANSFER') return 'TRANSFER';
+    return 'EXPENSE';
+  })();
+
+  const [type, setType] = useState<'EXPENSE' | 'INCOME' | 'TRANSFER'>(resolvedInitialType);
   const [amount, setAmount] = useState<string>('');
   const [date, setDate] = useState<string>(() => getTodayLocalISO());
   const [categoryId, setCategoryId] = useState<string>('');
-  const [sourceAccountId, setSourceAccountId] = useState<string>('');
-  const [targetAccountId, setTargetAccountId] = useState<string>('');
+  const [sourceAccountId, setSourceAccountId] = useState<string>(initialSourceAccountId || '');
+  const [targetAccountId, setTargetAccountId] = useState<string>(initialTargetAccountId || '');
   const [note, setNote] = useState<string>('');
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -70,8 +85,8 @@ export function MovementForm({
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   // F3.2: Registro de interacción manual en cuentas
-  const [sourceTouched, setSourceTouched] = useState<boolean>(false);
-  const [targetTouched, setTargetTouched] = useState<boolean>(false);
+  const [sourceTouched, setSourceTouched] = useState<boolean>(!!initialSourceAccountId);
+  const [targetTouched, setTargetTouched] = useState<boolean>(!!initialTargetAccountId);
 
   // F3.2: Etiquetas del store
   const tags = useAppStore((state) => state.tags);
