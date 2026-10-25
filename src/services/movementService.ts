@@ -10,6 +10,84 @@
 
 export const MAX_AMOUNT_NUMERIC_14_2 = 999999999999.99;
 
+export interface ExpenseAdvancedOptions {
+  splitType?: '50/50' | 'proporcional' | 'individual';
+  isMsi?: boolean;
+  msiCount?: number;
+  tags?: string[];
+}
+
+export interface KeyValueStorage {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+}
+
+export type MovementMode = 'expense' | 'income' | 'transfer';
+
+export function getLastUsedAccountId(
+  storage: KeyValueStorage | null | undefined,
+  uid: string | null | undefined,
+  mode: MovementMode,
+  validAccountIds: string[]
+): string | null {
+  if (!storage || !uid || typeof uid !== 'string' || uid.trim() === '') {
+    return null;
+  }
+  try {
+    const key = `orbita_last_account_${uid}_${mode}`;
+    const val = storage.getItem(key);
+    if (val && validAccountIds && validAccountIds.includes(val)) {
+      return val;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveLastUsedAccountId(
+  storage: KeyValueStorage | null | undefined,
+  uid: string | null | undefined,
+  mode: MovementMode,
+  accountId: string
+): void {
+  if (
+    !storage ||
+    !uid ||
+    typeof uid !== 'string' ||
+    uid.trim() === '' ||
+    !accountId ||
+    typeof accountId !== 'string' ||
+    accountId.trim() === ''
+  ) {
+    return;
+  }
+  try {
+    const key = `orbita_last_account_${uid}_${mode}`;
+    storage.setItem(key, accountId);
+  } catch {
+    // Silencia cualquier excepción (ej. cuota excedida)
+  }
+}
+
+export function normalizeTags(tags?: string[]): string[] {
+  if (!Array.isArray(tags) || tags.length === 0) {
+    return [];
+  }
+  const result: string[] = [];
+  const seen = new Set<string>();
+  for (const item of tags) {
+    if (typeof item === 'string') {
+      const trimmed = item.trim();
+      if (trimmed !== '' && !seen.has(trimmed)) {
+        seen.add(trimmed);
+        result.push(trimmed);
+      }
+    }
+  }
+  return result;
+}
+
 export interface LocalDateLike {
   getFullYear(): number;
   getMonth(): number;
@@ -62,8 +140,13 @@ export function validateAmount(raw: number | string | null | undefined): AmountV
     return { valid: false, error: 'El monto no puede tener más de 2 decimales' };
   }
 
+  // Si es un número negativo con formato válido, informar que debe ser mayor a cero
+  if (/^-\d+(\.\d{1,2})?$/.test(rawStr)) {
+    return { valid: false, error: 'El monto debe ser mayor a cero' };
+  }
+
   // Patrón estricto: solo dígitos con punto decimal opcional y máximo 2 decimales
-  // Rechaza notación científica (1e-7, 1e3), signos explícitos (+5, -5) y formatos no válidos
+  // Rechaza notación científica (1e-7, 1e3), signos explícitos (+5) y formatos no válidos
   if (!/^\d+(\.\d{1,2})?$/.test(rawStr)) {
     return { valid: false, error: 'Formato de número inválido' };
   }
@@ -95,6 +178,7 @@ export interface MovementValidationInput {
   sourceAccountId?: string;
   targetAccountId?: string;
   note?: string;
+  options?: ExpenseAdvancedOptions;
 }
 
 export interface MovementValidationResult {
@@ -143,6 +227,28 @@ export function validateMovement(input: MovementValidationInput): MovementValida
     if (!input.sourceAccountId || input.sourceAccountId.trim() === '') {
       return { valid: false, error: 'La cuenta de origen es obligatoria' };
     }
+    if (input.appContext !== 'personal') {
+      if (input.options?.splitType !== undefined) {
+        const allowedSplitTypes = ['50/50', 'proporcional', 'individual'];
+        if (!allowedSplitTypes.includes(input.options.splitType)) {
+          return { valid: false, error: 'Tipo de división inválido' };
+        }
+      }
+      if (input.options?.isMsi === true) {
+        const msiCount = input.options.msiCount;
+        if (
+          typeof msiCount !== 'number' ||
+          !Number.isInteger(msiCount) ||
+          msiCount < 2 ||
+          msiCount > 48
+        ) {
+          return {
+            valid: false,
+            error: 'El número de meses sin intereses debe ser un entero entre 2 y 48',
+          };
+        }
+      }
+    }
   } else if (input.type === 'INCOME') {
     if (!input.categoryId || input.categoryId.trim() === '') {
       return { valid: false, error: 'La categoría de ingreso es obligatoria' };
@@ -180,7 +286,10 @@ export type MovementAction =
         paidBy: string;
         isPrivate: boolean;
         isShared: boolean;
-        splitType: '50/50';
+        splitType?: '50/50' | 'proporcional' | 'individual';
+        isMsi?: boolean;
+        msiCount?: number;
+        tags?: string[];
       };
     }
   | {
@@ -195,6 +304,7 @@ export type MovementAction =
         userId: string;
         isPrivate: boolean;
         isShared: boolean;
+        incomeCategoryType?: string;
       };
     }
   | {
@@ -222,20 +332,51 @@ export function buildMovementAction(input: MovementValidationInput): MovementAct
 
   if (input.type === 'EXPENSE') {
     const categoryName = input.categoryName || 'Gasto';
+    const isPersonal = input.appContext === 'personal';
+    const splitType = isPersonal ? '50/50' : (input.options?.splitType || '50/50');
+    const isMsi = isPersonal ? false : !!input.options?.isMsi;
+    const msiCount = isMsi ? input.options?.msiCount : undefined;
+    const normalizedTags = normalizeTags(input.options?.tags);
+
+    const payload: {
+      amount: number;
+      categoryId: string;
+      category: string;
+      sourceAccountId: string;
+      date: string;
+      desc: string;
+      paidBy: string;
+      isPrivate: boolean;
+      isShared: boolean;
+      splitType?: '50/50' | 'proporcional' | 'individual';
+      isMsi?: boolean;
+      msiCount?: number;
+      tags?: string[];
+    } = {
+      amount,
+      categoryId: input.categoryId!,
+      category: categoryName,
+      sourceAccountId: input.sourceAccountId!,
+      date: input.date,
+      desc: note || categoryName,
+      paidBy: input.currentUserId!,
+      isPrivate: flags.isPrivate,
+      isShared: flags.isShared,
+      splitType,
+    };
+
+    if (isMsi) {
+      payload.isMsi = true;
+      payload.msiCount = msiCount;
+    }
+
+    if (normalizedTags.length > 0) {
+      payload.tags = normalizedTags;
+    }
+
     return {
       type: 'EXPENSE',
-      payload: {
-        amount,
-        categoryId: input.categoryId!,
-        category: categoryName,
-        sourceAccountId: input.sourceAccountId!,
-        date: input.date,
-        desc: note || categoryName,
-        paidBy: input.currentUserId!,
-        isPrivate: flags.isPrivate,
-        isShared: flags.isShared,
-        splitType: '50/50',
-      },
+      payload,
     };
   }
 
@@ -254,6 +395,7 @@ export function buildMovementAction(input: MovementValidationInput): MovementAct
         userId: input.currentUserId!,
         isPrivate: flags.isPrivate,
         isShared: flags.isShared,
+        incomeCategoryType: 'Ordinario',
       },
     };
   }

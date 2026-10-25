@@ -223,6 +223,7 @@ describe('movementService - buildMovementAction', () => {
         userId: 'usr-test',
         isPrivate: true,
         isShared: false,
+        incomeCategoryType: 'Ordinario',
       },
     });
   });
