@@ -4,19 +4,15 @@ import { calcularPatrimonio } from './services/simuladorService';
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   Home,
-  CreditCard,
-  PieChart,
-  ArrowRightLeft,
+  Wallet,
+  Target,
+  Users,
   BarChart3,
-  Landmark,
-  Flame,
+  Settings,
   UserPlus,
   LogOut,
-  Target,
   User,
-  Users,
-  Plus,
-  Settings
+  Plus
 } from 'lucide-react';
 import { Modal } from './components/ui/Modal';
 import { MovementForm } from './components/forms/MovementForm';
@@ -28,12 +24,9 @@ import { useAppStore, resetAppStore } from './store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
 import { AuthView } from './views/AuthView';
 import { DashboardView } from './views/DashboardView';
-import { BudgetsView } from './views/BudgetsView';
+import { PlanningView } from './views/PlanningView';
 import { AccountsView } from './views/AccountsView';
 import { SettlementView } from './views/SettlementView';
-import { DebtSimulatorView } from './views/DebtSimulatorView';
-import { WealthView } from './views/WealthView';
-import { ProjectsView } from './views/ProjectsView';
 import { HistoricalView } from './views/HistoricalView';
 import { SettingsView } from './views/SettingsView';
 
@@ -276,36 +269,45 @@ export default function App() {
 
 
 
-    let zoeOwesDavid = 0;
-    let davidOwesZoe = 0;
+    const isSingleUser = (filteredData.users?.length || 0) < 2;
 
-    filteredData.expenses.forEach(exp => {
-      if (exp.isPrivate) return;
+    let netSettlement = 0;
+    let settlementAmount = 0;
+    let simplifiedDebt: { deudor: 'A' | 'B' | null; monto: number } = { deudor: null, monto: 0 };
 
-      const normalizedAmount = normalize(exp.amount, exp.currency);
+    if (!isSingleUser) {
+      let zoeOwesDavid = 0;
+      let davidOwesZoe = 0;
 
-      let ratio1 = 0.5;
-      let ratio2 = 0.5;
+      filteredData.expenses.forEach(exp => {
+        if (exp.isPrivate) return;
 
-      if (exp.splitType === 'proporcional') {
-        const u1Id = filteredData.users[0]?.id || 'u1';
-        const u2Id = filteredData.users[1]?.id || 'u2';
-        
-        const inc1 = incomesByUser[u1Id] || 0;
-        const inc2 = incomesByUser[u2Id] || 0;
-        ratio1 = calcularProrrateo(inc1, inc2);
-        ratio2 = 1 - ratio1;
-      }
+        const normalizedAmount = normalize(exp.amount, exp.currency);
 
-      if (exp.paidBy === filteredData.users[0]?.id || exp.paidBy === 'u1') {
-        zoeOwesDavid += normalizedAmount * ratio2;
-      } else if (exp.paidBy === filteredData.users[1]?.id || exp.paidBy === 'u2') {
-        davidOwesZoe += normalizedAmount * ratio1;
-      }
-    });
+        let ratio1 = 0.5;
+        let ratio2 = 0.5;
 
-    const netSettlement = zoeOwesDavid - davidOwesZoe;
-    const simplifiedDebt = simplificarDeudas(davidOwesZoe, zoeOwesDavid);
+        if (exp.splitType === 'proporcional') {
+          const u1Id = filteredData.users[0]?.id || 'u1';
+          const u2Id = filteredData.users[1]?.id || 'u2';
+          
+          const inc1 = incomesByUser[u1Id] || 0;
+          const inc2 = incomesByUser[u2Id] || 0;
+          ratio1 = calcularProrrateo(inc1, inc2);
+          ratio2 = 1 - ratio1;
+        }
+
+        if (exp.paidBy === filteredData.users[0]?.id || exp.paidBy === 'u1') {
+          zoeOwesDavid += normalizedAmount * ratio2;
+        } else if (exp.paidBy === filteredData.users[1]?.id || exp.paidBy === 'u2') {
+          davidOwesZoe += normalizedAmount * ratio1;
+        }
+      });
+
+      netSettlement = zoeOwesDavid - davidOwesZoe;
+      simplifiedDebt = simplificarDeudas(davidOwesZoe, zoeOwesDavid);
+      settlementAmount = simplifiedDebt.monto;
+    }
 
     const totalBudgeted = (filteredData.budgets || []).reduce((acc, curr) => acc + (Number(curr.base) || 0), 0);
     const totalDebtAllocated = (filteredData.accounts || []).filter((a: any) => a.type === 'CREDIT_CARD' || a.type === 'LIABILITY').reduce((acc: any, curr: any) => acc + (Number(curr.balance) || 0), 0);
@@ -325,7 +327,9 @@ export default function App() {
 
     return {
       totalIncome, unallocated,
-      netSettlement, settlementAmount: simplifiedDebt.monto, simplifiedDebt,
+      netSettlement: isSingleUser ? 0 : netSettlement,
+      settlementAmount: isSingleUser ? 0 : settlementAmount,
+      simplifiedDebt,
       needsPct: totalIncome ? (needs / totalIncome) * 100 : 0,
       wantsPct: totalIncome ? (wants / totalIncome) * 100 : 0,
       savingsPct: totalIncome ? (savings / totalIncome) * 100 : 0,
@@ -344,12 +348,16 @@ export default function App() {
   const renderTab = () => {
     switch (activeTab) {
       case 'dashboard': return <DashboardView data={filteredData} calc={calc} methods={methods} />;
-      case 'budgets': return <BudgetsView data={filteredData} methods={methods} appContext={appContext} />;
-      case 'cards': return <AccountsView data={filteredData} methods={methods} appContext={appContext} />;
+      case 'wallet':
+      case 'cards':
+      case 'debts':
+      case 'wealth':
+        return <AccountsView data={filteredData} methods={methods} appContext={appContext} />;
+      case 'planning':
+      case 'budgets':
+      case 'projects':
+        return <PlanningView data={filteredData} calc={calc} methods={methods} appContext={appContext} defaultSubTab={activeTab === 'projects' ? 'projects' : 'budgets'} />;
       case 'settlement': return <SettlementView data={filteredData} calc={calc} methods={methods} />;
-      case 'debts': return <DebtSimulatorView data={filteredData} />;
-      case 'wealth': return <WealthView data={filteredData} calc={calc} methods={methods} />;
-      case 'projects': return <ProjectsView data={filteredData} calc={calc} methods={methods} />;
       case 'historical': return <HistoricalView data={filteredData} methods={methods} />;
       case 'settings': return <SettingsView />;
 
@@ -360,16 +368,12 @@ export default function App() {
   };
 
   const navItems = [
-    { id: 'dashboard', icon: <Home size={20} />, label: 'Resumen' },
-    { id: 'budgets', icon: <PieChart size={20} />, label: 'Presupuestos' },
-    { id: 'cards', icon: <CreditCard size={20} />, label: 'Fuentes de Ingreso' },
-    { id: 'settlement', icon: <ArrowRightLeft size={20} />, label: 'Cuentas' },
-    { id: 'debts', icon: <Flame size={20} />, label: 'Simulador' },
-    { id: 'projects', icon: <Target size={20} />, label: 'Proyectos' },
-    { id: 'wealth', icon: <Landmark size={20} />, label: 'Patrimonio' },
-    { id: 'historical', icon: <BarChart3 size={20} />, label: 'Histórico' },
+    { id: 'dashboard', icon: <Home size={20} />, label: 'Inicio' },
+    { id: 'wallet', icon: <Wallet size={20} />, label: 'Billetera' },
+    { id: 'planning', icon: <Target size={20} />, label: 'Planeación' },
+    { id: 'settlement', icon: <Users size={20} />, label: 'Hogar' },
+    { id: 'historical', icon: <BarChart3 size={20} />, label: 'Historial' },
     { id: 'settings', icon: <Settings size={20} />, label: 'Ajustes' },
-
   ];
 
   const renderContextToggle = () => {
@@ -408,22 +412,27 @@ export default function App() {
         </div>
 
         <div className="flex md:flex-col gap-4 w-full min-w-max">
-          {navItems.map(item => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`flex flex-col md:flex-row items-center gap-1 md:gap-3 p-3 md:px-4 md:py-3 rounded-2xl transition-all duration-200 flex-1 md:flex-none relative group ${
-                activeTab === item.id
-                  ? 'text-white font-medium bg-primary shadow-md'
-                  : 'text-slate-400 font-normal hover:text-white hover:bg-slate-800'
-              }`}
-            >
-              <div className={`relative z-10 transition-transform duration-200 ${activeTab === item.id ? 'scale-105' : 'group-hover:scale-105'}`}>
-                {item.icon}
-              </div>
-              <span className="text-[10px] md:text-sm whitespace-nowrap relative z-10 tracking-tight">{item.label}</span>
-            </button>
-          ))}
+          {navItems.map(item => {
+            const isItemActive = activeTab === item.id ||
+              (item.id === 'wallet' && ['cards', 'debts', 'wealth'].includes(activeTab)) ||
+              (item.id === 'planning' && ['budgets', 'projects'].includes(activeTab));
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`flex flex-col md:flex-row items-center gap-1 md:gap-3 p-3 md:px-4 md:py-3 rounded-2xl transition-all duration-200 flex-1 md:flex-none relative group ${
+                  isItemActive
+                    ? 'text-white font-medium bg-primary shadow-md'
+                    : 'text-slate-400 font-normal hover:text-white hover:bg-slate-800'
+                }`}
+              >
+                <div className={`relative z-10 transition-transform duration-200 ${isItemActive ? 'scale-105' : 'group-hover:scale-105'}`}>
+                  {item.icon}
+                </div>
+                <span className="text-[10px] md:text-sm whitespace-nowrap relative z-10 tracking-tight">{item.label}</span>
+              </button>
+            );
+          })}
           
           <div className="hidden md:block mt-auto pt-8 border-t border-slate-800">
             <button onClick={() => { setShowInviteModal(true); handleInvite(); }} className="w-full flex items-center gap-3 p-3 rounded-2xl text-primary hover:bg-slate-800 transition-colors font-medium">
@@ -463,7 +472,7 @@ export default function App() {
            </div>
         </div>
 
-        {activeTab !== 'settings' && activeTab !== 'historical' && activeTab !== 'terms' && activeTab !== 'privacy' && activeTab !== 'cards' && activeTab !== 'debts' && activeTab !== 'wealth' && (
+        {activeTab !== 'settings' && activeTab !== 'historical' && activeTab !== 'terms' && activeTab !== 'privacy' && activeTab !== 'wallet' && activeTab !== 'cards' && activeTab !== 'debts' && activeTab !== 'wealth' && (
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-3 md:p-4 rounded-2xl border border-transparent shadow-sm">
             <div className="flex items-center gap-3 w-full md:w-1/2">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:block">Periodo:</span>

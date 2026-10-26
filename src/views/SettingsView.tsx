@@ -1,20 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { User, Palette, Tag, Folder, Plus, Trash2, Edit2 } from 'lucide-react';
+import { User, Users, Coins, Palette, LogOut, Copy, Check, Share2, Building2 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
 import { Button } from '../components/ui/Button';
+import { authService } from '../services/authService';
+import { createInvitation } from '../services/userService';
 
-export function SettingsView() {
-  const [activeTab, setActiveTab] = useState('profile');
+export interface SettingsViewProps {
+  onLogout?: () => void;
+}
+
+export function SettingsView({ onLogout }: SettingsViewProps) {
+  const [activeTab, setActiveTab] = useState<'profile' | 'household' | 'currency' | 'appearance'>('profile');
   const [, setForceRender] = useState(0);
-  const { user, categories, tags, addCategory, deleteCategoryItem, addTag, deleteTagItem, refreshSettings } = useAppStore(useShallow(state => ({
+
+  const { user, houseId, users, refreshSettings } = useAppStore(useShallow(state => ({
     user: state.user,
-    categories: state.categories,
-    tags: state.tags,
-    addCategory: state.addCategory,
-    deleteCategoryItem: state.deleteCategoryItem,
-    addTag: state.addTag,
-    deleteTagItem: state.deleteTagItem,
+    houseId: state.houseId,
+    users: state.users,
     refreshSettings: state.refreshSettings
   })));
 
@@ -22,118 +25,359 @@ export function SettingsView() {
     refreshSettings();
   }, [refreshSettings]);
 
-  const [newTagName, setNewTagName] = useState('');
-  const handleAddTag = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTagName.trim()) return;
-    await addTag(newTagName.trim());
-    setNewTagName('');
+  // Invitaciones
+  const [inviteLink, setInviteLink] = useState('');
+  const [isGeneratingInvite, setIsGeneratingInvite] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleGenerateInvite = async () => {
+    if (!user || !houseId) return;
+    try {
+      setIsGeneratingInvite(true);
+      const inviteId = await createInvitation(user.uid, houseId);
+      const link = `${window.location.origin}/invite/${inviteId}`;
+      setInviteLink(link);
+      await navigator.clipboard.writeText(link);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 3000);
+    } catch (err) {
+      console.error('Error generando invitación:', err);
+    } finally {
+      setIsGeneratingInvite(false);
+    }
   };
 
-  const [newCategoryName, setNewCategoryName] = useState('');
-  const [newCategoryType, setNewCategoryType] = useState<'EXPENSE'|'INCOME'>('EXPENSE');
-  const [newCategoryColor, setNewCategoryColor] = useState('#6366f1');
-  const handleAddCategory = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newCategoryName.trim()) return;
-    await addCategory({
-      name: newCategoryName.trim(),
-      type: newCategoryType,
-      color: newCategoryColor,
-      ownerType: 'SHARED'
-    });
-    setNewCategoryName('');
+  const handleCopyExistingLink = async () => {
+    if (!inviteLink) return;
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 3000);
+    } catch (err) {
+      console.error('Error copiando link:', err);
+    }
   };
+
+  // Moneda y Tipo de Cambio
+  const [defaultCurrency, setDefaultCurrency] = useState(() => localStorage.getItem('defaultCurrency') || 'MXN');
+  const [exchangeRate, setExchangeRate] = useState(() => localStorage.getItem('exchangeRate') || '20');
+  const [exchangeSaved, setExchangeSaved] = useState(false);
+
+  const handleSaveCurrency = (e: React.FormEvent) => {
+    e.preventDefault();
+    localStorage.setItem('defaultCurrency', defaultCurrency);
+    localStorage.setItem('exchangeRate', exchangeRate);
+    setExchangeSaved(true);
+    setTimeout(() => setExchangeSaved(false), 2500);
+  };
+
+  // Cierre de sesión
+  const handleLogout = async () => {
+    if (onLogout) {
+      onLogout();
+    } else {
+      await authService.logout();
+    }
+  };
+
+  // Apariencia
+  const primaryColors = ['#4f46e5', '#3b82f6', '#0ea5e9', '#10b981', '#f59e0b', '#f43f5e', '#ec4899', '#8b5cf6', '#14b8a6'];
+  const secondaryColors = ['#f43f5e', '#f59e0b', '#10b981', '#0ea5e9', '#8b5cf6', '#ec4899'];
 
   return (
     <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col md:flex-row min-h-[600px] gap-8">
-      {/* Sidebar for settings tabs */}
-      <div className="w-full md:w-64 flex flex-col gap-2">
-        <h2 className="text-xl font-bold text-slate-900 mb-4 px-2">Ajustes</h2>
-        <button
-          onClick={() => setActiveTab('profile')}
-          className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium ${activeTab === 'profile' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-50'}`}
-        >
-          <User size={18} />
-          Perfil de Usuario
-        </button>
-        <button
-          onClick={() => setActiveTab('appearance')}
-          className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium ${activeTab === 'appearance' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-50'}`}
-        >
-          <Palette size={18} />
-          Apariencia
-        </button>
-        <button
-          onClick={() => setActiveTab('categories')}
-          className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium ${activeTab === 'categories' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-50'}`}
-        >
-          <Folder size={18} />
-          Categorías
-        </button>
-        <button
-          onClick={() => setActiveTab('tags')}
-          className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium ${activeTab === 'tags' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-50'}`}
-        >
-          <Tag size={18} />
-          Etiquetas (Tags)
-        </button>
+      {/* Sidebar de Ajustes */}
+      <div className="w-full md:w-64 flex flex-col justify-between">
+        <div className="flex flex-col gap-1.5">
+          <h2 className="text-xl font-bold text-slate-900 mb-4 px-2 font-title">Ajustes</h2>
+          
+          <button
+            type="button"
+            onClick={() => setActiveTab('profile')}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-150 font-medium text-sm ${
+              activeTab === 'profile' ? 'bg-primary/10 text-primary font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <User size={18} />
+            <span>Perfil de Usuario</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('household')}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-150 font-medium text-sm ${
+              activeTab === 'household' ? 'bg-primary/10 text-primary font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <Users size={18} />
+            <span>Integrantes del Hogar</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('currency')}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-150 font-medium text-sm ${
+              activeTab === 'currency' ? 'bg-primary/10 text-primary font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <Coins size={18} />
+            <span>Moneda y Tipo de Cambio</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('appearance')}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-150 font-medium text-sm ${
+              activeTab === 'appearance' ? 'bg-primary/10 text-primary font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <Palette size={18} />
+            <span>Apariencia y Colores</span>
+          </button>
+        </div>
+
+        {/* Botón de Cierre de Sesión en el Menú */}
+        <div className="pt-6 mt-6 border-t border-slate-100">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 transition-colors font-medium text-sm"
+          >
+            <LogOut size={18} />
+            <span>Cerrar Sesión</span>
+          </button>
+        </div>
       </div>
 
-      {/* Main content area */}
+      {/* Área Principal de Contenido */}
       <div className="flex-1 border-t md:border-t-0 md:border-l border-slate-100 pt-6 md:pt-0 md:pl-8">
         
+        {/* 1. PERFIL DE USUARIO */}
         {activeTab === 'profile' && (
-          <div className="space-y-6">
+          <div className="space-y-6 max-w-xl">
             <div>
-              <h3 className="text-lg font-bold text-slate-900">Perfil de Usuario</h3>
-              <p className="text-sm text-slate-500 mt-1">Configura tu información personal.</p>
+              <h3 className="text-lg font-bold text-slate-900 font-title">Perfil de Usuario</h3>
+              <p className="text-sm text-slate-500 mt-1">Información de tu cuenta autenticada.</p>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-slate-200 overflow-hidden">
-                {user?.photoURL ? <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover" /> : <User size={32} className="m-auto mt-4 text-slate-400" />}
+
+            <div className="flex items-center gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-100">
+              <div className="w-16 h-16 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center text-slate-500 font-bold text-xl flex-shrink-0">
+                {user?.photoURL ? (
+                  <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <span>{(user?.displayName || user?.email || 'U').charAt(0).toUpperCase()}</span>
+                )}
               </div>
-              <div>
-                <p className="font-bold text-slate-900">{user?.displayName || 'Usuario'}</p>
-                <p className="text-sm text-slate-500">{user?.email}</p>
+              <div className="min-w-0">
+                <p className="font-bold text-slate-900 text-base truncate">{user?.displayName || 'Usuario de Orbita'}</p>
+                <p className="text-sm text-slate-500 truncate">{user?.email || 'Sin correo asociado'}</p>
+                <p className="text-xs text-slate-400 font-mono mt-1">ID: {user?.uid}</p>
               </div>
             </div>
-            <p className="text-sm text-slate-500 italic">Nota: La edición del perfil desde la app aún no está disponible.</p>
+
+            <div className="p-4 rounded-xl border border-blue-100 bg-blue-50/50 text-xs text-blue-700">
+              <p className="font-semibold mb-1">Sesión Autenticada</p>
+              <p>Tu cuenta está gestionada a través del sistema de autenticación de Orbita. Las credenciales están protegidas y sincronizadas con tu hogar.</p>
+            </div>
           </div>
         )}
 
-        {activeTab === 'appearance' && (
-          <div className="space-y-6">
+        {/* 2. INTEGRANTES DEL HOGAR */}
+        {activeTab === 'household' && (
+          <div className="space-y-6 max-w-xl">
             <div>
-              <h3 className="text-lg font-bold text-slate-900">Apariencia</h3>
-              <p className="text-sm text-slate-500 mt-1">Personaliza cómo se ve tu app.</p>
+              <h3 className="text-lg font-bold text-slate-900 font-title">Integrantes del Hogar</h3>
+              <p className="text-sm text-slate-500 mt-1">Personas que comparten gastos, presupuestos y liquidación en esta casa.</p>
             </div>
-            <div className="flex items-center gap-3 p-4 border border-slate-100 rounded-xl bg-slate-50">
-              <div className="w-8 h-8 rounded-full bg-primary"></div>
-              <div>
-                <p className="font-bold text-slate-700">Tema Claro (Por defecto)</p>
-                <p className="text-xs text-slate-500">Próximamente agregaremos modo oscuro.</p>
+
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                  <Building2 size={20} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Identificador del Hogar</p>
+                  <p className="text-sm font-mono font-bold text-slate-800">{houseId || 'Sin hogar asignado'}</p>
+                </div>
               </div>
             </div>
 
-            <div className="p-4 border border-slate-100 rounded-xl bg-slate-50 space-y-3">
-              <div>
-                <p className="font-bold text-slate-700">Color Primario</p>
-                <p className="text-xs text-slate-500">Elige un color para los acentos principales en la app.</p>
+            {/* Lista de integrantes */}
+            <div className="space-y-3">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Miembros Actuales ({users?.length || 1})</p>
+              <div className="divide-y divide-slate-100 rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
+                {users && users.length > 0 ? (
+                  users.map((u: any, idx: number) => {
+                    const isSelf = u.id === user?.uid;
+                    const displayName = u.name || u.displayName || u.email?.split('@')[0] || `Integrante ${idx + 1}`;
+                    return (
+                      <div key={u.id || idx} className="p-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-sm">
+                            {displayName.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-sm text-slate-800">{displayName}</span>
+                              {isSelf && (
+                                <span className="bg-indigo-50 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded-full">Tú</span>
+                              )}
+                            </div>
+                            <span className="text-xs text-slate-400">{u.email || 'Miembro del hogar'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="p-4 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-sm">
+                      {(user?.displayName || 'U').charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-slate-800">{user?.displayName || 'Usuario Actual'}</p>
+                      <p className="text-xs text-slate-400">{user?.email}</p>
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="flex flex-wrap gap-3">
-                {['#4f46e5', '#3b82f6', '#0ea5e9', '#10b981', '#f59e0b', '#f43f5e', '#ec4899', '#8b5cf6', '#14b8a6'].map(color => {
+            </div>
+
+            {/* Enlace de Invitación */}
+            <div className="p-5 rounded-2xl border border-indigo-100 bg-indigo-50/30 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Share2 size={18} />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-slate-900">Invitar a un nuevo integrante</h4>
+                  <p className="text-xs text-slate-500 mt-0.5">Genera un enlace único para que tu pareja o familiar se una a este mismo hogar y gestionen juntos las finanzas.</p>
+                </div>
+              </div>
+
+              {inviteLink ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 p-2.5 rounded-xl bg-white border border-indigo-200">
+                    <code className="text-xs text-indigo-600 break-all flex-1 font-mono">{inviteLink}</code>
+                    <button
+                      type="button"
+                      onClick={handleCopyExistingLink}
+                      className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex-shrink-0"
+                      title="Copiar enlace"
+                    >
+                      {isCopied ? <Check size={16} className="text-emerald-600" /> : <Copy size={16} />}
+                    </button>
+                  </div>
+                  {isCopied && (
+                    <p className="text-xs font-bold text-emerald-600 flex items-center gap-1">
+                      <Check size={14} /> Enlace copiado al portapapeles
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={handleGenerateInvite}
+                  disabled={isGeneratingInvite}
+                  className="w-full sm:w-auto"
+                >
+                  {isGeneratingInvite ? 'Generando...' : 'Generar Enlace de Invitación'}
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 3. MONEDA Y TIPO DE CAMBIO */}
+        {activeTab === 'currency' && (
+          <div className="space-y-6 max-w-xl">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 font-title">Moneda y Divisas</h3>
+              <p className="text-sm text-slate-500 mt-1">Configura la moneda base y la tasa de conversión para monedas extranjeras.</p>
+            </div>
+
+            <form onSubmit={handleSaveCurrency} className="space-y-5">
+              <div className="space-y-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">Moneda Base</label>
+                <select
+                  value={defaultCurrency}
+                  onChange={e => setDefaultCurrency(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white"
+                >
+                  <option value="MXN">MXN - Peso Mexicano ($)</option>
+                  <option value="USD">USD - Dólar Estadounidense ($)</option>
+                  <option value="EUR">EUR - Euro (€)</option>
+                </select>
+                <p className="text-xs text-slate-400">Es la moneda de referencia en la que se calculan los saldos totales y presupuestos.</p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">Tipo de Cambio (USD a MXN)</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-400 font-bold">$</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="1"
+                    value={exchangeRate}
+                    onChange={e => setExchangeRate(e.target.value)}
+                    className="w-full pl-8 pr-4 py-3 rounded-xl border border-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    placeholder="20.00"
+                    required
+                  />
+                </div>
+                <p className="text-xs text-slate-400">Se aplica para normalizar transacciones o presupuestos denominados en USD.</p>
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <Button type="submit">Guardar Configuración</Button>
+                {exchangeSaved && (
+                  <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
+                    <Check size={15} /> Guardado exitosamente
+                  </span>
+                )}
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* 4. APARIENCIA Y COLORES */}
+        {activeTab === 'appearance' && (
+          <div className="space-y-6 max-w-xl">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 font-title">Apariencia y Tema</h3>
+              <p className="text-sm text-slate-500 mt-1">Personaliza el aspecto visual y la paleta de colores de Orbita.</p>
+            </div>
+
+            <div className="flex items-center gap-3 p-4 border border-slate-100 rounded-2xl bg-slate-50">
+              <div className="w-8 h-8 rounded-full bg-primary flex-shrink-0"></div>
+              <div>
+                <p className="font-bold text-slate-800 text-sm">Tema Claro (Predeterminado)</p>
+                <p className="text-xs text-slate-500">Diseñado con contraste optimizado para uso diario en escritorio y móvil.</p>
+              </div>
+            </div>
+
+            <div className="p-5 border border-slate-100 rounded-2xl bg-slate-50/70 space-y-3">
+              <div>
+                <p className="font-bold text-slate-800 text-sm">Color Primario de la Aplicación</p>
+                <p className="text-xs text-slate-500">Acento principal para botones, pestañas activas y destacados.</p>
+              </div>
+              <div className="flex flex-wrap gap-3 pt-1">
+                {primaryColors.map(color => {
                   const storedColor = localStorage.getItem('app_primary_color') || '#4f46e5';
                   const isActive = storedColor === color;
                   return (
                     <button
                       key={color}
+                      type="button"
                       onClick={() => {
                         localStorage.setItem('app_primary_color', color);
                         document.documentElement.style.setProperty('--primary-color', color);
                         setForceRender(prev => prev + 1);
                       }}
-                      className={`w-8 h-8 rounded-full transition-transform ${isActive ? 'ring-2 ring-offset-2 ring-slate-400 scale-110' : 'hover:scale-110'}`}
+                      className={`w-9 h-9 rounded-full transition-all duration-150 ${
+                        isActive ? 'ring-2 ring-offset-2 ring-slate-400 scale-110 shadow-sm' : 'hover:scale-105'
+                      }`}
                       style={{ backgroundColor: color }}
                       title={`Color ${color}`}
                     />
@@ -142,105 +386,33 @@ export function SettingsView() {
               </div>
             </div>
 
-            <div className="p-4 border border-slate-100 rounded-xl bg-slate-50 space-y-3">
+            <div className="p-5 border border-slate-100 rounded-2xl bg-slate-50/70 space-y-3">
               <div>
-                <p className="font-bold text-slate-700">Color Secundario</p>
-                <p className="text-xs text-slate-500">Elige un color para acentos secundarios en la app.</p>
+                <p className="font-bold text-slate-800 text-sm">Color Secundario</p>
+                <p className="text-xs text-slate-500">Acento para etiquetas, insignias y elementos secundarios.</p>
               </div>
-              <div className="flex flex-wrap gap-3">
-                {['#f43f5e', '#f59e0b', '#10b981', '#0ea5e9', '#8b5cf6', '#ec4899'].map(color => {
+              <div className="flex flex-wrap gap-3 pt-1">
+                {secondaryColors.map(color => {
                   const storedColor = localStorage.getItem('app_second_color') || '#f43f5e';
                   const isActive = storedColor === color;
                   return (
                     <button
                       key={color}
+                      type="button"
                       onClick={() => {
                         localStorage.setItem('app_second_color', color);
                         document.documentElement.style.setProperty('--second-color', color);
-                        // Trigger re-render by updating local state variable
                         setForceRender(prev => prev + 1);
                       }}
-                      className={`w-8 h-8 rounded-full transition-transform ${isActive ? 'ring-2 ring-offset-2 ring-slate-400 scale-110' : 'hover:scale-110'}`}
+                      className={`w-9 h-9 rounded-full transition-all duration-150 ${
+                        isActive ? 'ring-2 ring-offset-2 ring-slate-400 scale-110 shadow-sm' : 'hover:scale-105'
+                      }`}
                       style={{ backgroundColor: color }}
                       title={`Color ${color}`}
                     />
                   );
                 })}
               </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'categories' && (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-bold text-slate-900">Categorías Personalizadas</h3>
-              <p className="text-sm text-slate-500 mt-1">Administra las categorías de tus ingresos y gastos.</p>
-            </div>
-            
-            <form onSubmit={handleAddCategory} className="flex flex-col md:flex-row gap-3 items-end p-4 border border-slate-100 rounded-xl bg-slate-50">
-              <div className="flex-1 w-full">
-                <label className="block text-xs font-bold text-slate-600 mb-1">Nombre</label>
-                <input required type="text" value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" placeholder="Ej. Despensa" />
-              </div>
-              <div className="w-full md:w-32">
-                <label className="block text-xs font-bold text-slate-600 mb-1">Tipo</label>
-                <select value={newCategoryType} onChange={e => setNewCategoryType(e.target.value as any)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm">
-                  <option value="EXPENSE">Gasto</option>
-                  <option value="INCOME">Ingreso</option>
-                </select>
-              </div>
-              <div className="w-full md:w-20">
-                <label className="block text-xs font-bold text-slate-600 mb-1">Color</label>
-                <input type="color" value={newCategoryColor} onChange={e => setNewCategoryColor(e.target.value)} className="w-full h-[38px] cursor-pointer border border-slate-200 rounded-lg" />
-              </div>
-              <Button type="submit" className="w-full md:w-auto h-[38px]"><Plus size={16}/></Button>
-            </form>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-              {categories?.map(c => (
-                <div key={c.id} className="flex items-center justify-between p-3 border border-slate-100 rounded-xl hover:shadow-sm transition-shadow">
-                  <div className="flex items-center gap-3">
-                    <div className="w-4 h-4 rounded-full" style={{backgroundColor: c.color || '#ccc'}}></div>
-                    <div>
-                      <p className="font-bold text-sm text-slate-800">{c.name}</p>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase">{c.type === 'EXPENSE' ? 'Gasto' : 'Ingreso'}</p>
-                    </div>
-                  </div>
-                  <button onClick={() => deleteCategoryItem(c.id)} className="text-slate-400 hover:text-red-500 p-2"><Trash2 size={16}/></button>
-                </div>
-              ))}
-              {categories?.length === 0 && <p className="text-sm text-slate-500">No hay categorías configuradas.</p>}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'tags' && (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-bold text-slate-900">Etiquetas (Tags)</h3>
-              <p className="text-sm text-slate-500 mt-1">Agrupa gastos transversales usando etiquetas.</p>
-            </div>
-            
-            <form onSubmit={handleAddTag} className="flex gap-2">
-              <input 
-                type="text" 
-                value={newTagName} 
-                onChange={e => setNewTagName(e.target.value)} 
-                placeholder="Nueva etiqueta (ej. #Viaje2026)" 
-                className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500"
-              />
-              <Button type="submit"><Plus size={16}/> Agregar</Button>
-            </form>
-
-            <div className="flex flex-wrap gap-2 mt-4">
-              {tags?.map(t => (
-                <div key={t.id} className="flex items-center gap-2 bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm font-medium">
-                  {t.name}
-                  <button onClick={() => deleteTagItem(t.id)} className="text-primary hover:text-primary/70"><Trash2 size={14}/></button>
-                </div>
-              ))}
-              {tags?.length === 0 && <p className="text-sm text-slate-500">Aún no has creado ninguna etiqueta.</p>}
             </div>
           </div>
         )}
