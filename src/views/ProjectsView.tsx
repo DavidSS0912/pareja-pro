@@ -1,179 +1,299 @@
-import { Modal } from '../components/ui/Modal';
-import { distribuirEnCascada } from '../services/proyectosService';
 import React, { useState, useMemo } from 'react';
-import { createPortal } from 'react-dom';
-import { Target, Plus, ArrowUp, ArrowDown, History, Info, Calendar, Edit2, CheckCircle2, Circle, Flag } from 'lucide-react';
+import {
+  Target,
+  Plus,
+  ArrowUp,
+  ArrowDown,
+  History,
+  Info,
+  Calendar,
+  Edit2,
+  CheckCircle2,
+  Circle,
+  Flag,
+  ChevronLeft,
+  Wallet,
+  Sparkles,
+  TrendingUp,
+  Layers,
+  ArrowRight,
+  ArrowDownUp,
+  CheckCircle,
+  X
+} from 'lucide-react';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Modal } from '../components/ui/Modal';
+import { FormatCurrency } from '../utils';
+import { distribuirEnCascada, SavingsProjectData } from '../services/proyectosService';
+import { ProjectForm, ProjectFormData } from '../components/forms/ProjectForm';
+import { ProjectContributionModal } from '../components/forms/ProjectContributionModal';
+import { ProjectContributionPlan } from '../utils/projectCalculations';
 
-export const ProjectsView = ({ data, methods }: any) => {
-  const { projects = [], contributions = [], incomes = [], users = [] } = data;
-  const [showForm, setShowForm] = useState(false);
-  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
-  
-  const [showContributionForm, setShowContributionForm] = useState(false);
+export interface ProjectsViewProps {
+  data?: any;
+  calc?: any;
+  methods?: any;
+}
+
+export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
+  const {
+    projects = [],
+    contributions = [],
+    incomes = [],
+    users = [],
+    accounts = []
+  } = data;
+
+  // Nivel de navegación: null = Nivel 1 (Dashboard), string = Nivel 2 (Detalle del Proyecto)
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+
+  // Estados de modales
+  const [showProjectModal, setShowProjectModal] = useState(false);
+  const [editingProject, setEditingProject] = useState<any | null>(null);
+
+  const [showContributionModal, setShowContributionModal] = useState(false);
+  const [contributionProject, setContributionProject] = useState<any | null>(null);
+
   const [showCascadeModal, setShowCascadeModal] = useState(false);
-  const [excedente, setExcedente] = useState(0);
-  const [editingContributionId, setEditingContributionId] = useState<string | null>(null);
+  const [excedente, setExcedente] = useState<number>(0);
 
-  const [showHistoryModal, setShowHistoryModal] = useState(false);
-  const [selectedCompletedProject, setSelectedCompletedProject] = useState<any>(null);
-
-  const [showMilestoneForm, setShowMilestoneForm] = useState(false);
+  const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [editingMilestoneId, setEditingMilestoneId] = useState<string | null>(null);
   const [newMilestone, setNewMilestone] = useState({ title: '', amountThreshold: '', dateThreshold: '' });
 
-  // Form states
-  const [newProject, setNewProject] = useState({
-    name: '', targetAmount: 0, monthlyQuota: 0, targetAccount: '', priority: projects.length + 1
-  });
-
-  const [newContribution, setNewContribution] = useState({ amount: 0, notes: '', date: new Date().toISOString().split('T')[0], sourceBudget: '' });
-
-  // Calculate incomes per user for the current month/period to get proportional quota
+  // Cálculo de ingresos mensuales por integrante del hogar
   const incomePerUser = useMemo(() => {
     const totals: Record<string, number> = {};
-    users.forEach((u: any) => totals[u.id] = 0);
-    incomes.forEach((inc: any) => {
-      if (totals[inc.userId] !== undefined) {
-        totals[inc.userId] += Number(inc.amount);
+    (users || []).forEach((u: any) => {
+      totals[u.id] = 0;
+    });
+    (incomes || []).forEach((inc: any) => {
+      const uId = inc.userId || inc.ownerUid;
+      if (uId && totals[uId] !== undefined) {
+        totals[uId] += Number(inc.amount) || 0;
       }
     });
     return totals;
   }, [incomes, users]);
 
-  const totalHouseholdIncome = Object.values(incomePerUser).reduce((acc, curr) => acc + curr, 0);
+  const totalHouseholdIncome = useMemo(() => {
+    return Object.values(incomePerUser).reduce((acc, curr) => acc + curr, 0);
+  }, [incomePerUser]);
 
-  // Sorting and active project
-  const sortedProjects = [...projects].sort((a, b) => a.priority - b.priority);
-  const activeProject = sortedProjects.find(p => p.status === 'active');
-  const pendingProjects = sortedProjects.filter(p => p.status === 'pending' || (p.status === 'active' && p.id !== activeProject?.id));
-  const completedProjects = sortedProjects.filter(p => p.status === 'completed');
+  // Clasificación y orden de proyectos
+  const sortedProjects = useMemo(() => {
+    return [...projects].sort((a, b) => (a.priority || 0) - (b.priority || 0));
+  }, [projects]);
 
+  const activeProject = useMemo(() => {
+    return sortedProjects.find((p) => p.status === 'active') || sortedProjects[0] || null;
+  }, [sortedProjects]);
+
+  const pendingProjects = useMemo(() => {
+    return sortedProjects.filter(
+      (p) => p.status === 'pending' || (p.status === 'active' && p.id !== activeProject?.id)
+    );
+  }, [sortedProjects, activeProject]);
+
+  const completedProjects = useMemo(() => {
+    return sortedProjects.filter((p) => p.status === 'completed');
+  }, [sortedProjects]);
+
+  // Métricas globales para el Nivel 1
+  const totalSavedAllProjects = useMemo(() => {
+    return projects.reduce((sum: number, p: any) => sum + (Number(p.savedAmount ?? p.currentAmount ?? 0)), 0);
+  }, [projects]);
+
+  const totalTargetAllProjects = useMemo(() => {
+    return projects.reduce((sum: number, p: any) => sum + (Number(p.targetAmount || 0)), 0);
+  }, [projects]);
+
+  // Proyecto actualmente visualizado en Nivel 2
+  const currentProject = useMemo(() => {
+    if (!selectedProjectId) return null;
+    return projects.find((p: any) => p.id === selectedProjectId) || null;
+  }, [projects, selectedProjectId]);
+
+  // Estimación de fecha meta
   const getEstimatedDate = (project: any) => {
-    if (!project.monthlyQuota || project.monthlyQuota <= 0) return 'N/A';
-    const remaining = Math.max(0, project.targetAmount - project.savedAmount);
+    if (!project || !project.monthlyQuota || project.monthlyQuota <= 0) return 'Por definir';
+    const currentSaved = Number(project.savedAmount ?? project.currentAmount ?? 0);
+    const remaining = Math.max(0, Number(project.targetAmount || 0) - currentSaved);
+    if (remaining === 0) return '¡Completada!';
     const months = Math.ceil(remaining / project.monthlyQuota);
     const d = new Date();
     d.setMonth(d.getMonth() + months);
     return d.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' });
   };
 
-  const handleEditProject = (project: any) => {
-    setNewProject({
-      name: project.name,
-      targetAmount: project.targetAmount,
-      monthlyQuota: project.monthlyQuota,
-      targetAccount: project.targetAccount || '',
-      priority: project.priority
-    });
-    setEditingProjectId(project.id);
-    setShowForm(true);
+  // Helper para nombre de cuenta vinculada
+  const getAccountDisplayName = (accountRef: string | undefined) => {
+    if (!accountRef) return 'Sin cuenta asignada';
+    const acc = accounts.find((a: any) => a.id === accountRef || a.name === accountRef);
+    return acc ? acc.name : accountRef;
   };
 
-  const handleSaveProject = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newProject.name || newProject.targetAmount <= 0) return;
-    
-    if (editingProjectId) {
-      await methods.updateProject(editingProjectId, {
-        name: newProject.name,
-        targetAmount: newProject.targetAmount,
-        monthlyQuota: newProject.monthlyQuota,
-        targetAccount: newProject.targetAccount
-      });
+  // Apertura y guardado de proyectos
+  const handleOpenNewProject = () => {
+    setEditingProject(null);
+    setShowProjectModal(true);
+  };
+
+  const handleOpenEditProject = (project: any) => {
+    setEditingProject(project);
+    setShowProjectModal(true);
+  };
+
+  const closeProjectForm = () => {
+    setShowProjectModal(false);
+    setEditingProject(null);
+  };
+
+  const handleSaveProject = async (formData: ProjectFormData) => {
+    if (editingProject) {
+      if (methods?.updateProject) {
+        await methods.updateProject(editingProject.id, {
+          name: formData.name,
+          targetAmount: formData.targetAmount,
+          monthlyQuota: formData.monthlyQuota,
+          targetAccountId: formData.targetAccountId,
+          targetAccount: formData.targetAccount,
+          priority: formData.priority
+        });
+      }
     } else {
-      await methods.addProject({
-        ...newProject,
-        savedAmount: 0,
-        status: projects.length === 0 ? 'active' : 'pending',
-        startDate: new Date().toISOString(),
-        milestones: []
-      });
+      if (methods?.addProject) {
+        await methods.addProject({
+          name: formData.name,
+          targetAmount: formData.targetAmount,
+          monthlyQuota: formData.monthlyQuota,
+          targetAccountId: formData.targetAccountId,
+          targetAccount: formData.targetAccount,
+          priority: formData.priority || projects.length + 1,
+          savedAmount: 0,
+          currentAmount: 0,
+          status: projects.length === 0 ? 'active' : 'pending',
+          startDate: new Date().toISOString(),
+          milestones: []
+        });
+      }
     }
     closeProjectForm();
   };
 
-  const closeProjectForm = () => {
-    setShowForm(false);
-    setEditingProjectId(null);
-    setNewProject({ name: '', targetAmount: 0, monthlyQuota: 0, targetAccount: '', priority: projects.length + 1 });
+  // Ejecución de aportaciones (Flujo contable de Tarea 4.1)
+  const handleOpenContribution = (project: any) => {
+    setContributionProject(project);
+    setShowContributionModal(true);
   };
 
-  const handleEditContribution = (contribution: any) => {
-    setNewContribution({
-      amount: contribution.amount,
-      notes: contribution.notes || '',
-      date: contribution.date,
-      sourceBudget: contribution.sourceBudget || ''
-    });
-    setEditingContributionId(contribution.id);
-    setShowContributionForm(true);
-  };
+  const handleExecuteContribution = async (plan: ProjectContributionPlan) => {
+    if (!plan || !plan.isValid) return;
 
-  const handleSaveContribution = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activeProject || newContribution.amount <= 0) return;
-    if (!data.user) return;
-
-    if (editingContributionId) {
-      const oldContribution = contributions.find((c:any) => c.id === editingContributionId);
-      const diff = Number(newContribution.amount) - (oldContribution ? oldContribution.amount : 0);
-      
-      await methods.updateContribution(editingContributionId, {
-        amount: Number(newContribution.amount),
-        date: newContribution.date,
-        notes: newContribution.notes
-      });
-      if (diff !== 0) {
-        await methods.updateProject(activeProject.id, { savedAmount: activeProject.savedAmount + diff });
-      }
-    } else {
-      await methods.addContributionAndUpdateProject(
-        activeProject.id,
-        {
-          userId: data.user.uid,
-          amount: Number(newContribution.amount),
-          date: newContribution.date,
-          notes: newContribution.notes,
-          sourceBudget: newContribution.sourceBudget
-        },
-        activeProject.savedAmount + Number(newContribution.amount)
-      );
-
-      if (newContribution.sourceBudget) {
-        const budget = data.budgets?.find((b:any) => b.id === newContribution.sourceBudget);
-        if (budget) {
-          await methods.updateBudget(budget.id, { spent: (budget.spent || 0) + Number(newContribution.amount) });
-        }
-      }
-
-      const assetName = activeProject.targetAccount || activeProject.name;
-      const existingAsset = data.assets?.find((a:any) => a.name === assetName);
-      if (existingAsset) {
-        await methods.updateAsset(existingAsset.id, { value: Number(existingAsset.value) + Number(newContribution.amount) });
-      } else if (methods.addAsset) {
-        await methods.addAsset({ name: assetName, owner: 'Ambos', value: Number(newContribution.amount), type: 'Liquidez' });
+    // 1. Si requiere transferencia contable interna (Origen != Destino)
+    if (plan.plannedTransfer && methods?.createJournalWithEntries) {
+      try {
+        await methods.createJournalWithEntries({
+          householdId: data?.houseId || (methods as any)?.houseId,
+          date: new Date(plan.plannedTransfer.date).toISOString(),
+          description: plan.plannedTransfer.description,
+          amount: plan.plannedTransfer.amount,
+          debitAccountId: plan.plannedTransfer.targetAccountId,
+          creditAccountId: plan.plannedTransfer.sourceAccountId,
+          isInternalTransfer: true
+        });
+      } catch (err) {
+        console.warn('Registro de transferencia interna no disponible o diferido:', err);
       }
     }
-    closeContributionForm();
+
+    // 2. Incrementar el saldo ahorrado del proyecto y registrar aportación
+    const projId = plan.contributionRecord?.projectId;
+    if (!projId) return;
+
+    if (methods?.addContributionAndUpdateProject) {
+      await methods.addContributionAndUpdateProject(
+        projId,
+        {
+          userId: data?.user?.uid || '',
+          amount: plan.amount,
+          date: plan.contributionRecord?.date || new Date().toISOString().split('T')[0],
+          notes: plan.contributionRecord?.notes || 'Aportación a proyecto',
+          sourceAccountId: plan.contributionRecord?.sourceAccountId,
+          targetAccountId: plan.contributionRecord?.targetAccountId,
+          isInternalPiggyBank: plan.isInternalPiggyBank
+        },
+        plan.newProjectSavedAmount
+      );
+    } else if (methods?.updateProject) {
+      await methods.updateProject(projId, {
+        savedAmount: plan.newProjectSavedAmount,
+        currentAmount: plan.newProjectSavedAmount,
+        status: plan.projectReachedGoal ? 'completed' : undefined
+      });
+    }
+
+    if (plan.projectReachedGoal && methods?.updateProject) {
+      await methods.updateProject(projId, { status: 'completed' });
+    }
+
+    setShowContributionModal(false);
+    setContributionProject(null);
   };
 
-  const closeContributionForm = () => {
-    setShowContributionForm(false);
-    setEditingContributionId(null);
-    setNewContribution({ amount: 0, notes: '', date: new Date().toISOString().split('T')[0], sourceBudget: '' });
+  // Reordenamiento y cambio de estado
+  const changePriority = async (project: any, direction: 'up' | 'down') => {
+    const currentIndex = pendingProjects.findIndex((p) => p.id === project.id);
+    if (direction === 'up' && currentIndex > 0) {
+      const other = pendingProjects[currentIndex - 1];
+      if (methods?.updateProject) {
+        await methods.updateProject(project.id, { priority: other.priority });
+        await methods.updateProject(other.id, { priority: project.priority });
+      }
+    } else if (direction === 'down' && currentIndex < pendingProjects.length - 1) {
+      const other = pendingProjects[currentIndex + 1];
+      if (methods?.updateProject) {
+        await methods.updateProject(project.id, { priority: other.priority });
+        await methods.updateProject(other.id, { priority: project.priority });
+      }
+    }
   };
 
-  const handleAddMilestone = async (e: React.FormEvent) => {
+  const activateProject = async (project: any) => {
+    if (activeProject && methods?.updateProject) {
+      await methods.updateProject(activeProject.id, { status: 'pending' });
+    }
+    if (methods?.updateProject) {
+      await methods.updateProject(project.id, { status: 'active' });
+    }
+  };
+
+  const completeProject = async (project: any) => {
+    if (methods?.updateProject) {
+      await methods.updateProject(project.id, { status: 'completed' });
+    }
+  };
+
+  // Manejo de Hitos
+  const handleOpenAddMilestone = () => {
+    setEditingMilestoneId(null);
+    setNewMilestone({ title: '', amountThreshold: '', dateThreshold: '' });
+    setShowMilestoneModal(true);
+  };
+
+  const handleSaveMilestone = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeProject || !newMilestone.title) return;
-    
+    const targetProj = currentProject || activeProject;
+    if (!targetProj || !newMilestone.title.trim()) return;
+
     let updatedMilestones;
     if (editingMilestoneId) {
-      updatedMilestones = (activeProject.milestones || []).map((m: any) =>
+      updatedMilestones = (targetProj.milestones || []).map((m: any) =>
         m.id === editingMilestoneId
           ? {
               ...m,
-              title: newMilestone.title,
+              title: newMilestone.title.trim(),
               amountThreshold: newMilestone.amountThreshold ? Number(newMilestone.amountThreshold) : null,
               dateThreshold: newMilestone.dateThreshold || null
             }
@@ -182,107 +302,724 @@ export const ProjectsView = ({ data, methods }: any) => {
     } else {
       const milestone = {
         id: Date.now().toString(),
-        title: newMilestone.title,
+        title: newMilestone.title.trim(),
         amountThreshold: newMilestone.amountThreshold ? Number(newMilestone.amountThreshold) : null,
         dateThreshold: newMilestone.dateThreshold || null,
         isCompleted: false
       };
-      updatedMilestones = [...(activeProject.milestones || []), milestone];
+      updatedMilestones = [...(targetProj.milestones || []), milestone];
     }
 
-    await methods.updateProject(activeProject.id, { milestones: updatedMilestones });
-    
-    closeMilestoneForm();
-  };
-
-  const handleEditMilestone = (milestone: any) => {
-    setNewMilestone({
-      title: milestone.title,
-      amountThreshold: milestone.amountThreshold ? milestone.amountThreshold.toString() : '',
-      dateThreshold: milestone.dateThreshold || ''
-    });
-    setEditingMilestoneId(milestone.id);
-    setShowMilestoneForm(true);
-  };
-
-  const closeMilestoneForm = () => {
-    setShowMilestoneForm(false);
+    if (methods?.updateProject) {
+      await methods.updateProject(targetProj.id, { milestones: updatedMilestones });
+    }
+    setShowMilestoneModal(false);
     setEditingMilestoneId(null);
     setNewMilestone({ title: '', amountThreshold: '', dateThreshold: '' });
   };
 
-  const toggleMilestone = async (mId: string, isCompleted: boolean) => {
-    if (!activeProject) return;
-    const updatedMilestones = (activeProject.milestones || []).map((m: any) => 
+  const toggleMilestone = async (targetProj: any, mId: string, isCompleted: boolean) => {
+    if (!targetProj || !methods?.updateProject) return;
+    const updatedMilestones = (targetProj.milestones || []).map((m: any) =>
       m.id === mId ? { ...m, isCompleted } : m
     );
-    await methods.updateProject(activeProject.id, { milestones: updatedMilestones });
+    await methods.updateProject(targetProj.id, { milestones: updatedMilestones });
   };
 
-  const changePriority = async (project: any, direction: 'up' | 'down') => {
-    const currentIndex = pendingProjects.findIndex(p => p.id === project.id);
-    if (direction === 'up' && currentIndex > 0) {
-      const other = pendingProjects[currentIndex - 1];
-      await methods.updateProject(project.id, { priority: other.priority });
-      await methods.updateProject(other.id, { priority: project.priority });
-    } else if (direction === 'down' && currentIndex < pendingProjects.length - 1) {
-      const other = pendingProjects[currentIndex + 1];
-      await methods.updateProject(project.id, { priority: other.priority });
-      await methods.updateProject(other.id, { priority: project.priority });
-    }
+  // Cascada de Excedentes
+  const handleApplyCascade = () => {
+    if (excedente <= 0) return;
+    const targets: SavingsProjectData[] = pendingProjects.map((p) => ({
+      id: p.id,
+      name: p.name,
+      targetAmount: Number(p.targetAmount || 0),
+      currentAmount: Number(p.savedAmount ?? p.currentAmount ?? 0),
+      priority: Number(p.priority || 0),
+      isCompleted: p.status === 'completed'
+    }));
+
+    const aportes = distribuirEnCascada(targets, excedente);
+    aportes.forEach((a) => {
+      const proj = pendingProjects.find((p) => p.id === a.projectId);
+      const current = Number(proj?.savedAmount ?? proj?.currentAmount ?? 0);
+      if (methods?.updateProject) {
+        methods.updateProject(a.projectId, { savedAmount: current + a.aporte, currentAmount: current + a.aporte });
+      }
+    });
+    setShowCascadeModal(false);
+    setExcedente(0);
   };
 
-  const completeProject = async (project: any) => {
-    await methods.updateProject(project.id, { status: 'completed' });
-  };
+  // =========================================================================
+  // NIVEL 2: VISTA DETALLADA DEL PROYECTO
+  // =========================================================================
+  if (selectedProjectId && currentProject) {
+    const saved = Number(currentProject.savedAmount ?? currentProject.currentAmount ?? 0);
+    const target = Number(currentProject.targetAmount || 0);
+    const remaining = Math.max(0, target - saved);
+    const pct = target > 0 ? Math.min(100, Math.round((saved / target) * 100)) : 0;
+    const projectContributions = (contributions || []).filter((c: any) => c.projectId === currentProject.id);
 
-  const activateProject = async (project: any) => {
-    if (activeProject) {
-      await methods.updateProject(activeProject.id, { status: 'pending' });
-    }
-    await methods.updateProject(project.id, { status: 'active' });
-  };
-
-  const renderMilestones = () => {
-    if (!activeProject) return null;
-    const milestones = activeProject.milestones || [];
-    
     return (
-      <div className="bg-white rounded-3xl shadow-sm border-0 p-6 mt-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-bold text-slate-900 font-title flex items-center gap-2"><Flag size={18} className="text-slate-500"/> Hitos y Tareas</h3>
-          <button onClick={() => setShowMilestoneForm(true)} className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded hover:bg-primary/20">
-            + Añadir
-          </button>
+      <div className="space-y-6 animate-in fade-in duration-300">
+        {/* Cabecera con Breadcrumbs */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm">
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-500">
+            <button
+              onClick={() => setSelectedProjectId(null)}
+              className="inline-flex items-center gap-1.5 text-primary hover:text-primary/80 transition-colors font-bold cursor-pointer"
+            >
+              <ChevronLeft size={18} />
+              <span>Metas y Proyectos</span>
+            </button>
+            <span className="text-slate-300">/</span>
+            <span className="text-slate-900 font-bold truncate max-w-[200px] sm:max-w-xs">
+              {currentProject.name}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleOpenEditProject(currentProject)}
+              className="flex items-center gap-1.5"
+            >
+              <Edit2 size={15} />
+              <span>Editar Meta</span>
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => handleOpenContribution(currentProject)}
+              className="flex items-center gap-1.5 shadow-sm"
+            >
+              <Plus size={16} />
+              <span>Aportar a Meta</span>
+            </Button>
+          </div>
         </div>
-        {milestones.length === 0 ? (
-          <p className="text-sm text-slate-600 py-2">No hay hitos definidos.</p>
-        ) : (
-          <div className="space-y-3">
-            {milestones.map((m: any) => {
-              let isReached = false;
-              if (m.amountThreshold && activeProject.savedAmount >= m.amountThreshold) isReached = true;
-              if (m.dateThreshold && new Date() >= new Date(m.dateThreshold)) isReached = true;
+
+        {/* Tarjeta Principal de Detalle */}
+        <div className="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-indigo-900/40 relative overflow-hidden">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span
+                  className={`text-xs uppercase font-extrabold px-3 py-1 rounded-full tracking-wider border ${
+                    currentProject.status === 'active'
+                      ? 'bg-primary/20 text-indigo-300 border-primary/40'
+                      : currentProject.status === 'completed'
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
+                      : 'bg-white/10 text-slate-300 border-white/10'
+                  }`}
+                >
+                  {currentProject.status === 'active'
+                    ? 'Meta Activa'
+                    : currentProject.status === 'completed'
+                    ? 'Completado 🎉'
+                    : 'En Cola / Prioridad #' + (currentProject.priority || 1)}
+                </span>
+                <span className="inline-flex items-center gap-1.5 bg-white/10 text-slate-200 text-xs px-3 py-1 rounded-full border border-white/10">
+                  <Wallet size={12} className="text-indigo-300" />
+                  <span>Apartado en {getAccountDisplayName(currentProject.targetAccountId || currentProject.targetAccount)}</span>
+                </span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                {currentProject.name}
+              </h2>
+              <p className="text-indigo-200 text-sm mt-1.5 flex items-center gap-1.5 font-medium">
+                <Calendar size={15} />
+                Meta estimada: <strong className="text-white">{getEstimatedDate(currentProject)}</strong>
+              </p>
+            </div>
+
+            <div className="text-left md:text-right bg-white/5 border border-white/10 rounded-2xl p-4 sm:px-6">
+              <span className="text-xs uppercase tracking-wider font-bold text-indigo-300 block mb-1">
+                Progreso Acumulado
+              </span>
+              <p className="text-3xl sm:text-4xl font-black text-white tabular-nums tracking-tight">
+                {FormatCurrency(saved)}
+              </p>
+              <p className="text-xs text-indigo-200 mt-0.5">
+                de una meta de <strong className="text-white">{FormatCurrency(target)}</strong>
+              </p>
+            </div>
+          </div>
+
+          {/* Barra de Progreso Grande */}
+          <div className="space-y-2 mb-6">
+            <div className="flex justify-between items-center text-sm font-bold">
+              <span className="text-emerald-400 text-base font-black">{pct}% Alcanzado</span>
+              <span className="text-indigo-200 text-xs">
+                {remaining > 0 ? `Faltan ${FormatCurrency(remaining)}` : '¡Meta 100% alcanzada!'}
+              </span>
+            </div>
+            <div className="w-full bg-white/10 rounded-full h-4 overflow-hidden border border-white/10 relative">
+              <div
+                className="h-full bg-gradient-to-r from-indigo-500 via-primary to-emerald-400 rounded-full transition-all duration-1000 ease-out"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Botones de Cambio de Estado Rápido */}
+          <div className="flex flex-wrap gap-2.5 pt-4 border-t border-white/10 text-xs">
+            {currentProject.status !== 'active' && currentProject.status !== 'completed' && (
+              <button
+                type="button"
+                onClick={() => activateProject(currentProject)}
+                className="px-4 py-2 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl transition-colors cursor-pointer"
+              >
+                Hacer esta mi Meta Activa
+              </button>
+            )}
+            {currentProject.status !== 'completed' && (
+              <button
+                type="button"
+                onClick={() => completeProject(currentProject)}
+                className="px-4 py-2 bg-emerald-600/80 hover:bg-emerald-600 text-white font-bold rounded-xl transition-colors cursor-pointer"
+              >
+                Marcar como Completada
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Cuota Mensual y Aportación Sugerida en Pareja */}
+        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
+              <Info size={18} className="text-primary" />
+              <h3 className="font-bold text-slate-800 text-base">Aportación Sugerida de Pareja (Cuota Mensual)</h3>
+            </div>
+            <span className="font-black text-slate-900 text-sm">
+              Cuota: {FormatCurrency(currentProject.monthlyQuota || 0)} / mes
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {(users || []).map((u: any) => {
+              const userIncome = incomePerUser[u.id] || 0;
+              const ratio = totalHouseholdIncome > 0 ? userIncome / totalHouseholdIncome : (users.length > 0 ? 1 / users.length : 0.5);
+              const quota = Number(currentProject.monthlyQuota || 0);
+              const suggestedAmount = quota * ratio;
 
               return (
-                <div key={m.id} className={`flex items-start gap-3 p-3 rounded-lg border ${m.isCompleted ? 'bg-slate-50 border-slate-200' : isReached ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-100'}`}>
-                  <button onClick={() => toggleMilestone(m.id, !m.isCompleted)} className="mt-0.5">
-                    {m.isCompleted ? <CheckCircle2 className="text-emerald-500" size={20} /> : <Circle className={isReached ? 'text-amber-500' : 'text-slate-500'} size={20} />}
-                  </button>
-                  <div className="flex-1">
-                    <p className={`text-sm font-bold flex items-center gap-2 ${m.isCompleted ? 'text-slate-600 line-through' : 'text-slate-900'}`}>
-                      {m.title}
-                      <button onClick={() => handleEditMilestone(m)} className="text-slate-500 hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Edit2 size={12} />
-                      </button>
-                    </p>
-                    <div className="flex gap-3 mt-1 text-xs text-slate-600">
-                      {m.amountThreshold && <span>Alcanzar: ${Number(m.amountThreshold).toLocaleString()}</span>}
-                      {m.dateThreshold && <span>Fecha: {new Date(m.dateThreshold).toLocaleDateString('es-MX')}</span>}
+                <div
+                  key={u.id}
+                  className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-indigo-100 text-primary font-bold text-sm flex items-center justify-center">
+                      {u.name?.charAt(0)?.toUpperCase() || 'U'}
                     </div>
+                    <div>
+                      <h4 className="font-bold text-slate-800 text-sm leading-tight">{u.name || u.email}</h4>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Ingresos: {FormatCurrency(userIncome)} ({Math.round(ratio * 100)}%)
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[11px] font-bold text-slate-400 block uppercase">Sugerido</span>
+                    <span className="font-black text-slate-900 text-base tabular-nums">
+                      {FormatCurrency(suggestedAmount)}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Hitos y Tareas */}
+        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
+              <Flag size={18} className="text-primary" />
+              <h3 className="font-bold text-slate-800 text-base">Hitos y Tareas del Proyecto</h3>
+            </div>
+            <Button size="sm" variant="outline" onClick={handleOpenAddMilestone}>
+              + Añadir Hito
+            </Button>
+          </div>
+
+          {(!currentProject.milestones || currentProject.milestones.length === 0) ? (
+            <p className="text-sm text-slate-500 py-4 text-center">
+              Aún no has registrado tareas o hitos para esta meta.
+            </p>
+          ) : (
+            <div className="space-y-2.5">
+              {currentProject.milestones.map((m: any) => {
+                const isReached = m.amountThreshold && saved >= m.amountThreshold;
+                return (
+                  <div
+                    key={m.id}
+                    className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all ${
+                      m.isCompleted
+                        ? 'bg-slate-50/80 border-slate-200 text-slate-400'
+                        : isReached
+                        ? 'bg-amber-50/60 border-amber-200 text-slate-800'
+                        : 'bg-white border-slate-200 text-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => toggleMilestone(currentProject, m.id, !m.isCompleted)}
+                        className="cursor-pointer text-primary shrink-0"
+                      >
+                        {m.isCompleted ? (
+                          <CheckCircle2 size={20} className="text-emerald-500" />
+                        ) : (
+                          <Circle size={20} className="text-slate-400 hover:text-primary" />
+                        )}
+                      </button>
+                      <div>
+                        <p className={`text-sm font-bold ${m.isCompleted ? 'line-through text-slate-400' : 'text-slate-800'}`}>
+                          {m.title}
+                        </p>
+                        <div className="flex items-center gap-3 text-xs text-slate-500 mt-0.5">
+                          {m.amountThreshold && <span>Disparador: {FormatCurrency(Number(m.amountThreshold))}</span>}
+                          {m.dateThreshold && <span>Fecha: {m.dateThreshold}</span>}
+                        </div>
+                      </div>
+                    </div>
+
                     {isReached && !m.isCompleted && (
-                      <p className="text-xs font-bold text-amber-600 mt-1">¡Hito alcanzado! Tarea pendiente.</p>
+                      <span className="text-[11px] font-bold text-amber-700 bg-amber-100/80 px-2.5 py-1 rounded-lg">
+                        ¡Monto alcanzado!
+                      </span>
                     )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Trazabilidad / Historial de Aportaciones */}
+        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
+              <History size={18} className="text-primary" />
+              <h3 className="font-bold text-slate-800 text-base">Historial de Aportaciones</h3>
+            </div>
+            <Button size="sm" onClick={() => handleOpenContribution(currentProject)}>
+              + Registrar Aportación
+            </Button>
+          </div>
+
+          {projectContributions.length === 0 ? (
+            <p className="text-sm text-slate-500 py-4 text-center">
+              No hay aportaciones registradas para este proyecto aún.
+            </p>
+          ) : (
+            <div className="space-y-2.5">
+              {projectContributions
+                .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                .map((c: any) => {
+                  const user = users.find((u: any) => u.id === c.userId);
+                  return (
+                    <div
+                      key={c.id}
+                      className="p-3.5 bg-slate-50 border border-slate-200/70 rounded-2xl flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-xl bg-emerald-100 text-emerald-700">
+                          {c.isInternalPiggyBank ? <Sparkles size={16} /> : <ArrowDownUp size={16} />}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-slate-800 leading-tight">
+                            {c.notes || 'Aportación a proyecto'}
+                          </p>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            {c.date} • {user?.name || 'Usuario'}
+                            {c.isInternalPiggyBank && (
+                              <span className="ml-2 text-emerald-700 font-semibold">• Apartado interno</span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="font-black text-emerald-600 text-sm tabular-nums">
+                        + {FormatCurrency(c.amount)}
+                      </span>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
+        </div>
+
+        {/* Modales Compartidos */}
+        <Modal
+          isOpen={showProjectModal}
+          onClose={closeProjectForm}
+          title={editingProject ? 'Editar Proyecto' : 'Nuevo Proyecto'}
+        >
+          <ProjectForm
+            initialData={editingProject}
+            accounts={accounts}
+            onSubmit={handleSaveProject}
+            onCancel={closeProjectForm}
+          />
+        </Modal>
+
+        <ProjectContributionModal
+          isOpen={showContributionModal}
+          onClose={() => {
+            setShowContributionModal(false);
+            setContributionProject(null);
+          }}
+          project={contributionProject || currentProject}
+          accounts={accounts}
+          activeProjects={projects}
+          onContribute={handleExecuteContribution}
+        />
+
+        <Modal
+          isOpen={showMilestoneModal}
+          onClose={() => setShowMilestoneModal(false)}
+          title="Añadir Hito o Tarea"
+        >
+          <form onSubmit={handleSaveMilestone} className="space-y-4">
+            <div>
+              <label htmlFor="milestone-title" className="block text-sm font-bold text-slate-700 mb-1">
+                Descripción del Hito
+              </label>
+              <input
+                id="milestone-title"
+                type="text"
+                required
+                value={newMilestone.title}
+                onChange={(e) => setNewMilestone({ ...newMilestone, title: e.target.value })}
+                placeholder="Ej. Comprar boletos de avión, Dar anticipo"
+                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary text-sm"
+              />
+            </div>
+            <div>
+              <label htmlFor="milestone-amount" className="block text-sm font-bold text-slate-700 mb-1">
+                Monto Disparador ($) (Opcional)
+              </label>
+              <input
+                id="milestone-amount"
+                type="number"
+                value={newMilestone.amountThreshold}
+                onChange={(e) => setNewMilestone({ ...newMilestone, amountThreshold: e.target.value })}
+                placeholder="Ej. 15000"
+                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary text-sm"
+              />
+            </div>
+            <div>
+              <label htmlFor="milestone-date" className="block text-sm font-bold text-slate-700 mb-1">
+                Fecha Estimada (Opcional)
+              </label>
+              <input
+                id="milestone-date"
+                type="date"
+                value={newMilestone.dateThreshold}
+                onChange={(e) => setNewMilestone({ ...newMilestone, dateThreshold: e.target.value })}
+                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary text-sm"
+              />
+            </div>
+            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+              <Button variant="secondary" onClick={() => setShowMilestoneModal(false)} type="button">
+                Cancelar
+              </Button>
+              <Button type="submit">Guardar Hito</Button>
+            </div>
+          </form>
+        </Modal>
+      </div>
+    );
+  }
+
+  // =========================================================================
+  // NIVEL 1: DASHBOARD GENERAL DE PROYECTOS (EXPLORADOR)
+  // =========================================================================
+  return (
+    <div className="space-y-6 animate-in fade-in duration-300">
+      {/* Cabecera del Dashboard */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
+        <div>
+          <div className="flex items-center gap-2">
+            <div className="p-2.5 rounded-2xl bg-primary/10 text-primary">
+              <Target size={24} />
+            </div>
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                Metas y Proyectos de Ahorro
+              </h2>
+              <p className="text-slate-500 text-sm mt-0.5">
+                Efecto Cascada • Conquista un objetivo a la vez sin dispersar tus fondos
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+          {pendingProjects.length > 0 && (
+            <Button
+              variant="outline"
+              onClick={() => setShowCascadeModal(true)}
+              className="flex items-center gap-1.5"
+            >
+              <Layers size={16} />
+              <span>Distribuir Cascada</span>
+            </Button>
+          )}
+          <Button onClick={handleOpenNewProject} className="flex items-center gap-2 shadow-sm">
+            <Plus size={18} />
+            <span>Nuevo Proyecto</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* Resumen Ejecutivo Superior (KPIs) */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm">
+          <span className="text-xs uppercase font-extrabold text-slate-400 tracking-wider block mb-1">
+            Total en Proyectos
+          </span>
+          <p className="text-2xl font-black text-slate-900 tabular-nums">
+            {FormatCurrency(totalSavedAllProjects)}
+          </p>
+          <span className="text-xs text-slate-500 mt-1 block">
+            de {FormatCurrency(totalTargetAllProjects)} total
+          </span>
+        </div>
+
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm">
+          <span className="text-xs uppercase font-extrabold text-slate-400 tracking-wider block mb-1">
+            Meta Activa
+          </span>
+          <p className="text-2xl font-black text-primary tabular-nums">
+            {activeProject ? '1 Activa' : '0'}
+          </p>
+          <span className="text-xs text-slate-500 mt-1 block truncate">
+            {activeProject?.name || 'Ninguna'}
+          </span>
+        </div>
+
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm">
+          <span className="text-xs uppercase font-extrabold text-slate-400 tracking-wider block mb-1">
+            En Cola (Cascada)
+          </span>
+          <p className="text-2xl font-black text-amber-600 tabular-nums">
+            {pendingProjects.length}
+          </p>
+          <span className="text-xs text-slate-500 mt-1 block">Metas pendientes</span>
+        </div>
+
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm">
+          <span className="text-xs uppercase font-extrabold text-slate-400 tracking-wider block mb-1">
+            Completadas
+          </span>
+          <p className="text-2xl font-black text-emerald-600 tabular-nums">
+            {completedProjects.length}
+          </p>
+          <span className="text-xs text-slate-500 mt-1 block">Metas alcanzadas 🎉</span>
+        </div>
+      </div>
+
+      {/* Tarjeta Hero del Proyecto Activo Principal */}
+      {activeProject ? (
+        <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-indigo-900/40 relative overflow-hidden group">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="bg-primary/25 text-indigo-300 text-xs font-extrabold px-3 py-1 rounded-full border border-primary/40 uppercase tracking-wider">
+                  Meta Activa Principal
+                </span>
+                <span className="inline-flex items-center gap-1.5 bg-white/10 text-slate-200 text-xs px-3 py-1 rounded-full border border-white/10">
+                  <Wallet size={12} className="text-indigo-300" />
+                  <span>Apartado en {getAccountDisplayName(activeProject.targetAccountId || activeProject.targetAccount)}</span>
+                </span>
+              </div>
+              <h3 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                {activeProject.name}
+              </h3>
+              <p className="text-indigo-200 text-sm mt-1 flex items-center gap-1.5 font-medium">
+                <Calendar size={15} />
+                Meta estimada: <strong className="text-white">{getEstimatedDate(activeProject)}</strong>
+              </p>
+            </div>
+
+            <div className="text-left md:text-right bg-white/5 border border-white/10 rounded-2xl p-4 sm:px-6">
+              <span className="text-xs uppercase tracking-wider font-bold text-indigo-300 block mb-1">
+                Progreso Acumulado
+              </span>
+              <p className="text-3xl font-black text-white tabular-nums tracking-tight">
+                {FormatCurrency(Number(activeProject.savedAmount ?? activeProject.currentAmount ?? 0))}
+              </p>
+              <p className="text-xs text-indigo-200 mt-0.5">
+                Meta: <strong className="text-white">{FormatCurrency(Number(activeProject.targetAmount || 0))}</strong>
+              </p>
+            </div>
+          </div>
+
+          {/* Barra de Progreso */}
+          {(() => {
+            const saved = Number(activeProject.savedAmount ?? activeProject.currentAmount ?? 0);
+            const target = Number(activeProject.targetAmount || 0);
+            const pct = target > 0 ? Math.min(100, Math.round((saved / target) * 100)) : 0;
+            const remaining = Math.max(0, target - saved);
+
+            return (
+              <div className="space-y-2 mb-6">
+                <div className="flex justify-between items-center text-xs sm:text-sm font-bold">
+                  <span className="text-emerald-400 font-black">{pct}% Completado</span>
+                  <span className="text-indigo-200">
+                    {remaining > 0 ? `Restan ${FormatCurrency(remaining)}` : '¡Meta alcanzada!'}
+                  </span>
+                </div>
+                <div className="w-full bg-white/10 rounded-full h-3.5 overflow-hidden border border-white/10 relative">
+                  <div
+                    className="h-full bg-gradient-to-r from-indigo-500 via-primary to-emerald-400 rounded-full transition-all duration-1000 ease-out"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Desglose de Cuota Mensual y Botones */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-4 border-t border-white/10">
+            <div className="flex items-center gap-2 text-xs text-indigo-200">
+              <Info size={14} className="text-indigo-400" />
+              <span>Cuota mensual sugerida: <strong className="text-white">{FormatCurrency(activeProject.monthlyQuota || 0)}</strong></span>
+            </div>
+
+            <div className="flex items-center gap-2.5 w-full sm:w-auto">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setSelectedProjectId(activeProject.id)}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5"
+              >
+                <span>Ver Detalle y Tareas</span>
+                <ArrowRight size={15} />
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => handleOpenContribution(activeProject)}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white border-0 shadow-md"
+              >
+                <Plus size={16} />
+                <span>Aportar</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="p-8 text-center bg-white rounded-3xl border border-slate-200 shadow-sm space-y-3">
+          <Target size={36} className="mx-auto text-slate-400" />
+          <h3 className="text-lg font-bold text-slate-800">No tienes proyectos de ahorro activos</h3>
+          <p className="text-sm text-slate-500 max-w-sm mx-auto">
+            Crea tu primer proyecto para empezar a apartar dinero de forma inteligente.
+          </p>
+          <Button onClick={handleOpenNewProject} className="mt-2">
+            Crear Primer Proyecto
+          </Button>
+        </div>
+      )}
+
+      {/* Listado en Cascada de Proyectos en Cola */}
+      <div className="space-y-4">
+        <div className="flex justify-between items-center px-1">
+          <div>
+            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <Layers size={18} className="text-primary" />
+              <span>Cola de Proyectos (Efecto Cascada)</span>
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Se financiarán automáticamente en este orden conforme completes la meta activa
+            </p>
+          </div>
+        </div>
+
+        {pendingProjects.length === 0 ? (
+          <div className="p-6 bg-slate-50 border border-slate-200/80 rounded-3xl text-center text-xs text-slate-500 font-medium">
+            No hay metas en cola. Haz clic en "+ Nuevo Proyecto" para planificar tus próximas metas.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {pendingProjects.map((p, index) => {
+              const saved = Number(p.savedAmount ?? p.currentAmount ?? 0);
+              const target = Number(p.targetAmount || 0);
+              const pct = target > 0 ? Math.min(100, Math.round((saved / target) * 100)) : 0;
+
+              return (
+                <div
+                  key={p.id}
+                  className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm hover:border-indigo-200 transition-all flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 group"
+                >
+                  <div
+                    className="flex-1 cursor-pointer w-full"
+                    onClick={() => setSelectedProjectId(p.id)}
+                  >
+                    <div className="flex items-center gap-2.5 mb-1.5">
+                      <span className="text-xs font-black text-slate-400 bg-slate-100 px-2.5 py-0.5 rounded-md">
+                        #{index + 1}
+                      </span>
+                      <h4 className="font-bold text-slate-900 text-base group-hover:text-primary transition-colors">
+                        {p.name}
+                      </h4>
+                      <span className="text-xs text-slate-400 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-full hidden sm:inline-block">
+                        {getAccountDisplayName(p.targetAccountId || p.targetAccount)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-4 text-xs text-slate-500">
+                      <span>Meta: <strong className="text-slate-800">{FormatCurrency(target)}</strong></span>
+                      <span>Acumulado: <strong className="text-slate-800">{FormatCurrency(saved)}</strong> ({pct}%)</span>
+                      <span>Cuota: {FormatCurrency(p.monthlyQuota || 0)}/mes</span>
+                    </div>
+
+                    <div className="w-full bg-slate-100 rounded-full h-2 mt-2.5 overflow-hidden">
+                      <div className="bg-primary h-full rounded-full" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100">
+                    {/* Botones de Reordenamiento */}
+                    <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl p-0.5">
+                      <button
+                        type="button"
+                        onClick={() => changePriority(p, 'up')}
+                        disabled={index === 0}
+                        className="p-1.5 text-slate-500 hover:text-primary disabled:opacity-30 cursor-pointer"
+                        title="Subir prioridad"
+                      >
+                        <ArrowUp size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => changePriority(p, 'down')}
+                        disabled={index === pendingProjects.length - 1}
+                        className="p-1.5 text-slate-500 hover:text-primary disabled:opacity-30 cursor-pointer"
+                        title="Bajar prioridad"
+                      >
+                        <ArrowDown size={14} />
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => activateProject(p)}
+                      className="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                    >
+                      Activar
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedProjectId(p.id)}
+                      className="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-50 transition-colors"
+                      title="Ver detalle"
+                    >
+                      <ArrowRight size={16} />
+                    </button>
                   </div>
                 </div>
               );
@@ -290,376 +1027,99 @@ export const ProjectsView = ({ data, methods }: any) => {
           </div>
         )}
       </div>
-    );
-  };
 
-  const modalsContent = typeof document !== 'undefined' ? createPortal(
-      <>
-        {showForm && (
-          <div className="fixed inset-0 bg-slate-900/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl animate-in zoom-in-95 duration-200">
-              <h3 className="text-xl font-bold font-title mb-4">{editingProjectId ? 'Editar Proyecto' : 'Nuevo Proyecto'}</h3>
-              <form onSubmit={handleSaveProject} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Nombre del Proyecto</label>
-                  <input type="text" required value={newProject.name} onChange={e => setNewProject({...newProject, name: e.target.value})} className="w-full border border-slate-100 rounded-lg p-2.5 focus:ring-2 focus:ring-primary/50 outline-none" placeholder="Ej. Vacaciones Europa" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1">Monto Meta ($)</label>
-                    <input type="number" required min="1" value={newProject.targetAmount || ''} onChange={e => setNewProject({...newProject, targetAmount: Number(e.target.value)})} className="w-full border border-slate-100 rounded-lg p-2.5 focus:ring-2 focus:ring-primary/50 outline-none" placeholder="100000" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1">Cuota Mensual ($)</label>
-                    <input type="number" required min="1" value={newProject.monthlyQuota || ''} onChange={e => setNewProject({...newProject, monthlyQuota: Number(e.target.value)})} className="w-full border border-slate-100 rounded-lg p-2.5 focus:ring-2 focus:ring-primary/50 outline-none" placeholder="5000" />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Cuenta Destino</label>
-                  <input type="text" value={newProject.targetAccount} onChange={e => setNewProject({...newProject, targetAccount: e.target.value})} className="w-full border border-slate-100 rounded-lg p-2.5 focus:ring-2 focus:ring-primary/50 outline-none" placeholder="Ej. Cuenta Nu (Fondo Ahorro)" />
-                </div>
-                <div className="flex gap-3 pt-2">
-                  <button type="button" onClick={closeProjectForm} className="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-bold hover:bg-slate-200 transition-colors">Cancelar</button>
-                  <button type="submit" className="flex-1 px-4 py-2 bg-primary text-white rounded-lg font-bold hover:bg-primary/90 transition-colors">Guardar</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {showContributionForm && activeProject && (
-          <div className="fixed inset-0 bg-slate-900/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl animate-in zoom-in-95 duration-200">
-              <h3 className="text-xl font-bold font-title mb-4">{editingContributionId ? 'Editar Aportación' : 'Registrar Aportación'}</h3>
-              <p className="text-sm text-slate-600 mb-4">Aportando al proyecto <strong>{activeProject.name}</strong></p>
-              <form onSubmit={handleSaveContribution} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Monto ($)</label>
-                  <input type="number" required min="1" max={!editingContributionId ? activeProject.targetAmount - activeProject.savedAmount : undefined} value={newContribution.amount || ''} onChange={e => setNewContribution({...newContribution, amount: Number(e.target.value)})} className="w-full border border-slate-100 rounded-lg p-2.5 text-lg font-bold focus:ring-2 focus:ring-emerald-500 outline-none" />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Fecha</label>
-                  <input type="date" required value={newContribution.date} onChange={e => setNewContribution({...newContribution, date: e.target.value})} className="w-full border border-slate-100 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Notas (Opcional)</label>
-                  <input type="text" value={newContribution.notes} onChange={e => setNewContribution({...newContribution, notes: e.target.value})} className="w-full border border-slate-100 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Ej. Bono de fin de año" />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Origen (Presupuesto a deducir)</label>
-                  <select
-                    value={newContribution.sourceBudget}
-                    onChange={e => setNewContribution({...newContribution, sourceBudget: e.target.value})}
-                    className="w-full border border-slate-100 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"
-                  >
-                    <option value="">Seleccionar (Opcional)</option>
-                    {data.budgets?.map((b:any) => (
-                      <option key={b.id} value={b.id}>{b.category} (Disponible: ${Math.max(0, b.base - (b.spent || 0))})</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex gap-3 pt-2">
-                  <button type="button" onClick={closeContributionForm} className="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-bold hover:bg-slate-200 transition-colors">Cancelar</button>
-                  <button type="submit" className="flex-1 px-4 py-2 bg-emerald-500 text-white rounded-lg font-bold hover:bg-emerald-600 transition-colors">Guardar</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {showMilestoneForm && (
-          <div className="fixed inset-0 bg-slate-900/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl animate-in zoom-in-95 duration-200">
-              <h3 className="text-xl font-bold font-title mb-4">{editingMilestoneId ? 'Editar Hito / Tarea' : 'Añadir Hito / Tarea'}</h3>
-              <form onSubmit={handleAddMilestone} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Descripción de la Tarea</label>
-                  <input type="text" required value={newMilestone.title} onChange={e => setNewMilestone({...newMilestone, title: e.target.value})} className="w-full border border-slate-100 rounded-lg p-2.5 focus:ring-2 focus:ring-primary/50 outline-none" placeholder="Ej. Comprar lavamanos" />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Monto Disparador ($) (Opcional)</label>
-                  <input type="number" min="1" value={newMilestone.amountThreshold || ''} onChange={e => setNewMilestone({...newMilestone, amountThreshold: e.target.value})} className="w-full border border-slate-100 rounded-lg p-2.5 focus:ring-2 focus:ring-primary/50 outline-none" placeholder="Ej. 15000" />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Fecha Disparador (Opcional)</label>
-                  <input type="date" value={newMilestone.dateThreshold || ''} onChange={e => setNewMilestone({...newMilestone, dateThreshold: e.target.value})} className="w-full border border-slate-100 rounded-lg p-2.5 focus:ring-2 focus:ring-primary/50 outline-none" />
-                </div>
-                <div className="flex gap-3 pt-2">
-                  <button type="button" onClick={closeMilestoneForm} className="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-bold hover:bg-slate-200 transition-colors">Cancelar</button>
-                  <button type="submit" className="flex-1 px-4 py-2 bg-primary text-white rounded-lg font-bold hover:bg-primary/90 transition-colors">Guardar</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {showHistoryModal && selectedCompletedProject && (
-          <div className="fixed inset-0 bg-slate-900/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-xl max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200">
-              <div className="flex justify-between items-start mb-6">
-                <div>
-                  <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">PROYECTO COMPLETADO</span>
-                  <h3 className="text-2xl font-bold font-title text-slate-900">{selectedCompletedProject.name}</h3>
-                  <p className="text-slate-600 text-sm mt-1">Monto alcanzado: <strong className="text-slate-900">${selectedCompletedProject.targetAmount.toLocaleString()}</strong></p>
-                </div>
-                <button onClick={() => setShowHistoryModal(false)} className="text-slate-500 hover:text-slate-700 p-2">✕</button>
-              </div>
-              
-              <div className="overflow-y-auto flex-1">
-                <h4 className="font-bold text-slate-900 mb-4 text-sm uppercase tracking-wider">Historial de Aportaciones</h4>
-                {contributions.filter((c:any) => c.projectId === selectedCompletedProject.id).length === 0 ? (
-                  <p className="text-slate-600 text-sm">No hay registros detallados de aportaciones.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {contributions.filter((c:any) => c.projectId === selectedCompletedProject.id)
-                      .sort((a:any,b:any) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                      .map((c:any) => {
-                      const user = users.find((u:any) => u.id === c.userId);
-                      return (
-                        <div key={c.id} className="flex justify-between items-center p-3 border border-slate-100 rounded-lg bg-slate-50">
-                          <div className="flex items-center gap-3">
-                            {user?.photoURL ? (
-                              <img src={user.photoURL} alt={user.name} className="w-8 h-8 rounded-full object-cover" />
-                            ) : (
-                              <div className="w-8 h-8 rounded-full bg-slate-300 flex items-center justify-center text-white font-bold text-xs">
-                                {user?.name?.charAt(0) || '?'}
-                              </div>
-                            )}
-                            <div>
-                              <p className="text-sm font-bold text-slate-900">{c.notes || 'Aportación'}</p>
-                              <p className="text-xs text-slate-600">{new Date(c.date).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })} • {user?.name}</p>
-                            </div>
-                          </div>
-                          <span className="font-bold text-emerald-600 text-sm">+ ${c.amount.toLocaleString()}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-      </>,
-      document.body
-    ) : null;
-
-  return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border-0">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900 font-title flex items-center gap-2">
-            <Target className="text-primary" /> Metas y Proyectos
-          </h2>
-          <p className="text-slate-600 text-sm mt-1">Conquista un objetivo a la vez (Efecto Cascada)</p>
-        </div>
-        <button onClick={() => setShowForm(true)} className="bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-full font-bold flex items-center gap-2 transition-colors">
-          <Plus size={18} /> Nuevo
-        </button>
-      </div>
-
-      {activeProject ? (
-        <div className="bg-white rounded-3xl border-0 p-8 shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 left-0 w-full h-1 bg-primary"></div>
-          
-          <button onClick={() => handleEditProject(activeProject)} className="absolute top-4 right-4 p-2 text-slate-500 hover:text-primary bg-slate-50 hover:bg-primary/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
-            <Edit2 size={16} />
-          </button>
-
-          <div className="flex flex-col md:flex-row justify-between md:items-start gap-4 mb-6">
-            <div>
-              <span className="bg-primary/20 text-primary text-xs font-bold px-2 py-1 rounded mb-2 inline-block">PROYECTO ACTIVO</span>
-              <h3 className="text-3xl font-bold text-slate-900">{activeProject.name}</h3>
-              <p className="text-slate-600 mt-1 flex items-center gap-1"><Calendar size={14} /> Meta estimada: <span className="font-semibold text-slate-700">{getEstimatedDate(activeProject)}</span></p>
-            </div>
-            <div className="text-left md:text-right mt-4 md:mt-0">
-              <p className="text-sm text-slate-600 uppercase tracking-wider font-bold">Progreso</p>
-              <p className="text-2xl font-bold text-slate-900">
-                ${activeProject.savedAmount.toLocaleString()} <span className="text-slate-500 text-lg font-medium">/ ${activeProject.targetAmount.toLocaleString()}</span>
-              </p>
-            </div>
-          </div>
-
-          <div className="mb-8">
-            <div className="flex justify-between text-sm mb-1 font-bold">
-              <span className="text-primary">{Math.round((activeProject.savedAmount / activeProject.targetAmount) * 100)}%</span>
-              <span className="text-slate-600">Restan ${(activeProject.targetAmount - activeProject.savedAmount).toLocaleString()}</span>
-            </div>
-            <div className="w-full bg-slate-100 rounded-full h-4 relative border border-slate-200">
-              <div 
-                className="bg-primary h-full rounded-full transition-all duration-1000 ease-out" 
-                style={{ width: `${Math.min(100, (activeProject.savedAmount / activeProject.targetAmount) * 100)}%` }}
-              ></div>
-              {activeProject.milestones?.map((m: any) => {
-                if (!m.amountThreshold) return null;
-                const percent = Math.min(100, (Number(m.amountThreshold) / activeProject.targetAmount) * 100);
-                return (
-                  <div 
-                    key={m.id}
-                    className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 ${m.isCompleted ? 'bg-emerald-500 border-white' : 'bg-white border-primary'} z-10 shadow-sm`}
-                    style={{ left: `calc(${percent}% - 8px)` }}
-                    title={m.title}
-                  />
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="bg-slate-50 border-0 rounded-2xl p-5 mb-6">
-            <h4 className="font-bold text-slate-900 mb-3 flex items-center gap-2"><Info size={16} className="text-slate-500" /> Aportación Sugerida del Mes</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {users.map((u: any) => {
-                const userIncome = incomePerUser[u.id] || 0;
-                const percentage = totalHouseholdIncome > 0 ? userIncome / totalHouseholdIncome : (users.length > 0 ? 1 / users.length : 0);
-                const suggestedAmount = activeProject.monthlyQuota * percentage;
-                return (
-                  <div key={u.id} className="bg-white p-3 rounded-lg border border-slate-100 flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      {u.photoURL ? (
-                        <img src={u.photoURL} alt={u.name} className="w-8 h-8 rounded-full object-cover" />
-                      ) : (
-                        <div className={`w-8 h-8 rounded-full bg-slate-300 flex items-center justify-center text-white font-bold text-xs`}>
-                          {u.name?.charAt(0)}
-                        </div>
-                      )}
-                      <div>
-                        <p className="font-bold text-sm text-slate-900">{u.name}</p>
-                        <p className="text-xs text-slate-600">{(percentage * 100).toFixed(0)}% del ingreso</p>
-                      </div>
-                    </div>
-                    <span className="font-bold text-emerald-600">${suggestedAmount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
-                  </div>
-                );
-              })}
-            </div>
-            <p className="text-xs text-slate-600 mt-3 text-center">Calculado en base a ingresos registrados este mes. Meta mensual: <span className="font-bold text-slate-700">${Number(activeProject.monthlyQuota).toLocaleString()}</span></p>
-          </div>
-
-          <div className="flex gap-3">
-            <button onClick={() => setShowContributionForm(true)} className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-lg transition-colors flex justify-center items-center gap-2">
-              <Plus size={18} /> Registrar Aportación
-            </button>
-            <button onClick={() => completeProject(activeProject)} className="px-4 py-3 bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 font-bold rounded-lg transition-colors border border-slate-100 hover:border-emerald-200">
-              Marcar Terminado
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="bg-slate-50 border-0 shadow-sm rounded-3xl p-12 text-center">
-          <Target className="mx-auto text-slate-500 mb-4" size={48} />
-          <h3 className="text-lg font-bold text-slate-900 mb-2">Sin proyecto activo</h3>
-          <p className="text-slate-600 mb-6">Crea tu primer proyecto financiero o activa uno de la lista.</p>
-          <button onClick={() => setShowForm(true)} className="bg-primary text-white px-5 py-2.5 rounded-full font-bold mx-auto">Crear Proyecto</button>
-        </div>
-      )}
-
-      {/* Lists Container */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        <div className="flex justify-between items-center mb-4"><h3 className="font-bold text-slate-900 font-title flex items-center gap-2"><Target size={18} className="text-slate-500"/> Próximos (Cascada)</h3><button onClick={() => setShowCascadeModal(true)} className="text-xs bg-primary/20 text-primary px-3 py-1.5 rounded-lg font-bold hover:bg-primary/20">Distribuir Excedente</button></div>
-        <div className="bg-white rounded-3xl border-0 shadow-sm p-6">
-          
-          {pendingProjects.length === 0 ? (
-            <p className="text-sm text-slate-600 text-center py-4">No hay proyectos en cola.</p>
-          ) : (
-            <div className="space-y-3">
-              {pendingProjects.map((p, index) => (
-                <div key={p.id} className="flex items-center justify-between p-3 border border-slate-100 rounded-lg hover:border-primary/30 transition-colors bg-slate-50 group">
-                  <div className="flex-1">
-                    <p className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                      {p.name}
-                      <button onClick={() => handleEditProject(p)} className="text-slate-500 hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Edit2 size={12} />
-                      </button>
-                    </p>
-                    <p className="text-xs text-slate-600 mt-1">${p.savedAmount.toLocaleString()} / ${p.targetAmount.toLocaleString()} • Cuota: ${Number(p.monthlyQuota).toLocaleString()}/mes</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex flex-col gap-1 mr-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => changePriority(p, 'up')} disabled={index === 0 && !activeProject} className="p-1 text-slate-500 hover:text-primary disabled:opacity-30"><ArrowUp size={14}/></button>
-                      <button onClick={() => changePriority(p, 'down')} disabled={index === pendingProjects.length - 1} className="p-1 text-slate-500 hover:text-primary disabled:opacity-30"><ArrowDown size={14}/></button>
-                    </div>
-                    <button onClick={() => activateProject(p)} className="text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded hover:bg-primary/20 transition-colors">
-                      Activar
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Contributions History & Milestones Container */}
-        <div className="flex flex-col">
-          <div className="bg-white rounded-3xl border-0 shadow-sm p-6">
-            <h3 className="font-bold text-slate-900 mb-4 font-title flex items-center gap-2"><History size={18} className="text-slate-500"/> Trazabilidad (Activo)</h3>
-            {(!activeProject || contributions.filter((c:any) => c.projectId === activeProject.id).length === 0) ? (
-              <p className="text-sm text-slate-600 text-center py-4">Sin aportaciones recientes.</p>
-            ) : (
-              <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
-                {contributions.filter((c:any) => c.projectId === activeProject.id).sort((a:any,b:any) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((c:any) => {
-                  const user = users.find((u:any) => u.id === c.userId);
-                  return (
-                    <div key={c.id} className="flex justify-between items-center p-3 border-b border-slate-100 last:border-0 group">
-                      <div className="flex items-center gap-3">
-                        {user?.photoURL ? (
-                          <img src={user.photoURL} alt={user.name} className="w-8 h-8 rounded-full object-cover" />
-                        ) : (
-                          <div className={`w-8 h-8 rounded-full bg-slate-300 flex items-center justify-center text-white font-bold text-xs`}>
-                            {user?.name?.charAt(0) || '?'}
-                          </div>
-                        )}
-                        <div>
-                          <p className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                            {c.notes || 'Aportación'}
-                            <button onClick={() => handleEditContribution(c)} className="text-slate-500 hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Edit2 size={12} />
-                            </button>
-                          </p>
-                          <p className="text-xs text-slate-600">{new Date(c.date).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}</p>
-                        </div>
-                      </div>
-                      <span className="font-bold text-emerald-600 text-sm">+ ${c.amount.toLocaleString()}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-          {renderMilestones()}
-        </div>
-      </div>
-
+      {/* Proyectos Completados */}
       {completedProjects.length > 0 && (
-        <div className="mt-8">
-          <h3 className="font-bold text-slate-500 mb-4 font-title text-sm uppercase tracking-wider">Proyectos Completados</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {completedProjects.map(p => (
-              <button 
-                key={p.id} 
-                onClick={() => { setSelectedCompletedProject(p); setShowHistoryModal(true); }}
-                className="bg-emerald-50 border border-emerald-100 rounded-lg p-3 opacity-80 hover:opacity-100 transition-opacity text-left hover:shadow-sm"
+        <div className="space-y-3 pt-4 border-t border-slate-100">
+          <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+            <CheckCircle size={16} className="text-emerald-500" />
+            <span>Metas Alcanzadas ({completedProjects.length})</span>
+          </h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            {completedProjects.map((p) => (
+              <div
+                key={p.id}
+                onClick={() => setSelectedProjectId(p.id)}
+                className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-4 cursor-pointer hover:shadow-sm transition-all flex items-center justify-between"
               >
-                <p className="font-bold text-emerald-900 text-sm">{p.name}</p>
-                <p className="text-xs text-emerald-700 mt-1">${p.targetAmount.toLocaleString()} logrados</p>
-              </button>
+                <div>
+                  <h4 className="font-bold text-emerald-900 text-sm">{p.name}</h4>
+                  <p className="text-xs text-emerald-700 mt-0.5">
+                    {FormatCurrency(Number(p.targetAmount || 0))} completados
+                  </p>
+                </div>
+                <div className="p-2 rounded-full bg-emerald-100 text-emerald-700">
+                  <CheckCircle2 size={16} />
+                </div>
+              </div>
             ))}
           </div>
         </div>
       )}
 
-            {modalsContent}
-      <Modal isOpen={showCascadeModal} onClose={() => setShowCascadeModal(false)} title="Distribuir en Cascada">
-        <div className="p-4">
-          <label className="block text-sm font-bold text-slate-700 mb-2">Monto Excedente a Distribuir</label>
-          <input type="number" value={excedente} onChange={(e) => setExcedente(Number(e.target.value))} className="w-full border rounded-lg p-3 mb-4" />
-          <button onClick={() => {
-            const aportes = distribuirEnCascada(pendingProjects.map(p => ({...p, targetAmount: p.targetAmount, currentAmount: p.savedAmount, priority: p.order})), excedente);
-            aportes.forEach(a => { methods.updateProject(a.projectId, { savedAmount: (pendingProjects.find(p => p.id === a.projectId)?.savedAmount || 0) + a.aporte }); });
-            setShowCascadeModal(false);
-          }} className="w-full bg-primary text-white font-bold py-3 rounded-lg">Aplicar Cascada</button>
+      {/* Modales Compartidos en Nivel 1 */}
+      <Modal
+        isOpen={showProjectModal}
+        onClose={closeProjectForm}
+        title={editingProject ? 'Editar Proyecto' : 'Nuevo Proyecto'}
+      >
+        <ProjectForm
+          initialData={editingProject}
+          accounts={accounts}
+          onSubmit={handleSaveProject}
+          onCancel={closeProjectForm}
+        />
+      </Modal>
+
+      <ProjectContributionModal
+        isOpen={showContributionModal}
+        onClose={() => {
+          setShowContributionModal(false);
+          setContributionProject(null);
+        }}
+        project={contributionProject || activeProject}
+        accounts={accounts}
+        activeProjects={projects}
+        onContribute={handleExecuteContribution}
+      />
+
+      {/* Modal de Cascada de Excedentes */}
+      <Modal
+        isOpen={showCascadeModal}
+        onClose={() => setShowCascadeModal(false)}
+        title="Distribuir Excedente en Cascada"
+      >
+        <div className="p-2 space-y-4">
+          <p className="text-xs text-slate-600">
+            Ingresa un monto de liquidez excedente (ej. de ingresos variables, bonos o ahorros) para distribuirlo de forma óptima a través de las metas en cola según su prioridad.
+          </p>
+
+          <div>
+            <label htmlFor="cascade-amount" className="block text-sm font-bold text-slate-700 mb-1">
+              Monto Excedente ($)
+            </label>
+            <input
+              id="cascade-amount"
+              type="number"
+              min="1"
+              value={excedente || ''}
+              onChange={(e) => setExcedente(Number(e.target.value))}
+              placeholder="Ej. 10000"
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary font-bold text-slate-900 text-base"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+            <Button variant="secondary" onClick={() => setShowCascadeModal(false)} type="button">
+              Cancelar
+            </Button>
+            <Button onClick={handleApplyCascade} disabled={excedente <= 0}>
+              Aplicar Cascada
+            </Button>
+          </div>
         </div>
       </Modal>
     </div>
   );
-};
+}
