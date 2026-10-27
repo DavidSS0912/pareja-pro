@@ -22,8 +22,20 @@ export const createAccountSlice: StateCreator<AccountSlice & AuthSlice, [], [], 
     if (!houseId) return;
     
     const state = get();
-    const isUserA = !(state as any).users || (state as any).users.length === 0 || (state as any).users[0].id === state.user?.uid;
-    const optimisticOwnerType = item.shared ? OwnerType.SHARED : (isUserA ? OwnerType.USER_A : OwnerType.USER_B);
+    let userSlot: OwnerType = OwnerType.USER_A;
+    const explicitSlot = (state as any).memberSlot || state.user?.memberSlot;
+    if (explicitSlot === 'USER_B') {
+      userSlot = OwnerType.USER_B;
+    } else if (explicitSlot === 'USER_A') {
+      userSlot = OwnerType.USER_A;
+    } else {
+      const currentMember = (state as any).users?.find((u: any) => u.id === state.user?.uid);
+      if (currentMember?.memberSlot === 'USER_B') {
+        userSlot = OwnerType.USER_B;
+      }
+    }
+
+    const optimisticOwnerType = item.shared ? OwnerType.SHARED : (item.ownerType || userSlot);
     const optimisticAccount = { ...item, ownerType: optimisticOwnerType, id: `temp-${Date.now()}` };
     set({ accounts: [optimisticAccount, ...state.accounts] });
 
@@ -47,13 +59,24 @@ export const createAccountSlice: StateCreator<AccountSlice & AuthSlice, [], [], 
   },
   updateAccount: async (id, item) => {
     if (id.startsWith('temp-')) {
-      // useToastStore not imported here but we can just return
       return;
     }
     const state = get();
     const originalAccounts = state.accounts;
-    const isUserA = !(state as any).users || (state as any).users.length === 0 || (state as any).users[0].id === state.user?.uid;
-    const updatedOwnerType = item.shared ? OwnerType.SHARED : (isUserA ? OwnerType.USER_A : OwnerType.USER_B);
+    let userSlot: OwnerType = OwnerType.USER_A;
+    const explicitSlot = (state as any).memberSlot || state.user?.memberSlot;
+    if (explicitSlot === 'USER_B') {
+      userSlot = OwnerType.USER_B;
+    } else if (explicitSlot === 'USER_A') {
+      userSlot = OwnerType.USER_A;
+    } else {
+      const currentMember = (state as any).users?.find((u: any) => u.id === state.user?.uid);
+      if (currentMember?.memberSlot === 'USER_B') {
+        userSlot = OwnerType.USER_B;
+      }
+    }
+
+    const updatedOwnerType = item.shared ? OwnerType.SHARED : (item.ownerType || userSlot);
     
     const updatedAccounts = state.accounts.map(a => a.id === id ? { 
       ...a, 
