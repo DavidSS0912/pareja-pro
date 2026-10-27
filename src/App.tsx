@@ -44,6 +44,7 @@ import { WealthView } from './views/WealthView';
 import { ProjectsView } from './views/ProjectsView';
 import { HistoricalView } from './views/HistoricalView';
 import { SettingsView } from './views/SettingsView';
+import { ProfileView } from './views/ProfileView';
 
 import { TermsView } from './views/TermsView';
 import { PrivacyPolicyView } from './views/PrivacyPolicyView';
@@ -453,6 +454,8 @@ export default function App() {
       case 'projects': return <ProjectsView data={filteredData} calc={calc} methods={methods} />;
       case 'historical': return <HistoricalView data={filteredData} methods={methods} />;
       case 'settings': return <SettingsView />;
+      case 'profile': return <ProfileView data={filteredData} />;
+      case 'household': return <ProfileView data={filteredData} />;
 
       case 'terms': return <TermsView />;
       case 'privacy': return <PrivacyPolicyView />;

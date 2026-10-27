@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { User, Palette, Tag, Folder, Plus, Trash2, Edit2 } from 'lucide-react';
+import { User, Palette, Tag, Folder, Plus, Trash2, Edit2, Users } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
 import { Button } from '../components/ui/Button';
+import { ProfileView } from './ProfileView';
 
 export function SettingsView() {
   const [activeTab, setActiveTab] = useState('profile');
@@ -58,6 +59,13 @@ export function SettingsView() {
           Perfil de Usuario
         </button>
         <button
+          onClick={() => setActiveTab('household')}
+          className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium ${activeTab === 'household' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-50'}`}
+        >
+          <Users size={18} />
+          Hogar y Miembros
+        </button>
+        <button
           onClick={() => setActiveTab('appearance')}
           className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium ${activeTab === 'appearance' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-50'}`}
         >
@@ -99,7 +107,20 @@ export function SettingsView() {
               </div>
             </div>
             <p className="text-sm text-slate-500 italic">Nota: La edición del perfil desde la app aún no está disponible.</p>
+            <div className="pt-4 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setActiveTab('household')}
+                className="text-sm font-semibold text-primary hover:underline flex items-center gap-1.5"
+              >
+                <Users size={16} /> Administrar integrantes de mi hogar →
+              </button>
+            </div>
           </div>
+        )}
+
+        {activeTab === 'household' && (
+          <ProfileView />
         )}
 
         {activeTab === 'appearance' && (
