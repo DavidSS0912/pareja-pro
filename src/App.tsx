@@ -1,4 +1,5 @@
 import { filtrarPorContexto } from './services/contextService';
+import { filterByContext } from './services/ownershipService';
 import { calcularProrrateo, simplificarDeudas } from './services/liquidadorService';
 import { calcularPatrimonio } from './services/simuladorService';
 import React, { useState, useMemo, useEffect } from 'react';
@@ -125,10 +126,12 @@ export default function App() {
     fetchBudgetsForMonth: state.fetchBudgetsForMonth,
     copyBudgetsFromPreviousMonth: state.copyBudgetsFromPreviousMonth,
     refreshSettings: state.refreshSettings,
+    memberSlot: state.memberSlot,
+    setMemberSlot: state.setMemberSlot,
   })));
   
   const methods = { ...data, handleOpenMovementModal, handleOpenIncomeModal, handleOpenExpenseModal };
-  const { user, houseId, authLoading, setUser, setHouseId, setAuthLoading, fetchDashboardData, refreshSettings, dateRange, setDateRange } = data;
+  const { user, houseId, memberSlot, authLoading, setUser, setHouseId, setMemberSlot, setAuthLoading, fetchDashboardData, refreshSettings, dateRange, setDateRange } = data;
 
   const filteredData = useMemo(() => {
     const start = dateRange?.start || '2000-01-01';
@@ -152,24 +155,18 @@ export default function App() {
       const d = toDateStr(date);
       return !d || (d >= start && d <= end);
     };
+
+    // Para presupuestos y cuentas: en contexto personal se filtran estrictamente por el memberSlot activo
+    const contextMode = appContext === 'personal' ? 'personal' : 'shared';
+
     return {
       ...data,
       incomes: filterContext(data.incomes.filter(i => inDateRange(i.date))),
       expenses: filterContext(data.expenses.filter(e => inDateRange(e.date))),
-      budgets: data.budgets.filter((b: any) => {
-        if (appContext === 'personal') {
-          return b.ownerType === 'USER_A' || b.ownerType === 'USER_B';
-        }
-        return b.ownerType === 'SHARED';
-      }),
-      accounts: (data.accounts || []).filter((a: any) => {
-        if (appContext === 'personal') {
-          return a.ownerType === 'USER_A' || a.ownerType === 'USER_B';
-        }
-        return a.ownerType === 'SHARED';
-      })
+      budgets: filterByContext<any>(data.budgets, contextMode, memberSlot),
+      accounts: filterByContext(data.accounts || [], contextMode, memberSlot)
     };
-  }, [data, dateRange, appContext, user]);
+  }, [data, dateRange, appContext, user, memberSlot]);
 
   useEffect(() => {
     const storedColor = localStorage.getItem('app_second_color');
@@ -214,6 +211,12 @@ export default function App() {
                 if (b.memberSlot === 'USER_B') return 1;
                 return 0;
               });
+
+              // Sincronizar el slot del usuario actual con setMemberSlot
+              const currentMember = members.find(m => m.id === fbUser.uid);
+              if (currentMember?.memberSlot) {
+                setMemberSlot(currentMember.memberSlot as any);
+              }
 
               const mappedUsers = sortedMembers.map(m => ({
                 id: m.id,
@@ -378,36 +381,38 @@ export default function App() {
 
 
 
-    let zoeOwesDavid = 0;
-    let davidOwesZoe = 0;
+    const userA = filteredData.users.find((u: any) => u.memberSlot === 'USER_A') || filteredData.users[0];
+    const userB = filteredData.users.find((u: any) => u.memberSlot === 'USER_B') || filteredData.users[1];
+    const userAId = userA?.id || 'u1';
+    const userBId = userB?.id || 'u2';
+
+    let bOwesA = 0;
+    let aOwesB = 0;
 
     filteredData.expenses.forEach(exp => {
       if (exp.isPrivate) return;
 
       const normalizedAmount = normalize(exp.amount, exp.currency);
 
-      let ratio1 = 0.5;
-      let ratio2 = 0.5;
+      let ratioA = 0.5;
+      let ratioB = 0.5;
 
       if (exp.splitType === 'proporcional') {
-        const u1Id = filteredData.users[0]?.id || 'u1';
-        const u2Id = filteredData.users[1]?.id || 'u2';
-        
-        const inc1 = incomesByUser[u1Id] || 0;
-        const inc2 = incomesByUser[u2Id] || 0;
-        ratio1 = calcularProrrateo(inc1, inc2);
-        ratio2 = 1 - ratio1;
+        const incA = incomesByUser[userAId] || 0;
+        const incB = incomesByUser[userBId] || 0;
+        ratioA = calcularProrrateo(incA, incB);
+        ratioB = 1 - ratioA;
       }
 
-      if (exp.paidBy === filteredData.users[0]?.id || exp.paidBy === 'u1') {
-        zoeOwesDavid += normalizedAmount * ratio2;
-      } else if (exp.paidBy === filteredData.users[1]?.id || exp.paidBy === 'u2') {
-        davidOwesZoe += normalizedAmount * ratio1;
+      if (exp.paidBy === userAId || exp.paidBy === 'u1') {
+        bOwesA += normalizedAmount * ratioB;
+      } else if (exp.paidBy === userBId || exp.paidBy === 'u2') {
+        aOwesB += normalizedAmount * ratioA;
       }
     });
 
-    const netSettlement = zoeOwesDavid - davidOwesZoe;
-    const simplifiedDebt = simplificarDeudas(davidOwesZoe, zoeOwesDavid);
+    const netSettlement = bOwesA - aOwesB;
+    const simplifiedDebt = simplificarDeudas(aOwesB, bOwesA);
 
     const totalBudgeted = (filteredData.budgets || []).reduce((acc, curr) => acc + (Number(curr.base) || 0), 0);
     const totalDebtAllocated = (filteredData.accounts || []).filter((a: any) => a.type === 'CREDIT_CARD' || a.type === 'LIABILITY').reduce((acc: any, curr: any) => acc + (Number(curr.balance) || 0), 0);
