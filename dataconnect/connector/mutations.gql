@@ -567,7 +567,8 @@ mutation CreateHouseholdAndUser(
     uid_expr: "auth.uid",
     email: $email,
     displayName: $displayName,
-    householdId_expr: "response.household_insert.id"
+    householdId_expr: "response.household_insert.id",
+    memberSlot: USER_A
   })
 
   assetAccount: account_insert(data: {
@@ -1017,4 +1018,209 @@ mutation AddTagToJournal(
     journalId: $journalId,
     tagId: $tagId
   })
+}
+
+mutation CreateInvitation(
+  $householdId: UUID!,
+  $expiresAt: Timestamp!
+) @auth(level: USER) @transaction {
+  query @redact {
+    user: user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId && vars.expiresAt > request.time",
+             message: "Usuario no pertenece al hogar o fecha de expiración inválida") {
+      household { id }
+    }
+    members: users(where: { householdId: { eq: $householdId } })
+      @check(expr: "this.size() < 2", message: "El hogar ya cuenta con el límite de 2 integrantes") {
+      uid
+    }
+  }
+
+  invitation_insert(data: {
+    householdId: $householdId,
+    createdByUid_expr: "auth.uid",
+    expiresAt: $expiresAt,
+    status: PENDING
+  })
+}
+
+mutation AcceptInvitation(
+  $invitationId: UUID!,
+  $householdId: UUID!
+) @auth(level: USER) @transaction {
+  query @redact {
+    invite: invitation(id: $invitationId)
+      @check(expr: "this != null && this.household.id == vars.householdId && this.status == 'PENDING' && this.expiresAt > request.time",
+             message: "La invitación no existe, ya fue utilizada o ha expirado") {
+      id
+      status
+      expiresAt
+      household { id }
+    }
+    currentUser: user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id != vars.householdId",
+             message: "El usuario ya pertenece a este hogar") {
+      household { id }
+    }
+    targetMembers: users(where: { householdId: { eq: $householdId } })
+      @check(expr: "this.size() < 2", message: "El hogar destino ya está lleno (máximo 2 personas)") {
+      uid
+    }
+  }
+
+  user_update(key: { uid_expr: "auth.uid" }, data: {
+    householdId: $householdId,
+    memberSlot: USER_B
+  })
+
+  invitation_update(id: $invitationId, data: {
+    status: ACCEPTED,
+    acceptedByUid_expr: "auth.uid"
+  })
+}
+
+mutation RevokeInvitation(
+  $id: UUID!,
+  $householdId: UUID!
+) @auth(level: USER) @transaction {
+  query @redact {
+    user: user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El usuario no pertenece a este hogar") {
+      household { id }
+    }
+    invite: invitation(id: $id)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "La invitación no pertenece a este hogar") {
+      household { id }
+    }
+  }
+
+  invitation_update(id: $id, data: {
+    status: REVOKED
+  })
+}
+
+mutation LeaveHousehold(
+  $householdId: UUID!
+) @auth(level: USER) @transaction {
+  query @redact {
+    user: user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El usuario no pertenece a este hogar") {
+      household { id }
+    }
+    members: users(where: { householdId: { eq: $householdId } })
+      @check(expr: "this.size() > 1", message: "No puedes abandonar el hogar siendo el único integrante") {
+      uid
+    }
+  }
+
+  newHousehold: household_insert(data: {
+    name: "Mi Hogar"
+  })
+
+  user_update(key: { uid_expr: "auth.uid" }, data: {
+    householdId_expr: "response.newHousehold.id",
+    memberSlot: USER_A
+  })
+
+  assetAccount: account_insert(data: {
+    name: "Banco / Efectivo",
+    type: ASSET,
+    ownerType: SHARED,
+    systemKey: "default_asset",
+    householdId_expr: "response.newHousehold.id"
+  })
+
+  incomeAccount: account_insert(data: {
+    name: "Ingresos del Hogar",
+    type: INCOME,
+    ownerType: SHARED,
+    systemKey: "default_income",
+    householdId_expr: "response.newHousehold.id"
+  })
+
+  expenseAccount: account_insert(data: {
+    name: "Gastos del Hogar",
+    type: EXPENSE,
+    ownerType: SHARED,
+    systemKey: "default_expense",
+    householdId_expr: "response.newHousehold.id"
+  })
+
+  liabilityAccount: account_insert(data: {
+    name: "Tarjetas de Crédito",
+    type: LIABILITY,
+    ownerType: SHARED,
+    systemKey: "default_liability",
+    householdId_expr: "response.newHousehold.id"
+  })
+}
+
+mutation RemoveHouseholdMember(
+  $householdId: UUID!,
+  $memberUid: String!
+) @auth(level: USER) @transaction {
+  query @redact {
+    caller: user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId && this.memberSlot == 'USER_A'",
+             message: "Solo el creador del hogar (USER_A) puede remover miembros") {
+      household { id }
+      memberSlot
+    }
+    target: user(key: { uid: $memberUid })
+      @check(expr: "this != null && this.household.id == vars.householdId && vars.memberUid != auth.uid",
+             message: "El miembro objetivo no pertenece a este hogar o es el propio usuario") {
+      household { id }
+    }
+  }
+
+  newHouseholdForMember: household_insert(data: {
+    name: "Mi Hogar"
+  })
+
+  user_update(key: { uid: $memberUid }, data: {
+    householdId_expr: "response.newHouseholdForMember.id",
+    memberSlot: USER_A
+  })
+
+  assetAccount: account_insert(data: {
+    name: "Banco / Efectivo",
+    type: ASSET,
+    ownerType: SHARED,
+    systemKey: "default_asset",
+    householdId_expr: "response.newHouseholdForMember.id"
+  })
+
+  incomeAccount: account_insert(data: {
+    name: "Ingresos del Hogar",
+    type: INCOME,
+    ownerType: SHARED,
+    systemKey: "default_income",
+    householdId_expr: "response.newHouseholdForMember.id"
+  })
+
+  expenseAccount: account_insert(data: {
+    name: "Gastos del Hogar",
+    type: EXPENSE,
+    ownerType: SHARED,
+    systemKey: "default_expense",
+    householdId_expr: "response.newHouseholdForMember.id"
+  })
+
+  liabilityAccount: account_insert(data: {
+    name: "Tarjetas de Crédito",
+    type: LIABILITY,
+    ownerType: SHARED,
+    systemKey: "default_liability",
+    householdId_expr: "response.newHouseholdForMember.id"
+  })
+}
+
+mutation BackfillMemberSlots @auth(level: NO_ACCESS) {
+  user_updateMany(
+    where: { memberSlot: { eq: null } },
+    data: { memberSlot: USER_A }
+  )
 }

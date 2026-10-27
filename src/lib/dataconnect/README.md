@@ -25,6 +25,9 @@ This README will guide you through the process of using the generated JavaScript
   - [*GetJournalTags*](#getjournaltags)
   - [*GetSettlements*](#getsettlements)
   - [*GetJournalBalanceV2*](#getjournalbalancev2)
+  - [*GetInvitation*](#getinvitation)
+  - [*GetHouseholdMembers*](#gethouseholdmembers)
+  - [*GetPendingInvitations*](#getpendinginvitations)
   - [*NegativeEntries*](#negativeentries)
   - [*UnbalancedJournals*](#unbalancedjournals)
 - [**Mutations**](#mutations)
@@ -58,6 +61,12 @@ This README will guide you through the process of using the generated JavaScript
   - [*DeleteTag*](#deletetag)
   - [*SetJournalTags*](#setjournaltags)
   - [*AddTagToJournal*](#addtagtojournal)
+  - [*CreateInvitation*](#createinvitation)
+  - [*AcceptInvitation*](#acceptinvitation)
+  - [*RevokeInvitation*](#revokeinvitation)
+  - [*LeaveHousehold*](#leavehousehold)
+  - [*RemoveHouseholdMember*](#removehouseholdmember)
+  - [*BackfillMemberSlots*](#backfillmemberslots)
 
 # Accessing the connector
 A connector is a collection of Queries and Mutations. One SDK is generated for each connector - this SDK is generated for the connector `orbita2-connector`. You can find more information about connectors in the [Data Connect documentation](https://firebase.google.com/docs/data-connect#how-does).
@@ -1455,6 +1464,7 @@ export interface GetCurrentUserData {
     email: string;
     displayName?: string | null;
     householdId: UUIDString;
+    memberSlot?: MemberSlot | null;
   } & User_Key;
 }
 ```
@@ -2079,6 +2089,354 @@ console.log(data.journalBalanceV2s);
 executeQuery(ref).then((response) => {
   const data = response.data;
   console.log(data.journalBalanceV2s);
+});
+```
+
+## GetInvitation
+You can execute the `GetInvitation` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+getInvitation(vars: GetInvitationVariables, options?: ExecuteQueryOptions): QueryPromise<GetInvitationData, GetInvitationVariables>;
+
+interface GetInvitationRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetInvitationVariables): QueryRef<GetInvitationData, GetInvitationVariables>;
+}
+export const getInvitationRef: GetInvitationRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
+```typescript
+getInvitation(dc: DataConnect, vars: GetInvitationVariables, options?: ExecuteQueryOptions): QueryPromise<GetInvitationData, GetInvitationVariables>;
+
+interface GetInvitationRef {
+  ...
+  (dc: DataConnect, vars: GetInvitationVariables): QueryRef<GetInvitationData, GetInvitationVariables>;
+}
+export const getInvitationRef: GetInvitationRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the getInvitationRef:
+```typescript
+const name = getInvitationRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `GetInvitation` query requires an argument of type `GetInvitationVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface GetInvitationVariables {
+  id: UUIDString;
+}
+```
+### Return Type
+Recall that executing the `GetInvitation` query returns a `QueryPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `GetInvitationData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface GetInvitationData {
+  invitation?: {
+    id: UUIDString;
+    status: InvitationStatus;
+    expiresAt: TimestampString;
+    createdByUid: string;
+    household: {
+      id: UUIDString;
+      name: string;
+    } & Household_Key;
+  } & Invitation_Key;
+}
+```
+### Using `GetInvitation`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, getInvitation, GetInvitationVariables } from '@pareja-pro/dataconnect';
+
+// The `GetInvitation` query requires an argument of type `GetInvitationVariables`:
+const getInvitationVars: GetInvitationVariables = {
+  id: ..., 
+};
+
+// Call the `getInvitation()` function to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await getInvitation(getInvitationVars);
+// Variables can be defined inline as well.
+const { data } = await getInvitation({ id: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await getInvitation(dataConnect, getInvitationVars);
+
+console.log(data.invitation);
+
+// Or, you can use the `Promise` API.
+getInvitation(getInvitationVars).then((response) => {
+  const data = response.data;
+  console.log(data.invitation);
+});
+```
+
+### Using `GetInvitation`'s `QueryRef` function
+
+```typescript
+import { getDataConnect, executeQuery } from 'firebase/data-connect';
+import { connectorConfig, getInvitationRef, GetInvitationVariables } from '@pareja-pro/dataconnect';
+
+// The `GetInvitation` query requires an argument of type `GetInvitationVariables`:
+const getInvitationVars: GetInvitationVariables = {
+  id: ..., 
+};
+
+// Call the `getInvitationRef()` function to get a reference to the query.
+const ref = getInvitationRef(getInvitationVars);
+// Variables can be defined inline as well.
+const ref = getInvitationRef({ id: ..., });
+
+// You can also pass in a `DataConnect` instance to the `QueryRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = getInvitationRef(dataConnect, getInvitationVars);
+
+// Call `executeQuery()` on the reference to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeQuery(ref);
+
+console.log(data.invitation);
+
+// Or, you can use the `Promise` API.
+executeQuery(ref).then((response) => {
+  const data = response.data;
+  console.log(data.invitation);
+});
+```
+
+## GetHouseholdMembers
+You can execute the `GetHouseholdMembers` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+getHouseholdMembers(vars: GetHouseholdMembersVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdMembersData, GetHouseholdMembersVariables>;
+
+interface GetHouseholdMembersRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetHouseholdMembersVariables): QueryRef<GetHouseholdMembersData, GetHouseholdMembersVariables>;
+}
+export const getHouseholdMembersRef: GetHouseholdMembersRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
+```typescript
+getHouseholdMembers(dc: DataConnect, vars: GetHouseholdMembersVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdMembersData, GetHouseholdMembersVariables>;
+
+interface GetHouseholdMembersRef {
+  ...
+  (dc: DataConnect, vars: GetHouseholdMembersVariables): QueryRef<GetHouseholdMembersData, GetHouseholdMembersVariables>;
+}
+export const getHouseholdMembersRef: GetHouseholdMembersRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the getHouseholdMembersRef:
+```typescript
+const name = getHouseholdMembersRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `GetHouseholdMembers` query requires an argument of type `GetHouseholdMembersVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface GetHouseholdMembersVariables {
+  householdId: UUIDString;
+}
+```
+### Return Type
+Recall that executing the `GetHouseholdMembers` query returns a `QueryPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `GetHouseholdMembersData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface GetHouseholdMembersData {
+  users: ({
+    uid: string;
+    email: string;
+    displayName?: string | null;
+    memberSlot?: MemberSlot | null;
+    createdAt: TimestampString;
+  } & User_Key)[];
+}
+```
+### Using `GetHouseholdMembers`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, getHouseholdMembers, GetHouseholdMembersVariables } from '@pareja-pro/dataconnect';
+
+// The `GetHouseholdMembers` query requires an argument of type `GetHouseholdMembersVariables`:
+const getHouseholdMembersVars: GetHouseholdMembersVariables = {
+  householdId: ..., 
+};
+
+// Call the `getHouseholdMembers()` function to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await getHouseholdMembers(getHouseholdMembersVars);
+// Variables can be defined inline as well.
+const { data } = await getHouseholdMembers({ householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await getHouseholdMembers(dataConnect, getHouseholdMembersVars);
+
+console.log(data.users);
+
+// Or, you can use the `Promise` API.
+getHouseholdMembers(getHouseholdMembersVars).then((response) => {
+  const data = response.data;
+  console.log(data.users);
+});
+```
+
+### Using `GetHouseholdMembers`'s `QueryRef` function
+
+```typescript
+import { getDataConnect, executeQuery } from 'firebase/data-connect';
+import { connectorConfig, getHouseholdMembersRef, GetHouseholdMembersVariables } from '@pareja-pro/dataconnect';
+
+// The `GetHouseholdMembers` query requires an argument of type `GetHouseholdMembersVariables`:
+const getHouseholdMembersVars: GetHouseholdMembersVariables = {
+  householdId: ..., 
+};
+
+// Call the `getHouseholdMembersRef()` function to get a reference to the query.
+const ref = getHouseholdMembersRef(getHouseholdMembersVars);
+// Variables can be defined inline as well.
+const ref = getHouseholdMembersRef({ householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the `QueryRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = getHouseholdMembersRef(dataConnect, getHouseholdMembersVars);
+
+// Call `executeQuery()` on the reference to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeQuery(ref);
+
+console.log(data.users);
+
+// Or, you can use the `Promise` API.
+executeQuery(ref).then((response) => {
+  const data = response.data;
+  console.log(data.users);
+});
+```
+
+## GetPendingInvitations
+You can execute the `GetPendingInvitations` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+getPendingInvitations(vars: GetPendingInvitationsVariables, options?: ExecuteQueryOptions): QueryPromise<GetPendingInvitationsData, GetPendingInvitationsVariables>;
+
+interface GetPendingInvitationsRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetPendingInvitationsVariables): QueryRef<GetPendingInvitationsData, GetPendingInvitationsVariables>;
+}
+export const getPendingInvitationsRef: GetPendingInvitationsRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
+```typescript
+getPendingInvitations(dc: DataConnect, vars: GetPendingInvitationsVariables, options?: ExecuteQueryOptions): QueryPromise<GetPendingInvitationsData, GetPendingInvitationsVariables>;
+
+interface GetPendingInvitationsRef {
+  ...
+  (dc: DataConnect, vars: GetPendingInvitationsVariables): QueryRef<GetPendingInvitationsData, GetPendingInvitationsVariables>;
+}
+export const getPendingInvitationsRef: GetPendingInvitationsRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the getPendingInvitationsRef:
+```typescript
+const name = getPendingInvitationsRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `GetPendingInvitations` query requires an argument of type `GetPendingInvitationsVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface GetPendingInvitationsVariables {
+  householdId: UUIDString;
+}
+```
+### Return Type
+Recall that executing the `GetPendingInvitations` query returns a `QueryPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `GetPendingInvitationsData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface GetPendingInvitationsData {
+  invitations: ({
+    id: UUIDString;
+    status: InvitationStatus;
+    expiresAt: TimestampString;
+    createdByUid: string;
+    createdAt: TimestampString;
+  } & Invitation_Key)[];
+}
+```
+### Using `GetPendingInvitations`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, getPendingInvitations, GetPendingInvitationsVariables } from '@pareja-pro/dataconnect';
+
+// The `GetPendingInvitations` query requires an argument of type `GetPendingInvitationsVariables`:
+const getPendingInvitationsVars: GetPendingInvitationsVariables = {
+  householdId: ..., 
+};
+
+// Call the `getPendingInvitations()` function to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await getPendingInvitations(getPendingInvitationsVars);
+// Variables can be defined inline as well.
+const { data } = await getPendingInvitations({ householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await getPendingInvitations(dataConnect, getPendingInvitationsVars);
+
+console.log(data.invitations);
+
+// Or, you can use the `Promise` API.
+getPendingInvitations(getPendingInvitationsVars).then((response) => {
+  const data = response.data;
+  console.log(data.invitations);
+});
+```
+
+### Using `GetPendingInvitations`'s `QueryRef` function
+
+```typescript
+import { getDataConnect, executeQuery } from 'firebase/data-connect';
+import { connectorConfig, getPendingInvitationsRef, GetPendingInvitationsVariables } from '@pareja-pro/dataconnect';
+
+// The `GetPendingInvitations` query requires an argument of type `GetPendingInvitationsVariables`:
+const getPendingInvitationsVars: GetPendingInvitationsVariables = {
+  householdId: ..., 
+};
+
+// Call the `getPendingInvitationsRef()` function to get a reference to the query.
+const ref = getPendingInvitationsRef(getPendingInvitationsVars);
+// Variables can be defined inline as well.
+const ref = getPendingInvitationsRef({ householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the `QueryRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = getPendingInvitationsRef(dataConnect, getPendingInvitationsVars);
+
+// Call `executeQuery()` on the reference to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeQuery(ref);
+
+console.log(data.invitations);
+
+// Or, you can use the `Promise` API.
+executeQuery(ref).then((response) => {
+  const data = response.data;
+  console.log(data.invitations);
 });
 ```
 
@@ -6057,6 +6415,709 @@ console.log(data.journalTag_insert);
 executeMutation(ref).then((response) => {
   const data = response.data;
   console.log(data.journalTag_insert);
+});
+```
+
+## CreateInvitation
+You can execute the `CreateInvitation` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+createInvitation(vars: CreateInvitationVariables): MutationPromise<CreateInvitationData, CreateInvitationVariables>;
+
+interface CreateInvitationRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateInvitationVariables): MutationRef<CreateInvitationData, CreateInvitationVariables>;
+}
+export const createInvitationRef: CreateInvitationRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+createInvitation(dc: DataConnect, vars: CreateInvitationVariables): MutationPromise<CreateInvitationData, CreateInvitationVariables>;
+
+interface CreateInvitationRef {
+  ...
+  (dc: DataConnect, vars: CreateInvitationVariables): MutationRef<CreateInvitationData, CreateInvitationVariables>;
+}
+export const createInvitationRef: CreateInvitationRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the createInvitationRef:
+```typescript
+const name = createInvitationRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `CreateInvitation` mutation requires an argument of type `CreateInvitationVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface CreateInvitationVariables {
+  householdId: UUIDString;
+  expiresAt: TimestampString;
+}
+```
+### Return Type
+Recall that executing the `CreateInvitation` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `CreateInvitationData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface CreateInvitationData {
+  invitation_insert: Invitation_Key;
+}
+```
+### Using `CreateInvitation`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, createInvitation, CreateInvitationVariables } from '@pareja-pro/dataconnect';
+
+// The `CreateInvitation` mutation requires an argument of type `CreateInvitationVariables`:
+const createInvitationVars: CreateInvitationVariables = {
+  householdId: ..., 
+  expiresAt: ..., 
+};
+
+// Call the `createInvitation()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await createInvitation(createInvitationVars);
+// Variables can be defined inline as well.
+const { data } = await createInvitation({ householdId: ..., expiresAt: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await createInvitation(dataConnect, createInvitationVars);
+
+console.log(data.invitation_insert);
+
+// Or, you can use the `Promise` API.
+createInvitation(createInvitationVars).then((response) => {
+  const data = response.data;
+  console.log(data.invitation_insert);
+});
+```
+
+### Using `CreateInvitation`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, createInvitationRef, CreateInvitationVariables } from '@pareja-pro/dataconnect';
+
+// The `CreateInvitation` mutation requires an argument of type `CreateInvitationVariables`:
+const createInvitationVars: CreateInvitationVariables = {
+  householdId: ..., 
+  expiresAt: ..., 
+};
+
+// Call the `createInvitationRef()` function to get a reference to the mutation.
+const ref = createInvitationRef(createInvitationVars);
+// Variables can be defined inline as well.
+const ref = createInvitationRef({ householdId: ..., expiresAt: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = createInvitationRef(dataConnect, createInvitationVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.invitation_insert);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.invitation_insert);
+});
+```
+
+## AcceptInvitation
+You can execute the `AcceptInvitation` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+acceptInvitation(vars: AcceptInvitationVariables): MutationPromise<AcceptInvitationData, AcceptInvitationVariables>;
+
+interface AcceptInvitationRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: AcceptInvitationVariables): MutationRef<AcceptInvitationData, AcceptInvitationVariables>;
+}
+export const acceptInvitationRef: AcceptInvitationRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+acceptInvitation(dc: DataConnect, vars: AcceptInvitationVariables): MutationPromise<AcceptInvitationData, AcceptInvitationVariables>;
+
+interface AcceptInvitationRef {
+  ...
+  (dc: DataConnect, vars: AcceptInvitationVariables): MutationRef<AcceptInvitationData, AcceptInvitationVariables>;
+}
+export const acceptInvitationRef: AcceptInvitationRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the acceptInvitationRef:
+```typescript
+const name = acceptInvitationRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `AcceptInvitation` mutation requires an argument of type `AcceptInvitationVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface AcceptInvitationVariables {
+  invitationId: UUIDString;
+  householdId: UUIDString;
+}
+```
+### Return Type
+Recall that executing the `AcceptInvitation` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `AcceptInvitationData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface AcceptInvitationData {
+  user_update?: User_Key | null;
+  invitation_update?: Invitation_Key | null;
+}
+```
+### Using `AcceptInvitation`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, acceptInvitation, AcceptInvitationVariables } from '@pareja-pro/dataconnect';
+
+// The `AcceptInvitation` mutation requires an argument of type `AcceptInvitationVariables`:
+const acceptInvitationVars: AcceptInvitationVariables = {
+  invitationId: ..., 
+  householdId: ..., 
+};
+
+// Call the `acceptInvitation()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await acceptInvitation(acceptInvitationVars);
+// Variables can be defined inline as well.
+const { data } = await acceptInvitation({ invitationId: ..., householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await acceptInvitation(dataConnect, acceptInvitationVars);
+
+console.log(data.user_update);
+console.log(data.invitation_update);
+
+// Or, you can use the `Promise` API.
+acceptInvitation(acceptInvitationVars).then((response) => {
+  const data = response.data;
+  console.log(data.user_update);
+  console.log(data.invitation_update);
+});
+```
+
+### Using `AcceptInvitation`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, acceptInvitationRef, AcceptInvitationVariables } from '@pareja-pro/dataconnect';
+
+// The `AcceptInvitation` mutation requires an argument of type `AcceptInvitationVariables`:
+const acceptInvitationVars: AcceptInvitationVariables = {
+  invitationId: ..., 
+  householdId: ..., 
+};
+
+// Call the `acceptInvitationRef()` function to get a reference to the mutation.
+const ref = acceptInvitationRef(acceptInvitationVars);
+// Variables can be defined inline as well.
+const ref = acceptInvitationRef({ invitationId: ..., householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = acceptInvitationRef(dataConnect, acceptInvitationVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.user_update);
+console.log(data.invitation_update);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.user_update);
+  console.log(data.invitation_update);
+});
+```
+
+## RevokeInvitation
+You can execute the `RevokeInvitation` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+revokeInvitation(vars: RevokeInvitationVariables): MutationPromise<RevokeInvitationData, RevokeInvitationVariables>;
+
+interface RevokeInvitationRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: RevokeInvitationVariables): MutationRef<RevokeInvitationData, RevokeInvitationVariables>;
+}
+export const revokeInvitationRef: RevokeInvitationRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+revokeInvitation(dc: DataConnect, vars: RevokeInvitationVariables): MutationPromise<RevokeInvitationData, RevokeInvitationVariables>;
+
+interface RevokeInvitationRef {
+  ...
+  (dc: DataConnect, vars: RevokeInvitationVariables): MutationRef<RevokeInvitationData, RevokeInvitationVariables>;
+}
+export const revokeInvitationRef: RevokeInvitationRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the revokeInvitationRef:
+```typescript
+const name = revokeInvitationRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `RevokeInvitation` mutation requires an argument of type `RevokeInvitationVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface RevokeInvitationVariables {
+  id: UUIDString;
+  householdId: UUIDString;
+}
+```
+### Return Type
+Recall that executing the `RevokeInvitation` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `RevokeInvitationData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface RevokeInvitationData {
+  invitation_update?: Invitation_Key | null;
+}
+```
+### Using `RevokeInvitation`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, revokeInvitation, RevokeInvitationVariables } from '@pareja-pro/dataconnect';
+
+// The `RevokeInvitation` mutation requires an argument of type `RevokeInvitationVariables`:
+const revokeInvitationVars: RevokeInvitationVariables = {
+  id: ..., 
+  householdId: ..., 
+};
+
+// Call the `revokeInvitation()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await revokeInvitation(revokeInvitationVars);
+// Variables can be defined inline as well.
+const { data } = await revokeInvitation({ id: ..., householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await revokeInvitation(dataConnect, revokeInvitationVars);
+
+console.log(data.invitation_update);
+
+// Or, you can use the `Promise` API.
+revokeInvitation(revokeInvitationVars).then((response) => {
+  const data = response.data;
+  console.log(data.invitation_update);
+});
+```
+
+### Using `RevokeInvitation`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, revokeInvitationRef, RevokeInvitationVariables } from '@pareja-pro/dataconnect';
+
+// The `RevokeInvitation` mutation requires an argument of type `RevokeInvitationVariables`:
+const revokeInvitationVars: RevokeInvitationVariables = {
+  id: ..., 
+  householdId: ..., 
+};
+
+// Call the `revokeInvitationRef()` function to get a reference to the mutation.
+const ref = revokeInvitationRef(revokeInvitationVars);
+// Variables can be defined inline as well.
+const ref = revokeInvitationRef({ id: ..., householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = revokeInvitationRef(dataConnect, revokeInvitationVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.invitation_update);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.invitation_update);
+});
+```
+
+## LeaveHousehold
+You can execute the `LeaveHousehold` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+leaveHousehold(vars: LeaveHouseholdVariables): MutationPromise<LeaveHouseholdData, LeaveHouseholdVariables>;
+
+interface LeaveHouseholdRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: LeaveHouseholdVariables): MutationRef<LeaveHouseholdData, LeaveHouseholdVariables>;
+}
+export const leaveHouseholdRef: LeaveHouseholdRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+leaveHousehold(dc: DataConnect, vars: LeaveHouseholdVariables): MutationPromise<LeaveHouseholdData, LeaveHouseholdVariables>;
+
+interface LeaveHouseholdRef {
+  ...
+  (dc: DataConnect, vars: LeaveHouseholdVariables): MutationRef<LeaveHouseholdData, LeaveHouseholdVariables>;
+}
+export const leaveHouseholdRef: LeaveHouseholdRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the leaveHouseholdRef:
+```typescript
+const name = leaveHouseholdRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `LeaveHousehold` mutation requires an argument of type `LeaveHouseholdVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface LeaveHouseholdVariables {
+  householdId: UUIDString;
+}
+```
+### Return Type
+Recall that executing the `LeaveHousehold` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `LeaveHouseholdData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface LeaveHouseholdData {
+  newHousehold: Household_Key;
+  user_update?: User_Key | null;
+  assetAccount: Account_Key;
+  incomeAccount: Account_Key;
+  expenseAccount: Account_Key;
+  liabilityAccount: Account_Key;
+}
+```
+### Using `LeaveHousehold`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, leaveHousehold, LeaveHouseholdVariables } from '@pareja-pro/dataconnect';
+
+// The `LeaveHousehold` mutation requires an argument of type `LeaveHouseholdVariables`:
+const leaveHouseholdVars: LeaveHouseholdVariables = {
+  householdId: ..., 
+};
+
+// Call the `leaveHousehold()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await leaveHousehold(leaveHouseholdVars);
+// Variables can be defined inline as well.
+const { data } = await leaveHousehold({ householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await leaveHousehold(dataConnect, leaveHouseholdVars);
+
+console.log(data.newHousehold);
+console.log(data.user_update);
+console.log(data.assetAccount);
+console.log(data.incomeAccount);
+console.log(data.expenseAccount);
+console.log(data.liabilityAccount);
+
+// Or, you can use the `Promise` API.
+leaveHousehold(leaveHouseholdVars).then((response) => {
+  const data = response.data;
+  console.log(data.newHousehold);
+  console.log(data.user_update);
+  console.log(data.assetAccount);
+  console.log(data.incomeAccount);
+  console.log(data.expenseAccount);
+  console.log(data.liabilityAccount);
+});
+```
+
+### Using `LeaveHousehold`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, leaveHouseholdRef, LeaveHouseholdVariables } from '@pareja-pro/dataconnect';
+
+// The `LeaveHousehold` mutation requires an argument of type `LeaveHouseholdVariables`:
+const leaveHouseholdVars: LeaveHouseholdVariables = {
+  householdId: ..., 
+};
+
+// Call the `leaveHouseholdRef()` function to get a reference to the mutation.
+const ref = leaveHouseholdRef(leaveHouseholdVars);
+// Variables can be defined inline as well.
+const ref = leaveHouseholdRef({ householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = leaveHouseholdRef(dataConnect, leaveHouseholdVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.newHousehold);
+console.log(data.user_update);
+console.log(data.assetAccount);
+console.log(data.incomeAccount);
+console.log(data.expenseAccount);
+console.log(data.liabilityAccount);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.newHousehold);
+  console.log(data.user_update);
+  console.log(data.assetAccount);
+  console.log(data.incomeAccount);
+  console.log(data.expenseAccount);
+  console.log(data.liabilityAccount);
+});
+```
+
+## RemoveHouseholdMember
+You can execute the `RemoveHouseholdMember` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+removeHouseholdMember(vars: RemoveHouseholdMemberVariables): MutationPromise<RemoveHouseholdMemberData, RemoveHouseholdMemberVariables>;
+
+interface RemoveHouseholdMemberRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: RemoveHouseholdMemberVariables): MutationRef<RemoveHouseholdMemberData, RemoveHouseholdMemberVariables>;
+}
+export const removeHouseholdMemberRef: RemoveHouseholdMemberRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+removeHouseholdMember(dc: DataConnect, vars: RemoveHouseholdMemberVariables): MutationPromise<RemoveHouseholdMemberData, RemoveHouseholdMemberVariables>;
+
+interface RemoveHouseholdMemberRef {
+  ...
+  (dc: DataConnect, vars: RemoveHouseholdMemberVariables): MutationRef<RemoveHouseholdMemberData, RemoveHouseholdMemberVariables>;
+}
+export const removeHouseholdMemberRef: RemoveHouseholdMemberRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the removeHouseholdMemberRef:
+```typescript
+const name = removeHouseholdMemberRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `RemoveHouseholdMember` mutation requires an argument of type `RemoveHouseholdMemberVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface RemoveHouseholdMemberVariables {
+  householdId: UUIDString;
+  memberUid: string;
+}
+```
+### Return Type
+Recall that executing the `RemoveHouseholdMember` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `RemoveHouseholdMemberData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface RemoveHouseholdMemberData {
+  newHouseholdForMember: Household_Key;
+  user_update?: User_Key | null;
+  assetAccount: Account_Key;
+  incomeAccount: Account_Key;
+  expenseAccount: Account_Key;
+  liabilityAccount: Account_Key;
+}
+```
+### Using `RemoveHouseholdMember`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, removeHouseholdMember, RemoveHouseholdMemberVariables } from '@pareja-pro/dataconnect';
+
+// The `RemoveHouseholdMember` mutation requires an argument of type `RemoveHouseholdMemberVariables`:
+const removeHouseholdMemberVars: RemoveHouseholdMemberVariables = {
+  householdId: ..., 
+  memberUid: ..., 
+};
+
+// Call the `removeHouseholdMember()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await removeHouseholdMember(removeHouseholdMemberVars);
+// Variables can be defined inline as well.
+const { data } = await removeHouseholdMember({ householdId: ..., memberUid: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await removeHouseholdMember(dataConnect, removeHouseholdMemberVars);
+
+console.log(data.newHouseholdForMember);
+console.log(data.user_update);
+console.log(data.assetAccount);
+console.log(data.incomeAccount);
+console.log(data.expenseAccount);
+console.log(data.liabilityAccount);
+
+// Or, you can use the `Promise` API.
+removeHouseholdMember(removeHouseholdMemberVars).then((response) => {
+  const data = response.data;
+  console.log(data.newHouseholdForMember);
+  console.log(data.user_update);
+  console.log(data.assetAccount);
+  console.log(data.incomeAccount);
+  console.log(data.expenseAccount);
+  console.log(data.liabilityAccount);
+});
+```
+
+### Using `RemoveHouseholdMember`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, removeHouseholdMemberRef, RemoveHouseholdMemberVariables } from '@pareja-pro/dataconnect';
+
+// The `RemoveHouseholdMember` mutation requires an argument of type `RemoveHouseholdMemberVariables`:
+const removeHouseholdMemberVars: RemoveHouseholdMemberVariables = {
+  householdId: ..., 
+  memberUid: ..., 
+};
+
+// Call the `removeHouseholdMemberRef()` function to get a reference to the mutation.
+const ref = removeHouseholdMemberRef(removeHouseholdMemberVars);
+// Variables can be defined inline as well.
+const ref = removeHouseholdMemberRef({ householdId: ..., memberUid: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = removeHouseholdMemberRef(dataConnect, removeHouseholdMemberVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.newHouseholdForMember);
+console.log(data.user_update);
+console.log(data.assetAccount);
+console.log(data.incomeAccount);
+console.log(data.expenseAccount);
+console.log(data.liabilityAccount);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.newHouseholdForMember);
+  console.log(data.user_update);
+  console.log(data.assetAccount);
+  console.log(data.incomeAccount);
+  console.log(data.expenseAccount);
+  console.log(data.liabilityAccount);
+});
+```
+
+## BackfillMemberSlots
+You can execute the `BackfillMemberSlots` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+backfillMemberSlots(): MutationPromise<BackfillMemberSlotsData, undefined>;
+
+interface BackfillMemberSlotsRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<BackfillMemberSlotsData, undefined>;
+}
+export const backfillMemberSlotsRef: BackfillMemberSlotsRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+backfillMemberSlots(dc: DataConnect): MutationPromise<BackfillMemberSlotsData, undefined>;
+
+interface BackfillMemberSlotsRef {
+  ...
+  (dc: DataConnect): MutationRef<BackfillMemberSlotsData, undefined>;
+}
+export const backfillMemberSlotsRef: BackfillMemberSlotsRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the backfillMemberSlotsRef:
+```typescript
+const name = backfillMemberSlotsRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `BackfillMemberSlots` mutation has no variables.
+### Return Type
+Recall that executing the `BackfillMemberSlots` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `BackfillMemberSlotsData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface BackfillMemberSlotsData {
+  user_updateMany: number;
+}
+```
+### Using `BackfillMemberSlots`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, backfillMemberSlots } from '@pareja-pro/dataconnect';
+
+
+// Call the `backfillMemberSlots()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await backfillMemberSlots();
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await backfillMemberSlots(dataConnect);
+
+console.log(data.user_updateMany);
+
+// Or, you can use the `Promise` API.
+backfillMemberSlots().then((response) => {
+  const data = response.data;
+  console.log(data.user_updateMany);
+});
+```
+
+### Using `BackfillMemberSlots`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, backfillMemberSlotsRef } from '@pareja-pro/dataconnect';
+
+
+// Call the `backfillMemberSlotsRef()` function to get a reference to the mutation.
+const ref = backfillMemberSlotsRef();
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = backfillMemberSlotsRef(dataConnect);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.user_updateMany);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.user_updateMany);
 });
 ```
 

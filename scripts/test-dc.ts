@@ -38,7 +38,14 @@ import {
   getTags,
   setJournalTags,
   addTagToJournal,
-  getJournalTags
+  getJournalTags,
+  createInvitation,
+  acceptInvitation,
+  revokeInvitation,
+  leaveHousehold,
+  getInvitation,
+  getHouseholdMembers,
+  getPendingInvitations
 } from '../src/lib/dataconnect/esm/index.esm.js';
 
 const app = initializeApp({
@@ -1243,6 +1250,168 @@ async function run() {
     }
     console.log("✅ Verificado: UpdateSharedExpenseWithProration rechazó categoría ajena.");
   });
+
+  // ==== CASOS DE INVITACIONES Y INTEGRANTES (FASE 1) ====
+  console.log('\n--- Flujo de Invitaciones y Membresías ---');
+  const emailInviteA = `inviteA_${uniqueSuffix}@example.com`;
+  const credInviteA = await signUpOrSignIn(emailInviteA, 'password123');
+  const uidInviteA = credInviteA.user.uid;
+  const hhInviteA = await createHouseholdAndUser(dc, { email: emailInviteA, displayName: 'Invitador A' });
+  const houseAId = hhInviteA.data.household_insert.id;
+
+  const emailInviteB = `inviteB_${uniqueSuffix}@example.com`;
+  const credInviteB = await signUpOrSignIn(emailInviteB, 'password123');
+  const uidInviteB = credInviteB.user.uid;
+  const hhInviteB = await createHouseholdAndUser(dc, { email: emailInviteB, displayName: 'Invitado B' });
+  const houseBId = hhInviteB.data.household_insert.id;
+
+  const emailInviteC = `inviteC_${uniqueSuffix}@example.com`;
+  const credInviteC = await signUpOrSignIn(emailInviteC, 'password123');
+  const uidInviteC = credInviteC.user.uid;
+  const hhInviteC = await createHouseholdAndUser(dc, { email: emailInviteC, displayName: 'Invitado C (Alien)' });
+  const houseCId = hhInviteC.data.household_insert.id;
+
+  // CASO 1: A crea invitación -> B la acepta -> GetHouseholdMembers devuelve 2 integrantes (A como USER_A, B como USER_B)
+  await signInWithEmailAndPassword(auth, emailInviteA, 'password123');
+  let validInviteId = '';
+  const futureExpiration = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  await expectSuccess('CASO INV-1a: A crea invitación para su hogar', async () => {
+    const res = await createInvitation(dc, {
+      householdId: houseAId,
+      expiresAt: futureExpiration
+    });
+    validInviteId = res.data.invitation_insert.id;
+  });
+
+  await signInWithEmailAndPassword(auth, emailInviteB, 'password123');
+  await expectSuccess('CASO INV-1b: B consulta los detalles de la invitación', async () => {
+    const res = await getInvitation(dc, { id: validInviteId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (!res.data.invitation || res.data.invitation.status !== 'PENDING') {
+      throw new Error('La invitación consultada no está pendiente.');
+    }
+  });
+
+  await expectSuccess('CASO INV-1c: B acepta la invitación al hogar de A', async () => {
+    await acceptInvitation(dc, {
+      invitationId: validInviteId,
+      householdId: houseAId
+    });
+  });
+
+  await expectSuccess('CASO INV-1d: B consulta miembros del hogar de A (deben ser 2)', async () => {
+    const res = await getHouseholdMembers(dc, { householdId: houseAId }, { fetchPolicy: 'SERVER_ONLY' });
+    const members = res.data.users;
+    if (members.length !== 2) throw new Error(`Se esperaban 2 miembros, se encontraron ${members.length}`);
+    const memberA = members.find(m => m.uid === uidInviteA);
+    const memberB = members.find(m => m.uid === uidInviteB);
+    if (!memberA || memberA.memberSlot !== 'USER_A') throw new Error('A no tiene memberSlot USER_A');
+    if (!memberB || memberB.memberSlot !== 'USER_B') throw new Error('B no tiene memberSlot USER_B');
+  });
+
+  // CASO 2: C intenta aceptar la misma invitación -> rechazo específico
+  await signInWithEmailAndPassword(auth, emailInviteC, 'password123');
+  await expectRejected('CASO INV-2: C intenta aceptar invitación ya utilizada (debe fallar)', async () => {
+    await acceptInvitation(dc, {
+      invitationId: validInviteId,
+      householdId: houseAId
+    });
+  }, /La invitación no existe, ya fue utilizada o ha expirado/);
+
+  // CASO 3: Invitación revocada o expirada -> rechazo con mensaje específico
+  const emailInviteD = `inviteD_${uniqueSuffix}@example.com`;
+  await signUpOrSignIn(emailInviteD, 'password123');
+  const hhInviteD = await createHouseholdAndUser(dc, { email: emailInviteD, displayName: 'Usuario D' });
+  const houseDId = hhInviteD.data.household_insert.id;
+
+  let revokedInviteId = '';
+  await expectSuccess('CASO INV-3a: D crea una invitación', async () => {
+    const res = await createInvitation(dc, {
+      householdId: houseDId,
+      expiresAt: futureExpiration
+    });
+    revokedInviteId = res.data.invitation_insert.id;
+  });
+
+  await expectSuccess('CASO INV-3b: D revoca la invitación creada', async () => {
+    await revokeInvitation(dc, {
+      id: revokedInviteId,
+      householdId: houseDId
+    });
+  });
+
+  await signInWithEmailAndPassword(auth, emailInviteC, 'password123');
+  await expectRejected('CASO INV-3c: C intenta aceptar invitación revocada (debe fallar)', async () => {
+    await acceptInvitation(dc, {
+      invitationId: revokedInviteId,
+      householdId: houseDId
+    });
+  }, /La invitación no existe, ya fue utilizada o ha expirado/);
+
+  await expectRejected('CASO INV-3d: C consulta invitación revocada con getInvitation (debe fallar)', async () => {
+    await getInvitation(dc, { id: revokedInviteId }, { fetchPolicy: 'SERVER_ONLY' });
+  }, /Invitación inválida o expirada/);
+
+  // CASO 4: Aislamiento -> Usuario ajeno intenta llamar GetHouseholdMembers o GetPendingInvitations del hogar de A
+  await signInWithEmailAndPassword(auth, emailInviteC, 'password123');
+  await expectRejected('CASO INV-4a: C (alien) intenta consultar miembros del hogar de A (debe fallar)', async () => {
+    await getHouseholdMembers(dc, { householdId: houseAId }, { fetchPolicy: 'SERVER_ONLY' });
+  }, /El recurso no pertenece a este hogar/);
+
+  await expectRejected('CASO INV-4b: C (alien) intenta consultar invitaciones pendientes del hogar de A (debe fallar)', async () => {
+    await getPendingInvitations(dc, { householdId: houseAId }, { fetchPolicy: 'SERVER_ONLY' });
+  }, /El recurso no pertenece a este hogar/);
+
+  // CASO 5: B ejecuta LeaveHousehold -> B recibe nuevo hogar con 4 cuentas por defecto y memberSlot: USER_A; ya no tiene acceso a A
+  await signInWithEmailAndPassword(auth, emailInviteB, 'password123');
+  await expectSuccess('CASO INV-5a: B abandona el hogar de A', async () => {
+    await leaveHousehold(dc, { householdId: houseAId });
+  });
+
+  await expectSuccess('CASO INV-5b: B ahora tiene su propio hogar con memberSlot USER_A y 4 cuentas', async () => {
+    const userRes = await getCurrentUser(dc, { fetchPolicy: 'SERVER_ONLY' });
+    const newHouseId = userRes.data.user?.householdId;
+    if (!newHouseId || newHouseId === houseAId) {
+      throw new Error('B no fue asignado a un nuevo hogar diferente.');
+    }
+    if (userRes.data.user?.memberSlot !== 'USER_A') {
+      throw new Error(`B debió recibir memberSlot USER_A en su nuevo hogar, se obtuvo: ${userRes.data.user?.memberSlot}`);
+    }
+    const accountsRes = await getHouseholdAccounts(dc, { householdId: newHouseId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (accountsRes.data.accounts.length !== 4) {
+      throw new Error(`Se esperaban 4 cuentas por defecto en el nuevo hogar, se encontraron ${accountsRes.data.accounts.length}`);
+    }
+  });
+
+  await expectRejected('CASO INV-5c: B ya no puede consultar miembros del hogar de A (debe fallar)', async () => {
+    await getHouseholdMembers(dc, { householdId: houseAId }, { fetchPolicy: 'SERVER_ONLY' });
+  }, /El recurso no pertenece a este hogar/);
+
+  // CASO 6: A intenta crear invitación cuando el hogar ya tiene 2 integrantes -> rechazo específico
+  await signInWithEmailAndPassword(auth, emailInviteA, 'password123');
+  let inviteForC = '';
+  await expectSuccess('CASO INV-6a: A crea invitación para que C se una', async () => {
+    const res = await createInvitation(dc, {
+      householdId: houseAId,
+      expiresAt: futureExpiration
+    });
+    inviteForC = res.data.invitation_insert.id;
+  });
+
+  await signInWithEmailAndPassword(auth, emailInviteC, 'password123');
+  await expectSuccess('CASO INV-6b: C acepta invitación y se une al hogar de A (ahora son 2: A y C)', async () => {
+    await acceptInvitation(dc, {
+      invitationId: inviteForC,
+      householdId: houseAId
+    });
+  });
+
+  await signInWithEmailAndPassword(auth, emailInviteA, 'password123');
+  await expectRejected('CASO INV-6c: A intenta crear invitación con el hogar lleno de 2 miembros (debe fallar)', async () => {
+    await createInvitation(dc, {
+      householdId: houseAId,
+      expiresAt: futureExpiration
+    });
+  }, /El hogar ya cuenta con el límite de 2 integrantes/);
 
   if (globalHasErrors) {
     console.error('\n⚠️ Hubo errores en las pruebas.');
