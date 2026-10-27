@@ -1,4 +1,3 @@
-import { filtrarPorContexto } from './services/contextService';
 import { filterByContext } from './services/ownershipService';
 import { calcularProrrateo, simplificarDeudas } from './services/liquidadorService';
 import { calcularPatrimonio } from './services/simuladorService';
