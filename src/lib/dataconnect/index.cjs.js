@@ -15,6 +15,19 @@ const EntryType = {
 }
 exports.EntryType = EntryType;
 
+const InvitationStatus = {
+  PENDING: "PENDING",
+  ACCEPTED: "ACCEPTED",
+  REVOKED: "REVOKED",
+}
+exports.InvitationStatus = InvitationStatus;
+
+const MemberSlot = {
+  USER_A: "USER_A",
+  USER_B: "USER_B",
+}
+exports.MemberSlot = MemberSlot;
+
 const OwnerType = {
   USER_A: "USER_A",
   USER_B: "USER_B",
@@ -54,20 +67,6 @@ exports.createSharedExpenseWithProrationRef = createSharedExpenseWithProrationRe
 exports.createSharedExpenseWithProration = function createSharedExpenseWithProration(dcOrVars, vars) {
   const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
   return executeMutation(createSharedExpenseWithProrationRef(dcInstance, inputVars));
-}
-;
-
-const createMsiExpenseRef = (dcOrVars, vars) => {
-  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'CreateMsiExpense', inputVars);
-}
-createMsiExpenseRef.operationName = 'CreateMsiExpense';
-exports.createMsiExpenseRef = createMsiExpenseRef;
-
-exports.createMsiExpense = function createMsiExpense(dcOrVars, vars) {
-  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
-  return executeMutation(createMsiExpenseRef(dcInstance, inputVars));
 }
 ;
 
@@ -463,6 +462,90 @@ exports.addTagToJournal = function addTagToJournal(dcOrVars, vars) {
 }
 ;
 
+const createInvitationRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'CreateInvitation', inputVars);
+}
+createInvitationRef.operationName = 'CreateInvitation';
+exports.createInvitationRef = createInvitationRef;
+
+exports.createInvitation = function createInvitation(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(createInvitationRef(dcInstance, inputVars));
+}
+;
+
+const acceptInvitationRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'AcceptInvitation', inputVars);
+}
+acceptInvitationRef.operationName = 'AcceptInvitation';
+exports.acceptInvitationRef = acceptInvitationRef;
+
+exports.acceptInvitation = function acceptInvitation(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(acceptInvitationRef(dcInstance, inputVars));
+}
+;
+
+const revokeInvitationRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'RevokeInvitation', inputVars);
+}
+revokeInvitationRef.operationName = 'RevokeInvitation';
+exports.revokeInvitationRef = revokeInvitationRef;
+
+exports.revokeInvitation = function revokeInvitation(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(revokeInvitationRef(dcInstance, inputVars));
+}
+;
+
+const leaveHouseholdRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'LeaveHousehold', inputVars);
+}
+leaveHouseholdRef.operationName = 'LeaveHousehold';
+exports.leaveHouseholdRef = leaveHouseholdRef;
+
+exports.leaveHousehold = function leaveHousehold(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(leaveHouseholdRef(dcInstance, inputVars));
+}
+;
+
+const removeHouseholdMemberRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'RemoveHouseholdMember', inputVars);
+}
+removeHouseholdMemberRef.operationName = 'RemoveHouseholdMember';
+exports.removeHouseholdMemberRef = removeHouseholdMemberRef;
+
+exports.removeHouseholdMember = function removeHouseholdMember(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(removeHouseholdMemberRef(dcInstance, inputVars));
+}
+;
+
+const backfillMemberSlotsRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'BackfillMemberSlots');
+}
+backfillMemberSlotsRef.operationName = 'BackfillMemberSlots';
+exports.backfillMemberSlotsRef = backfillMemberSlotsRef;
+
+exports.backfillMemberSlots = function backfillMemberSlots(dc) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dc, undefined);
+  return executeMutation(backfillMemberSlotsRef(dcInstance, inputVars));
+}
+;
+
 const getHouseholdAccountsRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();
@@ -628,6 +711,21 @@ exports.getIncomesByHousehold = function getIncomesByHousehold(dcOrVars, varsOrO
 }
 ;
 
+const getInternalTransfersByHouseholdRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetInternalTransfersByHousehold', inputVars);
+}
+getInternalTransfersByHouseholdRef.operationName = 'GetInternalTransfersByHousehold';
+exports.getInternalTransfersByHouseholdRef = getInternalTransfersByHouseholdRef;
+
+exports.getInternalTransfersByHousehold = function getInternalTransfersByHousehold(dcOrVars, varsOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
+  return executeQuery(getInternalTransfersByHouseholdRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
+}
+;
+
 const getCurrentUserRef = (dc) => {
   const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
   dcInstance._useGeneratedSdk();
@@ -715,6 +813,51 @@ exports.getJournalBalanceV2 = function getJournalBalanceV2(dcOrVars, varsOrOptio
   
   const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
   return executeQuery(getJournalBalanceV2Ref(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
+}
+;
+
+const getInvitationRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetInvitation', inputVars);
+}
+getInvitationRef.operationName = 'GetInvitation';
+exports.getInvitationRef = getInvitationRef;
+
+exports.getInvitation = function getInvitation(dcOrVars, varsOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
+  return executeQuery(getInvitationRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
+}
+;
+
+const getHouseholdMembersRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetHouseholdMembers', inputVars);
+}
+getHouseholdMembersRef.operationName = 'GetHouseholdMembers';
+exports.getHouseholdMembersRef = getHouseholdMembersRef;
+
+exports.getHouseholdMembers = function getHouseholdMembers(dcOrVars, varsOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
+  return executeQuery(getHouseholdMembersRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
+}
+;
+
+const getPendingInvitationsRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetPendingInvitations', inputVars);
+}
+getPendingInvitationsRef.operationName = 'GetPendingInvitations';
+exports.getPendingInvitationsRef = getPendingInvitationsRef;
+
+exports.getPendingInvitations = function getPendingInvitations(dcOrVars, varsOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
+  return executeQuery(getPendingInvitationsRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
 }
 ;
 

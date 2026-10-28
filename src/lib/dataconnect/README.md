@@ -19,18 +19,21 @@ This README will guide you through the process of using the generated JavaScript
   - [*GetLatestRate*](#getlatestrate)
   - [*GetExpensesByHousehold*](#getexpensesbyhousehold)
   - [*GetIncomesByHousehold*](#getincomesbyhousehold)
+  - [*GetInternalTransfersByHousehold*](#getinternaltransfersbyhousehold)
   - [*GetCurrentUser*](#getcurrentuser)
   - [*GetCategories*](#getcategories)
   - [*GetTags*](#gettags)
   - [*GetJournalTags*](#getjournaltags)
   - [*GetSettlements*](#getsettlements)
   - [*GetJournalBalanceV2*](#getjournalbalancev2)
+  - [*GetInvitation*](#getinvitation)
+  - [*GetHouseholdMembers*](#gethouseholdmembers)
+  - [*GetPendingInvitations*](#getpendinginvitations)
   - [*NegativeEntries*](#negativeentries)
   - [*UnbalancedJournals*](#unbalancedjournals)
 - [**Mutations**](#mutations)
   - [*CreateJournalWithEntries*](#createjournalwithentries)
   - [*CreateSharedExpenseWithProration*](#createsharedexpensewithproration)
-  - [*CreateMsiExpense*](#createmsiexpense)
   - [*CreateBudget*](#createbudget)
   - [*UpdateBudget*](#updatebudget)
   - [*DeleteBudget*](#deletebudget)
@@ -59,6 +62,12 @@ This README will guide you through the process of using the generated JavaScript
   - [*DeleteTag*](#deletetag)
   - [*SetJournalTags*](#setjournaltags)
   - [*AddTagToJournal*](#addtagtojournal)
+  - [*CreateInvitation*](#createinvitation)
+  - [*AcceptInvitation*](#acceptinvitation)
+  - [*RevokeInvitation*](#revokeinvitation)
+  - [*LeaveHousehold*](#leavehousehold)
+  - [*RemoveHouseholdMember*](#removehouseholdmember)
+  - [*BackfillMemberSlots*](#backfillmemberslots)
 
 # Accessing the connector
 A connector is a collection of Queries and Mutations. One SDK is generated for each connector - this SDK is generated for the connector `orbita2-connector`. You can find more information about connectors in the [Data Connect documentation](https://firebase.google.com/docs/data-connect#how-does).
@@ -160,6 +169,12 @@ export interface GetHouseholdAccountsData {
     color?: string | null;
     isArchived: boolean;
   } & Account_Key)[];
+  householdUsers: ({
+    uid: string;
+    email: string;
+    displayName?: string | null;
+    memberSlot?: MemberSlot | null;
+  } & User_Key)[];
 }
 ```
 ### Using `GetHouseholdAccounts`'s action shortcut function
@@ -184,11 +199,13 @@ const dataConnect = getDataConnect(connectorConfig);
 const { data } = await getHouseholdAccounts(dataConnect, getHouseholdAccountsVars);
 
 console.log(data.accounts);
+console.log(data.householdUsers);
 
 // Or, you can use the `Promise` API.
 getHouseholdAccounts(getHouseholdAccountsVars).then((response) => {
   const data = response.data;
   console.log(data.accounts);
+  console.log(data.householdUsers);
 });
 ```
 
@@ -217,11 +234,13 @@ const ref = getHouseholdAccountsRef(dataConnect, getHouseholdAccountsVars);
 const { data } = await executeQuery(ref);
 
 console.log(data.accounts);
+console.log(data.householdUsers);
 
 // Or, you can use the `Promise` API.
 executeQuery(ref).then((response) => {
   const data = response.data;
   console.log(data.accounts);
+  console.log(data.householdUsers);
 });
 ```
 
@@ -1414,6 +1433,133 @@ executeQuery(ref).then((response) => {
 });
 ```
 
+## GetInternalTransfersByHousehold
+You can execute the `GetInternalTransfersByHousehold` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+getInternalTransfersByHousehold(vars: GetInternalTransfersByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetInternalTransfersByHouseholdData, GetInternalTransfersByHouseholdVariables>;
+
+interface GetInternalTransfersByHouseholdRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetInternalTransfersByHouseholdVariables): QueryRef<GetInternalTransfersByHouseholdData, GetInternalTransfersByHouseholdVariables>;
+}
+export const getInternalTransfersByHouseholdRef: GetInternalTransfersByHouseholdRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
+```typescript
+getInternalTransfersByHousehold(dc: DataConnect, vars: GetInternalTransfersByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetInternalTransfersByHouseholdData, GetInternalTransfersByHouseholdVariables>;
+
+interface GetInternalTransfersByHouseholdRef {
+  ...
+  (dc: DataConnect, vars: GetInternalTransfersByHouseholdVariables): QueryRef<GetInternalTransfersByHouseholdData, GetInternalTransfersByHouseholdVariables>;
+}
+export const getInternalTransfersByHouseholdRef: GetInternalTransfersByHouseholdRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the getInternalTransfersByHouseholdRef:
+```typescript
+const name = getInternalTransfersByHouseholdRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `GetInternalTransfersByHousehold` query requires an argument of type `GetInternalTransfersByHouseholdVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface GetInternalTransfersByHouseholdVariables {
+  householdId: UUIDString;
+}
+```
+### Return Type
+Recall that executing the `GetInternalTransfersByHousehold` query returns a `QueryPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `GetInternalTransfersByHouseholdData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface GetInternalTransfersByHouseholdData {
+  journals: ({
+    id: UUIDString;
+    date: TimestampString;
+    description: string;
+    isInternalTransfer: boolean;
+    createdAt: TimestampString;
+    entries_on_journal: ({
+      id: UUIDString;
+      amount: number;
+      entryType: EntryType;
+      ownerUid: string;
+      isShared: boolean;
+      account: {
+        id: UUIDString;
+        name: string;
+        type: AccountType;
+      } & Account_Key;
+    } & Entry_Key)[];
+  } & Journal_Key)[];
+}
+```
+### Using `GetInternalTransfersByHousehold`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, getInternalTransfersByHousehold, GetInternalTransfersByHouseholdVariables } from '@pareja-pro/dataconnect';
+
+// The `GetInternalTransfersByHousehold` query requires an argument of type `GetInternalTransfersByHouseholdVariables`:
+const getInternalTransfersByHouseholdVars: GetInternalTransfersByHouseholdVariables = {
+  householdId: ..., 
+};
+
+// Call the `getInternalTransfersByHousehold()` function to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await getInternalTransfersByHousehold(getInternalTransfersByHouseholdVars);
+// Variables can be defined inline as well.
+const { data } = await getInternalTransfersByHousehold({ householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await getInternalTransfersByHousehold(dataConnect, getInternalTransfersByHouseholdVars);
+
+console.log(data.journals);
+
+// Or, you can use the `Promise` API.
+getInternalTransfersByHousehold(getInternalTransfersByHouseholdVars).then((response) => {
+  const data = response.data;
+  console.log(data.journals);
+});
+```
+
+### Using `GetInternalTransfersByHousehold`'s `QueryRef` function
+
+```typescript
+import { getDataConnect, executeQuery } from 'firebase/data-connect';
+import { connectorConfig, getInternalTransfersByHouseholdRef, GetInternalTransfersByHouseholdVariables } from '@pareja-pro/dataconnect';
+
+// The `GetInternalTransfersByHousehold` query requires an argument of type `GetInternalTransfersByHouseholdVariables`:
+const getInternalTransfersByHouseholdVars: GetInternalTransfersByHouseholdVariables = {
+  householdId: ..., 
+};
+
+// Call the `getInternalTransfersByHouseholdRef()` function to get a reference to the query.
+const ref = getInternalTransfersByHouseholdRef(getInternalTransfersByHouseholdVars);
+// Variables can be defined inline as well.
+const ref = getInternalTransfersByHouseholdRef({ householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the `QueryRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = getInternalTransfersByHouseholdRef(dataConnect, getInternalTransfersByHouseholdVars);
+
+// Call `executeQuery()` on the reference to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeQuery(ref);
+
+console.log(data.journals);
+
+// Or, you can use the `Promise` API.
+executeQuery(ref).then((response) => {
+  const data = response.data;
+  console.log(data.journals);
+});
+```
+
 ## GetCurrentUser
 You can execute the `GetCurrentUser` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
 ```typescript
@@ -1456,6 +1602,7 @@ export interface GetCurrentUserData {
     email: string;
     displayName?: string | null;
     householdId: UUIDString;
+    memberSlot?: MemberSlot | null;
   } & User_Key;
 }
 ```
@@ -1772,6 +1919,7 @@ The `GetJournalTags` query requires an argument of type `GetJournalTagsVariables
 ```typescript
 export interface GetJournalTagsVariables {
   journalId: UUIDString;
+  householdId: UUIDString;
 }
 ```
 ### Return Type
@@ -1797,13 +1945,14 @@ import { connectorConfig, getJournalTags, GetJournalTagsVariables } from '@parej
 // The `GetJournalTags` query requires an argument of type `GetJournalTagsVariables`:
 const getJournalTagsVars: GetJournalTagsVariables = {
   journalId: ..., 
+  householdId: ..., 
 };
 
 // Call the `getJournalTags()` function to execute the query.
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await getJournalTags(getJournalTagsVars);
 // Variables can be defined inline as well.
-const { data } = await getJournalTags({ journalId: ..., });
+const { data } = await getJournalTags({ journalId: ..., householdId: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -1827,12 +1976,13 @@ import { connectorConfig, getJournalTagsRef, GetJournalTagsVariables } from '@pa
 // The `GetJournalTags` query requires an argument of type `GetJournalTagsVariables`:
 const getJournalTagsVars: GetJournalTagsVariables = {
   journalId: ..., 
+  householdId: ..., 
 };
 
 // Call the `getJournalTagsRef()` function to get a reference to the query.
 const ref = getJournalTagsRef(getJournalTagsVars);
 // Variables can be defined inline as well.
-const ref = getJournalTagsRef({ journalId: ..., });
+const ref = getJournalTagsRef({ journalId: ..., householdId: ..., });
 
 // You can also pass in a `DataConnect` instance to the `QueryRef` function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -2001,6 +2151,7 @@ The `GetJournalBalanceV2` query requires an argument of type `GetJournalBalanceV
 ```typescript
 export interface GetJournalBalanceV2Variables {
   journalId: UUIDString;
+  householdId: UUIDString;
 }
 ```
 ### Return Type
@@ -2023,13 +2174,14 @@ import { connectorConfig, getJournalBalanceV2, GetJournalBalanceV2Variables } fr
 // The `GetJournalBalanceV2` query requires an argument of type `GetJournalBalanceV2Variables`:
 const getJournalBalanceV2Vars: GetJournalBalanceV2Variables = {
   journalId: ..., 
+  householdId: ..., 
 };
 
 // Call the `getJournalBalanceV2()` function to execute the query.
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await getJournalBalanceV2(getJournalBalanceV2Vars);
 // Variables can be defined inline as well.
-const { data } = await getJournalBalanceV2({ journalId: ..., });
+const { data } = await getJournalBalanceV2({ journalId: ..., householdId: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -2053,12 +2205,13 @@ import { connectorConfig, getJournalBalanceV2Ref, GetJournalBalanceV2Variables }
 // The `GetJournalBalanceV2` query requires an argument of type `GetJournalBalanceV2Variables`:
 const getJournalBalanceV2Vars: GetJournalBalanceV2Variables = {
   journalId: ..., 
+  householdId: ..., 
 };
 
 // Call the `getJournalBalanceV2Ref()` function to get a reference to the query.
 const ref = getJournalBalanceV2Ref(getJournalBalanceV2Vars);
 // Variables can be defined inline as well.
-const ref = getJournalBalanceV2Ref({ journalId: ..., });
+const ref = getJournalBalanceV2Ref({ journalId: ..., householdId: ..., });
 
 // You can also pass in a `DataConnect` instance to the `QueryRef` function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -2074,6 +2227,354 @@ console.log(data.journalBalanceV2s);
 executeQuery(ref).then((response) => {
   const data = response.data;
   console.log(data.journalBalanceV2s);
+});
+```
+
+## GetInvitation
+You can execute the `GetInvitation` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+getInvitation(vars: GetInvitationVariables, options?: ExecuteQueryOptions): QueryPromise<GetInvitationData, GetInvitationVariables>;
+
+interface GetInvitationRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetInvitationVariables): QueryRef<GetInvitationData, GetInvitationVariables>;
+}
+export const getInvitationRef: GetInvitationRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
+```typescript
+getInvitation(dc: DataConnect, vars: GetInvitationVariables, options?: ExecuteQueryOptions): QueryPromise<GetInvitationData, GetInvitationVariables>;
+
+interface GetInvitationRef {
+  ...
+  (dc: DataConnect, vars: GetInvitationVariables): QueryRef<GetInvitationData, GetInvitationVariables>;
+}
+export const getInvitationRef: GetInvitationRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the getInvitationRef:
+```typescript
+const name = getInvitationRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `GetInvitation` query requires an argument of type `GetInvitationVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface GetInvitationVariables {
+  id: UUIDString;
+}
+```
+### Return Type
+Recall that executing the `GetInvitation` query returns a `QueryPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `GetInvitationData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface GetInvitationData {
+  invitation?: {
+    id: UUIDString;
+    status: InvitationStatus;
+    expiresAt: TimestampString;
+    createdByUid: string;
+    household: {
+      id: UUIDString;
+      name: string;
+    } & Household_Key;
+  } & Invitation_Key;
+}
+```
+### Using `GetInvitation`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, getInvitation, GetInvitationVariables } from '@pareja-pro/dataconnect';
+
+// The `GetInvitation` query requires an argument of type `GetInvitationVariables`:
+const getInvitationVars: GetInvitationVariables = {
+  id: ..., 
+};
+
+// Call the `getInvitation()` function to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await getInvitation(getInvitationVars);
+// Variables can be defined inline as well.
+const { data } = await getInvitation({ id: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await getInvitation(dataConnect, getInvitationVars);
+
+console.log(data.invitation);
+
+// Or, you can use the `Promise` API.
+getInvitation(getInvitationVars).then((response) => {
+  const data = response.data;
+  console.log(data.invitation);
+});
+```
+
+### Using `GetInvitation`'s `QueryRef` function
+
+```typescript
+import { getDataConnect, executeQuery } from 'firebase/data-connect';
+import { connectorConfig, getInvitationRef, GetInvitationVariables } from '@pareja-pro/dataconnect';
+
+// The `GetInvitation` query requires an argument of type `GetInvitationVariables`:
+const getInvitationVars: GetInvitationVariables = {
+  id: ..., 
+};
+
+// Call the `getInvitationRef()` function to get a reference to the query.
+const ref = getInvitationRef(getInvitationVars);
+// Variables can be defined inline as well.
+const ref = getInvitationRef({ id: ..., });
+
+// You can also pass in a `DataConnect` instance to the `QueryRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = getInvitationRef(dataConnect, getInvitationVars);
+
+// Call `executeQuery()` on the reference to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeQuery(ref);
+
+console.log(data.invitation);
+
+// Or, you can use the `Promise` API.
+executeQuery(ref).then((response) => {
+  const data = response.data;
+  console.log(data.invitation);
+});
+```
+
+## GetHouseholdMembers
+You can execute the `GetHouseholdMembers` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+getHouseholdMembers(vars: GetHouseholdMembersVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdMembersData, GetHouseholdMembersVariables>;
+
+interface GetHouseholdMembersRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetHouseholdMembersVariables): QueryRef<GetHouseholdMembersData, GetHouseholdMembersVariables>;
+}
+export const getHouseholdMembersRef: GetHouseholdMembersRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
+```typescript
+getHouseholdMembers(dc: DataConnect, vars: GetHouseholdMembersVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdMembersData, GetHouseholdMembersVariables>;
+
+interface GetHouseholdMembersRef {
+  ...
+  (dc: DataConnect, vars: GetHouseholdMembersVariables): QueryRef<GetHouseholdMembersData, GetHouseholdMembersVariables>;
+}
+export const getHouseholdMembersRef: GetHouseholdMembersRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the getHouseholdMembersRef:
+```typescript
+const name = getHouseholdMembersRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `GetHouseholdMembers` query requires an argument of type `GetHouseholdMembersVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface GetHouseholdMembersVariables {
+  householdId: UUIDString;
+}
+```
+### Return Type
+Recall that executing the `GetHouseholdMembers` query returns a `QueryPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `GetHouseholdMembersData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface GetHouseholdMembersData {
+  users: ({
+    uid: string;
+    email: string;
+    displayName?: string | null;
+    memberSlot?: MemberSlot | null;
+    createdAt: TimestampString;
+  } & User_Key)[];
+}
+```
+### Using `GetHouseholdMembers`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, getHouseholdMembers, GetHouseholdMembersVariables } from '@pareja-pro/dataconnect';
+
+// The `GetHouseholdMembers` query requires an argument of type `GetHouseholdMembersVariables`:
+const getHouseholdMembersVars: GetHouseholdMembersVariables = {
+  householdId: ..., 
+};
+
+// Call the `getHouseholdMembers()` function to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await getHouseholdMembers(getHouseholdMembersVars);
+// Variables can be defined inline as well.
+const { data } = await getHouseholdMembers({ householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await getHouseholdMembers(dataConnect, getHouseholdMembersVars);
+
+console.log(data.users);
+
+// Or, you can use the `Promise` API.
+getHouseholdMembers(getHouseholdMembersVars).then((response) => {
+  const data = response.data;
+  console.log(data.users);
+});
+```
+
+### Using `GetHouseholdMembers`'s `QueryRef` function
+
+```typescript
+import { getDataConnect, executeQuery } from 'firebase/data-connect';
+import { connectorConfig, getHouseholdMembersRef, GetHouseholdMembersVariables } from '@pareja-pro/dataconnect';
+
+// The `GetHouseholdMembers` query requires an argument of type `GetHouseholdMembersVariables`:
+const getHouseholdMembersVars: GetHouseholdMembersVariables = {
+  householdId: ..., 
+};
+
+// Call the `getHouseholdMembersRef()` function to get a reference to the query.
+const ref = getHouseholdMembersRef(getHouseholdMembersVars);
+// Variables can be defined inline as well.
+const ref = getHouseholdMembersRef({ householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the `QueryRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = getHouseholdMembersRef(dataConnect, getHouseholdMembersVars);
+
+// Call `executeQuery()` on the reference to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeQuery(ref);
+
+console.log(data.users);
+
+// Or, you can use the `Promise` API.
+executeQuery(ref).then((response) => {
+  const data = response.data;
+  console.log(data.users);
+});
+```
+
+## GetPendingInvitations
+You can execute the `GetPendingInvitations` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+getPendingInvitations(vars: GetPendingInvitationsVariables, options?: ExecuteQueryOptions): QueryPromise<GetPendingInvitationsData, GetPendingInvitationsVariables>;
+
+interface GetPendingInvitationsRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetPendingInvitationsVariables): QueryRef<GetPendingInvitationsData, GetPendingInvitationsVariables>;
+}
+export const getPendingInvitationsRef: GetPendingInvitationsRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
+```typescript
+getPendingInvitations(dc: DataConnect, vars: GetPendingInvitationsVariables, options?: ExecuteQueryOptions): QueryPromise<GetPendingInvitationsData, GetPendingInvitationsVariables>;
+
+interface GetPendingInvitationsRef {
+  ...
+  (dc: DataConnect, vars: GetPendingInvitationsVariables): QueryRef<GetPendingInvitationsData, GetPendingInvitationsVariables>;
+}
+export const getPendingInvitationsRef: GetPendingInvitationsRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the getPendingInvitationsRef:
+```typescript
+const name = getPendingInvitationsRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `GetPendingInvitations` query requires an argument of type `GetPendingInvitationsVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface GetPendingInvitationsVariables {
+  householdId: UUIDString;
+}
+```
+### Return Type
+Recall that executing the `GetPendingInvitations` query returns a `QueryPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `GetPendingInvitationsData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface GetPendingInvitationsData {
+  invitations: ({
+    id: UUIDString;
+    status: InvitationStatus;
+    expiresAt: TimestampString;
+    createdByUid: string;
+    createdAt: TimestampString;
+  } & Invitation_Key)[];
+}
+```
+### Using `GetPendingInvitations`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, getPendingInvitations, GetPendingInvitationsVariables } from '@pareja-pro/dataconnect';
+
+// The `GetPendingInvitations` query requires an argument of type `GetPendingInvitationsVariables`:
+const getPendingInvitationsVars: GetPendingInvitationsVariables = {
+  householdId: ..., 
+};
+
+// Call the `getPendingInvitations()` function to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await getPendingInvitations(getPendingInvitationsVars);
+// Variables can be defined inline as well.
+const { data } = await getPendingInvitations({ householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await getPendingInvitations(dataConnect, getPendingInvitationsVars);
+
+console.log(data.invitations);
+
+// Or, you can use the `Promise` API.
+getPendingInvitations(getPendingInvitationsVars).then((response) => {
+  const data = response.data;
+  console.log(data.invitations);
+});
+```
+
+### Using `GetPendingInvitations`'s `QueryRef` function
+
+```typescript
+import { getDataConnect, executeQuery } from 'firebase/data-connect';
+import { connectorConfig, getPendingInvitationsRef, GetPendingInvitationsVariables } from '@pareja-pro/dataconnect';
+
+// The `GetPendingInvitations` query requires an argument of type `GetPendingInvitationsVariables`:
+const getPendingInvitationsVars: GetPendingInvitationsVariables = {
+  householdId: ..., 
+};
+
+// Call the `getPendingInvitationsRef()` function to get a reference to the query.
+const ref = getPendingInvitationsRef(getPendingInvitationsVars);
+// Variables can be defined inline as well.
+const ref = getPendingInvitationsRef({ householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the `QueryRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = getPendingInvitationsRef(dataConnect, getPendingInvitationsVars);
+
+// Call `executeQuery()` on the reference to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeQuery(ref);
+
+console.log(data.invitations);
+
+// Or, you can use the `Promise` API.
+executeQuery(ref).then((response) => {
+  const data = response.data;
+  console.log(data.invitations);
 });
 ```
 
@@ -2633,153 +3134,6 @@ executeMutation(ref).then((response) => {
 });
 ```
 
-## CreateMsiExpense
-You can execute the `CreateMsiExpense` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
-```typescript
-createMsiExpense(vars: CreateMsiExpenseVariables): MutationPromise<CreateMsiExpenseData, CreateMsiExpenseVariables>;
-
-interface CreateMsiExpenseRef {
-  ...
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: CreateMsiExpenseVariables): MutationRef<CreateMsiExpenseData, CreateMsiExpenseVariables>;
-}
-export const createMsiExpenseRef: CreateMsiExpenseRef;
-```
-You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
-```typescript
-createMsiExpense(dc: DataConnect, vars: CreateMsiExpenseVariables): MutationPromise<CreateMsiExpenseData, CreateMsiExpenseVariables>;
-
-interface CreateMsiExpenseRef {
-  ...
-  (dc: DataConnect, vars: CreateMsiExpenseVariables): MutationRef<CreateMsiExpenseData, CreateMsiExpenseVariables>;
-}
-export const createMsiExpenseRef: CreateMsiExpenseRef;
-```
-
-If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the createMsiExpenseRef:
-```typescript
-const name = createMsiExpenseRef.operationName;
-console.log(name);
-```
-
-### Variables
-The `CreateMsiExpense` mutation requires an argument of type `CreateMsiExpenseVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
-
-```typescript
-export interface CreateMsiExpenseVariables {
-  householdId: UUIDString;
-  date: TimestampString;
-  description: string;
-  totalAmount: number;
-  months: number;
-  creditCardAccountId: UUIDString;
-  expenseAccountId: UUIDString;
-  prorataFactor: number;
-  monthlyAmount: number;
-  categoryId?: UUIDString | null;
-  msiRefId?: string | null;
-  msiMonthNumber?: number | null;
-}
-```
-### Return Type
-Recall that executing the `CreateMsiExpense` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
-
-The `data` property is an object of type `CreateMsiExpenseData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
-```typescript
-export interface CreateMsiExpenseData {
-  journal_insert: Journal_Key;
-  entry_insert: Entry_Key;
-}
-```
-### Using `CreateMsiExpense`'s action shortcut function
-
-```typescript
-import { getDataConnect } from 'firebase/data-connect';
-import { connectorConfig, createMsiExpense, CreateMsiExpenseVariables } from '@pareja-pro/dataconnect';
-
-// The `CreateMsiExpense` mutation requires an argument of type `CreateMsiExpenseVariables`:
-const createMsiExpenseVars: CreateMsiExpenseVariables = {
-  householdId: ..., 
-  date: ..., 
-  description: ..., 
-  totalAmount: ..., 
-  months: ..., 
-  creditCardAccountId: ..., 
-  expenseAccountId: ..., 
-  prorataFactor: ..., 
-  monthlyAmount: ..., 
-  categoryId: ..., // optional
-  msiRefId: ..., // optional
-  msiMonthNumber: ..., // optional
-};
-
-// Call the `createMsiExpense()` function to execute the mutation.
-// You can use the `await` keyword to wait for the promise to resolve.
-const { data } = await createMsiExpense(createMsiExpenseVars);
-// Variables can be defined inline as well.
-const { data } = await createMsiExpense({ householdId: ..., date: ..., description: ..., totalAmount: ..., months: ..., creditCardAccountId: ..., expenseAccountId: ..., prorataFactor: ..., monthlyAmount: ..., categoryId: ..., msiRefId: ..., msiMonthNumber: ..., });
-
-// You can also pass in a `DataConnect` instance to the action shortcut function.
-const dataConnect = getDataConnect(connectorConfig);
-const { data } = await createMsiExpense(dataConnect, createMsiExpenseVars);
-
-console.log(data.journal_insert);
-console.log(data.entry_insert);
-
-// Or, you can use the `Promise` API.
-createMsiExpense(createMsiExpenseVars).then((response) => {
-  const data = response.data;
-  console.log(data.journal_insert);
-  console.log(data.entry_insert);
-});
-```
-
-### Using `CreateMsiExpense`'s `MutationRef` function
-
-```typescript
-import { getDataConnect, executeMutation } from 'firebase/data-connect';
-import { connectorConfig, createMsiExpenseRef, CreateMsiExpenseVariables } from '@pareja-pro/dataconnect';
-
-// The `CreateMsiExpense` mutation requires an argument of type `CreateMsiExpenseVariables`:
-const createMsiExpenseVars: CreateMsiExpenseVariables = {
-  householdId: ..., 
-  date: ..., 
-  description: ..., 
-  totalAmount: ..., 
-  months: ..., 
-  creditCardAccountId: ..., 
-  expenseAccountId: ..., 
-  prorataFactor: ..., 
-  monthlyAmount: ..., 
-  categoryId: ..., // optional
-  msiRefId: ..., // optional
-  msiMonthNumber: ..., // optional
-};
-
-// Call the `createMsiExpenseRef()` function to get a reference to the mutation.
-const ref = createMsiExpenseRef(createMsiExpenseVars);
-// Variables can be defined inline as well.
-const ref = createMsiExpenseRef({ householdId: ..., date: ..., description: ..., totalAmount: ..., months: ..., creditCardAccountId: ..., expenseAccountId: ..., prorataFactor: ..., monthlyAmount: ..., categoryId: ..., msiRefId: ..., msiMonthNumber: ..., });
-
-// You can also pass in a `DataConnect` instance to the `MutationRef` function.
-const dataConnect = getDataConnect(connectorConfig);
-const ref = createMsiExpenseRef(dataConnect, createMsiExpenseVars);
-
-// Call `executeMutation()` on the reference to execute the mutation.
-// You can use the `await` keyword to wait for the promise to resolve.
-const { data } = await executeMutation(ref);
-
-console.log(data.journal_insert);
-console.log(data.entry_insert);
-
-// Or, you can use the `Promise` API.
-executeMutation(ref).then((response) => {
-  const data = response.data;
-  console.log(data.journal_insert);
-  console.log(data.entry_insert);
-});
-```
-
 ## CreateBudget
 You can execute the `CreateBudget` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
 ```typescript
@@ -3293,8 +3647,8 @@ The `UpdateAccount` mutation requires an argument of type `UpdateAccountVariable
 ```typescript
 export interface UpdateAccountVariables {
   accountId: UUIDString;
+  householdId: UUIDString;
   name: string;
-  type: AccountType;
   ownerType: OwnerType;
   cutDay?: number | null;
   paymentDay?: number | null;
@@ -3320,8 +3674,8 @@ import { connectorConfig, updateAccount, UpdateAccountVariables } from '@pareja-
 // The `UpdateAccount` mutation requires an argument of type `UpdateAccountVariables`:
 const updateAccountVars: UpdateAccountVariables = {
   accountId: ..., 
+  householdId: ..., 
   name: ..., 
-  type: ..., 
   ownerType: ..., 
   cutDay: ..., // optional
   paymentDay: ..., // optional
@@ -3333,7 +3687,7 @@ const updateAccountVars: UpdateAccountVariables = {
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await updateAccount(updateAccountVars);
 // Variables can be defined inline as well.
-const { data } = await updateAccount({ accountId: ..., name: ..., type: ..., ownerType: ..., cutDay: ..., paymentDay: ..., creditLimit: ..., color: ..., });
+const { data } = await updateAccount({ accountId: ..., householdId: ..., name: ..., ownerType: ..., cutDay: ..., paymentDay: ..., creditLimit: ..., color: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -3357,8 +3711,8 @@ import { connectorConfig, updateAccountRef, UpdateAccountVariables } from '@pare
 // The `UpdateAccount` mutation requires an argument of type `UpdateAccountVariables`:
 const updateAccountVars: UpdateAccountVariables = {
   accountId: ..., 
+  householdId: ..., 
   name: ..., 
-  type: ..., 
   ownerType: ..., 
   cutDay: ..., // optional
   paymentDay: ..., // optional
@@ -3369,7 +3723,7 @@ const updateAccountVars: UpdateAccountVariables = {
 // Call the `updateAccountRef()` function to get a reference to the mutation.
 const ref = updateAccountRef(updateAccountVars);
 // Variables can be defined inline as well.
-const ref = updateAccountRef({ accountId: ..., name: ..., type: ..., ownerType: ..., cutDay: ..., paymentDay: ..., creditLimit: ..., color: ..., });
+const ref = updateAccountRef({ accountId: ..., householdId: ..., name: ..., ownerType: ..., cutDay: ..., paymentDay: ..., creditLimit: ..., color: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -3423,6 +3777,7 @@ The `ArchiveAccount` mutation requires an argument of type `ArchiveAccountVariab
 ```typescript
 export interface ArchiveAccountVariables {
   accountId: UUIDString;
+  householdId: UUIDString;
   isArchived: boolean;
 }
 ```
@@ -3444,6 +3799,7 @@ import { connectorConfig, archiveAccount, ArchiveAccountVariables } from '@parej
 // The `ArchiveAccount` mutation requires an argument of type `ArchiveAccountVariables`:
 const archiveAccountVars: ArchiveAccountVariables = {
   accountId: ..., 
+  householdId: ..., 
   isArchived: ..., 
 };
 
@@ -3451,7 +3807,7 @@ const archiveAccountVars: ArchiveAccountVariables = {
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await archiveAccount(archiveAccountVars);
 // Variables can be defined inline as well.
-const { data } = await archiveAccount({ accountId: ..., isArchived: ..., });
+const { data } = await archiveAccount({ accountId: ..., householdId: ..., isArchived: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -3475,13 +3831,14 @@ import { connectorConfig, archiveAccountRef, ArchiveAccountVariables } from '@pa
 // The `ArchiveAccount` mutation requires an argument of type `ArchiveAccountVariables`:
 const archiveAccountVars: ArchiveAccountVariables = {
   accountId: ..., 
+  householdId: ..., 
   isArchived: ..., 
 };
 
 // Call the `archiveAccountRef()` function to get a reference to the mutation.
 const ref = archiveAccountRef(archiveAccountVars);
 // Variables can be defined inline as well.
-const ref = archiveAccountRef({ accountId: ..., isArchived: ..., });
+const ref = archiveAccountRef({ accountId: ..., householdId: ..., isArchived: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -3535,6 +3892,7 @@ The `DeleteAccount` mutation requires an argument of type `DeleteAccountVariable
 ```typescript
 export interface DeleteAccountVariables {
   accountId: UUIDString;
+  householdId: UUIDString;
 }
 ```
 ### Return Type
@@ -3555,13 +3913,14 @@ import { connectorConfig, deleteAccount, DeleteAccountVariables } from '@pareja-
 // The `DeleteAccount` mutation requires an argument of type `DeleteAccountVariables`:
 const deleteAccountVars: DeleteAccountVariables = {
   accountId: ..., 
+  householdId: ..., 
 };
 
 // Call the `deleteAccount()` function to execute the mutation.
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await deleteAccount(deleteAccountVars);
 // Variables can be defined inline as well.
-const { data } = await deleteAccount({ accountId: ..., });
+const { data } = await deleteAccount({ accountId: ..., householdId: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -3585,12 +3944,13 @@ import { connectorConfig, deleteAccountRef, DeleteAccountVariables } from '@pare
 // The `DeleteAccount` mutation requires an argument of type `DeleteAccountVariables`:
 const deleteAccountVars: DeleteAccountVariables = {
   accountId: ..., 
+  householdId: ..., 
 };
 
 // Call the `deleteAccountRef()` function to get a reference to the mutation.
 const ref = deleteAccountRef(deleteAccountVars);
 // Variables can be defined inline as well.
-const ref = deleteAccountRef({ accountId: ..., });
+const ref = deleteAccountRef({ accountId: ..., householdId: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -3643,8 +4003,10 @@ The `ReassignEntries` mutation requires an argument of type `ReassignEntriesVari
 
 ```typescript
 export interface ReassignEntriesVariables {
+  householdId: UUIDString;
   fromAccountId: UUIDString;
   toAccountId: UUIDString;
+  accountType: AccountType;
 }
 ```
 ### Return Type
@@ -3664,15 +4026,17 @@ import { connectorConfig, reassignEntries, ReassignEntriesVariables } from '@par
 
 // The `ReassignEntries` mutation requires an argument of type `ReassignEntriesVariables`:
 const reassignEntriesVars: ReassignEntriesVariables = {
+  householdId: ..., 
   fromAccountId: ..., 
   toAccountId: ..., 
+  accountType: ..., 
 };
 
 // Call the `reassignEntries()` function to execute the mutation.
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await reassignEntries(reassignEntriesVars);
 // Variables can be defined inline as well.
-const { data } = await reassignEntries({ fromAccountId: ..., toAccountId: ..., });
+const { data } = await reassignEntries({ householdId: ..., fromAccountId: ..., toAccountId: ..., accountType: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -3695,14 +4059,16 @@ import { connectorConfig, reassignEntriesRef, ReassignEntriesVariables } from '@
 
 // The `ReassignEntries` mutation requires an argument of type `ReassignEntriesVariables`:
 const reassignEntriesVars: ReassignEntriesVariables = {
+  householdId: ..., 
   fromAccountId: ..., 
   toAccountId: ..., 
+  accountType: ..., 
 };
 
 // Call the `reassignEntriesRef()` function to get a reference to the mutation.
 const ref = reassignEntriesRef(reassignEntriesVars);
 // Variables can be defined inline as well.
-const ref = reassignEntriesRef({ fromAccountId: ..., toAccountId: ..., });
+const ref = reassignEntriesRef({ householdId: ..., fromAccountId: ..., toAccountId: ..., accountType: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -4107,6 +4473,7 @@ The `UpdateProjectProgress` mutation requires an argument of type `UpdateProject
 ```typescript
 export interface UpdateProjectProgressVariables {
   projectId: UUIDString;
+  householdId: UUIDString;
   amountToAdd: number;
 }
 ```
@@ -4128,6 +4495,7 @@ import { connectorConfig, updateProjectProgress, UpdateProjectProgressVariables 
 // The `UpdateProjectProgress` mutation requires an argument of type `UpdateProjectProgressVariables`:
 const updateProjectProgressVars: UpdateProjectProgressVariables = {
   projectId: ..., 
+  householdId: ..., 
   amountToAdd: ..., 
 };
 
@@ -4135,7 +4503,7 @@ const updateProjectProgressVars: UpdateProjectProgressVariables = {
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await updateProjectProgress(updateProjectProgressVars);
 // Variables can be defined inline as well.
-const { data } = await updateProjectProgress({ projectId: ..., amountToAdd: ..., });
+const { data } = await updateProjectProgress({ projectId: ..., householdId: ..., amountToAdd: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -4159,13 +4527,14 @@ import { connectorConfig, updateProjectProgressRef, UpdateProjectProgressVariabl
 // The `UpdateProjectProgress` mutation requires an argument of type `UpdateProjectProgressVariables`:
 const updateProjectProgressVars: UpdateProjectProgressVariables = {
   projectId: ..., 
+  householdId: ..., 
   amountToAdd: ..., 
 };
 
 // Call the `updateProjectProgressRef()` function to get a reference to the mutation.
 const ref = updateProjectProgressRef(updateProjectProgressVars);
 // Variables can be defined inline as well.
-const ref = updateProjectProgressRef({ projectId: ..., amountToAdd: ..., });
+const ref = updateProjectProgressRef({ projectId: ..., householdId: ..., amountToAdd: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -4219,6 +4588,7 @@ The `UpdateSavingsProject` mutation requires an argument of type `UpdateSavingsP
 ```typescript
 export interface UpdateSavingsProjectVariables {
   projectId: UUIDString;
+  householdId: UUIDString;
   name?: string | null;
   targetAmount?: number | null;
   monthlyQuota?: number | null;
@@ -4245,6 +4615,7 @@ import { connectorConfig, updateSavingsProject, UpdateSavingsProjectVariables } 
 // The `UpdateSavingsProject` mutation requires an argument of type `UpdateSavingsProjectVariables`:
 const updateSavingsProjectVars: UpdateSavingsProjectVariables = {
   projectId: ..., 
+  householdId: ..., 
   name: ..., // optional
   targetAmount: ..., // optional
   monthlyQuota: ..., // optional
@@ -4257,7 +4628,7 @@ const updateSavingsProjectVars: UpdateSavingsProjectVariables = {
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await updateSavingsProject(updateSavingsProjectVars);
 // Variables can be defined inline as well.
-const { data } = await updateSavingsProject({ projectId: ..., name: ..., targetAmount: ..., monthlyQuota: ..., targetAccount: ..., priority: ..., isCompleted: ..., });
+const { data } = await updateSavingsProject({ projectId: ..., householdId: ..., name: ..., targetAmount: ..., monthlyQuota: ..., targetAccount: ..., priority: ..., isCompleted: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -4281,6 +4652,7 @@ import { connectorConfig, updateSavingsProjectRef, UpdateSavingsProjectVariables
 // The `UpdateSavingsProject` mutation requires an argument of type `UpdateSavingsProjectVariables`:
 const updateSavingsProjectVars: UpdateSavingsProjectVariables = {
   projectId: ..., 
+  householdId: ..., 
   name: ..., // optional
   targetAmount: ..., // optional
   monthlyQuota: ..., // optional
@@ -4292,7 +4664,7 @@ const updateSavingsProjectVars: UpdateSavingsProjectVariables = {
 // Call the `updateSavingsProjectRef()` function to get a reference to the mutation.
 const ref = updateSavingsProjectRef(updateSavingsProjectVars);
 // Variables can be defined inline as well.
-const ref = updateSavingsProjectRef({ projectId: ..., name: ..., targetAmount: ..., monthlyQuota: ..., targetAccount: ..., priority: ..., isCompleted: ..., });
+const ref = updateSavingsProjectRef({ projectId: ..., householdId: ..., name: ..., targetAmount: ..., monthlyQuota: ..., targetAccount: ..., priority: ..., isCompleted: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -4464,6 +4836,7 @@ The `UpdateExternalAsset` mutation requires an argument of type `UpdateExternalA
 ```typescript
 export interface UpdateExternalAssetVariables {
   assetId: UUIDString;
+  householdId: UUIDString;
   estimatedValue: number;
 }
 ```
@@ -4485,6 +4858,7 @@ import { connectorConfig, updateExternalAsset, UpdateExternalAssetVariables } fr
 // The `UpdateExternalAsset` mutation requires an argument of type `UpdateExternalAssetVariables`:
 const updateExternalAssetVars: UpdateExternalAssetVariables = {
   assetId: ..., 
+  householdId: ..., 
   estimatedValue: ..., 
 };
 
@@ -4492,7 +4866,7 @@ const updateExternalAssetVars: UpdateExternalAssetVariables = {
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await updateExternalAsset(updateExternalAssetVars);
 // Variables can be defined inline as well.
-const { data } = await updateExternalAsset({ assetId: ..., estimatedValue: ..., });
+const { data } = await updateExternalAsset({ assetId: ..., householdId: ..., estimatedValue: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -4516,13 +4890,14 @@ import { connectorConfig, updateExternalAssetRef, UpdateExternalAssetVariables }
 // The `UpdateExternalAsset` mutation requires an argument of type `UpdateExternalAssetVariables`:
 const updateExternalAssetVars: UpdateExternalAssetVariables = {
   assetId: ..., 
+  householdId: ..., 
   estimatedValue: ..., 
 };
 
 // Call the `updateExternalAssetRef()` function to get a reference to the mutation.
 const ref = updateExternalAssetRef(updateExternalAssetVars);
 // Variables can be defined inline as well.
-const ref = updateExternalAssetRef({ assetId: ..., estimatedValue: ..., });
+const ref = updateExternalAssetRef({ assetId: ..., householdId: ..., estimatedValue: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -5532,6 +5907,7 @@ The `UpdateCategory` mutation requires an argument of type `UpdateCategoryVariab
 ```typescript
 export interface UpdateCategoryVariables {
   id: UUIDString;
+  householdId: UUIDString;
   name: string;
   color?: string | null;
 }
@@ -5554,6 +5930,7 @@ import { connectorConfig, updateCategory, UpdateCategoryVariables } from '@parej
 // The `UpdateCategory` mutation requires an argument of type `UpdateCategoryVariables`:
 const updateCategoryVars: UpdateCategoryVariables = {
   id: ..., 
+  householdId: ..., 
   name: ..., 
   color: ..., // optional
 };
@@ -5562,7 +5939,7 @@ const updateCategoryVars: UpdateCategoryVariables = {
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await updateCategory(updateCategoryVars);
 // Variables can be defined inline as well.
-const { data } = await updateCategory({ id: ..., name: ..., color: ..., });
+const { data } = await updateCategory({ id: ..., householdId: ..., name: ..., color: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -5586,6 +5963,7 @@ import { connectorConfig, updateCategoryRef, UpdateCategoryVariables } from '@pa
 // The `UpdateCategory` mutation requires an argument of type `UpdateCategoryVariables`:
 const updateCategoryVars: UpdateCategoryVariables = {
   id: ..., 
+  householdId: ..., 
   name: ..., 
   color: ..., // optional
 };
@@ -5593,7 +5971,7 @@ const updateCategoryVars: UpdateCategoryVariables = {
 // Call the `updateCategoryRef()` function to get a reference to the mutation.
 const ref = updateCategoryRef(updateCategoryVars);
 // Variables can be defined inline as well.
-const ref = updateCategoryRef({ id: ..., name: ..., color: ..., });
+const ref = updateCategoryRef({ id: ..., householdId: ..., name: ..., color: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -5647,6 +6025,7 @@ The `DeleteCategory` mutation requires an argument of type `DeleteCategoryVariab
 ```typescript
 export interface DeleteCategoryVariables {
   id: UUIDString;
+  householdId: UUIDString;
 }
 ```
 ### Return Type
@@ -5667,13 +6046,14 @@ import { connectorConfig, deleteCategory, DeleteCategoryVariables } from '@parej
 // The `DeleteCategory` mutation requires an argument of type `DeleteCategoryVariables`:
 const deleteCategoryVars: DeleteCategoryVariables = {
   id: ..., 
+  householdId: ..., 
 };
 
 // Call the `deleteCategory()` function to execute the mutation.
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await deleteCategory(deleteCategoryVars);
 // Variables can be defined inline as well.
-const { data } = await deleteCategory({ id: ..., });
+const { data } = await deleteCategory({ id: ..., householdId: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -5697,12 +6077,13 @@ import { connectorConfig, deleteCategoryRef, DeleteCategoryVariables } from '@pa
 // The `DeleteCategory` mutation requires an argument of type `DeleteCategoryVariables`:
 const deleteCategoryVars: DeleteCategoryVariables = {
   id: ..., 
+  householdId: ..., 
 };
 
 // Call the `deleteCategoryRef()` function to get a reference to the mutation.
 const ref = deleteCategoryRef(deleteCategoryVars);
 // Variables can be defined inline as well.
-const ref = deleteCategoryRef({ id: ..., });
+const ref = deleteCategoryRef({ id: ..., householdId: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -5868,6 +6249,7 @@ The `DeleteTag` mutation requires an argument of type `DeleteTagVariables`, whic
 ```typescript
 export interface DeleteTagVariables {
   id: UUIDString;
+  householdId: UUIDString;
 }
 ```
 ### Return Type
@@ -5888,13 +6270,14 @@ import { connectorConfig, deleteTag, DeleteTagVariables } from '@pareja-pro/data
 // The `DeleteTag` mutation requires an argument of type `DeleteTagVariables`:
 const deleteTagVars: DeleteTagVariables = {
   id: ..., 
+  householdId: ..., 
 };
 
 // Call the `deleteTag()` function to execute the mutation.
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await deleteTag(deleteTagVars);
 // Variables can be defined inline as well.
-const { data } = await deleteTag({ id: ..., });
+const { data } = await deleteTag({ id: ..., householdId: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -5918,12 +6301,13 @@ import { connectorConfig, deleteTagRef, DeleteTagVariables } from '@pareja-pro/d
 // The `DeleteTag` mutation requires an argument of type `DeleteTagVariables`:
 const deleteTagVars: DeleteTagVariables = {
   id: ..., 
+  householdId: ..., 
 };
 
 // Call the `deleteTagRef()` function to get a reference to the mutation.
 const ref = deleteTagRef(deleteTagVars);
 // Variables can be defined inline as well.
-const ref = deleteTagRef({ id: ..., });
+const ref = deleteTagRef({ id: ..., householdId: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -5977,6 +6361,7 @@ The `SetJournalTags` mutation requires an argument of type `SetJournalTagsVariab
 ```typescript
 export interface SetJournalTagsVariables {
   journalId: UUIDString;
+  householdId: UUIDString;
   tagIds: UUIDString[];
 }
 ```
@@ -5998,6 +6383,7 @@ import { connectorConfig, setJournalTags, SetJournalTagsVariables } from '@parej
 // The `SetJournalTags` mutation requires an argument of type `SetJournalTagsVariables`:
 const setJournalTagsVars: SetJournalTagsVariables = {
   journalId: ..., 
+  householdId: ..., 
   tagIds: ..., 
 };
 
@@ -6005,7 +6391,7 @@ const setJournalTagsVars: SetJournalTagsVariables = {
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await setJournalTags(setJournalTagsVars);
 // Variables can be defined inline as well.
-const { data } = await setJournalTags({ journalId: ..., tagIds: ..., });
+const { data } = await setJournalTags({ journalId: ..., householdId: ..., tagIds: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -6029,13 +6415,14 @@ import { connectorConfig, setJournalTagsRef, SetJournalTagsVariables } from '@pa
 // The `SetJournalTags` mutation requires an argument of type `SetJournalTagsVariables`:
 const setJournalTagsVars: SetJournalTagsVariables = {
   journalId: ..., 
+  householdId: ..., 
   tagIds: ..., 
 };
 
 // Call the `setJournalTagsRef()` function to get a reference to the mutation.
 const ref = setJournalTagsRef(setJournalTagsVars);
 // Variables can be defined inline as well.
-const ref = setJournalTagsRef({ journalId: ..., tagIds: ..., });
+const ref = setJournalTagsRef({ journalId: ..., householdId: ..., tagIds: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -6089,6 +6476,7 @@ The `AddTagToJournal` mutation requires an argument of type `AddTagToJournalVari
 ```typescript
 export interface AddTagToJournalVariables {
   journalId: UUIDString;
+  householdId: UUIDString;
   tagId: UUIDString;
 }
 ```
@@ -6110,6 +6498,7 @@ import { connectorConfig, addTagToJournal, AddTagToJournalVariables } from '@par
 // The `AddTagToJournal` mutation requires an argument of type `AddTagToJournalVariables`:
 const addTagToJournalVars: AddTagToJournalVariables = {
   journalId: ..., 
+  householdId: ..., 
   tagId: ..., 
 };
 
@@ -6117,7 +6506,7 @@ const addTagToJournalVars: AddTagToJournalVariables = {
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await addTagToJournal(addTagToJournalVars);
 // Variables can be defined inline as well.
-const { data } = await addTagToJournal({ journalId: ..., tagId: ..., });
+const { data } = await addTagToJournal({ journalId: ..., householdId: ..., tagId: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -6141,13 +6530,14 @@ import { connectorConfig, addTagToJournalRef, AddTagToJournalVariables } from '@
 // The `AddTagToJournal` mutation requires an argument of type `AddTagToJournalVariables`:
 const addTagToJournalVars: AddTagToJournalVariables = {
   journalId: ..., 
+  householdId: ..., 
   tagId: ..., 
 };
 
 // Call the `addTagToJournalRef()` function to get a reference to the mutation.
 const ref = addTagToJournalRef(addTagToJournalVars);
 // Variables can be defined inline as well.
-const ref = addTagToJournalRef({ journalId: ..., tagId: ..., });
+const ref = addTagToJournalRef({ journalId: ..., householdId: ..., tagId: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -6163,6 +6553,709 @@ console.log(data.journalTag_insert);
 executeMutation(ref).then((response) => {
   const data = response.data;
   console.log(data.journalTag_insert);
+});
+```
+
+## CreateInvitation
+You can execute the `CreateInvitation` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+createInvitation(vars: CreateInvitationVariables): MutationPromise<CreateInvitationData, CreateInvitationVariables>;
+
+interface CreateInvitationRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateInvitationVariables): MutationRef<CreateInvitationData, CreateInvitationVariables>;
+}
+export const createInvitationRef: CreateInvitationRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+createInvitation(dc: DataConnect, vars: CreateInvitationVariables): MutationPromise<CreateInvitationData, CreateInvitationVariables>;
+
+interface CreateInvitationRef {
+  ...
+  (dc: DataConnect, vars: CreateInvitationVariables): MutationRef<CreateInvitationData, CreateInvitationVariables>;
+}
+export const createInvitationRef: CreateInvitationRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the createInvitationRef:
+```typescript
+const name = createInvitationRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `CreateInvitation` mutation requires an argument of type `CreateInvitationVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface CreateInvitationVariables {
+  householdId: UUIDString;
+  expiresAt: TimestampString;
+}
+```
+### Return Type
+Recall that executing the `CreateInvitation` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `CreateInvitationData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface CreateInvitationData {
+  invitation_insert: Invitation_Key;
+}
+```
+### Using `CreateInvitation`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, createInvitation, CreateInvitationVariables } from '@pareja-pro/dataconnect';
+
+// The `CreateInvitation` mutation requires an argument of type `CreateInvitationVariables`:
+const createInvitationVars: CreateInvitationVariables = {
+  householdId: ..., 
+  expiresAt: ..., 
+};
+
+// Call the `createInvitation()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await createInvitation(createInvitationVars);
+// Variables can be defined inline as well.
+const { data } = await createInvitation({ householdId: ..., expiresAt: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await createInvitation(dataConnect, createInvitationVars);
+
+console.log(data.invitation_insert);
+
+// Or, you can use the `Promise` API.
+createInvitation(createInvitationVars).then((response) => {
+  const data = response.data;
+  console.log(data.invitation_insert);
+});
+```
+
+### Using `CreateInvitation`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, createInvitationRef, CreateInvitationVariables } from '@pareja-pro/dataconnect';
+
+// The `CreateInvitation` mutation requires an argument of type `CreateInvitationVariables`:
+const createInvitationVars: CreateInvitationVariables = {
+  householdId: ..., 
+  expiresAt: ..., 
+};
+
+// Call the `createInvitationRef()` function to get a reference to the mutation.
+const ref = createInvitationRef(createInvitationVars);
+// Variables can be defined inline as well.
+const ref = createInvitationRef({ householdId: ..., expiresAt: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = createInvitationRef(dataConnect, createInvitationVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.invitation_insert);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.invitation_insert);
+});
+```
+
+## AcceptInvitation
+You can execute the `AcceptInvitation` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+acceptInvitation(vars: AcceptInvitationVariables): MutationPromise<AcceptInvitationData, AcceptInvitationVariables>;
+
+interface AcceptInvitationRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: AcceptInvitationVariables): MutationRef<AcceptInvitationData, AcceptInvitationVariables>;
+}
+export const acceptInvitationRef: AcceptInvitationRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+acceptInvitation(dc: DataConnect, vars: AcceptInvitationVariables): MutationPromise<AcceptInvitationData, AcceptInvitationVariables>;
+
+interface AcceptInvitationRef {
+  ...
+  (dc: DataConnect, vars: AcceptInvitationVariables): MutationRef<AcceptInvitationData, AcceptInvitationVariables>;
+}
+export const acceptInvitationRef: AcceptInvitationRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the acceptInvitationRef:
+```typescript
+const name = acceptInvitationRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `AcceptInvitation` mutation requires an argument of type `AcceptInvitationVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface AcceptInvitationVariables {
+  invitationId: UUIDString;
+  householdId: UUIDString;
+}
+```
+### Return Type
+Recall that executing the `AcceptInvitation` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `AcceptInvitationData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface AcceptInvitationData {
+  user_update?: User_Key | null;
+  invitation_update?: Invitation_Key | null;
+}
+```
+### Using `AcceptInvitation`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, acceptInvitation, AcceptInvitationVariables } from '@pareja-pro/dataconnect';
+
+// The `AcceptInvitation` mutation requires an argument of type `AcceptInvitationVariables`:
+const acceptInvitationVars: AcceptInvitationVariables = {
+  invitationId: ..., 
+  householdId: ..., 
+};
+
+// Call the `acceptInvitation()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await acceptInvitation(acceptInvitationVars);
+// Variables can be defined inline as well.
+const { data } = await acceptInvitation({ invitationId: ..., householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await acceptInvitation(dataConnect, acceptInvitationVars);
+
+console.log(data.user_update);
+console.log(data.invitation_update);
+
+// Or, you can use the `Promise` API.
+acceptInvitation(acceptInvitationVars).then((response) => {
+  const data = response.data;
+  console.log(data.user_update);
+  console.log(data.invitation_update);
+});
+```
+
+### Using `AcceptInvitation`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, acceptInvitationRef, AcceptInvitationVariables } from '@pareja-pro/dataconnect';
+
+// The `AcceptInvitation` mutation requires an argument of type `AcceptInvitationVariables`:
+const acceptInvitationVars: AcceptInvitationVariables = {
+  invitationId: ..., 
+  householdId: ..., 
+};
+
+// Call the `acceptInvitationRef()` function to get a reference to the mutation.
+const ref = acceptInvitationRef(acceptInvitationVars);
+// Variables can be defined inline as well.
+const ref = acceptInvitationRef({ invitationId: ..., householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = acceptInvitationRef(dataConnect, acceptInvitationVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.user_update);
+console.log(data.invitation_update);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.user_update);
+  console.log(data.invitation_update);
+});
+```
+
+## RevokeInvitation
+You can execute the `RevokeInvitation` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+revokeInvitation(vars: RevokeInvitationVariables): MutationPromise<RevokeInvitationData, RevokeInvitationVariables>;
+
+interface RevokeInvitationRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: RevokeInvitationVariables): MutationRef<RevokeInvitationData, RevokeInvitationVariables>;
+}
+export const revokeInvitationRef: RevokeInvitationRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+revokeInvitation(dc: DataConnect, vars: RevokeInvitationVariables): MutationPromise<RevokeInvitationData, RevokeInvitationVariables>;
+
+interface RevokeInvitationRef {
+  ...
+  (dc: DataConnect, vars: RevokeInvitationVariables): MutationRef<RevokeInvitationData, RevokeInvitationVariables>;
+}
+export const revokeInvitationRef: RevokeInvitationRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the revokeInvitationRef:
+```typescript
+const name = revokeInvitationRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `RevokeInvitation` mutation requires an argument of type `RevokeInvitationVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface RevokeInvitationVariables {
+  id: UUIDString;
+  householdId: UUIDString;
+}
+```
+### Return Type
+Recall that executing the `RevokeInvitation` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `RevokeInvitationData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface RevokeInvitationData {
+  invitation_update?: Invitation_Key | null;
+}
+```
+### Using `RevokeInvitation`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, revokeInvitation, RevokeInvitationVariables } from '@pareja-pro/dataconnect';
+
+// The `RevokeInvitation` mutation requires an argument of type `RevokeInvitationVariables`:
+const revokeInvitationVars: RevokeInvitationVariables = {
+  id: ..., 
+  householdId: ..., 
+};
+
+// Call the `revokeInvitation()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await revokeInvitation(revokeInvitationVars);
+// Variables can be defined inline as well.
+const { data } = await revokeInvitation({ id: ..., householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await revokeInvitation(dataConnect, revokeInvitationVars);
+
+console.log(data.invitation_update);
+
+// Or, you can use the `Promise` API.
+revokeInvitation(revokeInvitationVars).then((response) => {
+  const data = response.data;
+  console.log(data.invitation_update);
+});
+```
+
+### Using `RevokeInvitation`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, revokeInvitationRef, RevokeInvitationVariables } from '@pareja-pro/dataconnect';
+
+// The `RevokeInvitation` mutation requires an argument of type `RevokeInvitationVariables`:
+const revokeInvitationVars: RevokeInvitationVariables = {
+  id: ..., 
+  householdId: ..., 
+};
+
+// Call the `revokeInvitationRef()` function to get a reference to the mutation.
+const ref = revokeInvitationRef(revokeInvitationVars);
+// Variables can be defined inline as well.
+const ref = revokeInvitationRef({ id: ..., householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = revokeInvitationRef(dataConnect, revokeInvitationVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.invitation_update);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.invitation_update);
+});
+```
+
+## LeaveHousehold
+You can execute the `LeaveHousehold` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+leaveHousehold(vars: LeaveHouseholdVariables): MutationPromise<LeaveHouseholdData, LeaveHouseholdVariables>;
+
+interface LeaveHouseholdRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: LeaveHouseholdVariables): MutationRef<LeaveHouseholdData, LeaveHouseholdVariables>;
+}
+export const leaveHouseholdRef: LeaveHouseholdRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+leaveHousehold(dc: DataConnect, vars: LeaveHouseholdVariables): MutationPromise<LeaveHouseholdData, LeaveHouseholdVariables>;
+
+interface LeaveHouseholdRef {
+  ...
+  (dc: DataConnect, vars: LeaveHouseholdVariables): MutationRef<LeaveHouseholdData, LeaveHouseholdVariables>;
+}
+export const leaveHouseholdRef: LeaveHouseholdRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the leaveHouseholdRef:
+```typescript
+const name = leaveHouseholdRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `LeaveHousehold` mutation requires an argument of type `LeaveHouseholdVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface LeaveHouseholdVariables {
+  householdId: UUIDString;
+}
+```
+### Return Type
+Recall that executing the `LeaveHousehold` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `LeaveHouseholdData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface LeaveHouseholdData {
+  newHousehold: Household_Key;
+  user_update?: User_Key | null;
+  assetAccount: Account_Key;
+  incomeAccount: Account_Key;
+  expenseAccount: Account_Key;
+  liabilityAccount: Account_Key;
+}
+```
+### Using `LeaveHousehold`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, leaveHousehold, LeaveHouseholdVariables } from '@pareja-pro/dataconnect';
+
+// The `LeaveHousehold` mutation requires an argument of type `LeaveHouseholdVariables`:
+const leaveHouseholdVars: LeaveHouseholdVariables = {
+  householdId: ..., 
+};
+
+// Call the `leaveHousehold()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await leaveHousehold(leaveHouseholdVars);
+// Variables can be defined inline as well.
+const { data } = await leaveHousehold({ householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await leaveHousehold(dataConnect, leaveHouseholdVars);
+
+console.log(data.newHousehold);
+console.log(data.user_update);
+console.log(data.assetAccount);
+console.log(data.incomeAccount);
+console.log(data.expenseAccount);
+console.log(data.liabilityAccount);
+
+// Or, you can use the `Promise` API.
+leaveHousehold(leaveHouseholdVars).then((response) => {
+  const data = response.data;
+  console.log(data.newHousehold);
+  console.log(data.user_update);
+  console.log(data.assetAccount);
+  console.log(data.incomeAccount);
+  console.log(data.expenseAccount);
+  console.log(data.liabilityAccount);
+});
+```
+
+### Using `LeaveHousehold`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, leaveHouseholdRef, LeaveHouseholdVariables } from '@pareja-pro/dataconnect';
+
+// The `LeaveHousehold` mutation requires an argument of type `LeaveHouseholdVariables`:
+const leaveHouseholdVars: LeaveHouseholdVariables = {
+  householdId: ..., 
+};
+
+// Call the `leaveHouseholdRef()` function to get a reference to the mutation.
+const ref = leaveHouseholdRef(leaveHouseholdVars);
+// Variables can be defined inline as well.
+const ref = leaveHouseholdRef({ householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = leaveHouseholdRef(dataConnect, leaveHouseholdVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.newHousehold);
+console.log(data.user_update);
+console.log(data.assetAccount);
+console.log(data.incomeAccount);
+console.log(data.expenseAccount);
+console.log(data.liabilityAccount);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.newHousehold);
+  console.log(data.user_update);
+  console.log(data.assetAccount);
+  console.log(data.incomeAccount);
+  console.log(data.expenseAccount);
+  console.log(data.liabilityAccount);
+});
+```
+
+## RemoveHouseholdMember
+You can execute the `RemoveHouseholdMember` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+removeHouseholdMember(vars: RemoveHouseholdMemberVariables): MutationPromise<RemoveHouseholdMemberData, RemoveHouseholdMemberVariables>;
+
+interface RemoveHouseholdMemberRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: RemoveHouseholdMemberVariables): MutationRef<RemoveHouseholdMemberData, RemoveHouseholdMemberVariables>;
+}
+export const removeHouseholdMemberRef: RemoveHouseholdMemberRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+removeHouseholdMember(dc: DataConnect, vars: RemoveHouseholdMemberVariables): MutationPromise<RemoveHouseholdMemberData, RemoveHouseholdMemberVariables>;
+
+interface RemoveHouseholdMemberRef {
+  ...
+  (dc: DataConnect, vars: RemoveHouseholdMemberVariables): MutationRef<RemoveHouseholdMemberData, RemoveHouseholdMemberVariables>;
+}
+export const removeHouseholdMemberRef: RemoveHouseholdMemberRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the removeHouseholdMemberRef:
+```typescript
+const name = removeHouseholdMemberRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `RemoveHouseholdMember` mutation requires an argument of type `RemoveHouseholdMemberVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface RemoveHouseholdMemberVariables {
+  householdId: UUIDString;
+  memberUid: string;
+}
+```
+### Return Type
+Recall that executing the `RemoveHouseholdMember` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `RemoveHouseholdMemberData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface RemoveHouseholdMemberData {
+  newHouseholdForMember: Household_Key;
+  user_update?: User_Key | null;
+  assetAccount: Account_Key;
+  incomeAccount: Account_Key;
+  expenseAccount: Account_Key;
+  liabilityAccount: Account_Key;
+}
+```
+### Using `RemoveHouseholdMember`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, removeHouseholdMember, RemoveHouseholdMemberVariables } from '@pareja-pro/dataconnect';
+
+// The `RemoveHouseholdMember` mutation requires an argument of type `RemoveHouseholdMemberVariables`:
+const removeHouseholdMemberVars: RemoveHouseholdMemberVariables = {
+  householdId: ..., 
+  memberUid: ..., 
+};
+
+// Call the `removeHouseholdMember()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await removeHouseholdMember(removeHouseholdMemberVars);
+// Variables can be defined inline as well.
+const { data } = await removeHouseholdMember({ householdId: ..., memberUid: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await removeHouseholdMember(dataConnect, removeHouseholdMemberVars);
+
+console.log(data.newHouseholdForMember);
+console.log(data.user_update);
+console.log(data.assetAccount);
+console.log(data.incomeAccount);
+console.log(data.expenseAccount);
+console.log(data.liabilityAccount);
+
+// Or, you can use the `Promise` API.
+removeHouseholdMember(removeHouseholdMemberVars).then((response) => {
+  const data = response.data;
+  console.log(data.newHouseholdForMember);
+  console.log(data.user_update);
+  console.log(data.assetAccount);
+  console.log(data.incomeAccount);
+  console.log(data.expenseAccount);
+  console.log(data.liabilityAccount);
+});
+```
+
+### Using `RemoveHouseholdMember`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, removeHouseholdMemberRef, RemoveHouseholdMemberVariables } from '@pareja-pro/dataconnect';
+
+// The `RemoveHouseholdMember` mutation requires an argument of type `RemoveHouseholdMemberVariables`:
+const removeHouseholdMemberVars: RemoveHouseholdMemberVariables = {
+  householdId: ..., 
+  memberUid: ..., 
+};
+
+// Call the `removeHouseholdMemberRef()` function to get a reference to the mutation.
+const ref = removeHouseholdMemberRef(removeHouseholdMemberVars);
+// Variables can be defined inline as well.
+const ref = removeHouseholdMemberRef({ householdId: ..., memberUid: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = removeHouseholdMemberRef(dataConnect, removeHouseholdMemberVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.newHouseholdForMember);
+console.log(data.user_update);
+console.log(data.assetAccount);
+console.log(data.incomeAccount);
+console.log(data.expenseAccount);
+console.log(data.liabilityAccount);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.newHouseholdForMember);
+  console.log(data.user_update);
+  console.log(data.assetAccount);
+  console.log(data.incomeAccount);
+  console.log(data.expenseAccount);
+  console.log(data.liabilityAccount);
+});
+```
+
+## BackfillMemberSlots
+You can execute the `BackfillMemberSlots` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+backfillMemberSlots(): MutationPromise<BackfillMemberSlotsData, undefined>;
+
+interface BackfillMemberSlotsRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<BackfillMemberSlotsData, undefined>;
+}
+export const backfillMemberSlotsRef: BackfillMemberSlotsRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+backfillMemberSlots(dc: DataConnect): MutationPromise<BackfillMemberSlotsData, undefined>;
+
+interface BackfillMemberSlotsRef {
+  ...
+  (dc: DataConnect): MutationRef<BackfillMemberSlotsData, undefined>;
+}
+export const backfillMemberSlotsRef: BackfillMemberSlotsRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the backfillMemberSlotsRef:
+```typescript
+const name = backfillMemberSlotsRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `BackfillMemberSlots` mutation has no variables.
+### Return Type
+Recall that executing the `BackfillMemberSlots` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `BackfillMemberSlotsData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface BackfillMemberSlotsData {
+  user_updateMany: number;
+}
+```
+### Using `BackfillMemberSlots`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, backfillMemberSlots } from '@pareja-pro/dataconnect';
+
+
+// Call the `backfillMemberSlots()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await backfillMemberSlots();
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await backfillMemberSlots(dataConnect);
+
+console.log(data.user_updateMany);
+
+// Or, you can use the `Promise` API.
+backfillMemberSlots().then((response) => {
+  const data = response.data;
+  console.log(data.user_updateMany);
+});
+```
+
+### Using `BackfillMemberSlots`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, backfillMemberSlotsRef } from '@pareja-pro/dataconnect';
+
+
+// Call the `backfillMemberSlotsRef()` function to get a reference to the mutation.
+const ref = backfillMemberSlotsRef();
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = backfillMemberSlotsRef(dataConnect);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.user_updateMany);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.user_updateMany);
 });
 ```
 

@@ -3,8 +3,9 @@ import { RecordItem } from '../types';
 import { AuthSlice } from './authSlice';
 import { DataSlice } from './dataSlice';
 import { AccountSlice } from './accountSlice';
-import { createSharedExpenseWithProration, deleteJournal } from '../../lib/dataconnect';
+import { createSharedExpenseWithProration, deleteJournal, seedDefaultAccounts } from '../../lib/dataconnect';
 import { useToastStore } from '../useToastStore';
+import { calculateMsiInstallmentDate } from '../../services/movementService';
 
 export interface ExpenseSlice {
   expenses: RecordItem[];
@@ -21,8 +22,24 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
     const state = get();
     const houseId = state.houseId || "00000000-0000-0000-0000-000000000000";
 
-    const expenseAccounts = state.accounts?.filter((a: any) => a.type === 'EXPENSE') || [];
-    const assetAccounts = state.accounts?.filter((a: any) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT' || a.type === 'LIABILITY') || [];
+    let expenseAccounts = state.accounts?.filter((a: any) => a.type === 'EXPENSE') || [];
+    let assetAccounts = state.accounts?.filter((a: any) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT' || a.type === 'LIABILITY') || [];
+
+    if (expenseAccounts.length === 0 || assetAccounts.length === 0) {
+      try {
+        useToastStore.getState().addToast("Configurando cuentas contables...", "info");
+        await seedDefaultAccounts({ householdId: houseId });
+        if (state.houseId) await get().fetchDashboardData(state.houseId);
+        const updatedState = get();
+        expenseAccounts = updatedState.accounts?.filter((a: any) => a.type === 'EXPENSE') || [];
+        assetAccounts = updatedState.accounts?.filter((a: any) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT' || a.type === 'LIABILITY') || [];
+      } catch (seedError) {
+        console.warn("seedDefaultAccounts falló (puede que ya existan):", seedError);
+        const updatedState = get();
+        expenseAccounts = updatedState.accounts?.filter((a: any) => a.type === 'EXPENSE') || [];
+        assetAccounts = updatedState.accounts?.filter((a: any) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT' || a.type === 'LIABILITY') || [];
+      }
+    }
 
     if (expenseAccounts.length === 0 || assetAccounts.length === 0) {
       useToastStore.getState().addToast("No se encontraron cuentas de EXPENSE o ASSET.", "error");
@@ -38,10 +55,29 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
     const msiCount = isMsi && item.msiCount && item.msiCount > 0 ? item.msiCount : 1;
     const amountPerMonth = item.amount / msiCount;
 
+    const resolvedOwner = item.paidBy || item.userId || state.user?.uid || "unknown";
+    const isShared = item.isShared !== undefined ? item.isShared : !item.isPrivate;
+
     const totalCents = Math.round(amountPerMonth * 100);
     let user1Cents = totalCents;
     
-    if (item.splitType === '50/50' || item.splitType === 'proporcional') {
+    if (!isShared) {
+      const users = (state as any).users || [];
+      const isSecondUser = users.length > 1 && (users[1]?.id === resolvedOwner || users[1]?.uid === resolvedOwner);
+      if (isSecondUser) {
+        user1Cents = 0;
+      } else {
+        user1Cents = totalCents;
+      }
+    } else if (item.splitType === 'individual') {
+      const users = (state as any).users || [];
+      const isSecondUser = users.length > 1 && (users[1]?.id === resolvedOwner || users[1]?.uid === resolvedOwner);
+      if (isSecondUser) {
+        user1Cents = 0;
+      } else {
+        user1Cents = totalCents;
+      }
+    } else if (item.splitType === '50/50' || item.splitType === 'proporcional') {
       user1Cents = Math.round(totalCents / 2);
     }
     
@@ -50,14 +86,17 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
 
     const optimisticExpenses = [];
     const msiRefId = isMsi ? Date.now().toString() : null;
+    const expenseDesc = item.desc || item.category || 'Gasto';
     
     for (let i = 0; i < msiCount; i++) {
-      let expenseDate = new Date(item.date);
-      if (i > 0) {
-        expenseDate.setMonth(expenseDate.getMonth() + i);
-      }
+      const expenseDate = calculateMsiInstallmentDate(item.date, i);
       optimisticExpenses.push({
         ...item,
+        desc: expenseDesc,
+        description: expenseDesc,
+        userId: resolvedOwner,
+        ownerUid: resolvedOwner,
+        paidBy: resolvedOwner,
         id: `temp-${Date.now()}-${i}`,
         amount: amountPerMonth,
         date: expenseDate.toISOString(),
@@ -67,17 +106,14 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
       });
     }
 
-    set({ expenses: [...optimisticExpenses, ...state.expenses] });
+    set((s) => ({ expenses: [...optimisticExpenses, ...s.expenses] }));
 
     try {
       useToastStore.getState().addToast("Agregando gasto...", "info");
       const { createSharedExpenseWithProration, addTagToJournal } = await import('../../lib/dataconnect');
 
       for (let i = 0; i < msiCount; i++) {
-        let expenseDate = new Date(item.date);
-        if (i > 0) {
-          expenseDate.setMonth(expenseDate.getMonth() + i);
-        }
+        const expenseDate = calculateMsiInstallmentDate(item.date, i);
 
         const response = await createSharedExpenseWithProration({
           householdId: houseId,
@@ -90,8 +126,8 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
           user2ExpenseAccountId: user2ExpenseAccountId,
           user1Amount: baseUser1Amount,
           user2Amount: baseUser2Amount,
-          ownerUid: item.paidBy || item.userId || state.user?.uid || "unknown",
-          isShared: !item.isPrivate,
+          ownerUid: resolvedOwner,
+          isShared: isShared,
           isMsi: isMsi,
           msiRefId: msiRefId,
           msiMonthNumber: isMsi ? i + 1 : null,
@@ -112,7 +148,7 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
           if (item.tags && item.tags.length > 0) {
             for (const tagId of item.tags) {
               try {
-                await addTagToJournal({ journalId: realId, tagId });
+                await addTagToJournal({ journalId: realId, householdId: houseId, tagId });
               } catch (tagErr) {
                 console.error("Error al asignar tag", tagErr);
               }
@@ -122,11 +158,13 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
       }
 
       useToastStore.getState().addToast("Gasto(s) agregado(s) correctamente", "success");
+      const currentHouseId = get().houseId;
+      if (currentHouseId) await get().fetchDashboardData(currentHouseId);
     } catch (error: any) {
       console.error(error);
       useToastStore.getState().addToast(`Error: ${error.message || 'Desconocido'}`, "error");
-      alert("Error al agregar gasto: " + (error.message || JSON.stringify(error)));
       set((s) => ({ expenses: s.expenses.filter((e) => !e.id.startsWith('temp-')) }));
+      throw error;
     }
   },
   updateExpense: async (id, item) => {
@@ -144,21 +182,41 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
     const user1ExpenseAccountId = expenseAccounts[0].id;
     const user2ExpenseAccountId = expenseAccounts.length > 1 ? expenseAccounts[1].id : expenseAccounts[0].id;
 
+    const resolvedOwner = item.paidBy || item.userId || state.user?.uid || "unknown";
+    const isShared = item.isShared !== undefined ? item.isShared : !item.isPrivate;
+
     const houseId = state.houseId || "00000000-0000-0000-0000-000000000000";
     const totalCents = Math.round(item.amount * 100);
     let user1Cents = totalCents;
     
-    if (item.splitType === '50/50' || item.splitType === 'proporcional') {
+    if (!isShared) {
+      const users = (state as any).users || [];
+      const isSecondUser = users.length > 1 && (users[1]?.id === resolvedOwner || users[1]?.uid === resolvedOwner);
+      if (isSecondUser) {
+        user1Cents = 0;
+      } else {
+        user1Cents = totalCents;
+      }
+    } else if (item.splitType === 'individual') {
+      const users = (state as any).users || [];
+      const isSecondUser = users.length > 1 && (users[1]?.id === resolvedOwner || users[1]?.uid === resolvedOwner);
+      if (isSecondUser) {
+        user1Cents = 0;
+      } else {
+        user1Cents = totalCents;
+      }
+    } else if (item.splitType === '50/50' || item.splitType === 'proporcional') {
       user1Cents = Math.round(totalCents / 2);
     }
     
     const user1Amount = user1Cents / 100;
     const user2Amount = (totalCents - user1Cents) / 100;
 
+    const expenseDesc = item.desc || item.category || 'Gasto';
     // Optimistic update
     const previousExpenses = [...state.expenses];
     set((s) => ({
-      expenses: s.expenses.map((e) => e.id === id ? { ...e, ...item } : e)
+      expenses: s.expenses.map((e) => e.id === id ? { ...e, ...item, desc: expenseDesc, description: expenseDesc, userId: resolvedOwner, ownerUid: resolvedOwner, paidBy: resolvedOwner } : e)
     }));
 
     try {
@@ -178,8 +236,8 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
         user2ExpenseAccountId: user2ExpenseAccountId,
         user1Amount: user1Amount,
         user2Amount: user2Amount,
-        ownerUid: item.paidBy || item.userId || state.user?.uid || "unknown",
-        isShared: !item.isPrivate,
+        ownerUid: resolvedOwner,
+        isShared: isShared,
         isRecurring: item.isRecurring || false,
         recurringFrequency: item.recurringFrequency || null,
         recurringEndDate: item.recurringEndDate ? new Date(item.recurringEndDate).toISOString() : null,
@@ -188,14 +246,16 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
 
       if (item.tags !== undefined) {
         // Eliminar existentes
-        await setJournalTags({ journalId: id, tagIds: [] });
+        await setJournalTags({ journalId: id, householdId: houseId, tagIds: [] });
         // Agregar nuevos
         for (const tagId of item.tags) {
-           await addTagToJournal({ journalId: id, tagId });
+           await addTagToJournal({ journalId: id, householdId: houseId, tagId });
         }
       }
 
       useToastStore.getState().addToast("Gasto actualizado correctamente", "success");
+      const currentHouseId = get().houseId;
+      if (currentHouseId) await get().fetchDashboardData(currentHouseId);
       
     } catch (error: any) {
       console.error(error);
@@ -216,7 +276,9 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
         await deleteJournal({ journalId: id, householdId: houseId });
         await get().refreshExpenses();
         useToastStore.getState().addToast("Gasto eliminado correctamente", "success");
-        }
+        const currentHouseId = get().houseId;
+        if (currentHouseId) await get().fetchDashboardData(currentHouseId);
+      }
     } catch(error) {
       console.error(error);
       useToastStore.getState().addToast("Error al eliminar el gasto", "error");

@@ -14,7 +14,38 @@ import {
   updateBudget, 
   deleteBudget, 
   createCategory,
-  getBudgets
+  getBudgets,
+  getExpensesByHousehold,
+  createAccount,
+  updateAccount,
+  archiveAccount,
+  deleteAccount,
+  reassignEntries,
+  getHouseholdAccounts,
+  getCurrentUser,
+  createSavingsProject,
+  updateSavingsProject,
+  updateProjectProgress,
+  getSavingsProjects,
+  createExternalAsset,
+  updateExternalAsset,
+  getExternalAssets,
+  updateCategory,
+  deleteCategory,
+  getCategories,
+  createTag,
+  deleteTag,
+  getTags,
+  setJournalTags,
+  addTagToJournal,
+  getJournalTags,
+  createInvitation,
+  acceptInvitation,
+  revokeInvitation,
+  leaveHousehold,
+  getInvitation,
+  getHouseholdMembers,
+  getPendingInvitations
 } from '../src/lib/dataconnect/esm/index.esm.js';
 
 const app = initializeApp({
@@ -125,7 +156,7 @@ async function run() {
       isShared: true
     });
     journalIdShared = res.data.journal_insert.id;
-    const balanceRes = await getJournalBalanceV2(dc, { journalId: journalIdShared });
+    const balanceRes = await getJournalBalanceV2(dc, { journalId: journalIdShared, householdId });
     const diff = balanceRes.data.journalBalanceV2s[0]?.diff;
     if (Math.abs(diff) > 0.005) throw new Error(`El balance del journal no cuadra. diff: ${diff}`);
   });
@@ -145,7 +176,7 @@ async function run() {
       ownerUid,
       isShared: true
     });
-  }, /Unauthorized|Permission|not in household|permission denied/i);
+  }, /El usuario no pertenece a este hogar/);
 
   await expectRejected('CASO 3: Monto negativo (debe fallar)', async () => {
     await createSharedExpenseWithProration(dc, {
@@ -189,10 +220,10 @@ async function run() {
       journalId: journalIdShared,
       householdId: alienHouseholdId 
     });
-  }, /Unauthorized|Permission|not in household|permission denied|not found/i, async () => {
+  }, /El journal no pertenece a este hogar/, async () => {
     // Verificar que el journal NO fue borrado regresando al Usuario 1
     await signInWithEmailAndPassword(auth, email1, 'password123');
-    const balance = await getJournalBalanceV2(dc, { journalId: journalIdShared });
+    const balance = await getJournalBalanceV2(dc, { journalId: journalIdShared, householdId });
     if (balance.data.journalBalanceV2s.length === 0) throw new Error("El journal fue borrado de la BD!");
     console.log("✅ Verificado: El journal sigue existiendo.");
   });
@@ -252,7 +283,7 @@ async function run() {
   await expectSuccess('CASO 9: Borrar Journal exitoso', async () => {
     await deleteJournal(dc, { journalId: journalIdIngreso, householdId });
     // Verificación
-    const balance = await getJournalBalanceV2(dc, { journalId: journalIdIngreso });
+    const balance = await getJournalBalanceV2(dc, { journalId: journalIdIngreso, householdId });
     if (balance.data.journalBalanceV2s.length > 0) {
       throw new Error("El journal no fue borrado de la base de datos.");
     }
@@ -304,43 +335,1083 @@ async function run() {
     console.log("✅ Verificado: No se duplicó el presupuesto.");
   });
 
-  await signInWithEmailAndPassword(auth, email2, 'password123'); // alien
+  // We create a separate app for the alien to avoid Data Connect cache hits from User 1
+  const alienApp = initializeApp({
+    projectId: 'demo-pareja-pro',
+    apiKey: 'fake-api-key'
+  }, "alienApp");
+  const alienAuth = getAuth(alienApp);
+  connectAuthEmulator(alienAuth, 'http://127.0.0.1:9099');
+  const alienDc = getDataConnect(alienApp, connectorConfig);
+  connectDataConnectEmulator(alienDc, 'localhost', 9399);
+
+  await signInWithEmailAndPassword(alienAuth, email2, 'password123'); // alien
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  await expectRejected('CASO 12.5: Alien lee presupuestos de otro hogar (debe fallar)', async () => {
+    const res = await getBudgets(alienDc, { householdId });
+    if (res.errors && res.errors.length > 0) {
+      throw new Error(res.errors.map(e => e.message).join(", "));
+    }
+    if (res.data && res.data.budgets && res.data.budgets.length > 0) {
+      throw new Error("El sistema permitió leer presupuestos ajenos.");
+    }
+  }, /El recurso no pertenece a este hogar/i);
+  
   await expectRejected('CASO 13: Alien crea presupuesto en hogar ajeno', async () => {
-    await createBudget(dc, {
+    await createBudget(alienDc, {
       householdId: householdId, 
       categoryId,
       period: '2026-12-01',
       assignedAmount: 500,
       ownerType: 'SHARED'
     });
-  }, /Unauthorized|Permission|not in household|permission denied/i);
+  }, /Hogar inválido o monto negativo/);
 
   await expectRejected('CASO 14: Alien actualiza presupuesto ajeno', async () => {
-    await updateBudget(dc, {
+    await updateBudget(alienDc, {
       id: budgetId,
       householdId: alienHouseholdId,
       assignedAmount: 1500
     });
-  }, /Unauthorized|Permission|not in household|permission denied|not found/i, async () => {
-    await signInWithEmailAndPassword(auth, email1, 'password123');
+  }, /El presupuesto no pertenece a este hogar/, async () => {
     const budgets = await getBudgets(dc, { householdId });
     const b = budgets.data.budgets.find(b => b.id === budgetId);
     if (!b || b.assignedAmount !== 1000) throw new Error("Alien modificó el presupuesto!");
     console.log("✅ Verificado: El presupuesto no fue modificado.");
   });
 
-  await signInWithEmailAndPassword(auth, email2, 'password123'); // alien
   await expectRejected('CASO 15: Alien borra presupuesto ajeno', async () => {
-    await deleteBudget(dc, {
+    await deleteBudget(alienDc, {
       id: budgetId,
       householdId: alienHouseholdId 
     });
-  }, /Unauthorized|Permission|not in household|permission denied|not found/i, async () => {
-    await signInWithEmailAndPassword(auth, email1, 'password123');
+  }, /El presupuesto no pertenece a este hogar/, async () => {
     const budgets = await getBudgets(dc, { householdId });
     if (!budgets.data.budgets.find(b => b.id === budgetId)) throw new Error("Alien borró el presupuesto!");
     console.log("✅ Verificado: El presupuesto sigue existiendo.");
   });
+
+  await expectRejected('CASO 15.1: Alien crea Journal en hogar ajeno', async () => {
+    await createJournalWithEntries(alienDc, {
+      householdId,
+      date: new Date().toISOString(),
+      description: 'Alien Ingreso',
+      amount: 100,
+      debitAccountId: payerAccountId,
+      creditAccountId: user1ExpenseId,
+      prorataFactor: 0.5,
+      ownerUid,
+      isShared: false
+    });
+  }, /El usuario no pertenece a este hogar/);
+
+  const expensesBefore15_1b = await getExpensesByHousehold(dc, { householdId });
+  const countBefore15_1b = expensesBefore15_1b.data.entries.length;
+  await expectRejected('CASO 15.1b: Alien crea Journal en su propio hogar con cuentas de la víctima', async () => {
+    await createJournalWithEntries(alienDc, {
+      householdId: alienHouseholdId,
+      date: new Date().toISOString(),
+      description: 'Alien Ingreso Cuentas Ajenas',
+      amount: 100,
+      debitAccountId: payerAccountId,
+      creditAccountId: user1ExpenseId,
+      prorataFactor: 0.5,
+      ownerUid,
+      isShared: false
+    });
+  }, /Cuenta de débito inválida, monto no positivo o cuentas iguales/, async () => {
+    const expensesAfter = await getExpensesByHousehold(dc, { householdId });
+    if (expensesAfter.data.entries.length !== countBefore15_1b || expensesAfter.data.entries.some(e => e.journal.description === 'Alien Ingreso Cuentas Ajenas')) {
+      throw new Error("Se crearon asientos en las cuentas de la víctima!");
+    }
+    console.log("✅ Verificado: No se creó ningún asiento en las cuentas de la víctima.");
+  });
+
+  await expectRejected('CASO 15.2: Alien edita Journal ajeno', async () => {
+    await updateJournalWithEntries(alienDc, {
+      journalId: journalIdShared,
+      householdId,
+      date: new Date().toISOString(),
+      description: 'Alien Edit',
+      amount: 150,
+      debitAccountId: payerAccountId,
+      creditAccountId: user1ExpenseId,
+      prorataFactor: 0.5,
+      ownerUid,
+      isShared: false
+    });
+  }, /El usuario no pertenece a este hogar/);
+
+  await expectRejected('CASO 15.2b: Alien edita Journal ajeno usando su propio hogar', async () => {
+    await updateJournalWithEntries(alienDc, {
+      journalId: journalIdShared,
+      householdId: alienHouseholdId,
+      date: new Date().toISOString(),
+      description: 'Alien Edit Propio Hogar',
+      amount: 150,
+      debitAccountId: payerAccountId,
+      creditAccountId: user1ExpenseId,
+      prorataFactor: 0.5,
+      ownerUid,
+      isShared: false
+    });
+  }, /El journal no pertenece a este hogar/, async () => {
+    const expensesAfter = await getExpensesByHousehold(dc, { householdId });
+    const sharedEntries = expensesAfter.data.entries.filter(e => e.journal.id === journalIdShared);
+    if (sharedEntries.length === 0 || sharedEntries[0].journal.description !== 'Gasto Compartido Editado') {
+      throw new Error("El journal de la víctima fue modificado!");
+    }
+    console.log("✅ Verificado: El journal de la víctima no cambió.");
+  });
+
+  await expectRejected('CASO 15.3: Alien crea Gasto Compartido en hogar ajeno', async () => {
+    await createSharedExpenseWithProration(alienDc, {
+      householdId,
+      date: new Date().toISOString(),
+      description: 'Alien Shared',
+      totalAmount: 100,
+      prorataFactor: 0.5,
+      payerAccountId,
+      user1ExpenseAccountId: user1ExpenseId,
+      user2ExpenseAccountId: user2ExpenseId,
+      user1Amount: 50,
+      user2Amount: 50,
+      ownerUid,
+      isShared: true
+    });
+  }, /El usuario no pertenece a este hogar/);
+
+  const expensesBefore15_3b = await getExpensesByHousehold(dc, { householdId });
+  const countBefore15_3b = expensesBefore15_3b.data.entries.length;
+  await expectRejected('CASO 15.3b: Alien crea Gasto Compartido en su propio hogar con cuentas de la víctima', async () => {
+    await createSharedExpenseWithProration(alienDc, {
+      householdId: alienHouseholdId,
+      date: new Date().toISOString(),
+      description: 'Alien Shared Cuentas Ajenas',
+      totalAmount: 100,
+      prorataFactor: 0.5,
+      payerAccountId,
+      user1ExpenseAccountId: user1ExpenseId,
+      user2ExpenseAccountId: user2ExpenseId,
+      user1Amount: 50,
+      user2Amount: 50,
+      ownerUid,
+      isShared: true
+    });
+  }, /Cuenta de pago inválida o el reparto no suma el total/, async () => {
+    const expensesAfter = await getExpensesByHousehold(dc, { householdId });
+    if (expensesAfter.data.entries.length !== countBefore15_3b || expensesAfter.data.entries.some(e => e.journal.description === 'Alien Shared Cuentas Ajenas')) {
+      throw new Error("Se crearon gastos compartidos en las cuentas de la víctima!");
+    }
+    console.log("✅ Verificado: No se creó ningún gasto compartido en las cuentas de la víctima.");
+  });
+
+  await expectRejected('CASO 15.4: Alien edita Gasto Compartido ajeno', async () => {
+    await updateSharedExpenseWithProration(alienDc, {
+      journalId: journalIdShared,
+      householdId,
+      date: new Date().toISOString(),
+      description: 'Alien Shared Edit',
+      totalAmount: 120,
+      prorataFactor: 0.5,
+      payerAccountId,
+      user1ExpenseAccountId: user1ExpenseId,
+      user2ExpenseAccountId: user2ExpenseId,
+      user1Amount: 60,
+      user2Amount: 60,
+      ownerUid,
+      isShared: true
+    });
+  }, /El usuario no pertenece a este hogar/);
+
+  await expectRejected('CASO 15.4b: Alien edita Gasto Compartido ajeno usando su propio hogar', async () => {
+    await updateSharedExpenseWithProration(alienDc, {
+      journalId: journalIdShared,
+      householdId: alienHouseholdId,
+      date: new Date().toISOString(),
+      description: 'Alien Shared Edit Propio Hogar',
+      totalAmount: 120,
+      prorataFactor: 0.5,
+      payerAccountId,
+      user1ExpenseAccountId: user1ExpenseId,
+      user2ExpenseAccountId: user2ExpenseId,
+      user1Amount: 60,
+      user2Amount: 60,
+      ownerUid,
+      isShared: true
+    });
+  }, /El journal no pertenece a este hogar/, async () => {
+    const expensesAfter = await getExpensesByHousehold(dc, { householdId });
+    const sharedEntries = expensesAfter.data.entries.filter(e => e.journal.id === journalIdShared);
+    if (sharedEntries.length === 0 || sharedEntries[0].journal.description !== 'Gasto Compartido Editado') {
+      throw new Error("El gasto compartido de la víctima fue modificado!");
+    }
+    console.log("✅ Verificado: El gasto compartido de la víctima no cambió.");
+  });
+
+  // ==== FAMILIA CUENTAS ====
+  let extraAssetId = '';
+  let extraExpenseId = '';
+  await expectSuccess('CASO 16.1: Crear y editar cuenta exitosamente', async () => {
+    const res1 = await createAccount(dc, {
+      householdId,
+      name: 'Cuenta Temporal',
+      type: 'ASSET',
+      ownerType: 'SHARED',
+      color: 'bg-slate-800'
+    });
+    extraAssetId = res1.data.account_insert.id;
+
+    const res2 = await createAccount(dc, {
+      householdId,
+      name: 'Gasto Temporal 2',
+      type: 'EXPENSE',
+      ownerType: 'SHARED',
+      color: 'bg-slate-800'
+    });
+    extraExpenseId = res2.data.account_insert.id;
+
+    await updateAccount(dc, {
+      accountId: extraAssetId,
+      householdId,
+      name: 'Cuenta Temporal Editada',
+      ownerType: 'SHARED',
+      color: 'bg-blue-800'
+    });
+
+    const accs = await getHouseholdAccounts(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const updated = accs.data.accounts.find(a => a.id === extraAssetId);
+    if (!updated || updated.name !== 'Cuenta Temporal Editada') {
+      throw new Error("La cuenta no se actualizó correctamente.");
+    }
+  });
+
+  await expectRejected('CASO 16.2: Alien edita cuenta ajena con su propio hogar', async () => {
+    await updateAccount(alienDc, {
+      accountId: payerAccountId,
+      householdId: alienHouseholdId,
+      name: 'Hackeada',
+      ownerType: 'SHARED'
+    });
+  }, /La cuenta no pertenece a este hogar/, async () => {
+    const accs = await getHouseholdAccounts(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const victimAcc = accs.data.accounts.find(a => a.id === payerAccountId);
+    if (!victimAcc || victimAcc.name === 'Hackeada') throw new Error("Alien modificó la cuenta de la víctima!");
+    console.log("✅ Verificado: La cuenta de la víctima no cambió de nombre.");
+  });
+
+  await expectRejected('CASO 16.3: Alien archiva cuenta ajena con su propio hogar', async () => {
+    await archiveAccount(alienDc, {
+      accountId: payerAccountId,
+      householdId: alienHouseholdId,
+      isArchived: true
+    });
+  }, /La cuenta no pertenece a este hogar/, async () => {
+    const accs = await getHouseholdAccounts(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const victimAcc = accs.data.accounts.find(a => a.id === payerAccountId);
+    if (!victimAcc || victimAcc.isArchived !== false) throw new Error("Alien archivó la cuenta de la víctima!");
+    console.log("✅ Verificado: La cuenta de la víctima sigue activa.");
+  });
+
+  await expectRejected('CASO 16.4: Alien borra cuenta ajena con su propio hogar', async () => {
+    await deleteAccount(alienDc, {
+      accountId: extraAssetId,
+      householdId: alienHouseholdId
+    });
+  }, /La cuenta no pertenece a este hogar/, async () => {
+    const accs = await getHouseholdAccounts(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (!accs.data.accounts.find(a => a.id === extraAssetId)) throw new Error("Alien borró la cuenta de la víctima!");
+    console.log("✅ Verificado: La cuenta de la víctima sigue existiendo.");
+  });
+
+  const alienAssetId = hh2.data.assetAccount.id;
+  await expectRejected('CASO 16.5: Alien reasigna asientos de cuenta ajena con su propio hogar', async () => {
+    await reassignEntries(alienDc, {
+      householdId: alienHouseholdId,
+      fromAccountId: payerAccountId,
+      toAccountId: alienAssetId,
+      accountType: 'ASSET'
+    });
+  }, /Cuenta de origen inválida, de distinto tipo o igual a la de destino/, async () => {
+    const balanceRes = await getJournalBalanceV2(dc, { journalId: journalIdShared, householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const diff = balanceRes.data.journalBalanceV2s[0]?.diff;
+    if (Math.abs(diff) > 0.005) throw new Error("Los asientos de la víctima fueron alterados!");
+    console.log("✅ Verificado: Los asientos de la víctima no cambiaron.");
+  });
+
+  await expectRejected('CASO 16.6: Borrar cuenta con asientos asociados (debe fallar)', async () => {
+    await deleteAccount(dc, {
+      accountId: payerAccountId,
+      householdId
+    });
+  }, /La cuenta tiene asientos asociados y no puede eliminarse/, async () => {
+    const accs = await getHouseholdAccounts(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (!accs.data.accounts.find(a => a.id === payerAccountId)) throw new Error("Se borró una cuenta con asientos!");
+    console.log("✅ Verificado: La cuenta con asientos sigue existiendo.");
+  });
+
+  await expectRejected('CASO 16.7: Reasignar asientos entre cuentas de distinto tipo (debe fallar)', async () => {
+    await reassignEntries(dc, {
+      householdId,
+      fromAccountId: user1ExpenseId,
+      toAccountId: payerAccountId,
+      accountType: 'EXPENSE'
+    });
+  }, /Cuenta de destino inválida o de distinto tipo/, async () => {
+    const expensesAfter = await getExpensesByHousehold(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (expensesAfter.data.entries.length === 0) throw new Error("Los asientos de gasto cambiaron de cuenta!");
+    console.log("✅ Verificado: Los asientos no cambiaron ante tipos distintos.");
+  });
+
+  await expectSuccess('CASO 16.8: Reasignar asientos válido entre cuentas del mismo tipo', async () => {
+    await reassignEntries(dc, {
+      householdId,
+      fromAccountId: user1ExpenseId,
+      toAccountId: extraExpenseId,
+      accountType: 'EXPENSE'
+    });
+    const expensesAfter = await getExpensesByHousehold(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (!expensesAfter.data.entries.every(e => e.account.name === 'Gasto Temporal 2')) {
+      throw new Error("Los asientos no se reasignaron a la cuenta destino.");
+    }
+    // Regresar asientos a user1ExpenseId para dejar limpio
+    await reassignEntries(dc, {
+      householdId,
+      fromAccountId: extraExpenseId,
+      toAccountId: user1ExpenseId,
+      accountType: 'EXPENSE'
+    });
+  });
+
+  await expectSuccess('CASO 16.9: Borrar cuenta vacía exitoso', async () => {
+    await deleteAccount(dc, {
+      accountId: extraAssetId,
+      householdId
+    });
+    const accs = await getHouseholdAccounts(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (accs.data.accounts.find(a => a.id === extraAssetId)) {
+      throw new Error("La cuenta vacía no fue eliminada.");
+    }
+  });
+
+  const accsBefore16_10 = await getHouseholdAccounts(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+  await expectRejected('CASO 16.10: CreateHouseholdAndUser por segunda vez con el mismo usuario (debe fallar)', async () => {
+    await createHouseholdAndUser(dc, {
+      email: email1,
+      displayName: 'User 1 Duplicate'
+    });
+  }, /unique constraint/, async () => {
+    const currUser = await getCurrentUser(dc, { fetchPolicy: 'SERVER_ONLY' });
+    const accsAfter = await getHouseholdAccounts(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (currUser.data.user?.householdId !== householdId || accsAfter.data.accounts.length !== accsBefore16_10.data.accounts.length) {
+      throw new Error("El hogar del usuario o sus cuentas cambiaron tras el segundo CreateHouseholdAndUser!");
+    }
+    console.log("✅ Verificado: El hogar del usuario y sus cuentas permanecen intactos.");
+  });
+
+  // ==== FAMILIA AHORROS Y ACTIVOS ====
+  let projectId = '';
+  await expectSuccess('CASO 17.1: Crear proyecto de ahorro exitoso', async () => {
+    const res = await createSavingsProject(dc, {
+      householdId,
+      name: 'Fondo de Emergencia',
+      targetAmount: 10000,
+      priority: 1,
+      monthlyQuota: 1000,
+      targetAccount: 'Banco'
+    });
+    projectId = res.data.savingsProject_insert.id;
+    const projs = await getSavingsProjects(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const created = projs.data.savingsProjects.find(p => p.id === projectId);
+    if (!created || created.name !== 'Fondo de Emergencia' || created.targetAmount !== 10000) {
+      throw new Error("El proyecto de ahorro no se creó correctamente.");
+    }
+  });
+
+  await expectRejected('CASO 17.2: Alien crea proyecto de ahorro en hogar ajeno', async () => {
+    await createSavingsProject(alienDc, {
+      householdId,
+      name: 'Proyecto Alien',
+      targetAmount: 5000,
+      priority: 2
+    });
+  }, /El usuario no pertenece a este hogar o el monto objetivo es negativo/, async () => {
+    const projs = await getSavingsProjects(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (projs.data.savingsProjects.some(p => p.name === 'Proyecto Alien') || projs.data.savingsProjects.length !== 1) {
+      throw new Error("Alien creó un proyecto en el hogar de la víctima!");
+    }
+    console.log("✅ Verificado: No se creó ningún proyecto ajeno en el hogar de la víctima.");
+  });
+
+  await expectSuccess('CASO 17.3: Editar proyecto de ahorro exitoso', async () => {
+    await updateSavingsProject(dc, {
+      projectId,
+      householdId,
+      name: 'Fondo de Emergencia Editado',
+      targetAmount: 12000,
+      monthlyQuota: 1200,
+      targetAccount: 'CETES',
+      priority: 1,
+      isCompleted: false
+    });
+    const projs = await getSavingsProjects(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const updated = projs.data.savingsProjects.find(p => p.id === projectId);
+    if (!updated || updated.name !== 'Fondo de Emergencia Editado' || updated.targetAmount !== 12000) {
+      throw new Error("El proyecto de ahorro no se actualizó correctamente.");
+    }
+  });
+
+  await expectRejected('CASO 17.4: Alien edita proyecto de ahorro ajeno con su propio hogar', async () => {
+    await updateSavingsProject(alienDc, {
+      projectId,
+      householdId: alienHouseholdId,
+      name: 'Proyecto Hackeado',
+      targetAmount: 1
+    });
+  }, /El proyecto de ahorro no pertenece a este hogar/, async () => {
+    const projs = await getSavingsProjects(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const victimProj = projs.data.savingsProjects.find(p => p.id === projectId);
+    if (!victimProj || victimProj.name !== 'Fondo de Emergencia Editado' || victimProj.targetAmount !== 12000) {
+      throw new Error("Alien modificó el proyecto de ahorro de la víctima!");
+    }
+    console.log("✅ Verificado: El proyecto de ahorro de la víctima no cambió.");
+  });
+
+  await expectSuccess('CASO 17.5: Actualizar progreso de proyecto de ahorro exitoso', async () => {
+    await updateProjectProgress(dc, {
+      projectId,
+      householdId,
+      amountToAdd: 2500
+    });
+    const projs = await getSavingsProjects(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const updated = projs.data.savingsProjects.find(p => p.id === projectId);
+    if (!updated || updated.currentAmount !== 2500) {
+      throw new Error("El progreso del proyecto de ahorro no se actualizó correctamente.");
+    }
+  });
+
+  await expectRejected('CASO 17.6: Alien actualiza progreso de proyecto ajeno con su propio hogar', async () => {
+    await updateProjectProgress(alienDc, {
+      projectId,
+      householdId: alienHouseholdId,
+      amountToAdd: 99999
+    });
+  }, /El proyecto de ahorro no pertenece a este hogar/, async () => {
+    const projs = await getSavingsProjects(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const victimProj = projs.data.savingsProjects.find(p => p.id === projectId);
+    if (!victimProj || victimProj.currentAmount !== 2500) {
+      throw new Error("Alien modificó el progreso del proyecto de la víctima!");
+    }
+    console.log("✅ Verificado: El progreso del proyecto de la víctima no cambió.");
+  });
+
+  let assetId = '';
+  await expectSuccess('CASO 17.7: Crear activo externo exitoso', async () => {
+    const res = await createExternalAsset(dc, {
+      householdId,
+      name: 'Auto Familiar',
+      estimatedValue: 200000,
+      assetType: 'vehiculo'
+    });
+    assetId = res.data.externalAsset_insert.id;
+    const assets = await getExternalAssets(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const created = assets.data.externalAssets.find(a => a.id === assetId);
+    if (!created || created.name !== 'Auto Familiar' || created.estimatedValue !== 200000) {
+      throw new Error("El activo externo no se creó correctamente.");
+    }
+  });
+
+  await expectRejected('CASO 17.8: Alien crea activo externo en hogar ajeno', async () => {
+    await createExternalAsset(alienDc, {
+      householdId,
+      name: 'Activo Alien',
+      estimatedValue: 50000,
+      assetType: 'inmueble'
+    });
+  }, /El usuario no pertenece a este hogar o el valor estimado es negativo/, async () => {
+    const assets = await getExternalAssets(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (assets.data.externalAssets.some(a => a.name === 'Activo Alien') || assets.data.externalAssets.length !== 1) {
+      throw new Error("Alien creó un activo externo en el hogar de la víctima!");
+    }
+    console.log("✅ Verificado: No se creó ningún activo externo ajeno en el hogar de la víctima.");
+  });
+
+  await expectSuccess('CASO 17.9: Actualizar valor estimado de activo externo exitoso', async () => {
+    await updateExternalAsset(dc, {
+      assetId,
+      householdId,
+      estimatedValue: 185000
+    });
+    const assets = await getExternalAssets(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const updated = assets.data.externalAssets.find(a => a.id === assetId);
+    if (!updated || updated.estimatedValue !== 185000) {
+      throw new Error("El activo externo no se actualizó correctamente.");
+    }
+  });
+
+  await expectRejected('CASO 17.10: Alien actualiza activo externo ajeno con su propio hogar', async () => {
+    await updateExternalAsset(alienDc, {
+      assetId,
+      householdId: alienHouseholdId,
+      estimatedValue: 1
+    });
+  }, /El activo externo no pertenece a este hogar/, async () => {
+    const assets = await getExternalAssets(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const victimAsset = assets.data.externalAssets.find(a => a.id === assetId);
+    if (!victimAsset || victimAsset.estimatedValue !== 185000) {
+      throw new Error("Alien modificó el activo externo de la víctima!");
+    }
+    console.log("✅ Verificado: El activo externo de la víctima no cambió.");
+  });
+
+  // ==== FAMILIA CATEGORÍAS Y ETIQUETAS ====
+  let catTempId = '';
+  await expectSuccess('CASO 18.1: Crear y actualizar categoría exitosamente', async () => {
+    const res = await createCategory(dc, {
+      householdId,
+      name: 'Categoría Temporal',
+      type: 'EXPENSE',
+      color: '#ff0000',
+      ownerType: 'SHARED'
+    });
+    catTempId = res.data.category_insert.id;
+    await updateCategory(dc, {
+      id: catTempId,
+      householdId,
+      name: 'Categoría Temporal Editada',
+      color: '#00ff00'
+    });
+    const cats = await getCategories(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const updated = cats.data.categories.find(c => c.id === catTempId);
+    if (!updated || updated.name !== 'Categoría Temporal Editada' || updated.color !== '#00ff00') {
+      throw new Error("La categoría no se creó o actualizó correctamente.");
+    }
+  });
+
+  await expectRejected('CASO 18.2: Alien crea categoría en hogar ajeno', async () => {
+    await createCategory(alienDc, {
+      householdId,
+      name: 'Categoría Alien',
+      type: 'EXPENSE',
+      ownerType: 'SHARED'
+    });
+  }, /El usuario no pertenece a este hogar/, async () => {
+    const cats = await getCategories(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (cats.data.categories.some(c => c.name === 'Categoría Alien')) {
+      throw new Error("Alien creó una categoría en el hogar de la víctima!");
+    }
+    console.log("✅ Verificado: No se creó ninguna categoría ajena.");
+  });
+
+  await expectRejected('CASO 18.3: Alien actualiza categoría ajena con su propio hogar', async () => {
+    await updateCategory(alienDc, {
+      id: catTempId,
+      householdId: alienHouseholdId,
+      name: 'Categoría Hackeada',
+      color: '#000000'
+    });
+  }, /La categoría no pertenece a este hogar/, async () => {
+    const cats = await getCategories(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const victimCat = cats.data.categories.find(c => c.id === catTempId);
+    if (!victimCat || victimCat.name !== 'Categoría Temporal Editada') {
+      throw new Error("Alien modificó la categoría de la víctima!");
+    }
+    console.log("✅ Verificado: La categoría de la víctima no cambió.");
+  });
+
+  await expectRejected('CASO 18.4: Alien borra categoría ajena con su propio hogar', async () => {
+    await deleteCategory(alienDc, {
+      id: catTempId,
+      householdId: alienHouseholdId
+    });
+  }, /La categoría no pertenece a este hogar/, async () => {
+    const cats = await getCategories(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (!cats.data.categories.find(c => c.id === catTempId)) {
+      throw new Error("Alien borró la categoría de la víctima!");
+    }
+    console.log("✅ Verificado: La categoría de la víctima sigue existiendo.");
+  });
+
+  let tempBudgetId = '';
+  await expectRejected('CASO 18.5a: Borrar categoría con presupuestos asociados (debe fallar)', async () => {
+    const bRes = await createBudget(dc, {
+      householdId,
+      categoryId: catTempId,
+      period: '2026-09-01',
+      assignedAmount: 300,
+      ownerType: 'SHARED'
+    });
+    tempBudgetId = bRes.data.budget_insert.id;
+
+    await updateSharedExpenseWithProration(dc, {
+      journalId: journalIdShared,
+      householdId,
+      date: new Date().toISOString(),
+      description: 'Gasto Compartido Editado',
+      totalAmount: 120,
+      prorataFactor: 0.5,
+      payerAccountId,
+      user1ExpenseAccountId: user1ExpenseId,
+      user2ExpenseAccountId: user2ExpenseId,
+      user1Amount: 60,
+      user2Amount: 60,
+      ownerUid,
+      isShared: true,
+      categoryId: catTempId
+    });
+
+    await deleteCategory(dc, {
+      id: catTempId,
+      householdId
+    });
+  }, /La categoría tiene presupuestos asociados y no puede eliminarse/, async () => {
+    const cats = await getCategories(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const budgetsAfter = await getBudgets(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (!cats.data.categories.some(c => c.id === catTempId) || !budgetsAfter.data.budgets.some(b => b.id === tempBudgetId)) {
+      throw new Error("La categoría o sus presupuestos se eliminaron pese al check!");
+    }
+    console.log("✅ Verificado: La categoría y sus presupuestos siguen existiendo.");
+  });
+
+  await expectSuccess('CASO 18.5b: Borrar categoría sin presupuestos asociados (éxito)', async () => {
+    await deleteBudget(dc, {
+      id: tempBudgetId,
+      householdId
+    });
+
+    await deleteCategory(dc, {
+      id: catTempId,
+      householdId
+    });
+
+    const cats = await getCategories(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (cats.data.categories.find(c => c.id === catTempId)) {
+      throw new Error("La categoría sin presupuestos no fue eliminada.");
+    }
+    const exps = await getExpensesByHousehold(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const sharedEntry = exps.data.entries.find(e => e.journal.id === journalIdShared);
+    if (!sharedEntry || sharedEntry.journal.categoryId !== null) {
+      throw new Error(`Efecto inesperado tras DeleteCategory: journalExists=${!!sharedEntry}, journalCat=${sharedEntry?.journal.categoryId}`);
+    }
+    console.log("✅ Verificado: Categoría sin presupuestos eliminada y journal conserva categoryId=null.");
+  });
+
+  let tagTempId = '';
+  let alienTagId = '';
+  await expectSuccess('CASO 18.6: Crear etiqueta exitosamente', async () => {
+    const res = await createTag(dc, {
+      householdId,
+      name: 'Viaje2026'
+    });
+    tagTempId = res.data.tag_insert.id;
+    const tagsRes = await getTags(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (!tagsRes.data.tags.some(t => t.id === tagTempId && t.name === 'Viaje2026')) {
+      throw new Error("La etiqueta no se creó correctamente.");
+    }
+    const alienTagRes = await createTag(alienDc, {
+      householdId: alienHouseholdId,
+      name: 'TagPropioAlien'
+    });
+    alienTagId = alienTagRes.data.tag_insert.id;
+  });
+
+  await expectRejected('CASO 18.7: Alien crea etiqueta en hogar ajeno', async () => {
+    await createTag(alienDc, {
+      householdId,
+      name: 'TagAlienInvasor'
+    });
+  }, /El usuario no pertenece a este hogar/, async () => {
+    const tagsRes = await getTags(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (tagsRes.data.tags.some(t => t.name === 'TagAlienInvasor')) {
+      throw new Error("Alien creó una etiqueta en el hogar de la víctima!");
+    }
+    console.log("✅ Verificado: No se creó ninguna etiqueta ajena.");
+  });
+
+  await expectSuccess('CASO 18.8: Asignar etiqueta a Journal exitosamente (AddTagToJournal)', async () => {
+    await addTagToJournal(dc, {
+      journalId: journalIdShared,
+      householdId,
+      tagId: tagTempId
+    });
+    const jTags = await getJournalTags(dc, { journalId: journalIdShared, householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (!jTags.data.journalTags.some(jt => jt.tag.id === tagTempId)) {
+      throw new Error("La etiqueta no se asoció al journal.");
+    }
+  });
+
+  await expectRejected('CASO 18.9: Alien asigna etiqueta a Journal ajeno con su propio hogar', async () => {
+    await addTagToJournal(alienDc, {
+      journalId: journalIdShared,
+      householdId: alienHouseholdId,
+      tagId: alienTagId
+    });
+  }, /El journal no pertenece a este hogar/, async () => {
+    const jTags = await getJournalTags(dc, { journalId: journalIdShared, householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (jTags.data.journalTags.some(jt => jt.tag.id === alienTagId) || jTags.data.journalTags.length !== 1) {
+      throw new Error("Alien modificó las etiquetas del journal de la víctima!");
+    }
+    console.log("✅ Verificado: Las etiquetas del journal de la víctima no cambiaron.");
+  });
+
+  await expectRejected('CASO 18.9b: Usuario asigna etiqueta ajena a su propio Journal (debe fallar)', async () => {
+    await addTagToJournal(dc, {
+      journalId: journalIdShared,
+      householdId,
+      tagId: alienTagId
+    });
+  }, /La etiqueta no pertenece a este hogar/, async () => {
+    const jTags = await getJournalTags(dc, { journalId: journalIdShared, householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (jTags.data.journalTags.some(jt => jt.tag.id === alienTagId) || jTags.data.journalTags.length !== 1) {
+      throw new Error("Se asoció una etiqueta ajena al journal!");
+    }
+    console.log("✅ Verificado: No se asoció la etiqueta ajena.");
+  });
+
+  await expectRejected('CASO 18.10: Alien ejecuta SetJournalTags sobre Journal ajeno con su propio hogar', async () => {
+    await setJournalTags(alienDc, {
+      journalId: journalIdShared,
+      householdId: alienHouseholdId,
+      tagIds: []
+    });
+  }, /El journal no pertenece a este hogar/, async () => {
+    const jTags = await getJournalTags(dc, { journalId: journalIdShared, householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (jTags.data.journalTags.length !== 1 || jTags.data.journalTags[0].tag.id !== tagTempId) {
+      throw new Error("Alien borró las etiquetas del journal de la víctima!");
+    }
+    console.log("✅ Verificado: Las etiquetas del journal de la víctima siguen intactas.");
+  });
+
+  await expectRejected('CASO 18.10b: SetJournalTags con tagIds ajenos sobre Journal propio (debe fallar)', async () => {
+    await setJournalTags(dc, {
+      journalId: journalIdShared,
+      householdId,
+      tagIds: [tagTempId, alienTagId]
+    });
+  }, /Una o más etiquetas no pertenecen a este hogar/, async () => {
+    const jTags = await getJournalTags(dc, { journalId: journalIdShared, householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (jTags.data.journalTags.length !== 1) {
+      throw new Error("SetJournalTags eliminó las etiquetas pese a recibir tagIds inválidos!");
+    }
+    console.log("✅ Verificado: Las etiquetas del journal no se borraron.");
+  });
+
+  await expectSuccess('CASO 18.11: SetJournalTags exitoso con etiquetas válidas del hogar', async () => {
+    await setJournalTags(dc, {
+      journalId: journalIdShared,
+      householdId,
+      tagIds: [tagTempId]
+    });
+    const jTags = await getJournalTags(dc, { journalId: journalIdShared, householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (jTags.data.journalTags.length !== 0) {
+      throw new Error("SetJournalTags no limpió las etiquetas del journal.");
+    }
+  });
+
+  await expectRejected('CASO 18.12: Alien borra etiqueta ajena con su propio hogar', async () => {
+    await deleteTag(alienDc, {
+      id: tagTempId,
+      householdId: alienHouseholdId
+    });
+  }, /La etiqueta no pertenece a este hogar/, async () => {
+    const tagsRes = await getTags(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (!tagsRes.data.tags.some(t => t.id === tagTempId)) {
+      throw new Error("Alien borró la etiqueta de la víctima!");
+    }
+    console.log("✅ Verificado: La etiqueta de la víctima sigue existiendo.");
+  });
+
+  await expectSuccess('CASO 18.13: Borrar etiqueta exitoso', async () => {
+    await deleteTag(dc, {
+      id: tagTempId,
+      householdId
+    });
+    const tagsRes = await getTags(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (tagsRes.data.tags.some(t => t.id === tagTempId)) {
+      throw new Error("La etiqueta no fue eliminada.");
+    }
+  });
+
+  // ==== VALIDACIÓN DE PERIOD DÍA 1 Y $categoryId EN JOURNALS ====
+  await expectRejected('CASO 18.14: Crear presupuesto con period que no es día 1 (debe fallar)', async () => {
+    await createBudget(dc, {
+      householdId,
+      categoryId,
+      period: '2026-10-15',
+      assignedAmount: 500,
+      ownerType: 'SHARED'
+    });
+  }, /El periodo del presupuesto debe ser el día 1 del mes/, async () => {
+    const budgetsAfter = await getBudgets(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (budgetsAfter.data.budgets.some(b => b.period === '2026-10-15')) {
+      throw new Error("Se creó un presupuesto con fecha distinta al día 1!");
+    }
+    console.log("✅ Verificado: No se creó el presupuesto con period distinto al día 1.");
+  });
+
+  const alienCatRes = await createCategory(alienDc, {
+    householdId: alienHouseholdId,
+    name: 'CatPropiaAlien',
+    type: 'EXPENSE',
+    ownerType: 'SHARED'
+  });
+  const alienCategoryId = alienCatRes.data.category_insert.id;
+
+  await expectRejected('CASO 18.15a: CreateJournalWithEntries con categoryId de otro hogar (debe fallar)', async () => {
+    await createJournalWithEntries(dc, {
+      householdId,
+      date: new Date().toISOString(),
+      description: 'Journal con Cat Ajena',
+      amount: 50,
+      debitAccountId: user1ExpenseId,
+      creditAccountId: payerAccountId,
+      prorataFactor: 0.5,
+      ownerUid,
+      isShared: false,
+      categoryId: alienCategoryId
+    });
+  }, /La categoría no pertenece a este hogar/, async () => {
+    const exps = await getExpensesByHousehold(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (exps.data.entries.some(e => e.journal.description === 'Journal con Cat Ajena')) {
+      throw new Error("Se creó un journal con categoría de otro hogar!");
+    }
+    console.log("✅ Verificado: CreateJournalWithEntries rechazó categoría ajena.");
+  });
+
+  await expectRejected('CASO 18.15b: UpdateJournalWithEntries con categoryId de otro hogar (debe fallar)', async () => {
+    await updateJournalWithEntries(dc, {
+      journalId: journalIdShared,
+      householdId,
+      date: new Date().toISOString(),
+      description: 'Journal Editado con Cat Ajena',
+      amount: 120,
+      debitAccountId: user1ExpenseId,
+      creditAccountId: payerAccountId,
+      prorataFactor: 0.5,
+      ownerUid,
+      isShared: false,
+      categoryId: alienCategoryId
+    });
+  }, /La categoría no pertenece a este hogar/, async () => {
+    const exps = await getExpensesByHousehold(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const sharedEntry = exps.data.entries.find(e => e.journal.id === journalIdShared);
+    if (sharedEntry?.journal.categoryId === alienCategoryId) {
+      throw new Error("UpdateJournalWithEntries asignó categoría de otro hogar!");
+    }
+    console.log("✅ Verificado: UpdateJournalWithEntries rechazó categoría ajena.");
+  });
+
+  await expectRejected('CASO 18.15c: CreateSharedExpenseWithProration con categoryId de otro hogar (debe fallar)', async () => {
+    await createSharedExpenseWithProration(dc, {
+      householdId,
+      date: new Date().toISOString(),
+      description: 'Gasto Compartido con Cat Ajena',
+      totalAmount: 100,
+      prorataFactor: 0.5,
+      payerAccountId,
+      user1ExpenseAccountId: user1ExpenseId,
+      user2ExpenseAccountId: user2ExpenseId,
+      user1Amount: 50,
+      user2Amount: 50,
+      ownerUid,
+      isShared: true,
+      categoryId: alienCategoryId
+    });
+  }, /La categoría no pertenece a este hogar/, async () => {
+    const exps = await getExpensesByHousehold(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (exps.data.entries.some(e => e.journal.description === 'Gasto Compartido con Cat Ajena')) {
+      throw new Error("CreateSharedExpenseWithProration permitió categoría de otro hogar!");
+    }
+    console.log("✅ Verificado: CreateSharedExpenseWithProration rechazó categoría ajena.");
+  });
+
+  await expectRejected('CASO 18.15d: UpdateSharedExpenseWithProration con categoryId de otro hogar (debe fallar)', async () => {
+    await updateSharedExpenseWithProration(dc, {
+      journalId: journalIdShared,
+      householdId,
+      date: new Date().toISOString(),
+      description: 'Gasto Compartido Editado Cat Ajena',
+      totalAmount: 120,
+      prorataFactor: 0.5,
+      payerAccountId,
+      user1ExpenseAccountId: user1ExpenseId,
+      user2ExpenseAccountId: user2ExpenseId,
+      user1Amount: 60,
+      user2Amount: 60,
+      ownerUid,
+      isShared: true,
+      categoryId: alienCategoryId
+    });
+  }, /La categoría no pertenece a este hogar/, async () => {
+    const exps = await getExpensesByHousehold(dc, { householdId }, { fetchPolicy: 'SERVER_ONLY' });
+    const sharedEntry = exps.data.entries.find(e => e.journal.id === journalIdShared);
+    if (sharedEntry?.journal.categoryId === alienCategoryId) {
+      throw new Error("UpdateSharedExpenseWithProration asignó categoría de otro hogar!");
+    }
+    console.log("✅ Verificado: UpdateSharedExpenseWithProration rechazó categoría ajena.");
+  });
+
+  // ==== CASOS DE INVITACIONES Y INTEGRANTES (FASE 1) ====
+  console.log('\n--- Flujo de Invitaciones y Membresías ---');
+  const emailInviteA = `inviteA_${uniqueSuffix}@example.com`;
+  const credInviteA = await signUpOrSignIn(emailInviteA, 'password123');
+  const uidInviteA = credInviteA.user.uid;
+  const hhInviteA = await createHouseholdAndUser(dc, { email: emailInviteA, displayName: 'Invitador A' });
+  const houseAId = hhInviteA.data.household_insert.id;
+
+  const emailInviteB = `inviteB_${uniqueSuffix}@example.com`;
+  const credInviteB = await signUpOrSignIn(emailInviteB, 'password123');
+  const uidInviteB = credInviteB.user.uid;
+  const hhInviteB = await createHouseholdAndUser(dc, { email: emailInviteB, displayName: 'Invitado B' });
+  const houseBId = hhInviteB.data.household_insert.id;
+
+  const emailInviteC = `inviteC_${uniqueSuffix}@example.com`;
+  const credInviteC = await signUpOrSignIn(emailInviteC, 'password123');
+  const uidInviteC = credInviteC.user.uid;
+  const hhInviteC = await createHouseholdAndUser(dc, { email: emailInviteC, displayName: 'Invitado C (Alien)' });
+  const houseCId = hhInviteC.data.household_insert.id;
+
+  // CASO 1: A crea invitación -> B la acepta -> GetHouseholdMembers devuelve 2 integrantes (A como USER_A, B como USER_B)
+  await signInWithEmailAndPassword(auth, emailInviteA, 'password123');
+  let validInviteId = '';
+  const futureExpiration = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  await expectSuccess('CASO INV-1a: A crea invitación para su hogar', async () => {
+    const res = await createInvitation(dc, {
+      householdId: houseAId,
+      expiresAt: futureExpiration
+    });
+    validInviteId = res.data.invitation_insert.id;
+  });
+
+  await signInWithEmailAndPassword(auth, emailInviteB, 'password123');
+  await expectSuccess('CASO INV-1b: B consulta los detalles de la invitación', async () => {
+    const res = await getInvitation(dc, { id: validInviteId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (!res.data.invitation || res.data.invitation.status !== 'PENDING') {
+      throw new Error('La invitación consultada no está pendiente.');
+    }
+  });
+
+  await expectSuccess('CASO INV-1c: B acepta la invitación al hogar de A', async () => {
+    await acceptInvitation(dc, {
+      invitationId: validInviteId,
+      householdId: houseAId
+    });
+  });
+
+  await expectSuccess('CASO INV-1d: B consulta miembros del hogar de A (deben ser 2)', async () => {
+    const res = await getHouseholdMembers(dc, { householdId: houseAId }, { fetchPolicy: 'SERVER_ONLY' });
+    const members = res.data.users;
+    if (members.length !== 2) throw new Error(`Se esperaban 2 miembros, se encontraron ${members.length}`);
+    const memberA = members.find(m => m.uid === uidInviteA);
+    const memberB = members.find(m => m.uid === uidInviteB);
+    if (!memberA || memberA.memberSlot !== 'USER_A') throw new Error('A no tiene memberSlot USER_A');
+    if (!memberB || memberB.memberSlot !== 'USER_B') throw new Error('B no tiene memberSlot USER_B');
+  });
+
+  // CASO 2: C intenta aceptar la misma invitación -> rechazo específico
+  await signInWithEmailAndPassword(auth, emailInviteC, 'password123');
+  await expectRejected('CASO INV-2: C intenta aceptar invitación ya utilizada (debe fallar)', async () => {
+    await acceptInvitation(dc, {
+      invitationId: validInviteId,
+      householdId: houseAId
+    });
+  }, /La invitación no existe, ya fue utilizada o ha expirado/);
+
+  // CASO 3: Invitación revocada o expirada -> rechazo con mensaje específico
+  const emailInviteD = `inviteD_${uniqueSuffix}@example.com`;
+  await signUpOrSignIn(emailInviteD, 'password123');
+  const hhInviteD = await createHouseholdAndUser(dc, { email: emailInviteD, displayName: 'Usuario D' });
+  const houseDId = hhInviteD.data.household_insert.id;
+
+  let revokedInviteId = '';
+  await expectSuccess('CASO INV-3a: D crea una invitación', async () => {
+    const res = await createInvitation(dc, {
+      householdId: houseDId,
+      expiresAt: futureExpiration
+    });
+    revokedInviteId = res.data.invitation_insert.id;
+  });
+
+  await expectSuccess('CASO INV-3b: D revoca la invitación creada', async () => {
+    await revokeInvitation(dc, {
+      id: revokedInviteId,
+      householdId: houseDId
+    });
+  });
+
+  await signInWithEmailAndPassword(auth, emailInviteC, 'password123');
+  await expectRejected('CASO INV-3c: C intenta aceptar invitación revocada (debe fallar)', async () => {
+    await acceptInvitation(dc, {
+      invitationId: revokedInviteId,
+      householdId: houseDId
+    });
+  }, /La invitación no existe, ya fue utilizada o ha expirado/);
+
+  await expectRejected('CASO INV-3d: C consulta invitación revocada con getInvitation (debe fallar)', async () => {
+    await getInvitation(dc, { id: revokedInviteId }, { fetchPolicy: 'SERVER_ONLY' });
+  }, /Invitación inválida o expirada/);
+
+  // CASO 4: Aislamiento -> Usuario ajeno intenta llamar GetHouseholdMembers o GetPendingInvitations del hogar de A
+  await signInWithEmailAndPassword(auth, emailInviteC, 'password123');
+  await expectRejected('CASO INV-4a: C (alien) intenta consultar miembros del hogar de A (debe fallar)', async () => {
+    await getHouseholdMembers(dc, { householdId: houseAId }, { fetchPolicy: 'SERVER_ONLY' });
+  }, /El recurso no pertenece a este hogar/);
+
+  await expectRejected('CASO INV-4b: C (alien) intenta consultar invitaciones pendientes del hogar de A (debe fallar)', async () => {
+    await getPendingInvitations(dc, { householdId: houseAId }, { fetchPolicy: 'SERVER_ONLY' });
+  }, /El recurso no pertenece a este hogar/);
+
+  // CASO 5: B ejecuta LeaveHousehold -> B recibe nuevo hogar con 4 cuentas por defecto y memberSlot: USER_A; ya no tiene acceso a A
+  await signInWithEmailAndPassword(auth, emailInviteB, 'password123');
+  await expectSuccess('CASO INV-5a: B abandona el hogar de A', async () => {
+    await leaveHousehold(dc, { householdId: houseAId });
+  });
+
+  await expectSuccess('CASO INV-5b: B ahora tiene su propio hogar con memberSlot USER_A y 4 cuentas', async () => {
+    const userRes = await getCurrentUser(dc, { fetchPolicy: 'SERVER_ONLY' });
+    const newHouseId = userRes.data.user?.householdId;
+    if (!newHouseId || newHouseId === houseAId) {
+      throw new Error('B no fue asignado a un nuevo hogar diferente.');
+    }
+    if (userRes.data.user?.memberSlot !== 'USER_A') {
+      throw new Error(`B debió recibir memberSlot USER_A en su nuevo hogar, se obtuvo: ${userRes.data.user?.memberSlot}`);
+    }
+    const accountsRes = await getHouseholdAccounts(dc, { householdId: newHouseId }, { fetchPolicy: 'SERVER_ONLY' });
+    if (accountsRes.data.accounts.length !== 4) {
+      throw new Error(`Se esperaban 4 cuentas por defecto en el nuevo hogar, se encontraron ${accountsRes.data.accounts.length}`);
+    }
+  });
+
+  await expectRejected('CASO INV-5c: B ya no puede consultar miembros del hogar de A (debe fallar)', async () => {
+    await getHouseholdMembers(dc, { householdId: houseAId }, { fetchPolicy: 'SERVER_ONLY' });
+  }, /El recurso no pertenece a este hogar/);
+
+  // CASO 6: A intenta crear invitación cuando el hogar ya tiene 2 integrantes -> rechazo específico
+  await signInWithEmailAndPassword(auth, emailInviteA, 'password123');
+  let inviteForC = '';
+  await expectSuccess('CASO INV-6a: A crea invitación para que C se una', async () => {
+    const res = await createInvitation(dc, {
+      householdId: houseAId,
+      expiresAt: futureExpiration
+    });
+    inviteForC = res.data.invitation_insert.id;
+  });
+
+  await signInWithEmailAndPassword(auth, emailInviteC, 'password123');
+  await expectSuccess('CASO INV-6b: C acepta invitación y se une al hogar de A (ahora son 2: A y C)', async () => {
+    await acceptInvitation(dc, {
+      invitationId: inviteForC,
+      householdId: houseAId
+    });
+  });
+
+  await signInWithEmailAndPassword(auth, emailInviteA, 'password123');
+  await expectRejected('CASO INV-6c: A intenta crear invitación con el hogar lleno de 2 miembros (debe fallar)', async () => {
+    await createInvitation(dc, {
+      householdId: houseAId,
+      expiresAt: futureExpiration
+    });
+  }, /El hogar ya cuenta con el límite de 2 integrantes/);
 
   if (globalHasErrors) {
     console.error('\n⚠️ Hubo errores en las pruebas.');

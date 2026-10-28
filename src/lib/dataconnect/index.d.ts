@@ -21,6 +21,17 @@ export enum EntryType {
   CREDIT = "CREDIT",
 };
 
+export enum InvitationStatus {
+  PENDING = "PENDING",
+  ACCEPTED = "ACCEPTED",
+  REVOKED = "REVOKED",
+};
+
+export enum MemberSlot {
+  USER_A = "USER_A",
+  USER_B = "USER_B",
+};
+
 export enum OwnerType {
   USER_A = "USER_A",
   USER_B = "USER_B",
@@ -28,6 +39,16 @@ export enum OwnerType {
 };
 
 
+
+export interface AcceptInvitationData {
+  user_update?: User_Key | null;
+  invitation_update?: Invitation_Key | null;
+}
+
+export interface AcceptInvitationVariables {
+  invitationId: UUIDString;
+  householdId: UUIDString;
+}
 
 export interface Account_Key {
   id: UUIDString;
@@ -40,6 +61,7 @@ export interface AddTagToJournalData {
 
 export interface AddTagToJournalVariables {
   journalId: UUIDString;
+  householdId: UUIDString;
   tagId: UUIDString;
 }
 
@@ -49,7 +71,12 @@ export interface ArchiveAccountData {
 
 export interface ArchiveAccountVariables {
   accountId: UUIDString;
+  householdId: UUIDString;
   isArchived: boolean;
+}
+
+export interface BackfillMemberSlotsData {
+  user_updateMany: number;
 }
 
 export interface Budget_Key {
@@ -126,6 +153,15 @@ export interface CreateHouseholdAndUserVariables {
   displayName: string;
 }
 
+export interface CreateInvitationData {
+  invitation_insert: Invitation_Key;
+}
+
+export interface CreateInvitationVariables {
+  householdId: UUIDString;
+  expiresAt: TimestampString;
+}
+
 export interface CreateJournalWithEntriesData {
   journal_insert: Journal_Key;
   debitEntry: Entry_Key;
@@ -151,26 +187,6 @@ export interface CreateJournalWithEntriesVariables {
   recurringFrequency?: string | null;
   recurringEndDate?: TimestampString | null;
   categoryId?: UUIDString | null;
-}
-
-export interface CreateMsiExpenseData {
-  journal_insert: Journal_Key;
-  entry_insert: Entry_Key;
-}
-
-export interface CreateMsiExpenseVariables {
-  householdId: UUIDString;
-  date: TimestampString;
-  description: string;
-  totalAmount: number;
-  months: number;
-  creditCardAccountId: UUIDString;
-  expenseAccountId: UUIDString;
-  prorataFactor: number;
-  monthlyAmount: number;
-  categoryId?: UUIDString | null;
-  msiRefId?: string | null;
-  msiMonthNumber?: number | null;
 }
 
 export interface CreateSavingsProjectData {
@@ -241,6 +257,7 @@ export interface DeleteAccountData {
 
 export interface DeleteAccountVariables {
   accountId: UUIDString;
+  householdId: UUIDString;
 }
 
 export interface DeleteBudgetData {
@@ -258,6 +275,7 @@ export interface DeleteCategoryData {
 
 export interface DeleteCategoryVariables {
   id: UUIDString;
+  householdId: UUIDString;
 }
 
 export interface DeleteJournalData {
@@ -285,6 +303,7 @@ export interface DeleteTagData {
 
 export interface DeleteTagVariables {
   id: UUIDString;
+  householdId: UUIDString;
 }
 
 export interface Entry_Key {
@@ -359,6 +378,7 @@ export interface GetCurrentUserData {
     email: string;
     displayName?: string | null;
     householdId: UUIDString;
+    memberSlot?: MemberSlot | null;
   } & User_Key;
 }
 
@@ -422,9 +442,29 @@ export interface GetHouseholdAccountsData {
     color?: string | null;
     isArchived: boolean;
   } & Account_Key)[];
+  householdUsers: ({
+    uid: string;
+    email: string;
+    displayName?: string | null;
+    memberSlot?: MemberSlot | null;
+  } & User_Key)[];
 }
 
 export interface GetHouseholdAccountsVariables {
+  householdId: UUIDString;
+}
+
+export interface GetHouseholdMembersData {
+  users: ({
+    uid: string;
+    email: string;
+    displayName?: string | null;
+    memberSlot?: MemberSlot | null;
+    createdAt: TimestampString;
+  } & User_Key)[];
+}
+
+export interface GetHouseholdMembersVariables {
   householdId: UUIDString;
 }
 
@@ -474,6 +514,49 @@ export interface GetIncomesByHouseholdVariables {
   householdId: UUIDString;
 }
 
+export interface GetInternalTransfersByHouseholdData {
+  journals: ({
+    id: UUIDString;
+    date: TimestampString;
+    description: string;
+    isInternalTransfer: boolean;
+    createdAt: TimestampString;
+    entries_on_journal: ({
+      id: UUIDString;
+      amount: number;
+      entryType: EntryType;
+      ownerUid: string;
+      isShared: boolean;
+      account: {
+        id: UUIDString;
+        name: string;
+        type: AccountType;
+      } & Account_Key;
+    } & Entry_Key)[];
+  } & Journal_Key)[];
+}
+
+export interface GetInternalTransfersByHouseholdVariables {
+  householdId: UUIDString;
+}
+
+export interface GetInvitationData {
+  invitation?: {
+    id: UUIDString;
+    status: InvitationStatus;
+    expiresAt: TimestampString;
+    createdByUid: string;
+    household: {
+      id: UUIDString;
+      name: string;
+    } & Household_Key;
+  } & Invitation_Key;
+}
+
+export interface GetInvitationVariables {
+  id: UUIDString;
+}
+
 export interface GetJournalBalanceV2Data {
   journalBalanceV2s: ({
     diff?: number | null;
@@ -482,6 +565,7 @@ export interface GetJournalBalanceV2Data {
 
 export interface GetJournalBalanceV2Variables {
   journalId: UUIDString;
+  householdId: UUIDString;
 }
 
 export interface GetJournalTagsData {
@@ -495,6 +579,7 @@ export interface GetJournalTagsData {
 
 export interface GetJournalTagsVariables {
   journalId: UUIDString;
+  householdId: UUIDString;
 }
 
 export interface GetLatestRateData {
@@ -515,6 +600,20 @@ export interface GetNetWorthData {
 }
 
 export interface GetNetWorthVariables {
+  householdId: UUIDString;
+}
+
+export interface GetPendingInvitationsData {
+  invitations: ({
+    id: UUIDString;
+    status: InvitationStatus;
+    expiresAt: TimestampString;
+    createdByUid: string;
+    createdAt: TimestampString;
+  } & Invitation_Key)[];
+}
+
+export interface GetPendingInvitationsVariables {
   householdId: UUIDString;
 }
 
@@ -575,6 +674,11 @@ export interface Household_Key {
   __typename?: 'Household_Key';
 }
 
+export interface Invitation_Key {
+  id: UUIDString;
+  __typename?: 'Invitation_Key';
+}
+
 export interface JournalTag_Key {
   journalId: UUIDString;
   tagId: UUIDString;
@@ -584,6 +688,19 @@ export interface JournalTag_Key {
 export interface Journal_Key {
   id: UUIDString;
   __typename?: 'Journal_Key';
+}
+
+export interface LeaveHouseholdData {
+  newHousehold: Household_Key;
+  user_update?: User_Key | null;
+  assetAccount: Account_Key;
+  incomeAccount: Account_Key;
+  expenseAccount: Account_Key;
+  liabilityAccount: Account_Key;
+}
+
+export interface LeaveHouseholdVariables {
+  householdId: UUIDString;
 }
 
 export interface NegativeEntriesData {
@@ -603,13 +720,38 @@ export interface ReassignEntriesData {
 }
 
 export interface ReassignEntriesVariables {
+  householdId: UUIDString;
   fromAccountId: UUIDString;
   toAccountId: UUIDString;
+  accountType: AccountType;
 }
 
 export interface RecurringTemplate_Key {
   id: UUIDString;
   __typename?: 'RecurringTemplate_Key';
+}
+
+export interface RemoveHouseholdMemberData {
+  newHouseholdForMember: Household_Key;
+  user_update?: User_Key | null;
+  assetAccount: Account_Key;
+  incomeAccount: Account_Key;
+  expenseAccount: Account_Key;
+  liabilityAccount: Account_Key;
+}
+
+export interface RemoveHouseholdMemberVariables {
+  householdId: UUIDString;
+  memberUid: string;
+}
+
+export interface RevokeInvitationData {
+  invitation_update?: Invitation_Key | null;
+}
+
+export interface RevokeInvitationVariables {
+  id: UUIDString;
+  householdId: UUIDString;
 }
 
 export interface SavingsProject_Key {
@@ -634,6 +776,7 @@ export interface SetJournalTagsData {
 
 export interface SetJournalTagsVariables {
   journalId: UUIDString;
+  householdId: UUIDString;
   tagIds: UUIDString[];
 }
 
@@ -660,8 +803,8 @@ export interface UpdateAccountData {
 
 export interface UpdateAccountVariables {
   accountId: UUIDString;
+  householdId: UUIDString;
   name: string;
-  type: AccountType;
   ownerType: OwnerType;
   cutDay?: number | null;
   paymentDay?: number | null;
@@ -685,6 +828,7 @@ export interface UpdateCategoryData {
 
 export interface UpdateCategoryVariables {
   id: UUIDString;
+  householdId: UUIDString;
   name: string;
   color?: string | null;
 }
@@ -695,6 +839,7 @@ export interface UpdateExternalAssetData {
 
 export interface UpdateExternalAssetVariables {
   assetId: UUIDString;
+  householdId: UUIDString;
   estimatedValue: number;
 }
 
@@ -727,6 +872,7 @@ export interface UpdateProjectProgressData {
 
 export interface UpdateProjectProgressVariables {
   projectId: UUIDString;
+  householdId: UUIDString;
   amountToAdd: number;
 }
 
@@ -736,6 +882,7 @@ export interface UpdateSavingsProjectData {
 
 export interface UpdateSavingsProjectVariables {
   projectId: UUIDString;
+  householdId: UUIDString;
   name?: string | null;
   targetAmount?: number | null;
   monthlyQuota?: number | null;
@@ -810,18 +957,6 @@ export const createSharedExpenseWithProrationRef: CreateSharedExpenseWithProrati
 
 export function createSharedExpenseWithProration(vars: CreateSharedExpenseWithProrationVariables): MutationPromise<CreateSharedExpenseWithProrationData, CreateSharedExpenseWithProrationVariables>;
 export function createSharedExpenseWithProration(dc: DataConnect, vars: CreateSharedExpenseWithProrationVariables): MutationPromise<CreateSharedExpenseWithProrationData, CreateSharedExpenseWithProrationVariables>;
-
-interface CreateMsiExpenseRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: CreateMsiExpenseVariables): MutationRef<CreateMsiExpenseData, CreateMsiExpenseVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: CreateMsiExpenseVariables): MutationRef<CreateMsiExpenseData, CreateMsiExpenseVariables>;
-  operationName: string;
-}
-export const createMsiExpenseRef: CreateMsiExpenseRef;
-
-export function createMsiExpense(vars: CreateMsiExpenseVariables): MutationPromise<CreateMsiExpenseData, CreateMsiExpenseVariables>;
-export function createMsiExpense(dc: DataConnect, vars: CreateMsiExpenseVariables): MutationPromise<CreateMsiExpenseData, CreateMsiExpenseVariables>;
 
 interface CreateBudgetRef {
   /* Allow users to create refs without passing in DataConnect */
@@ -1159,6 +1294,78 @@ export const addTagToJournalRef: AddTagToJournalRef;
 export function addTagToJournal(vars: AddTagToJournalVariables): MutationPromise<AddTagToJournalData, AddTagToJournalVariables>;
 export function addTagToJournal(dc: DataConnect, vars: AddTagToJournalVariables): MutationPromise<AddTagToJournalData, AddTagToJournalVariables>;
 
+interface CreateInvitationRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateInvitationVariables): MutationRef<CreateInvitationData, CreateInvitationVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: CreateInvitationVariables): MutationRef<CreateInvitationData, CreateInvitationVariables>;
+  operationName: string;
+}
+export const createInvitationRef: CreateInvitationRef;
+
+export function createInvitation(vars: CreateInvitationVariables): MutationPromise<CreateInvitationData, CreateInvitationVariables>;
+export function createInvitation(dc: DataConnect, vars: CreateInvitationVariables): MutationPromise<CreateInvitationData, CreateInvitationVariables>;
+
+interface AcceptInvitationRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: AcceptInvitationVariables): MutationRef<AcceptInvitationData, AcceptInvitationVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: AcceptInvitationVariables): MutationRef<AcceptInvitationData, AcceptInvitationVariables>;
+  operationName: string;
+}
+export const acceptInvitationRef: AcceptInvitationRef;
+
+export function acceptInvitation(vars: AcceptInvitationVariables): MutationPromise<AcceptInvitationData, AcceptInvitationVariables>;
+export function acceptInvitation(dc: DataConnect, vars: AcceptInvitationVariables): MutationPromise<AcceptInvitationData, AcceptInvitationVariables>;
+
+interface RevokeInvitationRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: RevokeInvitationVariables): MutationRef<RevokeInvitationData, RevokeInvitationVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: RevokeInvitationVariables): MutationRef<RevokeInvitationData, RevokeInvitationVariables>;
+  operationName: string;
+}
+export const revokeInvitationRef: RevokeInvitationRef;
+
+export function revokeInvitation(vars: RevokeInvitationVariables): MutationPromise<RevokeInvitationData, RevokeInvitationVariables>;
+export function revokeInvitation(dc: DataConnect, vars: RevokeInvitationVariables): MutationPromise<RevokeInvitationData, RevokeInvitationVariables>;
+
+interface LeaveHouseholdRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: LeaveHouseholdVariables): MutationRef<LeaveHouseholdData, LeaveHouseholdVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: LeaveHouseholdVariables): MutationRef<LeaveHouseholdData, LeaveHouseholdVariables>;
+  operationName: string;
+}
+export const leaveHouseholdRef: LeaveHouseholdRef;
+
+export function leaveHousehold(vars: LeaveHouseholdVariables): MutationPromise<LeaveHouseholdData, LeaveHouseholdVariables>;
+export function leaveHousehold(dc: DataConnect, vars: LeaveHouseholdVariables): MutationPromise<LeaveHouseholdData, LeaveHouseholdVariables>;
+
+interface RemoveHouseholdMemberRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: RemoveHouseholdMemberVariables): MutationRef<RemoveHouseholdMemberData, RemoveHouseholdMemberVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: RemoveHouseholdMemberVariables): MutationRef<RemoveHouseholdMemberData, RemoveHouseholdMemberVariables>;
+  operationName: string;
+}
+export const removeHouseholdMemberRef: RemoveHouseholdMemberRef;
+
+export function removeHouseholdMember(vars: RemoveHouseholdMemberVariables): MutationPromise<RemoveHouseholdMemberData, RemoveHouseholdMemberVariables>;
+export function removeHouseholdMember(dc: DataConnect, vars: RemoveHouseholdMemberVariables): MutationPromise<RemoveHouseholdMemberData, RemoveHouseholdMemberVariables>;
+
+interface BackfillMemberSlotsRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<BackfillMemberSlotsData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): MutationRef<BackfillMemberSlotsData, undefined>;
+  operationName: string;
+}
+export const backfillMemberSlotsRef: BackfillMemberSlotsRef;
+
+export function backfillMemberSlots(): MutationPromise<BackfillMemberSlotsData, undefined>;
+export function backfillMemberSlots(dc: DataConnect): MutationPromise<BackfillMemberSlotsData, undefined>;
+
 interface GetHouseholdAccountsRef {
   /* Allow users to create refs without passing in DataConnect */
   (vars: GetHouseholdAccountsVariables): QueryRef<GetHouseholdAccountsData, GetHouseholdAccountsVariables>;
@@ -1291,6 +1498,18 @@ export const getIncomesByHouseholdRef: GetIncomesByHouseholdRef;
 export function getIncomesByHousehold(vars: GetIncomesByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetIncomesByHouseholdData, GetIncomesByHouseholdVariables>;
 export function getIncomesByHousehold(dc: DataConnect, vars: GetIncomesByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetIncomesByHouseholdData, GetIncomesByHouseholdVariables>;
 
+interface GetInternalTransfersByHouseholdRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetInternalTransfersByHouseholdVariables): QueryRef<GetInternalTransfersByHouseholdData, GetInternalTransfersByHouseholdVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetInternalTransfersByHouseholdVariables): QueryRef<GetInternalTransfersByHouseholdData, GetInternalTransfersByHouseholdVariables>;
+  operationName: string;
+}
+export const getInternalTransfersByHouseholdRef: GetInternalTransfersByHouseholdRef;
+
+export function getInternalTransfersByHousehold(vars: GetInternalTransfersByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetInternalTransfersByHouseholdData, GetInternalTransfersByHouseholdVariables>;
+export function getInternalTransfersByHousehold(dc: DataConnect, vars: GetInternalTransfersByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetInternalTransfersByHouseholdData, GetInternalTransfersByHouseholdVariables>;
+
 interface GetCurrentUserRef {
   /* Allow users to create refs without passing in DataConnect */
   (): QueryRef<GetCurrentUserData, undefined>;
@@ -1362,6 +1581,42 @@ export const getJournalBalanceV2Ref: GetJournalBalanceV2Ref;
 
 export function getJournalBalanceV2(vars: GetJournalBalanceV2Variables, options?: ExecuteQueryOptions): QueryPromise<GetJournalBalanceV2Data, GetJournalBalanceV2Variables>;
 export function getJournalBalanceV2(dc: DataConnect, vars: GetJournalBalanceV2Variables, options?: ExecuteQueryOptions): QueryPromise<GetJournalBalanceV2Data, GetJournalBalanceV2Variables>;
+
+interface GetInvitationRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetInvitationVariables): QueryRef<GetInvitationData, GetInvitationVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetInvitationVariables): QueryRef<GetInvitationData, GetInvitationVariables>;
+  operationName: string;
+}
+export const getInvitationRef: GetInvitationRef;
+
+export function getInvitation(vars: GetInvitationVariables, options?: ExecuteQueryOptions): QueryPromise<GetInvitationData, GetInvitationVariables>;
+export function getInvitation(dc: DataConnect, vars: GetInvitationVariables, options?: ExecuteQueryOptions): QueryPromise<GetInvitationData, GetInvitationVariables>;
+
+interface GetHouseholdMembersRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetHouseholdMembersVariables): QueryRef<GetHouseholdMembersData, GetHouseholdMembersVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetHouseholdMembersVariables): QueryRef<GetHouseholdMembersData, GetHouseholdMembersVariables>;
+  operationName: string;
+}
+export const getHouseholdMembersRef: GetHouseholdMembersRef;
+
+export function getHouseholdMembers(vars: GetHouseholdMembersVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdMembersData, GetHouseholdMembersVariables>;
+export function getHouseholdMembers(dc: DataConnect, vars: GetHouseholdMembersVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdMembersData, GetHouseholdMembersVariables>;
+
+interface GetPendingInvitationsRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetPendingInvitationsVariables): QueryRef<GetPendingInvitationsData, GetPendingInvitationsVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetPendingInvitationsVariables): QueryRef<GetPendingInvitationsData, GetPendingInvitationsVariables>;
+  operationName: string;
+}
+export const getPendingInvitationsRef: GetPendingInvitationsRef;
+
+export function getPendingInvitations(vars: GetPendingInvitationsVariables, options?: ExecuteQueryOptions): QueryPromise<GetPendingInvitationsData, GetPendingInvitationsVariables>;
+export function getPendingInvitations(dc: DataConnect, vars: GetPendingInvitationsVariables, options?: ExecuteQueryOptions): QueryPromise<GetPendingInvitationsData, GetPendingInvitationsVariables>;
 
 interface NegativeEntriesRef {
   /* Allow users to create refs without passing in DataConnect */

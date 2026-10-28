@@ -29,16 +29,17 @@ export const createIncomeSlice: StateCreator<IncomeSlice & AuthSlice & DataSlice
       try {
         useToastStore.getState().addToast("Configurando cuentas contables...", "info");
         await seedDefaultAccounts({ householdId: houseId });
+        if (state.houseId) await get().fetchDashboardData(state.houseId);
         // Re-read accounts from updated state
         const updatedState = get();
         incomeAccount = updatedState.accounts?.find((a: any) => a.type === 'INCOME');
-        assetAccount = updatedState.accounts?.find((a: any) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT');
+        assetAccount = item.accountId ? updatedState.accounts?.find((a: any) => a.id === item.accountId) : updatedState.accounts?.find((a: any) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT');
       } catch (seedError) {
         console.warn("seedDefaultAccounts falló (puede que ya existan):", seedError);
         // Re-read accounts in case they existed but hadn't loaded yet
         const updatedState = get();
         incomeAccount = updatedState.accounts?.find((a: any) => a.type === 'INCOME');
-        assetAccount = updatedState.accounts?.find((a: any) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT');
+        assetAccount = item.accountId ? updatedState.accounts?.find((a: any) => a.id === item.accountId) : updatedState.accounts?.find((a: any) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT');
       }
     }
 
@@ -50,19 +51,21 @@ export const createIncomeSlice: StateCreator<IncomeSlice & AuthSlice & DataSlice
       return;
     }
 
-    const optimisticIncome = { ...item, id: `temp-${Date.now()}` };
-    set({ incomes: [optimisticIncome, ...state.incomes] });
+    const desc = "Ingreso" + (item.source ? ` - ${item.source}` : '');
+    const resolvedOwner = item.userId || state.user?.uid || "unknown";
+    const optimisticIncome = { ...item, description: desc, type: desc, userId: resolvedOwner, ownerUid: resolvedOwner, id: `temp-${Date.now()}` };
+    set((s) => ({ incomes: [optimisticIncome, ...s.incomes] }));
 
     try {
       const response = await createJournalWithEntries({
         householdId: houseId,
         date: new Date(item.date).toISOString(),
-        description: "Ingreso" + (item.source ? ` - ${item.source}` : ''),
+        description: desc,
         amount: item.amount,
         debitAccountId: assetAccount.id,
         creditAccountId: incomeAccount.id,
         prorataFactor: 1.0,
-        ownerUid: item.userId || state.user?.uid || "unknown",
+        ownerUid: resolvedOwner,
         isShared: !item.isPrivate,
         incomeCategoryType: item.incomeCategoryType,
         categoryId: item.categoryId || null
@@ -75,19 +78,23 @@ export const createIncomeSlice: StateCreator<IncomeSlice & AuthSlice & DataSlice
       }
       // Sync with real Firebase data so all fields (ownerUid, isPrivate, etc.) are accurate
       useToastStore.getState().addToast("Ingreso agregado correctamente", "success");
-      } catch(error: any) {
+      const currentHouseId = get().houseId;
+      if (currentHouseId) await get().fetchDashboardData(currentHouseId);
+    } catch(error: any) {
       console.error(error);
       useToastStore.getState().addToast(`Error: ${error.message || 'Desconocido'}`, "error");
-      alert("Error al registrar el ingreso: " + (error.message || JSON.stringify(error)));
       set((s) => ({ incomes: s.incomes.filter((i) => i.id !== optimisticIncome.id) }));
+      throw error;
     }
   },
   updateIncome: async (id, item) => {
     const state = get();
+    const desc = "Ingreso" + (item.source ? ` - ${item.source}` : '');
+    const resolvedOwner = item.userId || state.user?.uid || "unknown";
     // Optimistic update
     const previousIncomes = [...state.incomes];
     set((s) => ({
-      incomes: s.incomes.map((i) => i.id === id ? { ...i, ...item } : i)
+      incomes: s.incomes.map((i) => i.id === id ? { ...i, ...item, description: desc, type: desc, userId: resolvedOwner, ownerUid: resolvedOwner } : i)
     }));
 
     try {
@@ -106,18 +113,20 @@ export const createIncomeSlice: StateCreator<IncomeSlice & AuthSlice & DataSlice
         journalId: id,
         householdId: houseId,
         date: new Date(item.date).toISOString(),
-        description: "Ingreso" + (item.source ? ` - ${item.source}` : ''),
+        description: desc,
         amount: item.amount,
         debitAccountId: assetAccount.id,
         creditAccountId: incomeAccount.id,
         prorataFactor: 1.0,
-        ownerUid: item.userId || state.user?.uid || "unknown",
+        ownerUid: resolvedOwner,
         isShared: !item.isPrivate,
         incomeCategoryType: item.incomeCategoryType,
         categoryId: item.categoryId || null
       });
       useToastStore.getState().addToast("Ingreso actualizado correctamente", "success");
-      } catch (error: any) {
+      const currentHouseId = get().houseId;
+      if (currentHouseId) await get().fetchDashboardData(currentHouseId);
+    } catch (error: any) {
       console.error(error);
       const errorMsg = error?.message || error?.toString() || JSON.stringify(error);
       useToastStore.getState().addToast("Error al actualizar el ingreso: " + errorMsg, "error");
@@ -136,7 +145,9 @@ export const createIncomeSlice: StateCreator<IncomeSlice & AuthSlice & DataSlice
         await deleteJournal({ journalId: id, householdId: houseId });
         await get().refreshIncomes();
         useToastStore.getState().addToast("Ingreso eliminado correctamente", "success");
-        }
+        const currentHouseId = get().houseId;
+        if (currentHouseId) await get().fetchDashboardData(currentHouseId);
+      }
     } catch(error) {
       console.error(error);
       useToastStore.getState().addToast("Error al eliminar el ingreso", "error");

@@ -4,10 +4,12 @@ import { getAuth, GoogleAuthProvider, connectAuthEmulator } from "firebase/auth"
 import { getDataConnect, connectDataConnectEmulator } from "firebase/data-connect";
 import { connectorConfig } from "./lib/dataconnect";
 
+const useEmulator = import.meta.env.DEV && import.meta.env.VITE_USE_PROD !== 'true';
+
 const firebaseConfig = {
   apiKey: "AIzaSyCpNwMBegGWdKoR2SE5Ntm-DbN0omTYybY",
   authDomain: "orbita2-f8aa1.firebaseapp.com",
-  projectId: "orbita2-f8aa1",
+  projectId: useEmulator ? "demo-pareja-pro" : "orbita2-f8aa1",
   storageBucket: "orbita2-f8aa1.firebasestorage.app",
   messagingSenderId: "731960014497",
   appId: "1:731960014497:web:b7a1f2a22ae4f0d3bbe2e0",
@@ -21,9 +23,10 @@ export const dataConnect = getDataConnect(app, connectorConfig);
 
 if (import.meta.env.DEV) {
   if (import.meta.env.VITE_USE_PROD !== 'true') {
-    connectAuthEmulator(auth, "http://127.0.0.1:9099");
-    connectDataConnectEmulator(dataConnect, "127.0.0.1", 9399);
-    console.log("Conectado a los emuladores de Firebase (Auth 9099, DataConnect 9399).");
+    const emulatorHost = window.location.hostname || "127.0.0.1";
+    connectAuthEmulator(auth, `http://${emulatorHost}:9099`);
+    connectDataConnectEmulator(dataConnect, emulatorHost, 9399);
+    console.log(`Conectado a los emuladores de Firebase en ${emulatorHost} (Auth 9099, DataConnect 9399).`);
     
     // Create a visible badge
     const badge = document.createElement('div');

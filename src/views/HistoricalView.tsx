@@ -1,7 +1,7 @@
 import React, { useRef, useState, useMemo } from 'react';
 import { Card } from '../components/ui/Card';
 import { FormatCurrency, exportToCSV } from '../utils';
-import { Download, BarChart2, Table as TableIcon, Trash2, Edit2, AlertCircle } from 'lucide-react';
+import { Download, BarChart2, Table as TableIcon, Trash2, Edit2, AlertCircle, ArrowLeftRight } from 'lucide-react';
 import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
 
@@ -12,19 +12,19 @@ const CATEGORY_COLORS = [
 ];
 
 export function HistoricalView({ data, methods }: any) {
-  const { expenses, incomes, users } = data;
+  const { expenses = [], incomes = [], users = [], transfers = [] } = data || {};
 
   const [deselectedUsers, setDeselectedUsers] = useState<Set<string>>(new Set());
   const [deselectedCategories, setDeselectedCategories] = useState<Set<string>>(new Set());
+  const [movementFilter, setMovementFilter] = useState<'all' | 'incomes' | 'expenses' | 'transfers'>('all');
   const [viewMode, setViewMode] = useState<'graph' | 'table'>('graph');
   const [selectedRecords, setSelectedRecords] = useState<Set<string>>(new Set());
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-
   const categories = useMemo(() => {
     const cats = new Set<string>();
-    expenses.forEach(e => cats.add(e.category || 'Otros'));
-    incomes.forEach(i => cats.add(i.category || 'Otros'));
+    expenses.forEach((e: any) => cats.add(e.category || 'Otros'));
+    incomes.forEach((i: any) => cats.add(i.category || i.source || 'Otros'));
     return Array.from(cats).sort();
   }, [expenses, incomes]);
 
@@ -78,8 +78,10 @@ export function HistoricalView({ data, methods }: any) {
   };
 
   const filteredExpenses = useMemo(() => {
-    return expenses.filter(e => {
+    return expenses.filter((e: any) => {
       if (e.userId && deselectedUsers.has(e.userId)) return false;
+      if (e.paidBy && deselectedUsers.has(e.paidBy)) return false;
+      if (e.ownerUid && deselectedUsers.has(e.ownerUid)) return false;
       const cat = e.category || 'Otros';
       if (deselectedCategories.has(cat)) return false;
       return true;
@@ -87,25 +89,89 @@ export function HistoricalView({ data, methods }: any) {
   }, [expenses, deselectedUsers, deselectedCategories]);
 
   const filteredIncomes = useMemo(() => {
-    return incomes.filter(i => {
+    return incomes.filter((i: any) => {
       if (i.userId && deselectedUsers.has(i.userId)) return false;
-      const cat = i.category || 'Otros';
+      if (i.ownerUid && deselectedUsers.has(i.ownerUid)) return false;
+      const cat = i.category || i.source || 'Otros';
       if (deselectedCategories.has(cat)) return false;
       return true;
     });
   }, [incomes, deselectedUsers, deselectedCategories]);
 
+  const filteredTransfers = useMemo(() => {
+    const start = methods?.dateRange?.start;
+    const end = methods?.dateRange?.end;
+    return (transfers || []).filter((t: any) => {
+      const uid = t.userId || t.ownerUid;
+      if (uid && deselectedUsers.has(uid)) return false;
+      const dateStr = t.date ? t.date.slice(0, 10) : null;
+      if (start && dateStr && dateStr < start) return false;
+      if (end && dateStr && dateStr > end) return false;
+      return true;
+    });
+  }, [transfers, deselectedUsers, methods?.dateRange]);
+
   const detailedRecords = useMemo(() => {
-    const combined = [
-      ...filteredExpenses.map(e => ({ ...e, recordType: 'expense' })),
-      ...filteredIncomes.map(i => ({ ...i, recordType: 'income' }))
-    ];
+    const expRecords = filteredExpenses.map((e: any) => ({
+      ...e,
+      id: e.id,
+      date: e.date,
+      recordType: 'expense',
+      typeLabel: 'Gasto',
+      category: e.category || 'Otros',
+      description: e.description || '',
+      amount: Math.abs(Number(e.amount) || 0),
+      sourceAccountName: '',
+      targetAccountName: '',
+      userId: e.userId || e.paidBy || e.ownerUid || '',
+    }));
+
+    const incRecords = filteredIncomes.map((i: any) => ({
+      ...i,
+      id: i.id,
+      date: i.date,
+      recordType: 'income',
+      typeLabel: 'Ingreso',
+      category: i.category || i.source || 'Otros',
+      description: i.description || '',
+      amount: Math.abs(Number(i.amount) || 0),
+      sourceAccountName: '',
+      targetAccountName: '',
+      userId: i.userId || i.ownerUid || '',
+    }));
+
+    const trRecords = filteredTransfers.map((t: any) => ({
+      id: t.id,
+      date: t.date,
+      recordType: 'transfer',
+      type: t.type,
+      typeLabel: t.type === 'CARD_PAYMENT' ? 'Pago de Tarjeta' : 'Transferencia',
+      category: `${t.sourceAccountName || 'Origen'} → ${t.targetAccountName || 'Destino'}`,
+      description: t.description || '',
+      amount: t.amount,
+      sourceAccountName: t.sourceAccountName || '',
+      targetAccountName: t.targetAccountName || '',
+      userId: t.ownerUid || t.userId || '',
+      ...t
+    }));
+
+    let combined: any[] = [];
+    if (movementFilter === 'incomes') {
+      combined = incRecords;
+    } else if (movementFilter === 'expenses') {
+      combined = expRecords;
+    } else if (movementFilter === 'transfers') {
+      combined = trRecords;
+    } else {
+      combined = [...expRecords, ...incRecords, ...trRecords];
+    }
+
     return combined.sort((a, b) => {
       const dateA = a.date || '';
       const dateB = b.date || '';
       return dateB.localeCompare(dateA); // Descending
     });
-  }, [filteredExpenses, filteredIncomes]);
+  }, [filteredExpenses, filteredIncomes, filteredTransfers, movementFilter]);
 
   const handleExportCSV = () => {
     exportToCSV(detailedRecords, 'historial_orbita2');
@@ -114,22 +180,26 @@ export function HistoricalView({ data, methods }: any) {
   const expensesByCategory = useMemo(() => {
     const totals: Record<string, number> = {};
     let totalExpense = 0;
-    filteredExpenses.forEach(e => {
+    (filteredExpenses || []).forEach((e: any) => {
       const amt = Number(e.amount) || 0;
       const cat = e.category || 'Otros';
       totals[cat] = (totals[cat] || 0) + amt;
       totalExpense += amt;
     });
     return Object.entries(totals)
-      .map(([name, amount]) => ({ name, amount, percentage: totalExpense > 0 ? (amount / totalExpense) * 100 : 0 }))
+      .map(([name, amount]) => ({
+        name,
+        amount,
+        percentage: totalExpense > 0 ? (amount / totalExpense) * 100 : 0
+      }))
       .sort((a, b) => b.amount - a.amount);
   }, [filteredExpenses]);
 
   const snapshots = useMemo(() => {
     const monthlyData: Record<string, { income: number; expense: number; count: number; incomeByCategory: Record<string, number>; expenseByCategory: Record<string, number> }> = {};
     
-    filteredExpenses.forEach(e => {
-      if (!e.date) return;
+    (filteredExpenses || []).forEach((e: any) => {
+      if (!e?.date) return;
       const month = e.date.substring(0, 7);
       if (!monthlyData[month]) monthlyData[month] = { income: 0, expense: 0, count: 0, incomeByCategory: {}, expenseByCategory: {} };
       const amt = Number(e.amount) || 0;
@@ -139,14 +209,14 @@ export function HistoricalView({ data, methods }: any) {
       monthlyData[month].expenseByCategory[cat] = (monthlyData[month].expenseByCategory[cat] || 0) + amt;
     });
 
-    filteredIncomes.forEach(i => {
-      if (!i.date) return;
+    (filteredIncomes || []).forEach((i: any) => {
+      if (!i?.date) return;
       const month = i.date.substring(0, 7);
       if (!monthlyData[month]) monthlyData[month] = { income: 0, expense: 0, count: 0, incomeByCategory: {}, expenseByCategory: {} };
       const amt = Number(i.amount) || 0;
       monthlyData[month].income += amt;
       monthlyData[month].count += 1;
-      const cat = i.category || 'Otros';
+      const cat = i.category || i.source || 'Otros';
       monthlyData[month].incomeByCategory[cat] = (monthlyData[month].incomeByCategory[cat] || 0) + amt;
     });
 
@@ -172,7 +242,9 @@ export function HistoricalView({ data, methods }: any) {
       });
   }, [filteredExpenses, filteredIncomes]);
 
-  const maxVal = snapshots.length > 0 ? Math.max(...snapshots.map(s => Math.max(s.income, s.expense))) : 1;
+  const maxVal = snapshots.length > 0 
+    ? Math.max(1, ...snapshots.map(s => Math.max(s.income, s.expense))) 
+    : 1;
 
   return (
     <div className="space-y-6 animate-in">
@@ -186,9 +258,21 @@ export function HistoricalView({ data, methods }: any) {
           <div className="flex items-center gap-3">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:block">Periodo:</span>
             <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-full flex-1 md:flex-none">
-              <input type="date" value={methods.dateRange?.start || ''} onChange={e => methods.setDateRange(e.target.value, methods.dateRange?.end || '')} className="px-3 py-2 bg-transparent text-sm font-medium text-slate-700 outline-none transition-all tabular-nums tracking-tight w-full" aria-label="Fecha inicial" />
+              <input 
+                type="date" 
+                value={methods?.dateRange?.start || ''} 
+                onChange={e => methods?.setDateRange?.(e.target.value, methods?.dateRange?.end || '')} 
+                className="px-3 py-2 bg-transparent text-sm font-medium text-slate-700 outline-none transition-all tabular-nums tracking-tight w-full" 
+                aria-label="Fecha inicial" 
+              />
               <span className="text-slate-300 font-bold">-</span>
-              <input type="date" value={methods.dateRange?.end || ''} onChange={e => methods.setDateRange(methods.dateRange?.start || '', e.target.value)} className="px-3 py-2 bg-transparent text-sm font-medium text-slate-700 outline-none transition-all tabular-nums tracking-tight w-full" aria-label="Fecha final" />
+              <input 
+                type="date" 
+                value={methods?.dateRange?.end || ''} 
+                onChange={e => methods?.setDateRange?.(methods?.dateRange?.start || '', e.target.value)} 
+                className="px-3 py-2 bg-transparent text-sm font-medium text-slate-700 outline-none transition-all tabular-nums tracking-tight w-full" 
+                aria-label="Fecha final" 
+              />
             </div>
           </div>
           <button
@@ -201,40 +285,133 @@ export function HistoricalView({ data, methods }: any) {
         </div>
       </div>
 
-      {users.length > 0 && (
-        <div className="flex flex-wrap items-center gap-4 mb-6">
-          <span className="text-sm font-bold text-slate-600 uppercase">Filtrar por:</span>
-          {users.map(user => (
-            <label key={user.id} className="flex items-center gap-2 cursor-pointer group">
-              <input
-                type="checkbox"
-                checked={!deselectedUsers.has(user.id)}
-                onChange={() => toggleUser(user.id)}
-                className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 transition-colors"
-              />
-              <span className="text-sm font-medium text-slate-700 group-hover:text-slate-900 transition-colors">
-                {user.name || 'Usuario sin nombre'}
-              </span>
-            </label>
-          ))}
-        </div>
-      )}
+      {/* Panel Superior de Controles y Filtros */}
+      <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+        {/* Fila superior: Selector rápido por tipo de movimiento y selector de vista */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl overflow-x-auto">
+            <button
+              type="button"
+              onClick={() => setMovementFilter('all')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-bold whitespace-nowrap transition-all ${
+                movementFilter === 'all'
+                  ? 'bg-white text-indigo-600 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-800'
+              }`}
+            >
+              Todos
+            </button>
+            <button
+              type="button"
+              onClick={() => setMovementFilter('incomes')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-bold whitespace-nowrap transition-all ${
+                movementFilter === 'incomes'
+                  ? 'bg-white text-emerald-600 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-800'
+              }`}
+            >
+              Ingresos
+            </button>
+            <button
+              type="button"
+              onClick={() => setMovementFilter('expenses')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-bold whitespace-nowrap transition-all ${
+                movementFilter === 'expenses'
+                  ? 'bg-white text-rose-600 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-800'
+              }`}
+            >
+              Gastos
+            </button>
+            <button
+              type="button"
+              onClick={() => setMovementFilter('transfers')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-bold whitespace-nowrap transition-all ${
+                movementFilter === 'transfers'
+                  ? 'bg-white text-indigo-600 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-800'
+              }`}
+            >
+              Transferencias / Pagos TDC
+            </button>
+          </div>
 
-      <div className="flex items-center gap-2 mb-4 bg-slate-100 p-1 rounded-xl w-fit">
-        <button
-          onClick={() => setViewMode('graph')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'graph' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-700'}`}
-        >
-          <BarChart2 className="w-4 h-4" />
-          Gráfica
-        </button>
-        <button
-          onClick={() => setViewMode('table')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'table' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-700'}`}
-        >
-          <TableIcon className="w-4 h-4" />
-          Tabla
-        </button>
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl w-fit self-end sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setViewMode('graph')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all ${
+                viewMode === 'graph' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-700'
+              }`}
+            >
+              <BarChart2 className="w-4 h-4" />
+              Gráfica
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('table')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all ${
+                viewMode === 'table' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-700'
+              }`}
+            >
+              <TableIcon className="w-4 h-4" />
+              Tabla
+            </button>
+          </div>
+        </div>
+
+        {/* Coexistencia armónica de Filtro por Usuarios y Filtro por Categorías arriba de la gráfica y tabla */}
+        {(users.length > 0 || categories.length > 0) && (
+          <div className="pt-3 border-t border-slate-100 space-y-3">
+            {users.length > 0 && (
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Filtrar por Usuario:</span>
+                <div className="flex flex-wrap items-center gap-4">
+                  {users.map((user: any) => (
+                    <label key={user.id} className="flex items-center gap-2 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={!deselectedUsers.has(user.id)}
+                        onChange={() => toggleUser(user.id)}
+                        className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 transition-colors"
+                      />
+                      <span className="text-sm font-medium text-slate-700 group-hover:text-slate-900 transition-colors">
+                        {user.name || 'Usuario sin nombre'}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {categories.length > 0 && (
+              <div className={`flex flex-wrap items-center gap-3 ${users.length > 0 ? 'pt-3 border-t border-slate-50' : ''}`}>
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Filtrar por Categoría:</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  {categories.map((cat: string) => {
+                    const isSelected = !deselectedCategories.has(cat);
+                    const colorClass = categoryColorMap[cat] || 'bg-slate-500';
+                    return (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => toggleCategory(cat)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border shadow-xs flex items-center gap-2 ${
+                          isSelected
+                            ? 'bg-white border-slate-200 text-slate-700'
+                            : 'bg-slate-50 border-transparent text-slate-400 opacity-50 hover:opacity-100'
+                        }`}
+                      >
+                        <span className={`w-2 h-2 rounded-full ${colorClass}`}></span>
+                        {cat}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <Card className={viewMode === 'graph' ? "pt-10 pb-8" : "p-0 overflow-hidden"}>
@@ -254,7 +431,6 @@ export function HistoricalView({ data, methods }: any) {
                 </div>
               ) : (
                   snapshots.map((snap, idx) => {
-
                     return (
                       <div key={idx} className="flex-1 h-full flex flex-col justify-end items-center group min-w-[60px] relative">
                         <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:-translate-y-2 text-xs mb-2 bg-slate-900 text-white p-3 rounded-xl whitespace-nowrap absolute bottom-full mb-4 z-10 pointer-events-none shadow-xl border border-slate-700">
@@ -340,21 +516,29 @@ export function HistoricalView({ data, methods }: any) {
             {selectedRecords.size > 0 && (
               <div className="p-4 bg-indigo-50 border-b border-indigo-100 flex items-center gap-4">
                 <span className="text-sm font-bold text-indigo-800">{selectedRecords.size} seleccionado(s)</span>
-                {selectedRecords.size === 1 && (
-                  <button 
-                    onClick={() => {
-                      const id = Array.from(selectedRecords)[0];
-                      const record = detailedRecords.find(r => r.id === id);
-                      if (record) {
+                {selectedRecords.size === 1 && (() => {
+                  const id = Array.from(selectedRecords)[0];
+                  const record = detailedRecords.find((r: any) => r.id === id);
+                  const canEdit = record && (
+                    (record.recordType === 'expense' && typeof methods?.handleOpenExpenseModal === 'function') ||
+                    (record.recordType === 'income' && typeof methods?.handleOpenIncomeModal === 'function') ||
+                    (record.recordType === 'transfer' && typeof methods?.handleOpenTransferModal === 'function')
+                  );
+                  if (!canEdit) return null;
+                  return (
+                    <button 
+                      onClick={() => {
+                        if (!record) return;
                         if (record.recordType === 'expense') methods.handleOpenExpenseModal(record);
-                        else methods.handleOpenIncomeModal(record);
-                      }
-                    }}
-                    className="flex items-center gap-1 text-sm font-bold text-indigo-600 hover:text-indigo-800"
-                  >
-                    <Edit2 className="w-4 h-4" /> Editar
-                  </button>
-                )}
+                        else if (record.recordType === 'income') methods.handleOpenIncomeModal(record);
+                        else if (record.recordType === 'transfer') methods.handleOpenTransferModal(record);
+                      }}
+                      className="flex items-center gap-1 text-sm font-bold text-indigo-600 hover:text-indigo-800"
+                    >
+                      <Edit2 className="w-4 h-4" /> Editar
+                    </button>
+                  );
+                })()}
                 <button 
                   onClick={() => setIsDeleteModalOpen(true)}
                   className="flex items-center gap-1 text-sm font-bold text-rose-600 hover:text-rose-800"
@@ -370,20 +554,20 @@ export function HistoricalView({ data, methods }: any) {
                     <th className="px-4 py-4 rounded-tl-xl w-10">
                       <input 
                         type="checkbox" 
-                        className="rounded border-slate-300"
+                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-600"
                         ref={input => {
                           if (input) {
-                            const isAll = detailedRecords.length > 0 && detailedRecords.every(r => selectedRecords.has(r.id));
+                            const isAll = detailedRecords.length > 0 && detailedRecords.every((r: any) => selectedRecords.has(r.id));
                             input.indeterminate = selectedRecords.size > 0 && !isAll;
                           }
                         }}
-                        checked={detailedRecords.length > 0 && detailedRecords.every(r => selectedRecords.has(r.id))}
+                        checked={detailedRecords.length > 0 && detailedRecords.every((r: any) => selectedRecords.has(r.id))}
                         onChange={() => {
-                          const isAll = detailedRecords.length > 0 && detailedRecords.every(r => selectedRecords.has(r.id));
+                          const isAll = detailedRecords.length > 0 && detailedRecords.every((r: any) => selectedRecords.has(r.id));
                           if (isAll) {
                             setSelectedRecords(new Set());
                           } else {
-                            setSelectedRecords(new Set(detailedRecords.map(r => r.id)));
+                            setSelectedRecords(new Set(detailedRecords.map((r: any) => r.id)));
                           }
                         }}
                       />
@@ -404,16 +588,24 @@ export function HistoricalView({ data, methods }: any) {
                       </td>
                     </tr>
                   ) : (
-                    detailedRecords.map((record) => {
-                      const userObj = users.find(u => u.id === (record.userId || record.paidBy || record.ownerUid));
-                      const userName = userObj ? userObj.name : 'Desconocido';
+                    detailedRecords.map((record: any) => {
+                      const uid = record.userId || record.paidBy || record.ownerUid;
+                      const userObj = uid ? users.find((u: any) => u.id === uid) : null;
+                      let userName = '-';
+                      if (record.recordType === 'transfer') {
+                        userName = userObj?.name || 'Sistema';
+                      } else {
+                        userName = userObj?.name || 'Desconocido';
+                      }
+
                       const isSelected = selectedRecords.has(record.id);
+
                       return (
                         <tr key={record.id} className={`transition-colors ${isSelected ? 'bg-indigo-50/50' : 'hover:bg-slate-50'}`}>
                           <td className="px-4 py-4">
                             <input 
                               type="checkbox" 
-                              className="rounded border-slate-300"
+                              className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-600"
                               checked={isSelected}
                               onChange={() => {
                                 const newSet = new Set(selectedRecords);
@@ -423,52 +615,60 @@ export function HistoricalView({ data, methods }: any) {
                               }}
                             />
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">{record.date ? record.date.substring(0, 10) : ''}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-slate-700 font-medium">
+                            {record.date ? record.date.substring(0, 10) : '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2.5 py-1 rounded-md text-xs font-bold border ${
+                              record.recordType === 'income' 
+                                ? 'bg-emerald-100 text-emerald-700 border-emerald-200/50' 
+                                : record.recordType === 'transfer'
+                                  ? record.type === 'CARD_PAYMENT'
+                                    ? 'bg-purple-100 text-purple-700 border-purple-200/50'
+                                    : 'bg-blue-100 text-blue-700 border-blue-200/50'
+                                  : 'bg-rose-100 text-rose-700 border-rose-200/50'
+                            }`}>
+                              {record.recordType === 'transfer'
+                                ? (record.type === 'CARD_PAYMENT' ? 'Pago de Tarjeta' : 'Transferencia')
+                                : (record.recordType === 'income' ? 'Ingreso' : 'Gasto')}
+                            </span>
+                          </td>
                           <td className="px-6 py-4">
-                            <span className={`px-2 py-1 rounded-md text-xs font-bold ${record.recordType === 'income' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                              {record.recordType === 'income' ? 'Ingreso' : 'Gasto'}
+                            {record.recordType === 'transfer' ? (
+                              <span className="font-medium text-indigo-700 flex items-center gap-1.5">
+                                <ArrowLeftRight size={14} className="text-indigo-500 flex-shrink-0" />
+                                <span>{record.sourceAccountName || 'Origen'} → {record.targetAccountName || 'Destino'}</span>
+                              </span>
+                            ) : (
+                              <span className="font-medium text-slate-700">
+                                {record.category || record.source || record.type || 'Otros'}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 truncate max-w-xs text-slate-600" title={record.description}>
+                            {record.description || '-'}
+                          </td>
+                          <td className="px-6 py-4 text-right font-mono font-medium whitespace-nowrap">
+                            <span className={
+                              record.recordType === 'income' 
+                                ? 'text-emerald-600' 
+                                : record.recordType === 'transfer'
+                                  ? 'text-indigo-600 font-bold'
+                                  : 'text-slate-600'
+                            }>
+                              {record.recordType === 'income' ? '+' : record.recordType === 'transfer' ? '' : '-'}
+                              {FormatCurrency(record.amount)}
                             </span>
                           </td>
-                          <td className="px-6 py-4">{record.category || record.source || record.type || 'Otros'}</td>
-                          <td className="px-6 py-4 truncate max-w-xs">{record.description || '-'}</td>
-                          <td className="px-6 py-4 text-right font-mono font-medium">
-                            <span className={record.recordType === 'income' ? 'text-emerald-600' : 'text-slate-600'}>
-                              {record.recordType === 'income' ? '+' : '-'}{FormatCurrency(record.amount)}
-                            </span>
+                          <td className="px-6 py-4 text-slate-700 whitespace-nowrap">
+                            {userName}
                           </td>
-                          <td className="px-6 py-4">{userName}</td>
                         </tr>
                       );
                     })
                   )}
                 </tbody>
               </table>
-            </div>
-          </div>
-        )}
-        
-        {categories.length > 0 && (
-          <div className={`border-t border-slate-100 ${viewMode === 'graph' ? 'mt-8 pt-6 px-6' : 'mt-0 p-6 bg-slate-50'}`}>
-            <span className="text-xs font-bold text-slate-500 uppercase mb-3 block text-center">Filtrar por Categoría</span>
-            <div className="flex flex-wrap justify-center gap-2">
-                {categories.map(cat => {
-                  const isSelected = !deselectedCategories.has(cat);
-                  const colorClass = categoryColorMap[cat] || 'bg-slate-500';
-                  return (
-                    <button
-                      key={cat}
-                      onClick={() => toggleCategory(cat)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border shadow-sm flex items-center gap-2 ${
-                        isSelected
-                          ? 'bg-white border-slate-200 text-slate-700'
-                          : 'bg-slate-50 border-transparent text-slate-500 opacity-50 hover:opacity-100'
-                      }`}
-                    >
-                      <span className={`w-2 h-2 rounded-full ${colorClass}`}></span>
-                      {cat}
-                    </button>
-                  );
-                })}
             </div>
           </div>
         )}
@@ -487,7 +687,7 @@ export function HistoricalView({ data, methods }: any) {
                 <div className="w-full bg-slate-100 rounded-full h-3">
                   <div 
                     className={`${categoryColorMap[cat.name] || 'bg-emerald-500'} h-3 rounded-full transition-all duration-700`}
-                    style={{ width: `${cat.percentage}%` }}
+                    style={{ width: `${Math.min(100, Math.max(0, cat.percentage))}%` }}
                   ></div>
                 </div>
               </div>
@@ -524,10 +724,15 @@ export function HistoricalView({ data, methods }: any) {
               className="flex-1"
               onClick={() => {
                 selectedRecords.forEach(id => {
-                  const record = detailedRecords.find(r => r.id === id);
+                  const record = detailedRecords.find((r: any) => r.id === id);
                   if (record) {
-                    if (record.recordType === 'expense') methods.deleteExpense(id);
-                    else methods.deleteIncome(id);
+                    if (record.recordType === 'expense' && typeof methods?.deleteExpense === 'function') {
+                      methods.deleteExpense(id);
+                    } else if (record.recordType === 'income' && typeof methods?.deleteIncome === 'function') {
+                      methods.deleteIncome(id);
+                    } else if (record.recordType === 'transfer' && typeof methods?.deleteTransfer === 'function') {
+                      methods.deleteTransfer(id);
+                    }
                   }
                 });
                 setSelectedRecords(new Set());

@@ -1,42 +1,43 @@
-import { filtrarPorContexto } from './services/contextService';
+import { filterByContext } from './services/ownershipService';
 import { calcularProrrateo, simplificarDeudas } from './services/liquidadorService';
 import { calcularPatrimonio } from './services/simuladorService';
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   Home,
-  CreditCard,
-  PieChart,
-  ArrowRightLeft,
+  Wallet,
+  Target,
+  Users,
   BarChart3,
-  Landmark,
-  Flame,
+  Settings,
   UserPlus,
   LogOut,
-  Target,
   User,
-  Users,
   Plus,
-  Settings
+  Copy
 } from 'lucide-react';
 import { Modal } from './components/ui/Modal';
-import { IncomeForm } from './components/forms/IncomeForm';
-import { ExpenseForm } from './components/forms/ExpenseForm';
+import { MovementForm } from './components/forms/MovementForm';
 import { OrbitaLogo } from './components/ui/OrbitaLogo';
 import { authService } from './services/authService';
-import { getOrCreateUserAndHouse, checkInvitation, acceptInvitation, createInvitation } from './services/userService';
+import {
+  getOrCreateUserAndHouse,
+  checkInvitation,
+  acceptInvitation,
+  createInvitation,
+  getHouseholdMembers,
+  InvitationDetails
+} from './services/userService';
 
-import { useAppStore } from './store/useAppStore';
+import { useAppStore, resetAppStore } from './store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
 import { AuthView } from './views/AuthView';
 import { DashboardView } from './views/DashboardView';
-import { BudgetsView } from './views/BudgetsView';
+import { PlanningView } from './views/PlanningView';
 import { AccountsView } from './views/AccountsView';
 import { SettlementView } from './views/SettlementView';
-import { DebtSimulatorView } from './views/DebtSimulatorView';
-import { WealthView } from './views/WealthView';
-import { ProjectsView } from './views/ProjectsView';
 import { HistoricalView } from './views/HistoricalView';
 import { SettingsView } from './views/SettingsView';
+import { ProfileView } from './views/ProfileView';
 
 import { TermsView } from './views/TermsView';
 import { PrivacyPolicyView } from './views/PrivacyPolicyView';
@@ -47,23 +48,23 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
+
   const [joinHouseConfirm, setJoinHouseConfirm] = useState<string | null>(null);
+  const [inviteModalData, setInviteModalData] = useState<InvitationDetails | null>(null);
+  const [joinLoading, setJoinLoading] = useState(false);
+  const [joinError, setJoinError] = useState<string | null>(null);
+
   const [appContext, setAppContext] = useState<any>('household');
+  const [isMovementModalOpen, setIsMovementModalOpen] = useState(false);
 
-  const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
-  const [editingIncome, setEditingIncome] = useState(null);
-  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
-  const [editingExpense, setEditingExpense] = useState(null);
-
-  const handleOpenIncomeModal = (income = null) => {
-    setEditingIncome(income);
-    setIsIncomeModalOpen(true);
+  const handleOpenMovementModal = () => {
+    setIsMovementModalOpen(true);
   };
-
-  const handleOpenExpenseModal = (expense = null) => {
-    setEditingExpense(expense);
-    setIsExpenseModalOpen(true);
-  };
+  const handleOpenIncomeModal = handleOpenMovementModal;
+  const handleOpenExpenseModal = handleOpenMovementModal;
 
 
   const data = useAppStore(useShallow(state => ({
@@ -117,10 +118,12 @@ export default function App() {
     fetchBudgetsForMonth: state.fetchBudgetsForMonth,
     copyBudgetsFromPreviousMonth: state.copyBudgetsFromPreviousMonth,
     refreshSettings: state.refreshSettings,
+    memberSlot: state.memberSlot,
+    setMemberSlot: state.setMemberSlot,
   })));
   
-  const methods = { ...data, handleOpenIncomeModal, handleOpenExpenseModal };
-  const { user, houseId, authLoading, setUser, setHouseId, setAuthLoading, fetchDashboardData, refreshSettings, dateRange, setDateRange } = data;
+  const methods = { ...data, handleOpenMovementModal, handleOpenIncomeModal, handleOpenExpenseModal };
+  const { user, houseId, memberSlot, authLoading, setUser, setHouseId, setMemberSlot, setAuthLoading, fetchDashboardData, refreshSettings, dateRange, setDateRange } = data;
 
   const filteredData = useMemo(() => {
     const start = dateRange?.start || '2000-01-01';
@@ -129,13 +132,20 @@ export default function App() {
     // We normalize to date-only ("2026-09-30") for correct string range comparison.
     const toDateStr = (d: string | undefined | null): string | null =>
       d ? d.slice(0, 10) : null;
-    const filterContext = (items: any[]) => {
+    const filterContext = (items: any[], isIncome = false) => {
        const userUid = user?.uid || '';
        return items.filter((i: any) => {
          const ownerUid = i.ownerUid || i.userId || i.paidBy;
          const isShared = !i.isPrivate;
          if (appContext === 'personal') {
+           if (isIncome) {
+             return !userUid || ownerUid === userUid;
+           }
            return ownerUid === userUid && !isShared;
+         }
+         // appContext === 'household'
+         if (isIncome) {
+           return isShared || !userUid || ownerUid === userUid;
          }
          return isShared;
        });
@@ -144,24 +154,18 @@ export default function App() {
       const d = toDateStr(date);
       return !d || (d >= start && d <= end);
     };
+
+    // Para presupuestos y cuentas: en contexto personal se filtran estrictamente por el memberSlot activo
+    const contextMode = appContext === 'personal' ? 'personal' : 'shared';
+
     return {
       ...data,
-      incomes: filterContext(data.incomes.filter(i => inDateRange(i.date))),
-      expenses: filterContext(data.expenses.filter(e => inDateRange(e.date))),
-      budgets: data.budgets.filter((b: any) => {
-        if (appContext === 'personal') {
-          return b.ownerType === 'USER_A' || b.ownerType === 'USER_B';
-        }
-        return b.ownerType === 'SHARED';
-      }),
-      accounts: (data.accounts || []).filter((a: any) => {
-        if (appContext === 'personal') {
-          return a.ownerType === 'USER_A' || a.ownerType === 'USER_B';
-        }
-        return a.ownerType === 'SHARED';
-      })
+      incomes: filterContext(data.incomes.filter(i => inDateRange(i.date)), true),
+      expenses: filterContext(data.expenses.filter(e => inDateRange(e.date)), false),
+      budgets: filterByContext<any>(data.budgets, contextMode, memberSlot),
+      accounts: filterByContext(data.accounts || [], contextMode, memberSlot)
     };
-  }, [data, dateRange, appContext, user]);
+  }, [data, dateRange, appContext, user, memberSlot]);
 
   useEffect(() => {
     const storedColor = localStorage.getItem('app_second_color');
@@ -178,38 +182,97 @@ export default function App() {
     const unsub = authService.onAuthStateChange(async (fbUser) => {
       try {
         if (fbUser) {
+          const currentUid = useAppStore.getState().user?.uid;
+          if (currentUid && currentUid !== fbUser.uid) {
+            resetAppStore();
+          }
           setUser({ uid: fbUser.uid, email: fbUser.email, displayName: fbUser.displayName, photoURL: fbUser.photoURL });
           
           const currentHouseId = await getOrCreateUserAndHouse(fbUser);
           setHouseId(currentHouseId);
 
-          // Poblar el store de usuarios con el usuario actual de Firebase Auth
+          // Poblar el store de usuarios con los miembros del hogar ordenados (USER_A en 0, USER_B en 1)
           const localUser = {
             id: fbUser.uid,
-            name: fbUser.displayName || fbUser.email || 'Usuario',
+            name: fbUser.displayName || (fbUser.email ? fbUser.email.split('@')[0] : 'Usuario'),
+            displayName: fbUser.displayName || (fbUser.email ? fbUser.email.split('@')[0] : 'Usuario'),
             email: fbUser.email || '',
             photoURL: fbUser.photoURL || null,
           };
-          data.setUsers([localUser]);
 
-          // Check for invite
+          try {
+            if (currentHouseId) {
+              const members = await getHouseholdMembers(currentHouseId);
+              const sortedMembers = [...members].sort((a, b) => {
+                if (a.memberSlot === 'USER_A') return -1;
+                if (b.memberSlot === 'USER_A') return 1;
+                if (a.memberSlot === 'USER_B') return -1;
+                if (b.memberSlot === 'USER_B') return 1;
+                return 0;
+              });
+
+              // Sincronizar el slot del usuario actual con setMemberSlot
+              const currentMember = members.find(m => m.id === fbUser.uid);
+              if (currentMember?.memberSlot) {
+                setMemberSlot(currentMember.memberSlot as any);
+              }
+
+              const mappedUsers = sortedMembers.map(m => ({
+                id: m.id,
+                name: m.displayName || (m.email ? m.email.split('@')[0] : 'Usuario'),
+                displayName: m.displayName || (m.email ? m.email.split('@')[0] : 'Usuario'),
+                email: m.email || '',
+                memberSlot: m.memberSlot,
+                photoURL: m.id === fbUser.uid ? (fbUser.photoURL || null) : null,
+                createdAt: m.createdAt
+              }));
+
+              data.setUsers(mappedUsers.length > 0 ? mappedUsers : [localUser]);
+            } else {
+              data.setUsers([localUser]);
+            }
+          } catch (memberErr) {
+            console.error("Error al obtener miembros del hogar:", memberErr);
+            data.setUsers([localUser]);
+          }
+
+          // Check for invite (desde la URL o desde sessionStorage resguardado previo al login)
+          let inviteIdToProcess: string | null = null;
           const path = window.location.pathname;
           if (path.startsWith('/invite/')) {
-            const inviteId = path.split('/')[2];
-            const invitedHouseId = await checkInvitation(inviteId);
-            if (invitedHouseId) {
-               if (invitedHouseId !== currentHouseId) {
-                 setJoinHouseConfirm(inviteId);
-               } else {
-                 window.history.replaceState({}, document.title, "/");
-               }
-            } else {
+            inviteIdToProcess = path.split('/')[2];
+          } else {
+            const pendingId = sessionStorage.getItem('pending_invite_id');
+            if (pendingId) {
+              inviteIdToProcess = pendingId;
+            }
+          }
+
+          if (inviteIdToProcess) {
+            // Limpieza inmediata de URL y de sessionStorage
+            sessionStorage.removeItem('pending_invite_id');
+            if (window.location.pathname.startsWith('/invite/')) {
               window.history.replaceState({}, document.title, "/");
+            }
+
+            const inviteDetails = await checkInvitation(inviteIdToProcess);
+            if (inviteDetails && typeof inviteDetails === 'object' && inviteDetails.householdId) {
+              if (inviteDetails.householdId !== currentHouseId) {
+                setInviteModalData(inviteDetails as InvitationDetails);
+                setJoinHouseConfirm(inviteIdToProcess);
+              }
             }
           }
         } else {
-          setUser(null);
-          setHouseId(null);
+          // Si no hay sesión activa y la URL contiene /invite/:id, resguardar en sessionStorage
+          const path = window.location.pathname;
+          if (path.startsWith('/invite/')) {
+            const inviteId = path.split('/')[2];
+            if (inviteId) {
+              sessionStorage.setItem('pending_invite_id', inviteId);
+            }
+          }
+          resetAppStore();
         }
       } catch (error) {
         console.error("Error setting up user:", error);
@@ -245,22 +308,59 @@ export default function App() {
   }
 
   const handleJoinHouse = async (accept: boolean) => {
+    sessionStorage.removeItem('pending_invite_id');
+    window.history.replaceState({}, document.title, "/");
     if (accept && joinHouseConfirm && user) {
-      const newHouseId = await acceptInvitation(user.uid, joinHouseConfirm);
-      if (newHouseId) {
-        setHouseId(newHouseId);
+      setJoinLoading(true);
+      setJoinError(null);
+      try {
+        const newHouseId = await acceptInvitation(joinHouseConfirm);
+        if (newHouseId) {
+          resetAppStore();
+          setHouseId(newHouseId);
+        }
+      } catch (err: any) {
+        console.error("Error al unirse al hogar:", err);
+        setJoinError(err?.message || "No se pudo unir al hogar. La invitación puede haber expirado o el hogar estar lleno.");
+        setJoinLoading(false);
+        return;
+      } finally {
+        setJoinLoading(false);
       }
     }
     setJoinHouseConfirm(null);
-    window.history.replaceState({}, document.title, "/");
+    setInviteModalData(null);
+    setJoinError(null);
   };
 
   const handleInvite = async () => {
-    if (!user || !houseId) return;
-    const inviteId = await createInvitation(user.uid, houseId);
-    const link = `${window.location.origin}/invite/${inviteId}`;
-    setInviteLink(link);
-    navigator.clipboard.writeText(link);
+    if (!houseId) return;
+    setInviteLoading(true);
+    setInviteError(null);
+    setCopiedLink(false);
+    setInviteLink('');
+    try {
+      const inviteId = await createInvitation(houseId);
+      const link = `${window.location.origin}/invite/${inviteId}`;
+      setInviteLink(link);
+    } catch (err: any) {
+      console.error("Error al generar invitación:", err);
+      const msg = err?.message || String(err);
+      if (msg.includes('límite de 2') || msg.includes('2 integrantes')) {
+        setInviteError('El hogar ya cuenta con el límite máximo de 2 integrantes.');
+      } else {
+        setInviteError('No se pudo generar la invitación. Inténtalo de nuevo más tarde.');
+      }
+    } finally {
+      setInviteLoading(false);
+    }
+  };
+
+  const handleCopyLink = () => {
+    if (!inviteLink) return;
+    navigator.clipboard.writeText(inviteLink);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2500);
   };
 
   const calc = useMemo(() => {
@@ -282,36 +382,45 @@ export default function App() {
 
 
 
-    let zoeOwesDavid = 0;
-    let davidOwesZoe = 0;
+    const isSingleUser = (filteredData.users?.length || 0) < 2;
+    const userA = filteredData.users.find((u: any) => u.memberSlot === 'USER_A') || filteredData.users[0];
+    const userB = filteredData.users.find((u: any) => u.memberSlot === 'USER_B') || filteredData.users[1];
+    const userAId = userA?.id || 'u1';
+    const userBId = userB?.id || 'u2';
 
-    filteredData.expenses.forEach(exp => {
-      if (exp.isPrivate) return;
+    let bOwesA = 0;
+    let aOwesB = 0;
+    let netSettlement = 0;
+    let settlementAmount = 0;
+    let simplifiedDebt: { deudor: 'A' | 'B' | null; monto: number } = { deudor: null, monto: 0 };
 
-      const normalizedAmount = normalize(exp.amount, exp.currency);
+    if (!isSingleUser) {
+      filteredData.expenses.forEach(exp => {
+        if (exp.isPrivate) return;
 
-      let ratio1 = 0.5;
-      let ratio2 = 0.5;
+        const normalizedAmount = normalize(exp.amount, exp.currency);
 
-      if (exp.splitType === 'proporcional') {
-        const u1Id = filteredData.users[0]?.id || 'u1';
-        const u2Id = filteredData.users[1]?.id || 'u2';
-        
-        const inc1 = incomesByUser[u1Id] || 0;
-        const inc2 = incomesByUser[u2Id] || 0;
-        ratio1 = calcularProrrateo(inc1, inc2);
-        ratio2 = 1 - ratio1;
-      }
+        let ratioA = 0.5;
+        let ratioB = 0.5;
 
-      if (exp.paidBy === filteredData.users[0]?.id || exp.paidBy === 'u1') {
-        zoeOwesDavid += normalizedAmount * ratio2;
-      } else if (exp.paidBy === filteredData.users[1]?.id || exp.paidBy === 'u2') {
-        davidOwesZoe += normalizedAmount * ratio1;
-      }
-    });
+        if (exp.splitType === 'proporcional') {
+          const incA = incomesByUser[userAId] || 0;
+          const incB = incomesByUser[userBId] || 0;
+          ratioA = calcularProrrateo(incA, incB);
+          ratioB = 1 - ratioA;
+        }
 
-    const netSettlement = zoeOwesDavid - davidOwesZoe;
-    const simplifiedDebt = simplificarDeudas(davidOwesZoe, zoeOwesDavid);
+        if (exp.paidBy === userAId || exp.paidBy === 'u1') {
+          bOwesA += normalizedAmount * ratioB;
+        } else if (exp.paidBy === userBId || exp.paidBy === 'u2') {
+          aOwesB += normalizedAmount * ratioA;
+        }
+      });
+
+      netSettlement = bOwesA - aOwesB;
+      simplifiedDebt = simplificarDeudas(aOwesB, bOwesA);
+      settlementAmount = simplifiedDebt.monto;
+    }
 
     const totalBudgeted = (filteredData.budgets || []).reduce((acc, curr) => acc + (Number(curr.base) || 0), 0);
     const totalDebtAllocated = (filteredData.accounts || []).filter((a: any) => a.type === 'CREDIT_CARD' || a.type === 'LIABILITY').reduce((acc: any, curr: any) => acc + (Number(curr.balance) || 0), 0);
@@ -331,7 +440,9 @@ export default function App() {
 
     return {
       totalIncome, unallocated,
-      netSettlement, settlementAmount: simplifiedDebt.monto, simplifiedDebt,
+      netSettlement: isSingleUser ? 0 : netSettlement,
+      settlementAmount: isSingleUser ? 0 : settlementAmount,
+      simplifiedDebt,
       needsPct: totalIncome ? (needs / totalIncome) * 100 : 0,
       wantsPct: totalIncome ? (wants / totalIncome) * 100 : 0,
       savingsPct: totalIncome ? (savings / totalIncome) * 100 : 0,
@@ -350,14 +461,20 @@ export default function App() {
   const renderTab = () => {
     switch (activeTab) {
       case 'dashboard': return <DashboardView data={filteredData} calc={calc} methods={methods} />;
-      case 'budgets': return <BudgetsView data={filteredData} methods={methods} appContext={appContext} />;
-      case 'cards': return <AccountsView data={filteredData} methods={methods} appContext={appContext} />;
+      case 'wallet':
+      case 'cards':
+      case 'debts':
+      case 'wealth':
+        return <AccountsView data={filteredData} methods={methods} appContext={appContext} />;
+      case 'planning':
+      case 'budgets':
+      case 'projects':
+        return <PlanningView data={filteredData} calc={calc} methods={methods} appContext={appContext} defaultSubTab={activeTab === 'projects' ? 'projects' : 'budgets'} />;
       case 'settlement': return <SettlementView data={filteredData} calc={calc} methods={methods} />;
-      case 'debts': return <DebtSimulatorView data={filteredData} />;
-      case 'wealth': return <WealthView data={filteredData} calc={calc} methods={methods} />;
-      case 'projects': return <ProjectsView data={filteredData} calc={calc} methods={methods} />;
       case 'historical': return <HistoricalView data={filteredData} methods={methods} />;
       case 'settings': return <SettingsView />;
+      case 'profile': return <ProfileView data={filteredData} />;
+      case 'household': return <ProfileView data={filteredData} />;
 
       case 'terms': return <TermsView />;
       case 'privacy': return <PrivacyPolicyView />;
@@ -366,16 +483,12 @@ export default function App() {
   };
 
   const navItems = [
-    { id: 'dashboard', icon: <Home size={20} />, label: 'Resumen' },
-    { id: 'budgets', icon: <PieChart size={20} />, label: 'Presupuestos' },
-    { id: 'cards', icon: <CreditCard size={20} />, label: 'Fuentes de Ingreso' },
-    { id: 'settlement', icon: <ArrowRightLeft size={20} />, label: 'Cuentas' },
-    { id: 'debts', icon: <Flame size={20} />, label: 'Simulador' },
-    { id: 'projects', icon: <Target size={20} />, label: 'Proyectos' },
-    { id: 'wealth', icon: <Landmark size={20} />, label: 'Patrimonio' },
-    { id: 'historical', icon: <BarChart3 size={20} />, label: 'Histórico' },
+    { id: 'dashboard', icon: <Home size={20} />, label: 'Inicio' },
+    { id: 'wallet', icon: <Wallet size={20} />, label: 'Billetera' },
+    { id: 'planning', icon: <Target size={20} />, label: 'Planeación' },
+    { id: 'settlement', icon: <Users size={20} />, label: 'Hogar' },
+    { id: 'historical', icon: <BarChart3 size={20} />, label: 'Historial' },
     { id: 'settings', icon: <Settings size={20} />, label: 'Ajustes' },
-
   ];
 
   const renderContextToggle = () => {
@@ -414,22 +527,27 @@ export default function App() {
         </div>
 
         <div className="flex md:flex-col gap-4 w-full min-w-max">
-          {navItems.map(item => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`flex flex-col md:flex-row items-center gap-1 md:gap-3 p-3 md:px-4 md:py-3 rounded-2xl transition-all duration-200 flex-1 md:flex-none relative group ${
-                activeTab === item.id
-                  ? 'text-white font-medium bg-primary shadow-md'
-                  : 'text-slate-400 font-normal hover:text-white hover:bg-slate-800'
-              }`}
-            >
-              <div className={`relative z-10 transition-transform duration-200 ${activeTab === item.id ? 'scale-105' : 'group-hover:scale-105'}`}>
-                {item.icon}
-              </div>
-              <span className="text-[10px] md:text-sm whitespace-nowrap relative z-10 tracking-tight">{item.label}</span>
-            </button>
-          ))}
+          {navItems.map(item => {
+            const isItemActive = activeTab === item.id ||
+              (item.id === 'wallet' && ['cards', 'debts', 'wealth'].includes(activeTab)) ||
+              (item.id === 'planning' && ['budgets', 'projects'].includes(activeTab));
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`flex flex-col md:flex-row items-center gap-1 md:gap-3 p-3 md:px-4 md:py-3 rounded-2xl transition-all duration-200 flex-1 md:flex-none relative group ${
+                  isItemActive
+                    ? 'text-white font-medium bg-primary shadow-md'
+                    : 'text-slate-400 font-normal hover:text-white hover:bg-slate-800'
+                }`}
+              >
+                <div className={`relative z-10 transition-transform duration-200 ${isItemActive ? 'scale-105' : 'group-hover:scale-105'}`}>
+                  {item.icon}
+                </div>
+                <span className="text-[10px] md:text-sm whitespace-nowrap relative z-10 tracking-tight">{item.label}</span>
+              </button>
+            );
+          })}
           
           <div className="hidden md:block mt-auto pt-8 border-t border-slate-800">
             <button onClick={() => { setShowInviteModal(true); handleInvite(); }} className="w-full flex items-center gap-3 p-3 rounded-2xl text-primary hover:bg-slate-800 transition-colors font-medium">
@@ -469,7 +587,7 @@ export default function App() {
            </div>
         </div>
 
-        {activeTab !== 'settings' && activeTab !== 'historical' && activeTab !== 'terms' && activeTab !== 'privacy' && activeTab !== 'cards' && activeTab !== 'debts' && activeTab !== 'wealth' && (
+        {activeTab !== 'settings' && activeTab !== 'historical' && activeTab !== 'terms' && activeTab !== 'privacy' && activeTab !== 'wallet' && activeTab !== 'cards' && activeTab !== 'debts' && activeTab !== 'wealth' && (
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-3 md:p-4 rounded-2xl border border-transparent shadow-sm">
             <div className="flex items-center gap-3 w-full md:w-1/2">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:block">Periodo:</span>
@@ -483,17 +601,14 @@ export default function App() {
             </div>
             
             <div className="flex gap-2 w-full md:w-1/2 justify-end">
-              <button onClick={() => handleOpenExpenseModal()} className="flex-1 md:flex-none bg-secondary/10 hover:bg-secondary/20 text-secondary px-4 py-2.5 rounded-full text-sm font-bold flex items-center justify-center gap-2 transition-colors">
-                <Plus size={16} /> Nuevo Gasto
-              </button>
-              <button onClick={() => handleOpenIncomeModal()} className="flex-1 md:flex-none bg-primary hover:bg-primary/90 text-white shadow-sm px-4 py-2.5 rounded-full text-sm font-bold flex items-center justify-center gap-2 transition-colors">
-                <Plus size={16} /> Nuevo Ingreso
+              <button onClick={() => setIsMovementModalOpen(true)} className="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm px-4 py-2.5 rounded-full text-sm font-bold flex items-center justify-center gap-2 transition-colors">
+                <Plus size={16} /> Nuevo Movimiento
               </button>
             </div>
           </div>
         )}
 
-        <ErrorBoundary>
+        <ErrorBoundary key={activeTab}>
           {renderTab()}
         </ErrorBoundary>
       </main>
@@ -502,17 +617,47 @@ export default function App() {
       {showInviteModal && (
         <div className="fixed inset-0 bg-slate-900/60 z-[100] flex items-center justify-center p-4">
           <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm max-w-md w-full relative">
-            <h2 className="text-2xl font-bold text-slate-900 mb-4 font-title">Invitar a tu casa</h2>
-            <p className="text-slate-500 mb-6">Comparte este enlace para que otra persona se una a tu misma cuenta y gestionen sus finanzas juntos.</p>
-            {inviteLink ? (
-              <div className="bg-slate-50 p-4 rounded-lg border border-[#E5E5E5] flex flex-col gap-3">
-                <code className="text-sm text-primary break-all">{inviteLink}</code>
-                <p className="text-xs font-bold text-primary">¡Copiado al portapapeles!</p>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2 font-title">Invitar a tu hogar</h2>
+            <p className="text-slate-500 mb-6 text-sm">
+              Comparte este enlace para que tu pareja se una a tu hogar y gestionen sus finanzas juntos.
+            </p>
+
+            {inviteLoading && (
+              <div className="flex flex-col items-center justify-center py-6">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-2"></div>
+                <p className="text-xs text-slate-400">Generando enlace seguro...</p>
               </div>
-            ) : (
-              <div className="flex justify-center p-4"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
             )}
-            <button onClick={() => setShowInviteModal(false)} className="mt-8 w-full bg-primary hover:bg-primary/90 text-white p-3 rounded-lg font-bold transition-colors">
+
+            {inviteError && (
+              <div className="bg-amber-50 text-amber-800 p-4 rounded-lg border border-amber-200 text-sm mb-4">
+                <p className="font-semibold">{inviteError}</p>
+              </div>
+            )}
+
+            {inviteLink && !inviteLoading && (
+              <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 flex flex-col gap-3">
+                <div className="bg-white p-2.5 rounded border border-slate-200 font-mono text-xs text-slate-700 break-all select-all">
+                  {inviteLink}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="w-full bg-primary hover:bg-primary/90 text-white py-2 px-4 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2"
+                >
+                  <Copy size={16} />
+                  {copiedLink ? '¡Enlace copiado!' : 'Copiar enlace'}
+                </button>
+                <p className="text-xs text-slate-400 text-center">
+                  ⏳ Este enlace caduca automáticamente en 7 días.
+                </p>
+              </div>
+            )}
+
+            <button
+              onClick={() => { setShowInviteModal(false); setInviteError(null); }}
+              className="mt-6 w-full bg-slate-100 hover:bg-slate-200 text-slate-700 p-3 rounded-lg font-bold text-sm transition-colors"
+            >
               Cerrar
             </button>
           </div>
@@ -526,67 +671,78 @@ export default function App() {
             <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-6">
               <UserPlus size={32} />
             </div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-4 font-title">¡Te han invitado a una casa!</h2>
-            <p className="text-slate-600 mb-8 font-medium">¿Deseas abandonar tu casa actual para unirte a esta nueva casa o mantenerte en tu casa actual?</p>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2 font-title">
+              ¡Te han invitado a un hogar!
+            </h2>
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6 text-left">
+              <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Detalles de la invitación</p>
+              <p className="text-sm text-slate-800 font-bold">
+                Hogar: <span className="font-normal text-slate-600">{inviteModalData?.householdName || 'Hogar compartido'}</span>
+              </p>
+              <p className="text-sm text-slate-800 font-bold mt-1">
+                Invitado por: <span className="font-normal text-slate-600">{inviteModalData?.inviterName || 'Tu pareja'}</span>
+              </p>
+            </div>
+            <p className="text-slate-600 mb-6 text-sm">
+              ¿Deseas unirte a este hogar para compartir finanzas y presupuestos en común?
+            </p>
+            {joinError && (
+              <div className="bg-red-50 text-red-700 p-3 rounded-lg border border-red-200 text-xs mb-4">
+                {joinError}
+              </div>
+            )}
             <div className="flex flex-col gap-3">
-              <button onClick={() => handleJoinHouse(true)} className="w-full bg-primary hover:bg-primary/90 text-white p-3 rounded-lg font-bold transition-colors">
-                Unirme a la nueva casa
+              <button
+                disabled={joinLoading}
+                onClick={() => handleJoinHouse(true)}
+                className="w-full bg-primary hover:bg-primary/90 text-white p-3 rounded-lg font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {joinLoading ? 'Uniéndote al hogar...' : 'Unirme al nuevo hogar'}
               </button>
-              <button onClick={() => handleJoinHouse(false)} className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 p-3 rounded-lg font-bold transition-colors">
-                Mantenerme en mi casa actual
+              <button
+                disabled={joinLoading}
+                onClick={() => handleJoinHouse(false)}
+                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 p-3 rounded-lg font-bold transition-colors disabled:opacity-50"
+              >
+                Mantenerme en mi hogar actual
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modals for Income and Expense */}
-      <Modal 
-        isOpen={isIncomeModalOpen} 
-        onClose={() => setIsIncomeModalOpen(false)} 
-        title={editingIncome ? "Editar Ingreso" : "Nuevo Ingreso"}
-      >
-        {isIncomeModalOpen && (
-          <IncomeForm 
-            key={editingIncome ? editingIncome.id : 'new-inc'}
-            initialData={editingIncome} 
-            users={data.users} 
-            categories={data.categories}
-            accounts={data.accounts}
-            currentUserId={user?.uid}
-            appContext={appContext}
-            onSubmit={(formData) => {
-              if (editingIncome) methods.updateIncome(editingIncome.id, formData);
-              else methods.addIncome(formData);
-              setIsIncomeModalOpen(false);
-            }} 
-            onCancel={() => setIsIncomeModalOpen(false)} 
-          />
-        )}
-      </Modal>
 
-      <Modal 
-        isOpen={isExpenseModalOpen} 
-        onClose={() => setIsExpenseModalOpen(false)} 
-        title={editingExpense ? "Editar Gasto" : "Nuevo Gasto"}
+
+      {/* Modal for Unified Movement (F3.1) */}
+      <Modal
+        isOpen={isMovementModalOpen}
+        onClose={() => setIsMovementModalOpen(false)}
+        title="Nuevo Movimiento"
       >
-        {isExpenseModalOpen && (
-          <ExpenseForm 
-            key={editingExpense ? editingExpense.id : 'new-exp'}
-            initialData={editingExpense} 
-            users={data.users} 
+        {isMovementModalOpen && (
+          <MovementForm
             categories={data.categories}
             accounts={data.accounts}
-            tags={data.tags}
-            budgets={data.budgets || []}
             currentUserId={user?.uid}
             appContext={appContext}
-            onSubmit={(formData) => {
-              if (editingExpense) methods.updateExpense(editingExpense.id, formData);
-              else methods.addExpense(formData);
-              setIsExpenseModalOpen(false);
-            }} 
-            onCancel={() => setIsExpenseModalOpen(false)} 
+            onSubmit={async (action) => {
+              if (action.type === 'EXPENSE') {
+                await methods.addExpense(action.payload);
+              } else if (action.type === 'INCOME') {
+                await methods.addIncome(action.payload);
+              } else if (action.type === 'TRANSFER') {
+                await methods.payCreditCard(
+                  action.payload.sourceAccountId,
+                  action.payload.targetAccountId,
+                  action.payload.amount,
+                  action.payload.date,
+                  action.payload.ownerUid,
+                  action.payload.isShared
+                );
+              }
+              setIsMovementModalOpen(false);
+            }}
+            onCancel={() => setIsMovementModalOpen(false)}
           />
         )}
       </Modal>

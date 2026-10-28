@@ -24,15 +24,19 @@ export const createAssetSlice: StateCreator<AssetSlice & AuthSlice & DataSlice, 
       estimatedValue: item.value || 0,
       assetType: item.type || 'Liquidez'
     });
-    if (state.houseId) await state.fetchDashboardData(state.houseId);
+    const currentHouseId = get().houseId;
+    if (currentHouseId) await get().fetchDashboardData(currentHouseId);
   },
   updateAsset: async (id, item) => {
     const state = get();
+    const houseId = state.houseId;
+    if (!houseId) return;
     await updateExternalAsset({
       assetId: id,
+      householdId: houseId,
       estimatedValue: item.value !== undefined ? item.value : 0
     });
-    if (state.houseId) await state.fetchDashboardData(state.houseId);
+    await get().fetchDashboardData(houseId);
   },
   deleteAsset: async (_id) => {}
 });
