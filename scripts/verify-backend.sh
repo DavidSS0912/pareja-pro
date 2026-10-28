@@ -75,16 +75,16 @@ awk '
   }
 ' "$CONNECTOR_DIR/queries.gql" "$CONNECTOR_DIR/mutations.gql" > "$OPS_REPORT"
 
-# 1. NO_ACCESS obligatorio en NegativeEntries, UnbalancedJournals, CreateSettlement, DeleteSettlement, UpsertExchangeRate
-for op in NegativeEntries UnbalancedJournals CreateSettlement DeleteSettlement UpsertExchangeRate; do
+# 1. NO_ACCESS obligatorio en NegativeEntries, UnbalancedJournals, CreateSettlement, DeleteSettlement, UpsertExchangeRate, BackfillMemberSlots
+for op in NegativeEntries UnbalancedJournals CreateSettlement DeleteSettlement UpsertExchangeRate BackfillMemberSlots; do
   if ! grep -q ":${op}:auth=NO_ACCESS:" "$OPS_REPORT"; then
     echo "❌ Error: La operación ${op} debe existir y tener @auth(level: NO_ACCESS)"
     exit 1
   fi
 done
-echo "✅ NO_ACCESS confirmado en NegativeEntries, UnbalancedJournals, CreateSettlement, DeleteSettlement y UpsertExchangeRate"
+echo "✅ NO_ACCESS confirmado en NegativeEntries, UnbalancedJournals, CreateSettlement, DeleteSettlement, UpsertExchangeRate y BackfillMemberSlots"
 
-# 3. Para toda operación USER fuera de la lista permitida (GetCurrentUser, GetLatestRate, CreateHouseholdAndUser):
+# 3. Para toda operación USER fuera de la lista permitida (GetCurrentUser, GetLatestRate, CreateHouseholdAndUser, GetInvitation, AcceptInvitation):
 #    - rechazar @check con expr "true" o solo literales
 #    - exigir redact_fields >= 1 en mutaciones USER ("bloque @redact no detectado")
 #    - exigir al menos un @check y "household.id == vars.householdId"
@@ -113,6 +113,24 @@ INVALID_OPS="$(awk -F: '
       next
     }
     if (op == "GetCurrentUser" || op == "GetLatestRate" || op == "CreateHouseholdAndUser") next
+
+    if (op == "GetInvitation") {
+      if (checks + 0 < 1) {
+        print $0 " (0 @check)"
+      }
+      next
+    }
+
+    if (op == "AcceptInvitation") {
+      if (kind == "mutation" && (rf + 0) < 1) {
+        print $0 " (bloque @redact no detectado)"
+      } else if (checks + 0 < 1) {
+        print $0 " (0 @check)"
+      } else if (rf + 0 > 0 && (checks + 0) < (rf + 0)) {
+        print $0 " (campo en query @redact sin @check)"
+      }
+      next
+    }
 
     if (kind == "mutation" && (rf + 0) < 1) {
       print $0 " (bloque @redact no detectado)"

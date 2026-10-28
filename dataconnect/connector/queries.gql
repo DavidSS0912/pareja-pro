@@ -285,6 +285,7 @@ query GetCurrentUser @auth(level: USER) {
     email
     displayName
     householdId
+    memberSlot
   }
 }
 
@@ -356,6 +357,57 @@ query GetJournalBalanceV2($journalId: UUID!, $householdId: UUID!) @auth(level: U
     journal: { householdId: { eq: $householdId } }
   }) {
     diff
+  }
+}
+
+query GetInvitation($id: UUID!) @auth(level: USER) {
+  invitation(id: $id)
+    @check(expr: "this != null && this.status == 'PENDING' && this.expiresAt > request.time", message: "Invitación inválida o expirada") {
+    id
+    status
+    expiresAt
+    createdByUid
+    household {
+      id
+      name
+    }
+  }
+}
+
+query GetHouseholdMembers($householdId: UUID!) @auth(level: USER) {
+  user(key: { uid_expr: "auth.uid" })
+    @redact
+    @check(expr: "this != null && this.household.id == vars.householdId", message: "El recurso no pertenece a este hogar") {
+    household { id }
+  }
+  users(where: {
+    householdId: { eq: $householdId },
+    household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
+  }, orderBy: { createdAt: ASC }) {
+    uid
+    email
+    displayName
+    memberSlot
+    createdAt
+  }
+}
+
+query GetPendingInvitations($householdId: UUID!) @auth(level: USER) {
+  user(key: { uid_expr: "auth.uid" })
+    @redact
+    @check(expr: "this != null && this.household.id == vars.householdId", message: "El recurso no pertenece a este hogar") {
+    household { id }
+  }
+  invitations(where: {
+    householdId: { eq: $householdId },
+    status: { eq: PENDING },
+    household: { users_on_household: { exist: { uid: { eq_expr: "auth.uid" } } } }
+  }, orderBy: { createdAt: DESC }) {
+    id
+    status
+    expiresAt
+    createdByUid
+    createdAt
   }
 }
 

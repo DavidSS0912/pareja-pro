@@ -5,6 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { Button } from '../components/ui/Button';
 import { authService } from '../services/authService';
 import { createInvitation } from '../services/userService';
+import { ProfileView } from './ProfileView';
 
 export interface SettingsViewProps {
   onLogout?: () => void;
@@ -174,22 +175,27 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
                 <p className="text-xs text-slate-400 font-mono mt-1">ID: {user?.uid}</p>
               </div>
             </div>
-
             <div className="p-4 rounded-xl border border-blue-100 bg-blue-50/50 text-xs text-blue-700">
               <p className="font-semibold mb-1">Sesión Autenticada</p>
               <p>Tu cuenta está gestionada a través del sistema de autenticación de Orbita. Las credenciales están protegidas y sincronizadas con tu hogar.</p>
+            </div>
+
+            <p className="text-sm text-slate-500 italic">Nota: La edición del perfil desde la app aún no está disponible.</p>
+            <div className="pt-4 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setActiveTab('household')}
+                className="text-sm font-semibold text-primary hover:underline flex items-center gap-1.5"
+              >
+                <Users size={16} /> Administrar integrantes de mi hogar →
+              </button>
             </div>
           </div>
         )}
 
         {/* 2. INTEGRANTES DEL HOGAR */}
         {activeTab === 'household' && (
-          <div className="space-y-6 max-w-xl">
-            <div>
-              <h3 className="text-lg font-bold text-slate-900 font-title">Integrantes del Hogar</h3>
-              <p className="text-sm text-slate-500 mt-1">Personas que comparten gastos, presupuestos y liquidación en esta casa.</p>
-            </div>
-
+          <div className="space-y-6 max-w-2xl">
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
@@ -199,47 +205,6 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
                   <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Identificador del Hogar</p>
                   <p className="text-sm font-mono font-bold text-slate-800">{houseId || 'Sin hogar asignado'}</p>
                 </div>
-              </div>
-            </div>
-
-            {/* Lista de integrantes */}
-            <div className="space-y-3">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Miembros Actuales ({users?.length || 1})</p>
-              <div className="divide-y divide-slate-100 rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
-                {users && users.length > 0 ? (
-                  users.map((u: any, idx: number) => {
-                    const isSelf = u.id === user?.uid;
-                    const displayName = u.name || u.displayName || u.email?.split('@')[0] || `Integrante ${idx + 1}`;
-                    return (
-                      <div key={u.id || idx} className="p-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-sm">
-                            {displayName.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-sm text-slate-800">{displayName}</span>
-                              {isSelf && (
-                                <span className="bg-indigo-50 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded-full">Tú</span>
-                              )}
-                            </div>
-                            <span className="text-xs text-slate-400">{u.email || 'Miembro del hogar'}</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-sm">
-                      {(user?.displayName || 'U').charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm text-slate-800">{user?.displayName || 'Usuario Actual'}</p>
-                      <p className="text-xs text-slate-400">{user?.email}</p>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -285,6 +250,9 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
                 </Button>
               )}
             </div>
+
+            {/* Integrantes, abandono de hogar y gestión de invitaciones */}
+            <ProfileView />
           </div>
         )}
 

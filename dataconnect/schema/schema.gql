@@ -3,6 +3,8 @@ enum AccountType { ASSET LIABILITY INCOME EXPENSE EQUITY }
 enum OwnerType { USER_A USER_B SHARED }
 enum EntryType { DEBIT CREDIT }
 enum RecurrenceFrequency { SEMANAL MENSUAL ANUAL }
+enum MemberSlot { USER_A USER_B }
+enum InvitationStatus { PENDING ACCEPTED REVOKED }
 
 # Hogar (Tenant principal)
 type Household @table {
@@ -16,6 +18,17 @@ type User @table(key: "uid") {
   email: String!
   displayName: String
   household: Household!
+  memberSlot: MemberSlot
+  createdAt: Timestamp! @default(expr: "request.time")
+}
+
+# Invitación a un hogar
+type Invitation @table {
+  household: Household!
+  createdByUid: String!
+  status: InvitationStatus! @default(value: PENDING)
+  expiresAt: Timestamp!
+  acceptedByUid: String
   createdAt: Timestamp! @default(expr: "request.time")
 }
 

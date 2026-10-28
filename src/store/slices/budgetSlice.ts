@@ -22,7 +22,23 @@ export const createBudgetSlice: StateCreator<BudgetSlice & AuthSlice & DataSlice
     const state = get();
     const houseId = state.houseId || "00000000-0000-0000-0000-000000000000";
     
-    const optimisticOwnerType = (item.shared || item.type === 'SHARED') ? OwnerType.SHARED : OwnerType.USER_A;
+    let userSlot: OwnerType = OwnerType.USER_A;
+    const explicitSlot = (state as any).memberSlot || state.user?.memberSlot;
+    if (explicitSlot === 'USER_B') {
+      userSlot = OwnerType.USER_B;
+    } else if (explicitSlot === 'USER_A') {
+      userSlot = OwnerType.USER_A;
+    } else {
+      const currentMember = (state as any).users?.find((u: any) => u.id === state.user?.uid);
+      if (currentMember?.memberSlot === 'USER_B') {
+        userSlot = OwnerType.USER_B;
+      }
+    }
+
+    const optimisticOwnerType = (item.shared || item.type === 'SHARED') 
+      ? OwnerType.SHARED 
+      : (item.ownerType || userSlot);
+
     const optimisticBudget = { ...item, ownerType: optimisticOwnerType, id: `temp-${Date.now()}` };
     set({ budgets: [optimisticBudget, ...state.budgets] });
     
@@ -52,13 +68,30 @@ export const createBudgetSlice: StateCreator<BudgetSlice & AuthSlice & DataSlice
     if (!houseId) return;
     const originalBudgets = state.budgets;
     
+    let userSlot: OwnerType = OwnerType.USER_A;
+    const explicitSlot = (state as any).memberSlot || state.user?.memberSlot;
+    if (explicitSlot === 'USER_B') {
+      userSlot = OwnerType.USER_B;
+    } else if (explicitSlot === 'USER_A') {
+      userSlot = OwnerType.USER_A;
+    } else {
+      const currentMember = (state as any).users?.find((u: any) => u.id === state.user?.uid);
+      if (currentMember?.memberSlot === 'USER_B') {
+        userSlot = OwnerType.USER_B;
+      }
+    }
+
+    const updatedOwnerType = (item.shared || item.type === 'SHARED')
+      ? OwnerType.SHARED
+      : (item.ownerType || userSlot);
+
     // Optimistic update
     const updatedBudgets = state.budgets.map(b => b.id === id ? { 
       ...b, 
       ...item, 
       category: item.category?.name || item.category || b.category, 
       base: item.base !== undefined ? item.base : (item.assignedAmount !== undefined ? item.assignedAmount : b.base),
-      ownerType: (item.shared || item.type === 'SHARED') ? OwnerType.SHARED : OwnerType.USER_A
+      ownerType: updatedOwnerType
     } : b);
     set({ budgets: updatedBudgets });
 
