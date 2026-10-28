@@ -132,13 +132,20 @@ export default function App() {
     // We normalize to date-only ("2026-09-30") for correct string range comparison.
     const toDateStr = (d: string | undefined | null): string | null =>
       d ? d.slice(0, 10) : null;
-    const filterContext = (items: any[]) => {
+    const filterContext = (items: any[], isIncome = false) => {
        const userUid = user?.uid || '';
        return items.filter((i: any) => {
          const ownerUid = i.ownerUid || i.userId || i.paidBy;
          const isShared = !i.isPrivate;
          if (appContext === 'personal') {
+           if (isIncome) {
+             return !userUid || ownerUid === userUid;
+           }
            return ownerUid === userUid && !isShared;
+         }
+         // appContext === 'household'
+         if (isIncome) {
+           return isShared || !userUid || ownerUid === userUid;
          }
          return isShared;
        });
@@ -153,8 +160,8 @@ export default function App() {
 
     return {
       ...data,
-      incomes: filterContext(data.incomes.filter(i => inDateRange(i.date))),
-      expenses: filterContext(data.expenses.filter(e => inDateRange(e.date))),
+      incomes: filterContext(data.incomes.filter(i => inDateRange(i.date)), true),
+      expenses: filterContext(data.expenses.filter(e => inDateRange(e.date)), false),
       budgets: filterByContext<any>(data.budgets, contextMode, memberSlot),
       accounts: filterByContext(data.accounts || [], contextMode, memberSlot)
     };
@@ -187,8 +194,8 @@ export default function App() {
           // Poblar el store de usuarios con los miembros del hogar ordenados (USER_A en 0, USER_B en 1)
           const localUser = {
             id: fbUser.uid,
-            name: fbUser.displayName || fbUser.email || 'Usuario',
-            displayName: fbUser.displayName || fbUser.email || 'Usuario',
+            name: fbUser.displayName || (fbUser.email ? fbUser.email.split('@')[0] : 'Usuario'),
+            displayName: fbUser.displayName || (fbUser.email ? fbUser.email.split('@')[0] : 'Usuario'),
             email: fbUser.email || '',
             photoURL: fbUser.photoURL || null,
           };
@@ -212,8 +219,8 @@ export default function App() {
 
               const mappedUsers = sortedMembers.map(m => ({
                 id: m.id,
-                name: m.displayName || m.email || 'Usuario',
-                displayName: m.displayName || m.email || 'Usuario',
+                name: m.displayName || (m.email ? m.email.split('@')[0] : 'Usuario'),
+                displayName: m.displayName || (m.email ? m.email.split('@')[0] : 'Usuario'),
                 email: m.email || '',
                 memberSlot: m.memberSlot,
                 photoURL: m.id === fbUser.uid ? (fbUser.photoURL || null) : null,
@@ -238,21 +245,22 @@ export default function App() {
             const pendingId = sessionStorage.getItem('pending_invite_id');
             if (pendingId) {
               inviteIdToProcess = pendingId;
-              sessionStorage.removeItem('pending_invite_id');
             }
           }
 
           if (inviteIdToProcess) {
+            // Limpieza inmediata de URL y de sessionStorage
+            sessionStorage.removeItem('pending_invite_id');
+            if (window.location.pathname.startsWith('/invite/')) {
+              window.history.replaceState({}, document.title, "/");
+            }
+
             const inviteDetails = await checkInvitation(inviteIdToProcess);
             if (inviteDetails && typeof inviteDetails === 'object' && inviteDetails.householdId) {
               if (inviteDetails.householdId !== currentHouseId) {
                 setInviteModalData(inviteDetails as InvitationDetails);
                 setJoinHouseConfirm(inviteIdToProcess);
-              } else {
-                window.history.replaceState({}, document.title, "/");
               }
-            } else {
-              window.history.replaceState({}, document.title, "/");
             }
           }
         } else {
@@ -300,6 +308,8 @@ export default function App() {
   }
 
   const handleJoinHouse = async (accept: boolean) => {
+    sessionStorage.removeItem('pending_invite_id');
+    window.history.replaceState({}, document.title, "/");
     if (accept && joinHouseConfirm && user) {
       setJoinLoading(true);
       setJoinError(null);
@@ -321,7 +331,6 @@ export default function App() {
     setJoinHouseConfirm(null);
     setInviteModalData(null);
     setJoinError(null);
-    window.history.replaceState({}, document.title, "/");
   };
 
   const handleInvite = async () => {

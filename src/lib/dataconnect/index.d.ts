@@ -446,6 +446,7 @@ export interface GetHouseholdAccountsData {
     uid: string;
     email: string;
     displayName?: string | null;
+    memberSlot?: MemberSlot | null;
   } & User_Key)[];
 }
 

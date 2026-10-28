@@ -103,8 +103,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ data: propData }) => {
 
       storeData.setUsers(sorted.map(m => ({
         id: m.id,
-        name: m.displayName || m.email || 'Usuario',
-        displayName: m.displayName || m.email || 'Usuario',
+        name: m.displayName || (m.email ? m.email.split('@')[0] : 'Usuario'),
+        displayName: m.displayName || (m.email ? m.email.split('@')[0] : 'Usuario'),
         email: m.email,
         memberSlot: m.memberSlot,
         photoURL: m.id === user?.uid ? user.photoURL : null,
@@ -169,7 +169,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ data: propData }) => {
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="font-bold text-slate-900 text-sm">
-                        {u.displayName || u.name || 'Usuario'}
+                        {u.displayName || u.name || (u.email ? u.email.split('@')[0] : 'Usuario')}
                       </p>
                       {isMe && (
                         <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">
@@ -182,7 +182,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ data: propData }) => {
                           : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                       }`}>
                         <Shield size={10} />
-                        {isMemberA ? 'Creador (USER A)' : 'Pareja (USER B)'}
+                        {isMemberA ? 'Administrador' : 'Miembro'}
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 mt-0.5">{u.email}</p>

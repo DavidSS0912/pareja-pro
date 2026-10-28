@@ -24,7 +24,7 @@ export function HistoricalView({ data, methods }: any) {
   const categories = useMemo(() => {
     const cats = new Set<string>();
     expenses.forEach((e: any) => cats.add(e.category || 'Otros'));
-    incomes.forEach((i: any) => cats.add(i.category || 'Otros'));
+    incomes.forEach((i: any) => cats.add(i.category || i.source || 'Otros'));
     return Array.from(cats).sort();
   }, [expenses, incomes]);
 
@@ -92,7 +92,7 @@ export function HistoricalView({ data, methods }: any) {
     return incomes.filter((i: any) => {
       if (i.userId && deselectedUsers.has(i.userId)) return false;
       if (i.ownerUid && deselectedUsers.has(i.ownerUid)) return false;
-      const cat = i.category || 'Otros';
+      const cat = i.category || i.source || 'Otros';
       if (deselectedCategories.has(cat)) return false;
       return true;
     });
@@ -113,31 +113,31 @@ export function HistoricalView({ data, methods }: any) {
 
   const detailedRecords = useMemo(() => {
     const expRecords = filteredExpenses.map((e: any) => ({
+      ...e,
       id: e.id,
       date: e.date,
       recordType: 'expense',
       typeLabel: 'Gasto',
       category: e.category || 'Otros',
       description: e.description || '',
-      amount: e.amount,
+      amount: Math.abs(Number(e.amount) || 0),
       sourceAccountName: '',
       targetAccountName: '',
       userId: e.userId || e.paidBy || e.ownerUid || '',
-      ...e
     }));
 
     const incRecords = filteredIncomes.map((i: any) => ({
+      ...i,
       id: i.id,
       date: i.date,
       recordType: 'income',
       typeLabel: 'Ingreso',
       category: i.category || i.source || 'Otros',
       description: i.description || '',
-      amount: i.amount,
+      amount: Math.abs(Number(i.amount) || 0),
       sourceAccountName: '',
       targetAccountName: '',
       userId: i.userId || i.ownerUid || '',
-      ...i
     }));
 
     const trRecords = filteredTransfers.map((t: any) => ({
@@ -216,7 +216,7 @@ export function HistoricalView({ data, methods }: any) {
       const amt = Number(i.amount) || 0;
       monthlyData[month].income += amt;
       monthlyData[month].count += 1;
-      const cat = i.category || 'Otros';
+      const cat = i.category || i.source || 'Otros';
       monthlyData[month].incomeByCategory[cat] = (monthlyData[month].incomeByCategory[cat] || 0) + amt;
     });
 

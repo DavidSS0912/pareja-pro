@@ -54,7 +54,7 @@ export const getOrCreateUserAndHouse = async (fbUser: any) => {
     console.log("Usuario no existe en BD, creándolo...");
     const created = await createHouseholdAndUser({
       email: fbUser.email || '',
-      displayName: fbUser.displayName || 'Usuario'
+      displayName: fbUser.displayName || (fbUser.email ? fbUser.email.split('@')[0] : 'Usuario')
     });
     
     const newHouseholdId = created.data.household_insert.id;
@@ -116,8 +116,8 @@ export const checkInvitation = async (invitationId: string): Promise<InvitationD
       status: inv.status,
       expiresAt: inv.expiresAt
     };
-  } catch (error) {
-    console.error("Error al verificar invitación:", error);
+  } catch (_error) {
+    // Si la invitación fue aceptada, expiró o no existe, la regla CEL o la consulta falla de forma controlada
     return null;
   }
 };
@@ -201,7 +201,7 @@ export const getHouseholdMembers = async (householdId: string): Promise<Househol
   return users.map(u => ({
     id: u.uid,
     email: u.email,
-    displayName: u.displayName || '',
+    displayName: u.displayName || (u.email ? u.email.split('@')[0] : 'Usuario'),
     memberSlot: u.memberSlot || null,
     createdAt: u.createdAt
   }));

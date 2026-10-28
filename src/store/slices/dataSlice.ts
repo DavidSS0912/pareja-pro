@@ -20,7 +20,7 @@ import {
   getInternalTransfersByHousehold
 } from '../../lib/dataconnect';
 import { mergeAccountsWithBalances } from '../../services/accountService';
-import { Transfer } from '../types';
+import { Transfer, RecordItem } from '../types';
 
 export type { Transfer };
 
@@ -65,11 +65,17 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
       const mergedAccounts = mergeAccountsWithBalances(serverAccounts, balanceEntries, currentAccounts);
       get().setAccounts(mergedAccounts as any);
       if (accountsResult.data?.householdUsers) {
-        const mappedUsers = accountsResult.data.householdUsers.map((u: any) => ({
-          id: u.uid,
-          name: u.displayName || u.email,
-          email: u.email
-        }));
+        const mappedUsers = accountsResult.data.householdUsers.map((u: any) => {
+          const userItem: RecordItem = {
+            id: u.uid,
+            name: u.displayName || u.email,
+            email: u.email
+          };
+          if (u.memberSlot) {
+            userItem.memberSlot = u.memberSlot;
+          }
+          return userItem;
+        });
         get().setUsers(mappedUsers);
       }
       if (budgets.data?.budgets) {
