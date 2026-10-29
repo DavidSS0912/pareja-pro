@@ -546,6 +546,20 @@ exports.backfillMemberSlots = function backfillMemberSlots(dc) {
 }
 ;
 
+const updateUserProfileRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpdateUserProfile', inputVars);
+}
+updateUserProfileRef.operationName = 'UpdateUserProfile';
+exports.updateUserProfileRef = updateUserProfileRef;
+
+exports.updateUserProfile = function updateUserProfile(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars);
+  return executeMutation(updateUserProfileRef(dcInstance, inputVars));
+}
+;
+
 const getHouseholdAccountsRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();

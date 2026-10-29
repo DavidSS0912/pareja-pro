@@ -17,6 +17,7 @@ type User @table(key: "uid") {
   uid: String! @default(expr: "auth.uid")
   email: String!
   displayName: String
+  photoUrl: String
   household: Household!
   memberSlot: MemberSlot
   createdAt: Timestamp! @default(expr: "request.time")

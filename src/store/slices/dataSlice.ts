@@ -30,6 +30,7 @@ export interface DataSlice {
   selectedBudgetMonth?: string;
   transfers: Transfer[];
   setTransfers: (transfers: Transfer[]) => void;
+  setUsers?: (users: RecordItem[]) => void;
   fetchDashboardData: (houseId: string, month?: string) => Promise<void>;
   fetchBudgetsForMonth: (month: string) => Promise<void>;
   refreshExpenses: () => Promise<void>;
@@ -41,6 +42,29 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
   selectedBudgetMonth: undefined,
   transfers: [],
   setTransfers: (transfers) => set({ transfers }),
+  setUsers: (users: RecordItem[]) => {
+    const existingUsers = get().users || [];
+    const currentUser = get().user;
+    const sanitized = users.map((u: any) => {
+      const existing = existingUsers.find((eu: any) => eu.id === u.id);
+      const photo = u.photoURL || u.photoUrl || existing?.photoURL || (currentUser?.uid === u.id ? currentUser?.photoURL : undefined);
+      const userItem: RecordItem = {
+        ...u
+      };
+      if (photo) {
+        userItem.photoURL = photo;
+        userItem.photoUrl = photo;
+      }
+      return userItem;
+    }).sort((a: any, b: any) => {
+      if (a.memberSlot === 'USER_A') return -1;
+      if (b.memberSlot === 'USER_A') return 1;
+      if (a.memberSlot === 'USER_B') return -1;
+      if (b.memberSlot === 'USER_B') return 1;
+      return 0;
+    });
+    set({ users: sanitized } as any);
+  },
   fetchDashboardData: async (houseId: string, month?: string) => {
     try {
       const currentMonth = month || get().selectedBudgetMonth || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-01`;
@@ -65,17 +89,34 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
       const mergedAccounts = mergeAccountsWithBalances(serverAccounts, balanceEntries, currentAccounts);
       get().setAccounts(mergedAccounts as any);
       if (accountsResult.data?.householdUsers) {
+        const existingUsers = get().users || [];
+        const currentUser = get().user;
         const mappedUsers = accountsResult.data.householdUsers.map((u: any) => {
+          const existing = existingUsers.find((eu: any) => eu.id === u.uid);
+          const photoURL = u.photoUrl || existing?.photoURL || (currentUser?.uid === u.uid ? currentUser?.photoURL : undefined);
           const userItem: RecordItem = {
             id: u.uid,
             name: u.displayName || u.email,
             email: u.email
           };
+          if (photoURL) {
+            userItem.photoURL = photoURL;
+            userItem.photoUrl = photoURL;
+          }
           if (u.memberSlot) {
             userItem.memberSlot = u.memberSlot;
           }
           return userItem;
         });
+
+        mappedUsers.sort((a: any, b: any) => {
+          if (a.memberSlot === 'USER_A') return -1;
+          if (b.memberSlot === 'USER_A') return 1;
+          if (a.memberSlot === 'USER_B') return -1;
+          if (b.memberSlot === 'USER_B') return 1;
+          return 0;
+        });
+
         get().setUsers(mappedUsers);
       }
       if (budgets.data?.budgets) {

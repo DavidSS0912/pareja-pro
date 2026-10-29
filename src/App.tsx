@@ -493,7 +493,9 @@ export default function App() {
 
   const renderContextToggle = () => {
     const isPersonal = appContext === 'personal';
-    const otherUser = data.users.find(u => u.id !== user?.uid);
+    const member1 = data.users[0];
+    const member2 = data.users[1];
+    const hasBothMembers = !isPersonal && data.users.length >= 2;
     
     return (
       <button 
@@ -503,13 +505,51 @@ export default function App() {
       >
         {isPersonal ? (
           user?.photoURL ? (
-            <img src={user.photoURL} alt="Personal" className="w-full h-full object-cover" />
+            <img src={user.photoURL} alt="Personal" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
           ) : (
-            <User size={20} className="text-slate-600" />
+            <span className="text-xs font-bold text-slate-700">
+              {(user?.displayName || user?.email || 'U')[0].toUpperCase()}
+            </span>
           )
+        ) : hasBothMembers ? (
+          <div className="w-full h-full flex">
+            <div className="w-1/2 h-full relative overflow-hidden bg-slate-100 flex items-center justify-center">
+              {member1?.photoURL || member1?.photoUrl ? (
+                <img
+                  src={member1.photoURL || member1.photoUrl}
+                  alt={member1.displayName || member1.name || 'Integrante 1'}
+                  referrerPolicy="no-referrer"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-[10px] font-bold text-slate-700">
+                  {(member1?.displayName || member1?.name || member1?.email || 'A')[0].toUpperCase()}
+                </span>
+              )}
+            </div>
+            <div className="w-1/2 h-full relative overflow-hidden bg-slate-100 flex items-center justify-center border-l border-white/60">
+              {member2?.photoURL || member2?.photoUrl ? (
+                <img
+                  src={member2.photoURL || member2.photoUrl}
+                  alt={member2.displayName || member2.name || 'Integrante 2'}
+                  referrerPolicy="no-referrer"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-[10px] font-bold text-slate-700">
+                  {(member2?.displayName || member2?.name || member2?.email || 'B')[0].toUpperCase()}
+                </span>
+              )}
+            </div>
+          </div>
         ) : (
-          otherUser?.photoURL ? (
-            <img src={otherUser.photoURL} alt="Hogar" className="w-full h-full object-cover" />
+          (member1?.photoURL || member1?.photoUrl || user?.photoURL) ? (
+            <img
+              src={member1?.photoURL || member1?.photoUrl || user?.photoURL}
+              alt="Hogar"
+              referrerPolicy="no-referrer"
+              className="w-full h-full object-cover"
+            />
           ) : (
             <Users size={20} className="text-primary" />
           )

@@ -2,6 +2,7 @@ import { QueryFetchPolicy } from 'firebase/data-connect';
 import {
   getCurrentUser,
   createHouseholdAndUser,
+  updateUserProfile,
   createInvitation as createInvitationMutation,
   acceptInvitation as acceptInvitationMutation,
   revokeInvitation as revokeInvitationMutation,
@@ -26,6 +27,8 @@ export interface HouseholdMember {
   id: string;
   email: string;
   displayName: string;
+  photoUrl?: string | null;
+  photoURL?: string | null;
   memberSlot: MemberSlot | string | null;
   createdAt: string;
 }
@@ -39,6 +42,22 @@ export const getOrCreateUserAndHouse = async (fbUser: any) => {
       const householdId = existing.data.user.householdId;
       console.log("Usuario encontrado en BD:", householdId);
       
+      // Sincronizar foto y nombre si cambiaron en Google
+      try {
+        const dbUser = existing.data.user;
+        const currentGooglePhoto = fbUser.photoURL || null;
+        const currentGoogleName = fbUser.displayName || (fbUser.email ? fbUser.email.split('@')[0] : 'Usuario');
+
+        if (dbUser.photoUrl !== currentGooglePhoto || (currentGoogleName && dbUser.displayName !== currentGoogleName)) {
+          await updateUserProfile({
+            displayName: currentGoogleName,
+            photoUrl: currentGooglePhoto
+          });
+        }
+      } catch (syncErr) {
+        console.error("Error sincronizando perfil de usuario con Google:", syncErr);
+      }
+
       // 2. Ejecutar migración / deduplicación de cuentas
       try {
         const { runAccountMigration } = await import('./accountMigrationService');
@@ -54,7 +73,8 @@ export const getOrCreateUserAndHouse = async (fbUser: any) => {
     console.log("Usuario no existe en BD, creándolo...");
     const created = await createHouseholdAndUser({
       email: fbUser.email || '',
-      displayName: fbUser.displayName || (fbUser.email ? fbUser.email.split('@')[0] : 'Usuario')
+      displayName: fbUser.displayName || (fbUser.email ? fbUser.email.split('@')[0] : 'Usuario'),
+      photoUrl: fbUser.photoURL || null
     });
     
     const newHouseholdId = created.data.household_insert.id;
@@ -202,6 +222,8 @@ export const getHouseholdMembers = async (householdId: string): Promise<Househol
     id: u.uid,
     email: u.email,
     displayName: u.displayName || (u.email ? u.email.split('@')[0] : 'Usuario'),
+    photoUrl: u.photoUrl || null,
+    photoURL: u.photoUrl || null,
     memberSlot: u.memberSlot || null,
     createdAt: u.createdAt
   }));

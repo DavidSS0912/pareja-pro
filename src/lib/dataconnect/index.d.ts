@@ -151,6 +151,7 @@ export interface CreateHouseholdAndUserData {
 export interface CreateHouseholdAndUserVariables {
   email: string;
   displayName: string;
+  photoUrl?: string | null;
 }
 
 export interface CreateInvitationData {
@@ -377,6 +378,7 @@ export interface GetCurrentUserData {
     uid: string;
     email: string;
     displayName?: string | null;
+    photoUrl?: string | null;
     householdId: UUIDString;
     memberSlot?: MemberSlot | null;
   } & User_Key;
@@ -446,6 +448,7 @@ export interface GetHouseholdAccountsData {
     uid: string;
     email: string;
     displayName?: string | null;
+    photoUrl?: string | null;
     memberSlot?: MemberSlot | null;
   } & User_Key)[];
 }
@@ -459,6 +462,7 @@ export interface GetHouseholdMembersData {
     uid: string;
     email: string;
     displayName?: string | null;
+    photoUrl?: string | null;
     memberSlot?: MemberSlot | null;
     createdAt: TimestampString;
   } & User_Key)[];
@@ -919,6 +923,15 @@ export interface UpdateSharedExpenseWithProrationVariables {
   categoryId?: UUIDString | null;
 }
 
+export interface UpdateUserProfileData {
+  user_update?: User_Key | null;
+}
+
+export interface UpdateUserProfileVariables {
+  displayName?: string | null;
+  photoUrl?: string | null;
+}
+
 export interface UpsertExchangeRateData {
   exchangeRate_upsert: ExchangeRate_Key;
 }
@@ -1365,6 +1378,18 @@ export const backfillMemberSlotsRef: BackfillMemberSlotsRef;
 
 export function backfillMemberSlots(): MutationPromise<BackfillMemberSlotsData, undefined>;
 export function backfillMemberSlots(dc: DataConnect): MutationPromise<BackfillMemberSlotsData, undefined>;
+
+interface UpdateUserProfileRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars?: UpdateUserProfileVariables): MutationRef<UpdateUserProfileData, UpdateUserProfileVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars?: UpdateUserProfileVariables): MutationRef<UpdateUserProfileData, UpdateUserProfileVariables>;
+  operationName: string;
+}
+export const updateUserProfileRef: UpdateUserProfileRef;
+
+export function updateUserProfile(vars?: UpdateUserProfileVariables): MutationPromise<UpdateUserProfileData, UpdateUserProfileVariables>;
+export function updateUserProfile(dc: DataConnect, vars?: UpdateUserProfileVariables): MutationPromise<UpdateUserProfileData, UpdateUserProfileVariables>;
 
 interface GetHouseholdAccountsRef {
   /* Allow users to create refs without passing in DataConnect */

@@ -205,10 +205,10 @@ export function SettlementView({ data, calc, methods }: { data?: any; calc?: any
                 <div key={exp.id} className="flex justify-between items-center p-4 bg-rose-50/50 hover:bg-rose-50 rounded-2xl border border-rose-100/50 transition-colors group">
                   <div className="flex items-center gap-4">
                     <div className={`w-10 h-10 rounded-full ${payer?.avatar || 'bg-slate-300'} flex items-center justify-center text-white font-bold overflow-hidden shrink-0`}>
-                      {payer?.photoURL ? (
+                      {(payer?.photoURL || payer?.photoUrl) ? (
                         <>
                           <img 
-                            src={payer.photoURL} 
+                            src={payer.photoURL || payer.photoUrl} 
                             alt={payerName} 
                             referrerPolicy="no-referrer"
                             className="w-full h-full object-cover rounded-full" 

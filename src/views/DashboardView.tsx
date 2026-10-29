@@ -221,15 +221,15 @@ export function DashboardView({ data, calc, methods }) {
                 <div key={user.id} className="flex items-center justify-between p-3 bg-white/60 rounded-xl border border-white/80 shadow-sm">
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-full ${user?.avatar || 'bg-slate-200'} flex items-center justify-center text-slate-700 font-bold shadow-sm overflow-hidden border-2 border-white`}>
-                      {user?.photoURL ? (
+                      {(user?.photoURL || user?.photoUrl) ? (
                         <img 
-                          src={user.photoURL} 
-                          alt={user?.name} 
+                          src={user.photoURL || user.photoUrl} 
+                          alt={user?.name || user?.displayName || 'Usuario'} 
                           referrerPolicy="no-referrer"
                           className="w-full h-full object-cover" 
                         />
                       ) : (
-                        user?.name?.[0]
+                        user?.name?.[0] || user?.displayName?.[0] || 'U'
                       )}
                     </div>
                     <div>
@@ -384,15 +384,15 @@ export function DashboardView({ data, calc, methods }) {
                            )}
                         </div>
                         <div className={`w-9 h-9 rounded-full ${user?.avatar || (isTransfer ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-700')} flex items-center justify-center font-bold text-xs shadow-sm border border-white overflow-hidden`}>
-                          {user?.photoURL ? (
+                          {(user?.photoURL || user?.photoUrl) ? (
                             <img 
-                              src={user.photoURL} 
-                              alt={user?.name} 
+                              src={user.photoURL || user.photoUrl} 
+                              alt={user?.name || user?.displayName || 'Usuario'} 
                               referrerPolicy="no-referrer"
                               className="w-full h-full object-cover" 
                             />
                           ) : (
-                            user?.name?.[0] || (isTransfer ? '⇄' : 'U')
+                            user?.name?.[0] || user?.displayName?.[0] || (isTransfer ? '⇄' : 'U')
                           )}
                         </div>
                         <div>

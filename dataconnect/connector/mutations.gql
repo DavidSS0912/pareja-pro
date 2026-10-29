@@ -557,7 +557,8 @@ mutation UpsertExchangeRate(
 
 mutation CreateHouseholdAndUser(
   $email: String!,
-  $displayName: String!
+  $displayName: String!,
+  $photoUrl: String = null
 ) @auth(level: USER) @transaction {
   household_insert(data: {
     name: "Mi Hogar"
@@ -567,6 +568,7 @@ mutation CreateHouseholdAndUser(
     uid_expr: "auth.uid",
     email: $email,
     displayName: $displayName,
+    photoUrl: $photoUrl,
     householdId_expr: "response.household_insert.id",
     memberSlot: USER_A
   })
@@ -1222,5 +1224,18 @@ mutation BackfillMemberSlots @auth(level: NO_ACCESS) {
   user_updateMany(
     where: { memberSlot: { eq: null } },
     data: { memberSlot: USER_A }
+  )
+}
+
+mutation UpdateUserProfile(
+  $displayName: String,
+  $photoUrl: String
+) @auth(level: USER) {
+  user_update(
+    key: { uid_expr: "auth.uid" },
+    data: {
+      displayName: $displayName,
+      photoUrl: $photoUrl
+    }
   )
 }

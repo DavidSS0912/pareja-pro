@@ -164,7 +164,7 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
             <div className="flex items-center gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-100">
               <div className="w-16 h-16 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center text-slate-500 font-bold text-xl flex-shrink-0">
                 {user?.photoURL ? (
-                  <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover" />
+                  <img src={user.photoURL} alt="Avatar" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                 ) : (
                   <span>{(user?.displayName || user?.email || 'U').charAt(0).toUpperCase()}</span>
                 )}

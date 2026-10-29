@@ -107,7 +107,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ data: propData }) => {
         displayName: m.displayName || (m.email ? m.email.split('@')[0] : 'Usuario'),
         email: m.email,
         memberSlot: m.memberSlot,
-        photoURL: m.id === user?.uid ? user.photoURL : null,
+        photoURL: m.photoURL || m.photoUrl || (m.id === user?.uid ? user.photoURL : null),
+        photoUrl: m.photoURL || m.photoUrl || (m.id === user?.uid ? user.photoURL : null),
         createdAt: m.createdAt
       })));
     } catch (err: any) {
@@ -160,10 +161,15 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ data: propData }) => {
               >
                 <div className="flex items-center gap-3.5">
                   <div className="w-11 h-11 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-base overflow-hidden border border-indigo-200">
-                    {u.photoURL ? (
-                      <img src={u.photoURL} alt={u.name} className="w-full h-full object-cover" />
+                    {(u.photoURL || u.photoUrl) ? (
+                      <img
+                        src={u.photoURL || u.photoUrl}
+                        alt={u.displayName || u.name || 'Usuario'}
+                        referrerPolicy="no-referrer"
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
-                      u.name?.charAt(0)?.toUpperCase() || <User size={20} />
+                      (u.displayName || u.name)?.charAt(0)?.toUpperCase() || <User size={20} />
                     )}
                   </div>
                   <div>

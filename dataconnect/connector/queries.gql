@@ -22,6 +22,7 @@ query GetHouseholdAccounts($householdId: UUID!) @auth(level: USER) {
     uid
     email
     displayName
+    photoUrl
     memberSlot
   }
 }
@@ -285,6 +286,7 @@ query GetCurrentUser @auth(level: USER) {
     uid
     email
     displayName
+    photoUrl
     householdId
     memberSlot
   }
@@ -388,6 +390,7 @@ query GetHouseholdMembers($householdId: UUID!) @auth(level: USER) {
     uid
     email
     displayName
+    photoUrl
     memberSlot
     createdAt
   }
