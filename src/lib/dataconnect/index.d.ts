@@ -194,6 +194,33 @@ export interface CreateJournalWithEntriesVariables {
   categoryId?: UUIDString | null;
 }
 
+export interface CreateProjectContributionData {
+  projectContribution_insert: ProjectContribution_Key;
+}
+
+export interface CreateProjectContributionVariables {
+  projectId: UUIDString;
+  householdId: UUIDString;
+  amount: number;
+  date: DateString;
+  notes?: string | null;
+  sourceAccountId?: UUIDString | null;
+  targetAccountId?: UUIDString | null;
+  userId?: string | null;
+}
+
+export interface CreateProjectMilestoneData {
+  projectMilestone_insert: ProjectMilestone_Key;
+}
+
+export interface CreateProjectMilestoneVariables {
+  projectId: UUIDString;
+  householdId: UUIDString;
+  title: string;
+  amountThreshold?: number | null;
+  dateThreshold?: DateString | null;
+}
+
 export interface CreateSavingsProjectData {
   savingsProject_insert: SavingsProject_Key;
 }
@@ -291,6 +318,15 @@ export interface DeleteJournalData {
 
 export interface DeleteJournalVariables {
   journalId: UUIDString;
+  householdId: UUIDString;
+}
+
+export interface DeleteProjectMilestoneData {
+  projectMilestone_delete?: ProjectMilestone_Key | null;
+}
+
+export interface DeleteProjectMilestoneVariables {
+  milestoneId: UUIDString;
   householdId: UUIDString;
 }
 
@@ -637,6 +673,50 @@ export interface GetPendingInvitationsVariables {
   householdId: UUIDString;
 }
 
+export interface GetProjectContributionsByHouseholdData {
+  projectContributions: ({
+    id: UUIDString;
+    amount: number;
+    date: DateString;
+    notes?: string | null;
+    createdAt: TimestampString;
+    sourceAccountId?: UUIDString | null;
+    targetAccountId?: UUIDString | null;
+    savingsProject: {
+      id: UUIDString;
+      name: string;
+    } & SavingsProject_Key;
+    user: {
+      uid: string;
+      id: string;
+      displayName?: string | null;
+      photoUrl?: string | null;
+    } & User_Key;
+  } & ProjectContribution_Key)[];
+}
+
+export interface GetProjectContributionsByHouseholdVariables {
+  householdId: UUIDString;
+}
+
+export interface GetProjectMilestonesByHouseholdData {
+  projectMilestones: ({
+    id: UUIDString;
+    title: string;
+    amountThreshold?: number | null;
+    dateThreshold?: DateString | null;
+    isCompleted: boolean;
+    savingsProject: {
+      id: UUIDString;
+    } & SavingsProject_Key;
+    createdAt: TimestampString;
+  } & ProjectMilestone_Key)[];
+}
+
+export interface GetProjectMilestonesByHouseholdVariables {
+  householdId: UUIDString;
+}
+
 export interface GetSavingsProjectsData {
   savingsProjects: ({
     id: UUIDString;
@@ -735,6 +815,16 @@ export interface NegativeEntriesData {
   } & Entry_Key)[];
 }
 
+export interface ProjectContribution_Key {
+  id: UUIDString;
+  __typename?: 'ProjectContribution_Key';
+}
+
+export interface ProjectMilestone_Key {
+  id: UUIDString;
+  __typename?: 'ProjectMilestone_Key';
+}
+
 export interface ReassignEntriesData {
   entry_updateMany: number;
 }
@@ -808,6 +898,16 @@ export interface Settlement_Key {
 export interface Tag_Key {
   id: UUIDString;
   __typename?: 'Tag_Key';
+}
+
+export interface ToggleProjectMilestoneData {
+  projectMilestone_update?: ProjectMilestone_Key | null;
+}
+
+export interface ToggleProjectMilestoneVariables {
+  milestoneId: UUIDString;
+  householdId: UUIDString;
+  isCompleted: boolean;
 }
 
 export interface UnbalancedJournalsData {
@@ -888,6 +988,19 @@ export interface UpdateJournalWithEntriesVariables {
   isInternalTransfer?: boolean | null;
   incomeCategoryType?: string | null;
   categoryId?: UUIDString | null;
+}
+
+export interface UpdateProjectMilestoneData {
+  projectMilestone_update?: ProjectMilestone_Key | null;
+}
+
+export interface UpdateProjectMilestoneVariables {
+  milestoneId: UUIDString;
+  householdId: UUIDString;
+  isCompleted?: boolean | null;
+  title?: string | null;
+  amountThreshold?: number | null;
+  dateThreshold?: DateString | null;
 }
 
 export interface UpdateProjectProgressData {
@@ -1135,6 +1248,18 @@ export const updateProjectProgressRef: UpdateProjectProgressRef;
 export function updateProjectProgress(vars: UpdateProjectProgressVariables): MutationPromise<UpdateProjectProgressData, UpdateProjectProgressVariables>;
 export function updateProjectProgress(dc: DataConnect, vars: UpdateProjectProgressVariables): MutationPromise<UpdateProjectProgressData, UpdateProjectProgressVariables>;
 
+interface CreateProjectContributionRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateProjectContributionVariables): MutationRef<CreateProjectContributionData, CreateProjectContributionVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: CreateProjectContributionVariables): MutationRef<CreateProjectContributionData, CreateProjectContributionVariables>;
+  operationName: string;
+}
+export const createProjectContributionRef: CreateProjectContributionRef;
+
+export function createProjectContribution(vars: CreateProjectContributionVariables): MutationPromise<CreateProjectContributionData, CreateProjectContributionVariables>;
+export function createProjectContribution(dc: DataConnect, vars: CreateProjectContributionVariables): MutationPromise<CreateProjectContributionData, CreateProjectContributionVariables>;
+
 interface UpdateSavingsProjectRef {
   /* Allow users to create refs without passing in DataConnect */
   (vars: UpdateSavingsProjectVariables): MutationRef<UpdateSavingsProjectData, UpdateSavingsProjectVariables>;
@@ -1146,6 +1271,54 @@ export const updateSavingsProjectRef: UpdateSavingsProjectRef;
 
 export function updateSavingsProject(vars: UpdateSavingsProjectVariables): MutationPromise<UpdateSavingsProjectData, UpdateSavingsProjectVariables>;
 export function updateSavingsProject(dc: DataConnect, vars: UpdateSavingsProjectVariables): MutationPromise<UpdateSavingsProjectData, UpdateSavingsProjectVariables>;
+
+interface CreateProjectMilestoneRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateProjectMilestoneVariables): MutationRef<CreateProjectMilestoneData, CreateProjectMilestoneVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: CreateProjectMilestoneVariables): MutationRef<CreateProjectMilestoneData, CreateProjectMilestoneVariables>;
+  operationName: string;
+}
+export const createProjectMilestoneRef: CreateProjectMilestoneRef;
+
+export function createProjectMilestone(vars: CreateProjectMilestoneVariables): MutationPromise<CreateProjectMilestoneData, CreateProjectMilestoneVariables>;
+export function createProjectMilestone(dc: DataConnect, vars: CreateProjectMilestoneVariables): MutationPromise<CreateProjectMilestoneData, CreateProjectMilestoneVariables>;
+
+interface UpdateProjectMilestoneRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateProjectMilestoneVariables): MutationRef<UpdateProjectMilestoneData, UpdateProjectMilestoneVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: UpdateProjectMilestoneVariables): MutationRef<UpdateProjectMilestoneData, UpdateProjectMilestoneVariables>;
+  operationName: string;
+}
+export const updateProjectMilestoneRef: UpdateProjectMilestoneRef;
+
+export function updateProjectMilestone(vars: UpdateProjectMilestoneVariables): MutationPromise<UpdateProjectMilestoneData, UpdateProjectMilestoneVariables>;
+export function updateProjectMilestone(dc: DataConnect, vars: UpdateProjectMilestoneVariables): MutationPromise<UpdateProjectMilestoneData, UpdateProjectMilestoneVariables>;
+
+interface ToggleProjectMilestoneRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: ToggleProjectMilestoneVariables): MutationRef<ToggleProjectMilestoneData, ToggleProjectMilestoneVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: ToggleProjectMilestoneVariables): MutationRef<ToggleProjectMilestoneData, ToggleProjectMilestoneVariables>;
+  operationName: string;
+}
+export const toggleProjectMilestoneRef: ToggleProjectMilestoneRef;
+
+export function toggleProjectMilestone(vars: ToggleProjectMilestoneVariables): MutationPromise<ToggleProjectMilestoneData, ToggleProjectMilestoneVariables>;
+export function toggleProjectMilestone(dc: DataConnect, vars: ToggleProjectMilestoneVariables): MutationPromise<ToggleProjectMilestoneData, ToggleProjectMilestoneVariables>;
+
+interface DeleteProjectMilestoneRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: DeleteProjectMilestoneVariables): MutationRef<DeleteProjectMilestoneData, DeleteProjectMilestoneVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: DeleteProjectMilestoneVariables): MutationRef<DeleteProjectMilestoneData, DeleteProjectMilestoneVariables>;
+  operationName: string;
+}
+export const deleteProjectMilestoneRef: DeleteProjectMilestoneRef;
+
+export function deleteProjectMilestone(vars: DeleteProjectMilestoneVariables): MutationPromise<DeleteProjectMilestoneData, DeleteProjectMilestoneVariables>;
+export function deleteProjectMilestone(dc: DataConnect, vars: DeleteProjectMilestoneVariables): MutationPromise<DeleteProjectMilestoneData, DeleteProjectMilestoneVariables>;
 
 interface CreateExternalAssetRef {
   /* Allow users to create refs without passing in DataConnect */
@@ -1482,6 +1655,30 @@ export const getSavingsProjectsRef: GetSavingsProjectsRef;
 
 export function getSavingsProjects(vars: GetSavingsProjectsVariables, options?: ExecuteQueryOptions): QueryPromise<GetSavingsProjectsData, GetSavingsProjectsVariables>;
 export function getSavingsProjects(dc: DataConnect, vars: GetSavingsProjectsVariables, options?: ExecuteQueryOptions): QueryPromise<GetSavingsProjectsData, GetSavingsProjectsVariables>;
+
+interface GetProjectContributionsByHouseholdRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetProjectContributionsByHouseholdVariables): QueryRef<GetProjectContributionsByHouseholdData, GetProjectContributionsByHouseholdVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetProjectContributionsByHouseholdVariables): QueryRef<GetProjectContributionsByHouseholdData, GetProjectContributionsByHouseholdVariables>;
+  operationName: string;
+}
+export const getProjectContributionsByHouseholdRef: GetProjectContributionsByHouseholdRef;
+
+export function getProjectContributionsByHousehold(vars: GetProjectContributionsByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetProjectContributionsByHouseholdData, GetProjectContributionsByHouseholdVariables>;
+export function getProjectContributionsByHousehold(dc: DataConnect, vars: GetProjectContributionsByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetProjectContributionsByHouseholdData, GetProjectContributionsByHouseholdVariables>;
+
+interface GetProjectMilestonesByHouseholdRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetProjectMilestonesByHouseholdVariables): QueryRef<GetProjectMilestonesByHouseholdData, GetProjectMilestonesByHouseholdVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetProjectMilestonesByHouseholdVariables): QueryRef<GetProjectMilestonesByHouseholdData, GetProjectMilestonesByHouseholdVariables>;
+  operationName: string;
+}
+export const getProjectMilestonesByHouseholdRef: GetProjectMilestonesByHouseholdRef;
+
+export function getProjectMilestonesByHousehold(vars: GetProjectMilestonesByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetProjectMilestonesByHouseholdData, GetProjectMilestonesByHouseholdVariables>;
+export function getProjectMilestonesByHousehold(dc: DataConnect, vars: GetProjectMilestonesByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetProjectMilestonesByHouseholdData, GetProjectMilestonesByHouseholdVariables>;
 
 interface GetExternalAssetsRef {
   /* Allow users to create refs without passing in DataConnect */

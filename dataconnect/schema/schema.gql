@@ -171,6 +171,31 @@ type SavingsProject @table {
   account: Account
 }
 
+# Historial de Aportaciones a Proyectos
+type ProjectContribution @table {
+  savingsProject: SavingsProject!
+  user: User!
+  amount: Float! @col(dataType: "numeric(14,2)")
+  date: Date!
+  notes: String
+  sourceAccount: Account
+  targetAccount: Account
+  household: Household!
+  createdAt: Timestamp! @default(expr: "request.time")
+}
+
+# Hitos y Tareas de Proyectos de Ahorro
+type ProjectMilestone @table {
+  savingsProject: SavingsProject!
+  title: String!
+  amountThreshold: Float @col(dataType: "numeric(14,2)")
+  dateThreshold: Date
+  isCompleted: Boolean! @default(value: false)
+  household: Household!
+  createdAt: Timestamp! @default(expr: "request.time")
+}
+
+
 # Activo externo/ilíquido (casa, auto, inversiones externas)
 type ExternalAsset @table {
   name: String!

@@ -108,6 +108,7 @@ export default function App() {
     updateAccount: state.updateAccount,
     deleteAccount: state.deleteAccount,
     payCreditCard: state.payCreditCard,
+    createTransfer: state.createTransfer,
     addAsset: state.addAsset,
     updateAsset: state.updateAsset,
     deleteAsset: state.deleteAsset,
@@ -789,14 +790,28 @@ export default function App() {
               } else if (action.type === 'INCOME') {
                 await methods.addIncome(action.payload);
               } else if (action.type === 'TRANSFER') {
-                await methods.payCreditCard(
-                  action.payload.sourceAccountId,
-                  action.payload.targetAccountId,
-                  action.payload.amount,
-                  action.payload.date,
-                  action.payload.ownerUid,
-                  action.payload.isShared
-                );
+                const targetAccount = (data.accounts || []).find((a: any) => a.id === action.payload.targetAccountId);
+                const isLiability = targetAccount?.type === 'LIABILITY' || targetAccount?.type === 'CREDIT_CARD';
+                if (isLiability) {
+                  await methods.payCreditCard(
+                    action.payload.sourceAccountId,
+                    action.payload.targetAccountId,
+                    action.payload.amount,
+                    action.payload.date,
+                    action.payload.ownerUid,
+                    action.payload.isShared
+                  );
+                } else {
+                  await methods.createTransfer(
+                    action.payload.sourceAccountId,
+                    action.payload.targetAccountId,
+                    action.payload.amount,
+                    action.payload.date,
+                    action.payload.ownerUid,
+                    action.payload.isShared,
+                    (action.payload as any).description || (action.payload as any).note
+                  );
+                }
               }
               setIsMovementModalOpen(false);
             }}

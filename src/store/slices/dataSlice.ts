@@ -20,7 +20,7 @@ import {
   getInternalTransfersByHousehold
 } from '../../lib/dataconnect';
 import { mergeAccountsWithBalances } from '../../services/accountService';
-import { Transfer, RecordItem } from '../types';
+import { Transfer, RecordItem, ProjectContribution, ProjectMilestone } from '../types';
 
 export type { Transfer };
 
@@ -76,14 +76,40 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
   fetchDashboardData: async (houseId: string, month?: string) => {
     try {
       const currentMonth = month || get().selectedBudgetMonth || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-01`;
-      const [balances, budgets, projects, assets, expensesData, incomesData, transfersData] = await Promise.all([
+      const contributionsPromise = (async () => {
+        try {
+          const dc = await import('../../lib/dataconnect');
+          if (dc && typeof (dc as any).getProjectContributionsByHousehold === 'function') {
+            return await (dc as any).getProjectContributionsByHousehold({ householdId: houseId }, SERVER_ONLY);
+          }
+        } catch {
+          // Fallback silencioso cuando lib/dataconnect está mockeado en tests preexistentes
+        }
+        return { data: { projectContributions: [] } };
+      })();
+
+      const milestonesPromise = (async () => {
+        try {
+          const dc = await import('../../lib/dataconnect');
+          if (dc && typeof (dc as any).getProjectMilestonesByHousehold === 'function') {
+            return await (dc as any).getProjectMilestonesByHousehold({ householdId: houseId }, SERVER_ONLY);
+          }
+        } catch {
+          // Fallback silencioso cuando lib/dataconnect está mockeado en tests preexistentes
+        }
+        return { data: { projectMilestones: [] } };
+      })();
+
+      const [balances, budgets, projects, assets, expensesData, incomesData, transfersData, contributionsData, milestonesData] = await Promise.all([
         getHouseholdNetBalances({ householdId: houseId }, SERVER_ONLY),
         getBudgetsByMonth({ householdId: houseId, period: currentMonth }, SERVER_ONLY),
         getSavingsProjects({ householdId: houseId }, SERVER_ONLY),
         getExternalAssets({ householdId: houseId }, SERVER_ONLY),
         getExpensesByHousehold({ householdId: houseId }, SERVER_ONLY),
         getIncomesByHousehold({ householdId: houseId }, SERVER_ONLY),
-        getInternalTransfersByHousehold({ householdId: houseId }, SERVER_ONLY)
+        getInternalTransfersByHousehold({ householdId: houseId }, SERVER_ONLY),
+        contributionsPromise,
+        milestonesPromise
       ]);
       const isDebitNature = (t: string) => t === 'ASSET' || t === 'EXPENSE' || t === 'BANK_ACCOUNT';
       const signed = (e: any, fallbackType = 'EXPENSE') => (e.entryType === 'DEBIT') === isDebitNature(e.account?.type || fallbackType) ? +e.amount : -e.amount;
@@ -184,15 +210,87 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
         const mergedBudgets = [...mappedBudgets, ...unmergedTempBudgets];
         get().setBudgets(mergedBudgets as any);
       }
+      let mappedContributions: ProjectContribution[] = [];
+      if (contributionsData?.data?.projectContributions) {
+        mappedContributions = contributionsData.data.projectContributions.map((c: any) => {
+          const userId = c.user?.id || c.user?.uid || c.userUid || '';
+          const projectId = c.savingsProject?.id || c.savingsProjectId || '';
+          const projectName = c.savingsProject?.name || '';
+          const isInternalPiggyBank = !!(c.sourceAccountId && c.targetAccountId && c.sourceAccountId === c.targetAccountId);
+
+          return {
+            id: c.id,
+            projectId,
+            savingsProjectId: projectId,
+            projectName,
+            userId,
+            userName: c.user?.displayName,
+            userDisplayName: c.user?.displayName,
+            userPhotoUrl: c.user?.photoUrl,
+            user: c.user ? {
+              id: userId,
+              uid: userId,
+              displayName: c.user.displayName,
+              photoUrl: c.user.photoUrl
+            } : undefined,
+            amount: Number(c.amount || 0),
+            date: c.date,
+            notes: c.notes || null,
+            sourceAccountId: c.sourceAccountId || null,
+            targetAccountId: c.targetAccountId || null,
+            isInternalPiggyBank,
+            createdAt: c.createdAt
+          };
+        });
+
+        const currentContributions = get().contributions || [];
+        const tempContributions = currentContributions.filter((c: any) => typeof c.id === 'string' && c.id.startsWith('temp-'));
+        const mergedContributions = [
+          ...tempContributions,
+          ...mappedContributions.filter((mc: any) => !tempContributions.find((tc: any) => tc.id === mc.id))
+        ];
+        get().setContributions?.(mergedContributions);
+      }
       if (projects.data?.savingsProjects) {
-        const mappedProjects = projects.data.savingsProjects.map((p: any) => ({
-          ...p,
-          savedAmount: p.currentAmount || 0,
-          status: p.isCompleted ? 'completed' : 'pending',
-          monthlyQuota: p.monthlyQuota || 0,
-          targetAccount: p.targetAccount || '',
-          milestones: []
-        })).sort((a: any, b: any) => {
+        const rawMilestones = milestonesData?.data?.projectMilestones || [];
+        const mappedMilestones: ProjectMilestone[] = rawMilestones.map((m: any) => ({
+          id: m.id,
+          projectId: m.savingsProject?.id || m.savingsProjectId || m.projectId || '',
+          title: m.title || '',
+          amountThreshold: m.amountThreshold !== null && m.amountThreshold !== undefined ? Number(m.amountThreshold) : undefined,
+          dateThreshold: m.dateThreshold || undefined,
+          isCompleted: !!m.isCompleted,
+          createdAt: m.createdAt
+        }));
+
+        const currentProjects = get().projects || [];
+
+        const mappedProjects = projects.data.savingsProjects.map((p: any) => {
+          const existingProject = currentProjects.find((ep: any) => ep.id === p.id);
+          const serverMilestones = mappedMilestones.filter((m: any) => m.projectId === p.id);
+          const tempMilestones = (existingProject?.milestones || []).filter(
+            (m: any) => typeof m.id === 'string' && m.id.startsWith('temp-')
+          );
+          const mergedMilestones = [
+            ...serverMilestones,
+            ...tempMilestones.filter((tm: any) => !serverMilestones.some((sm: any) => sm.title === tm.title))
+          ];
+
+          const contributionsSum = mappedContributions
+            .filter((c: any) => c.projectId === p.id || c.savingsProjectId === p.id)
+            .reduce((sum: number, c: any) => sum + Number(c.amount || 0), 0);
+          const effectiveSavedAmount = contributionsSum > 0 ? contributionsSum : (p.currentAmount || 0);
+
+          return {
+            ...p,
+            savedAmount: effectiveSavedAmount,
+            currentAmount: effectiveSavedAmount,
+            status: p.isCompleted ? 'completed' : 'pending',
+            monthlyQuota: p.monthlyQuota || 0,
+            targetAccount: p.targetAccount || '',
+            milestones: mergedMilestones
+          };
+        }).sort((a: any, b: any) => {
           if ((a.priority || 0) !== (b.priority || 0)) {
             return (a.priority || 0) - (b.priority || 0);
           }

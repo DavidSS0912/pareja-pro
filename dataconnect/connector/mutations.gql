@@ -486,6 +486,42 @@ mutation UpdateProjectProgress(
   })
 }
 
+mutation CreateProjectContribution(
+  $projectId: UUID!,
+  $householdId: UUID!,
+  $amount: Float!,
+  $date: Date!,
+  $notes: String = null,
+  $sourceAccountId: UUID = null,
+  $targetAccountId: UUID = null,
+  $userId: String = null
+) @auth(level: USER) @transaction {
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId && vars.amount > 0",
+             message: "El usuario no pertenece a este hogar o el monto es inválido") {
+      household { id }
+    }
+    savingsProject(id: $projectId)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El proyecto de ahorro no pertenece a este hogar") {
+      household { id }
+    }
+  }
+
+  projectContribution_insert(data: {
+    savingsProjectId: $projectId,
+    userUid_expr: "vars.userId != null && vars.userId != '' ? vars.userId : auth.uid",
+    amount: $amount,
+    date: $date,
+    notes: $notes,
+    sourceAccountId: $sourceAccountId,
+    targetAccountId: $targetAccountId,
+    householdId: $householdId
+  })
+}
+
+
 mutation UpdateSavingsProject(
   $projectId: UUID!,
   $householdId: UUID!,
@@ -516,6 +552,107 @@ mutation UpdateSavingsProject(
     priority: $priority,
     isCompleted: $isCompleted
   })
+}
+
+mutation CreateProjectMilestone(
+  $projectId: UUID!,
+  $householdId: UUID!,
+  $title: String!,
+  $amountThreshold: Float = null,
+  $dateThreshold: Date = null
+) @auth(level: USER) @transaction {
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El usuario no pertenece a este hogar") {
+      household { id }
+    }
+    savingsProject(id: $projectId)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El proyecto de ahorro no pertenece a este hogar") {
+      household { id }
+    }
+  }
+
+  projectMilestone_insert(data: {
+    savingsProjectId: $projectId,
+    title: $title,
+    amountThreshold: $amountThreshold,
+    dateThreshold: $dateThreshold,
+    householdId: $householdId
+  })
+}
+
+mutation UpdateProjectMilestone(
+  $milestoneId: UUID!,
+  $householdId: UUID!,
+  $isCompleted: Boolean = null,
+  $title: String = null,
+  $amountThreshold: Float = null,
+  $dateThreshold: Date = null
+) @auth(level: USER) @transaction {
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El usuario no pertenece a este hogar") {
+      household { id }
+    }
+    projectMilestone(id: $milestoneId)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El hito no pertenece a este hogar") {
+      household { id }
+    }
+  }
+
+  projectMilestone_update(id: $milestoneId, data: {
+    isCompleted: $isCompleted,
+    title: $title,
+    amountThreshold: $amountThreshold,
+    dateThreshold: $dateThreshold
+  })
+}
+
+mutation ToggleProjectMilestone(
+  $milestoneId: UUID!,
+  $householdId: UUID!,
+  $isCompleted: Boolean!
+) @auth(level: USER) @transaction {
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El usuario no pertenece a este hogar") {
+      household { id }
+    }
+    projectMilestone(id: $milestoneId)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El hito no pertenece a este hogar") {
+      household { id }
+    }
+  }
+
+  projectMilestone_update(id: $milestoneId, data: {
+    isCompleted: $isCompleted
+  })
+}
+
+mutation DeleteProjectMilestone(
+  $milestoneId: UUID!,
+  $householdId: UUID!
+) @auth(level: USER) @transaction {
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El usuario no pertenece a este hogar") {
+      household { id }
+    }
+    projectMilestone(id: $milestoneId)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El hito no pertenece a este hogar") {
+      household { id }
+    }
+  }
+
+  projectMilestone_delete(id: $milestoneId)
 }
 
 mutation CreateExternalAsset(

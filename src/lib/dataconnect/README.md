@@ -14,6 +14,8 @@ This README will guide you through the process of using the generated JavaScript
   - [*GetBudgetsByMonth*](#getbudgetsbymonth)
   - [*GetUnassignedCash*](#getunassignedcash)
   - [*GetSavingsProjects*](#getsavingsprojects)
+  - [*GetProjectContributionsByHousehold*](#getprojectcontributionsbyhousehold)
+  - [*GetProjectMilestonesByHousehold*](#getprojectmilestonesbyhousehold)
   - [*GetExternalAssets*](#getexternalassets)
   - [*GetNetWorth*](#getnetworth)
   - [*GetLatestRate*](#getlatestrate)
@@ -46,7 +48,12 @@ This README will guide you through the process of using the generated JavaScript
   - [*DeleteSettlement*](#deletesettlement)
   - [*CreateSavingsProject*](#createsavingsproject)
   - [*UpdateProjectProgress*](#updateprojectprogress)
+  - [*CreateProjectContribution*](#createprojectcontribution)
   - [*UpdateSavingsProject*](#updatesavingsproject)
+  - [*CreateProjectMilestone*](#createprojectmilestone)
+  - [*UpdateProjectMilestone*](#updateprojectmilestone)
+  - [*ToggleProjectMilestone*](#toggleprojectmilestone)
+  - [*DeleteProjectMilestone*](#deleteprojectmilestone)
   - [*CreateExternalAsset*](#createexternalasset)
   - [*UpdateExternalAsset*](#updateexternalasset)
   - [*UpsertExchangeRate*](#upsertexchangerate)
@@ -837,6 +844,252 @@ console.log(data.savingsProjects);
 executeQuery(ref).then((response) => {
   const data = response.data;
   console.log(data.savingsProjects);
+});
+```
+
+## GetProjectContributionsByHousehold
+You can execute the `GetProjectContributionsByHousehold` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+getProjectContributionsByHousehold(vars: GetProjectContributionsByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetProjectContributionsByHouseholdData, GetProjectContributionsByHouseholdVariables>;
+
+interface GetProjectContributionsByHouseholdRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetProjectContributionsByHouseholdVariables): QueryRef<GetProjectContributionsByHouseholdData, GetProjectContributionsByHouseholdVariables>;
+}
+export const getProjectContributionsByHouseholdRef: GetProjectContributionsByHouseholdRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
+```typescript
+getProjectContributionsByHousehold(dc: DataConnect, vars: GetProjectContributionsByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetProjectContributionsByHouseholdData, GetProjectContributionsByHouseholdVariables>;
+
+interface GetProjectContributionsByHouseholdRef {
+  ...
+  (dc: DataConnect, vars: GetProjectContributionsByHouseholdVariables): QueryRef<GetProjectContributionsByHouseholdData, GetProjectContributionsByHouseholdVariables>;
+}
+export const getProjectContributionsByHouseholdRef: GetProjectContributionsByHouseholdRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the getProjectContributionsByHouseholdRef:
+```typescript
+const name = getProjectContributionsByHouseholdRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `GetProjectContributionsByHousehold` query requires an argument of type `GetProjectContributionsByHouseholdVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface GetProjectContributionsByHouseholdVariables {
+  householdId: UUIDString;
+}
+```
+### Return Type
+Recall that executing the `GetProjectContributionsByHousehold` query returns a `QueryPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `GetProjectContributionsByHouseholdData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface GetProjectContributionsByHouseholdData {
+  projectContributions: ({
+    id: UUIDString;
+    amount: number;
+    date: DateString;
+    notes?: string | null;
+    createdAt: TimestampString;
+    sourceAccountId?: UUIDString | null;
+    targetAccountId?: UUIDString | null;
+    savingsProject: {
+      id: UUIDString;
+      name: string;
+    } & SavingsProject_Key;
+    user: {
+      uid: string;
+      id: string;
+      displayName?: string | null;
+      photoUrl?: string | null;
+    } & User_Key;
+  } & ProjectContribution_Key)[];
+}
+```
+### Using `GetProjectContributionsByHousehold`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, getProjectContributionsByHousehold, GetProjectContributionsByHouseholdVariables } from '@pareja-pro/dataconnect';
+
+// The `GetProjectContributionsByHousehold` query requires an argument of type `GetProjectContributionsByHouseholdVariables`:
+const getProjectContributionsByHouseholdVars: GetProjectContributionsByHouseholdVariables = {
+  householdId: ..., 
+};
+
+// Call the `getProjectContributionsByHousehold()` function to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await getProjectContributionsByHousehold(getProjectContributionsByHouseholdVars);
+// Variables can be defined inline as well.
+const { data } = await getProjectContributionsByHousehold({ householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await getProjectContributionsByHousehold(dataConnect, getProjectContributionsByHouseholdVars);
+
+console.log(data.projectContributions);
+
+// Or, you can use the `Promise` API.
+getProjectContributionsByHousehold(getProjectContributionsByHouseholdVars).then((response) => {
+  const data = response.data;
+  console.log(data.projectContributions);
+});
+```
+
+### Using `GetProjectContributionsByHousehold`'s `QueryRef` function
+
+```typescript
+import { getDataConnect, executeQuery } from 'firebase/data-connect';
+import { connectorConfig, getProjectContributionsByHouseholdRef, GetProjectContributionsByHouseholdVariables } from '@pareja-pro/dataconnect';
+
+// The `GetProjectContributionsByHousehold` query requires an argument of type `GetProjectContributionsByHouseholdVariables`:
+const getProjectContributionsByHouseholdVars: GetProjectContributionsByHouseholdVariables = {
+  householdId: ..., 
+};
+
+// Call the `getProjectContributionsByHouseholdRef()` function to get a reference to the query.
+const ref = getProjectContributionsByHouseholdRef(getProjectContributionsByHouseholdVars);
+// Variables can be defined inline as well.
+const ref = getProjectContributionsByHouseholdRef({ householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the `QueryRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = getProjectContributionsByHouseholdRef(dataConnect, getProjectContributionsByHouseholdVars);
+
+// Call `executeQuery()` on the reference to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeQuery(ref);
+
+console.log(data.projectContributions);
+
+// Or, you can use the `Promise` API.
+executeQuery(ref).then((response) => {
+  const data = response.data;
+  console.log(data.projectContributions);
+});
+```
+
+## GetProjectMilestonesByHousehold
+You can execute the `GetProjectMilestonesByHousehold` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+getProjectMilestonesByHousehold(vars: GetProjectMilestonesByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetProjectMilestonesByHouseholdData, GetProjectMilestonesByHouseholdVariables>;
+
+interface GetProjectMilestonesByHouseholdRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetProjectMilestonesByHouseholdVariables): QueryRef<GetProjectMilestonesByHouseholdData, GetProjectMilestonesByHouseholdVariables>;
+}
+export const getProjectMilestonesByHouseholdRef: GetProjectMilestonesByHouseholdRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
+```typescript
+getProjectMilestonesByHousehold(dc: DataConnect, vars: GetProjectMilestonesByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetProjectMilestonesByHouseholdData, GetProjectMilestonesByHouseholdVariables>;
+
+interface GetProjectMilestonesByHouseholdRef {
+  ...
+  (dc: DataConnect, vars: GetProjectMilestonesByHouseholdVariables): QueryRef<GetProjectMilestonesByHouseholdData, GetProjectMilestonesByHouseholdVariables>;
+}
+export const getProjectMilestonesByHouseholdRef: GetProjectMilestonesByHouseholdRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the getProjectMilestonesByHouseholdRef:
+```typescript
+const name = getProjectMilestonesByHouseholdRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `GetProjectMilestonesByHousehold` query requires an argument of type `GetProjectMilestonesByHouseholdVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface GetProjectMilestonesByHouseholdVariables {
+  householdId: UUIDString;
+}
+```
+### Return Type
+Recall that executing the `GetProjectMilestonesByHousehold` query returns a `QueryPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `GetProjectMilestonesByHouseholdData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface GetProjectMilestonesByHouseholdData {
+  projectMilestones: ({
+    id: UUIDString;
+    title: string;
+    amountThreshold?: number | null;
+    dateThreshold?: DateString | null;
+    isCompleted: boolean;
+    savingsProject: {
+      id: UUIDString;
+    } & SavingsProject_Key;
+    createdAt: TimestampString;
+  } & ProjectMilestone_Key)[];
+}
+```
+### Using `GetProjectMilestonesByHousehold`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, getProjectMilestonesByHousehold, GetProjectMilestonesByHouseholdVariables } from '@pareja-pro/dataconnect';
+
+// The `GetProjectMilestonesByHousehold` query requires an argument of type `GetProjectMilestonesByHouseholdVariables`:
+const getProjectMilestonesByHouseholdVars: GetProjectMilestonesByHouseholdVariables = {
+  householdId: ..., 
+};
+
+// Call the `getProjectMilestonesByHousehold()` function to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await getProjectMilestonesByHousehold(getProjectMilestonesByHouseholdVars);
+// Variables can be defined inline as well.
+const { data } = await getProjectMilestonesByHousehold({ householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await getProjectMilestonesByHousehold(dataConnect, getProjectMilestonesByHouseholdVars);
+
+console.log(data.projectMilestones);
+
+// Or, you can use the `Promise` API.
+getProjectMilestonesByHousehold(getProjectMilestonesByHouseholdVars).then((response) => {
+  const data = response.data;
+  console.log(data.projectMilestones);
+});
+```
+
+### Using `GetProjectMilestonesByHousehold`'s `QueryRef` function
+
+```typescript
+import { getDataConnect, executeQuery } from 'firebase/data-connect';
+import { connectorConfig, getProjectMilestonesByHouseholdRef, GetProjectMilestonesByHouseholdVariables } from '@pareja-pro/dataconnect';
+
+// The `GetProjectMilestonesByHousehold` query requires an argument of type `GetProjectMilestonesByHouseholdVariables`:
+const getProjectMilestonesByHouseholdVars: GetProjectMilestonesByHouseholdVariables = {
+  householdId: ..., 
+};
+
+// Call the `getProjectMilestonesByHouseholdRef()` function to get a reference to the query.
+const ref = getProjectMilestonesByHouseholdRef(getProjectMilestonesByHouseholdVars);
+// Variables can be defined inline as well.
+const ref = getProjectMilestonesByHouseholdRef({ householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the `QueryRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = getProjectMilestonesByHouseholdRef(dataConnect, getProjectMilestonesByHouseholdVars);
+
+// Call `executeQuery()` on the reference to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeQuery(ref);
+
+console.log(data.projectMilestones);
+
+// Or, you can use the `Promise` API.
+executeQuery(ref).then((response) => {
+  const data = response.data;
+  console.log(data.projectMilestones);
 });
 ```
 
@@ -4593,6 +4846,136 @@ executeMutation(ref).then((response) => {
 });
 ```
 
+## CreateProjectContribution
+You can execute the `CreateProjectContribution` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+createProjectContribution(vars: CreateProjectContributionVariables): MutationPromise<CreateProjectContributionData, CreateProjectContributionVariables>;
+
+interface CreateProjectContributionRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateProjectContributionVariables): MutationRef<CreateProjectContributionData, CreateProjectContributionVariables>;
+}
+export const createProjectContributionRef: CreateProjectContributionRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+createProjectContribution(dc: DataConnect, vars: CreateProjectContributionVariables): MutationPromise<CreateProjectContributionData, CreateProjectContributionVariables>;
+
+interface CreateProjectContributionRef {
+  ...
+  (dc: DataConnect, vars: CreateProjectContributionVariables): MutationRef<CreateProjectContributionData, CreateProjectContributionVariables>;
+}
+export const createProjectContributionRef: CreateProjectContributionRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the createProjectContributionRef:
+```typescript
+const name = createProjectContributionRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `CreateProjectContribution` mutation requires an argument of type `CreateProjectContributionVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface CreateProjectContributionVariables {
+  projectId: UUIDString;
+  householdId: UUIDString;
+  amount: number;
+  date: DateString;
+  notes?: string | null;
+  sourceAccountId?: UUIDString | null;
+  targetAccountId?: UUIDString | null;
+  userId?: string | null;
+}
+```
+### Return Type
+Recall that executing the `CreateProjectContribution` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `CreateProjectContributionData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface CreateProjectContributionData {
+  projectContribution_insert: ProjectContribution_Key;
+}
+```
+### Using `CreateProjectContribution`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, createProjectContribution, CreateProjectContributionVariables } from '@pareja-pro/dataconnect';
+
+// The `CreateProjectContribution` mutation requires an argument of type `CreateProjectContributionVariables`:
+const createProjectContributionVars: CreateProjectContributionVariables = {
+  projectId: ..., 
+  householdId: ..., 
+  amount: ..., 
+  date: ..., 
+  notes: ..., // optional
+  sourceAccountId: ..., // optional
+  targetAccountId: ..., // optional
+  userId: ..., // optional
+};
+
+// Call the `createProjectContribution()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await createProjectContribution(createProjectContributionVars);
+// Variables can be defined inline as well.
+const { data } = await createProjectContribution({ projectId: ..., householdId: ..., amount: ..., date: ..., notes: ..., sourceAccountId: ..., targetAccountId: ..., userId: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await createProjectContribution(dataConnect, createProjectContributionVars);
+
+console.log(data.projectContribution_insert);
+
+// Or, you can use the `Promise` API.
+createProjectContribution(createProjectContributionVars).then((response) => {
+  const data = response.data;
+  console.log(data.projectContribution_insert);
+});
+```
+
+### Using `CreateProjectContribution`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, createProjectContributionRef, CreateProjectContributionVariables } from '@pareja-pro/dataconnect';
+
+// The `CreateProjectContribution` mutation requires an argument of type `CreateProjectContributionVariables`:
+const createProjectContributionVars: CreateProjectContributionVariables = {
+  projectId: ..., 
+  householdId: ..., 
+  amount: ..., 
+  date: ..., 
+  notes: ..., // optional
+  sourceAccountId: ..., // optional
+  targetAccountId: ..., // optional
+  userId: ..., // optional
+};
+
+// Call the `createProjectContributionRef()` function to get a reference to the mutation.
+const ref = createProjectContributionRef(createProjectContributionVars);
+// Variables can be defined inline as well.
+const ref = createProjectContributionRef({ projectId: ..., householdId: ..., amount: ..., date: ..., notes: ..., sourceAccountId: ..., targetAccountId: ..., userId: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = createProjectContributionRef(dataConnect, createProjectContributionVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.projectContribution_insert);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.projectContribution_insert);
+});
+```
+
 ## UpdateSavingsProject
 You can execute the `UpdateSavingsProject` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
 ```typescript
@@ -4720,6 +5103,478 @@ console.log(data.savingsProject_update);
 executeMutation(ref).then((response) => {
   const data = response.data;
   console.log(data.savingsProject_update);
+});
+```
+
+## CreateProjectMilestone
+You can execute the `CreateProjectMilestone` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+createProjectMilestone(vars: CreateProjectMilestoneVariables): MutationPromise<CreateProjectMilestoneData, CreateProjectMilestoneVariables>;
+
+interface CreateProjectMilestoneRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateProjectMilestoneVariables): MutationRef<CreateProjectMilestoneData, CreateProjectMilestoneVariables>;
+}
+export const createProjectMilestoneRef: CreateProjectMilestoneRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+createProjectMilestone(dc: DataConnect, vars: CreateProjectMilestoneVariables): MutationPromise<CreateProjectMilestoneData, CreateProjectMilestoneVariables>;
+
+interface CreateProjectMilestoneRef {
+  ...
+  (dc: DataConnect, vars: CreateProjectMilestoneVariables): MutationRef<CreateProjectMilestoneData, CreateProjectMilestoneVariables>;
+}
+export const createProjectMilestoneRef: CreateProjectMilestoneRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the createProjectMilestoneRef:
+```typescript
+const name = createProjectMilestoneRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `CreateProjectMilestone` mutation requires an argument of type `CreateProjectMilestoneVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface CreateProjectMilestoneVariables {
+  projectId: UUIDString;
+  householdId: UUIDString;
+  title: string;
+  amountThreshold?: number | null;
+  dateThreshold?: DateString | null;
+}
+```
+### Return Type
+Recall that executing the `CreateProjectMilestone` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `CreateProjectMilestoneData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface CreateProjectMilestoneData {
+  projectMilestone_insert: ProjectMilestone_Key;
+}
+```
+### Using `CreateProjectMilestone`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, createProjectMilestone, CreateProjectMilestoneVariables } from '@pareja-pro/dataconnect';
+
+// The `CreateProjectMilestone` mutation requires an argument of type `CreateProjectMilestoneVariables`:
+const createProjectMilestoneVars: CreateProjectMilestoneVariables = {
+  projectId: ..., 
+  householdId: ..., 
+  title: ..., 
+  amountThreshold: ..., // optional
+  dateThreshold: ..., // optional
+};
+
+// Call the `createProjectMilestone()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await createProjectMilestone(createProjectMilestoneVars);
+// Variables can be defined inline as well.
+const { data } = await createProjectMilestone({ projectId: ..., householdId: ..., title: ..., amountThreshold: ..., dateThreshold: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await createProjectMilestone(dataConnect, createProjectMilestoneVars);
+
+console.log(data.projectMilestone_insert);
+
+// Or, you can use the `Promise` API.
+createProjectMilestone(createProjectMilestoneVars).then((response) => {
+  const data = response.data;
+  console.log(data.projectMilestone_insert);
+});
+```
+
+### Using `CreateProjectMilestone`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, createProjectMilestoneRef, CreateProjectMilestoneVariables } from '@pareja-pro/dataconnect';
+
+// The `CreateProjectMilestone` mutation requires an argument of type `CreateProjectMilestoneVariables`:
+const createProjectMilestoneVars: CreateProjectMilestoneVariables = {
+  projectId: ..., 
+  householdId: ..., 
+  title: ..., 
+  amountThreshold: ..., // optional
+  dateThreshold: ..., // optional
+};
+
+// Call the `createProjectMilestoneRef()` function to get a reference to the mutation.
+const ref = createProjectMilestoneRef(createProjectMilestoneVars);
+// Variables can be defined inline as well.
+const ref = createProjectMilestoneRef({ projectId: ..., householdId: ..., title: ..., amountThreshold: ..., dateThreshold: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = createProjectMilestoneRef(dataConnect, createProjectMilestoneVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.projectMilestone_insert);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.projectMilestone_insert);
+});
+```
+
+## UpdateProjectMilestone
+You can execute the `UpdateProjectMilestone` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+updateProjectMilestone(vars: UpdateProjectMilestoneVariables): MutationPromise<UpdateProjectMilestoneData, UpdateProjectMilestoneVariables>;
+
+interface UpdateProjectMilestoneRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateProjectMilestoneVariables): MutationRef<UpdateProjectMilestoneData, UpdateProjectMilestoneVariables>;
+}
+export const updateProjectMilestoneRef: UpdateProjectMilestoneRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+updateProjectMilestone(dc: DataConnect, vars: UpdateProjectMilestoneVariables): MutationPromise<UpdateProjectMilestoneData, UpdateProjectMilestoneVariables>;
+
+interface UpdateProjectMilestoneRef {
+  ...
+  (dc: DataConnect, vars: UpdateProjectMilestoneVariables): MutationRef<UpdateProjectMilestoneData, UpdateProjectMilestoneVariables>;
+}
+export const updateProjectMilestoneRef: UpdateProjectMilestoneRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the updateProjectMilestoneRef:
+```typescript
+const name = updateProjectMilestoneRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `UpdateProjectMilestone` mutation requires an argument of type `UpdateProjectMilestoneVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface UpdateProjectMilestoneVariables {
+  milestoneId: UUIDString;
+  householdId: UUIDString;
+  isCompleted?: boolean | null;
+  title?: string | null;
+  amountThreshold?: number | null;
+  dateThreshold?: DateString | null;
+}
+```
+### Return Type
+Recall that executing the `UpdateProjectMilestone` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `UpdateProjectMilestoneData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface UpdateProjectMilestoneData {
+  projectMilestone_update?: ProjectMilestone_Key | null;
+}
+```
+### Using `UpdateProjectMilestone`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, updateProjectMilestone, UpdateProjectMilestoneVariables } from '@pareja-pro/dataconnect';
+
+// The `UpdateProjectMilestone` mutation requires an argument of type `UpdateProjectMilestoneVariables`:
+const updateProjectMilestoneVars: UpdateProjectMilestoneVariables = {
+  milestoneId: ..., 
+  householdId: ..., 
+  isCompleted: ..., // optional
+  title: ..., // optional
+  amountThreshold: ..., // optional
+  dateThreshold: ..., // optional
+};
+
+// Call the `updateProjectMilestone()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await updateProjectMilestone(updateProjectMilestoneVars);
+// Variables can be defined inline as well.
+const { data } = await updateProjectMilestone({ milestoneId: ..., householdId: ..., isCompleted: ..., title: ..., amountThreshold: ..., dateThreshold: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await updateProjectMilestone(dataConnect, updateProjectMilestoneVars);
+
+console.log(data.projectMilestone_update);
+
+// Or, you can use the `Promise` API.
+updateProjectMilestone(updateProjectMilestoneVars).then((response) => {
+  const data = response.data;
+  console.log(data.projectMilestone_update);
+});
+```
+
+### Using `UpdateProjectMilestone`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, updateProjectMilestoneRef, UpdateProjectMilestoneVariables } from '@pareja-pro/dataconnect';
+
+// The `UpdateProjectMilestone` mutation requires an argument of type `UpdateProjectMilestoneVariables`:
+const updateProjectMilestoneVars: UpdateProjectMilestoneVariables = {
+  milestoneId: ..., 
+  householdId: ..., 
+  isCompleted: ..., // optional
+  title: ..., // optional
+  amountThreshold: ..., // optional
+  dateThreshold: ..., // optional
+};
+
+// Call the `updateProjectMilestoneRef()` function to get a reference to the mutation.
+const ref = updateProjectMilestoneRef(updateProjectMilestoneVars);
+// Variables can be defined inline as well.
+const ref = updateProjectMilestoneRef({ milestoneId: ..., householdId: ..., isCompleted: ..., title: ..., amountThreshold: ..., dateThreshold: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = updateProjectMilestoneRef(dataConnect, updateProjectMilestoneVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.projectMilestone_update);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.projectMilestone_update);
+});
+```
+
+## ToggleProjectMilestone
+You can execute the `ToggleProjectMilestone` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+toggleProjectMilestone(vars: ToggleProjectMilestoneVariables): MutationPromise<ToggleProjectMilestoneData, ToggleProjectMilestoneVariables>;
+
+interface ToggleProjectMilestoneRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: ToggleProjectMilestoneVariables): MutationRef<ToggleProjectMilestoneData, ToggleProjectMilestoneVariables>;
+}
+export const toggleProjectMilestoneRef: ToggleProjectMilestoneRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+toggleProjectMilestone(dc: DataConnect, vars: ToggleProjectMilestoneVariables): MutationPromise<ToggleProjectMilestoneData, ToggleProjectMilestoneVariables>;
+
+interface ToggleProjectMilestoneRef {
+  ...
+  (dc: DataConnect, vars: ToggleProjectMilestoneVariables): MutationRef<ToggleProjectMilestoneData, ToggleProjectMilestoneVariables>;
+}
+export const toggleProjectMilestoneRef: ToggleProjectMilestoneRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the toggleProjectMilestoneRef:
+```typescript
+const name = toggleProjectMilestoneRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `ToggleProjectMilestone` mutation requires an argument of type `ToggleProjectMilestoneVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface ToggleProjectMilestoneVariables {
+  milestoneId: UUIDString;
+  householdId: UUIDString;
+  isCompleted: boolean;
+}
+```
+### Return Type
+Recall that executing the `ToggleProjectMilestone` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `ToggleProjectMilestoneData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface ToggleProjectMilestoneData {
+  projectMilestone_update?: ProjectMilestone_Key | null;
+}
+```
+### Using `ToggleProjectMilestone`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, toggleProjectMilestone, ToggleProjectMilestoneVariables } from '@pareja-pro/dataconnect';
+
+// The `ToggleProjectMilestone` mutation requires an argument of type `ToggleProjectMilestoneVariables`:
+const toggleProjectMilestoneVars: ToggleProjectMilestoneVariables = {
+  milestoneId: ..., 
+  householdId: ..., 
+  isCompleted: ..., 
+};
+
+// Call the `toggleProjectMilestone()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await toggleProjectMilestone(toggleProjectMilestoneVars);
+// Variables can be defined inline as well.
+const { data } = await toggleProjectMilestone({ milestoneId: ..., householdId: ..., isCompleted: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await toggleProjectMilestone(dataConnect, toggleProjectMilestoneVars);
+
+console.log(data.projectMilestone_update);
+
+// Or, you can use the `Promise` API.
+toggleProjectMilestone(toggleProjectMilestoneVars).then((response) => {
+  const data = response.data;
+  console.log(data.projectMilestone_update);
+});
+```
+
+### Using `ToggleProjectMilestone`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, toggleProjectMilestoneRef, ToggleProjectMilestoneVariables } from '@pareja-pro/dataconnect';
+
+// The `ToggleProjectMilestone` mutation requires an argument of type `ToggleProjectMilestoneVariables`:
+const toggleProjectMilestoneVars: ToggleProjectMilestoneVariables = {
+  milestoneId: ..., 
+  householdId: ..., 
+  isCompleted: ..., 
+};
+
+// Call the `toggleProjectMilestoneRef()` function to get a reference to the mutation.
+const ref = toggleProjectMilestoneRef(toggleProjectMilestoneVars);
+// Variables can be defined inline as well.
+const ref = toggleProjectMilestoneRef({ milestoneId: ..., householdId: ..., isCompleted: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = toggleProjectMilestoneRef(dataConnect, toggleProjectMilestoneVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.projectMilestone_update);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.projectMilestone_update);
+});
+```
+
+## DeleteProjectMilestone
+You can execute the `DeleteProjectMilestone` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+deleteProjectMilestone(vars: DeleteProjectMilestoneVariables): MutationPromise<DeleteProjectMilestoneData, DeleteProjectMilestoneVariables>;
+
+interface DeleteProjectMilestoneRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: DeleteProjectMilestoneVariables): MutationRef<DeleteProjectMilestoneData, DeleteProjectMilestoneVariables>;
+}
+export const deleteProjectMilestoneRef: DeleteProjectMilestoneRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+deleteProjectMilestone(dc: DataConnect, vars: DeleteProjectMilestoneVariables): MutationPromise<DeleteProjectMilestoneData, DeleteProjectMilestoneVariables>;
+
+interface DeleteProjectMilestoneRef {
+  ...
+  (dc: DataConnect, vars: DeleteProjectMilestoneVariables): MutationRef<DeleteProjectMilestoneData, DeleteProjectMilestoneVariables>;
+}
+export const deleteProjectMilestoneRef: DeleteProjectMilestoneRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the deleteProjectMilestoneRef:
+```typescript
+const name = deleteProjectMilestoneRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `DeleteProjectMilestone` mutation requires an argument of type `DeleteProjectMilestoneVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface DeleteProjectMilestoneVariables {
+  milestoneId: UUIDString;
+  householdId: UUIDString;
+}
+```
+### Return Type
+Recall that executing the `DeleteProjectMilestone` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `DeleteProjectMilestoneData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface DeleteProjectMilestoneData {
+  projectMilestone_delete?: ProjectMilestone_Key | null;
+}
+```
+### Using `DeleteProjectMilestone`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, deleteProjectMilestone, DeleteProjectMilestoneVariables } from '@pareja-pro/dataconnect';
+
+// The `DeleteProjectMilestone` mutation requires an argument of type `DeleteProjectMilestoneVariables`:
+const deleteProjectMilestoneVars: DeleteProjectMilestoneVariables = {
+  milestoneId: ..., 
+  householdId: ..., 
+};
+
+// Call the `deleteProjectMilestone()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await deleteProjectMilestone(deleteProjectMilestoneVars);
+// Variables can be defined inline as well.
+const { data } = await deleteProjectMilestone({ milestoneId: ..., householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await deleteProjectMilestone(dataConnect, deleteProjectMilestoneVars);
+
+console.log(data.projectMilestone_delete);
+
+// Or, you can use the `Promise` API.
+deleteProjectMilestone(deleteProjectMilestoneVars).then((response) => {
+  const data = response.data;
+  console.log(data.projectMilestone_delete);
+});
+```
+
+### Using `DeleteProjectMilestone`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, deleteProjectMilestoneRef, DeleteProjectMilestoneVariables } from '@pareja-pro/dataconnect';
+
+// The `DeleteProjectMilestone` mutation requires an argument of type `DeleteProjectMilestoneVariables`:
+const deleteProjectMilestoneVars: DeleteProjectMilestoneVariables = {
+  milestoneId: ..., 
+  householdId: ..., 
+};
+
+// Call the `deleteProjectMilestoneRef()` function to get a reference to the mutation.
+const ref = deleteProjectMilestoneRef(deleteProjectMilestoneVars);
+// Variables can be defined inline as well.
+const ref = deleteProjectMilestoneRef({ milestoneId: ..., householdId: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = deleteProjectMilestoneRef(dataConnect, deleteProjectMilestoneVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.projectMilestone_delete);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.projectMilestone_delete);
 });
 ```
 

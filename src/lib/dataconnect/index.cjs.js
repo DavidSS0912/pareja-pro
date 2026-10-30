@@ -238,6 +238,20 @@ exports.updateProjectProgress = function updateProjectProgress(dcOrVars, vars) {
 }
 ;
 
+const createProjectContributionRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'CreateProjectContribution', inputVars);
+}
+createProjectContributionRef.operationName = 'CreateProjectContribution';
+exports.createProjectContributionRef = createProjectContributionRef;
+
+exports.createProjectContribution = function createProjectContribution(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(createProjectContributionRef(dcInstance, inputVars));
+}
+;
+
 const updateSavingsProjectRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();
@@ -249,6 +263,62 @@ exports.updateSavingsProjectRef = updateSavingsProjectRef;
 exports.updateSavingsProject = function updateSavingsProject(dcOrVars, vars) {
   const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
   return executeMutation(updateSavingsProjectRef(dcInstance, inputVars));
+}
+;
+
+const createProjectMilestoneRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'CreateProjectMilestone', inputVars);
+}
+createProjectMilestoneRef.operationName = 'CreateProjectMilestone';
+exports.createProjectMilestoneRef = createProjectMilestoneRef;
+
+exports.createProjectMilestone = function createProjectMilestone(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(createProjectMilestoneRef(dcInstance, inputVars));
+}
+;
+
+const updateProjectMilestoneRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpdateProjectMilestone', inputVars);
+}
+updateProjectMilestoneRef.operationName = 'UpdateProjectMilestone';
+exports.updateProjectMilestoneRef = updateProjectMilestoneRef;
+
+exports.updateProjectMilestone = function updateProjectMilestone(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(updateProjectMilestoneRef(dcInstance, inputVars));
+}
+;
+
+const toggleProjectMilestoneRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'ToggleProjectMilestone', inputVars);
+}
+toggleProjectMilestoneRef.operationName = 'ToggleProjectMilestone';
+exports.toggleProjectMilestoneRef = toggleProjectMilestoneRef;
+
+exports.toggleProjectMilestone = function toggleProjectMilestone(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(toggleProjectMilestoneRef(dcInstance, inputVars));
+}
+;
+
+const deleteProjectMilestoneRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'DeleteProjectMilestone', inputVars);
+}
+deleteProjectMilestoneRef.operationName = 'DeleteProjectMilestone';
+exports.deleteProjectMilestoneRef = deleteProjectMilestoneRef;
+
+exports.deleteProjectMilestone = function deleteProjectMilestone(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(deleteProjectMilestoneRef(dcInstance, inputVars));
 }
 ;
 
@@ -647,6 +717,36 @@ exports.getSavingsProjects = function getSavingsProjects(dcOrVars, varsOrOptions
   
   const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
   return executeQuery(getSavingsProjectsRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
+}
+;
+
+const getProjectContributionsByHouseholdRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetProjectContributionsByHousehold', inputVars);
+}
+getProjectContributionsByHouseholdRef.operationName = 'GetProjectContributionsByHousehold';
+exports.getProjectContributionsByHouseholdRef = getProjectContributionsByHouseholdRef;
+
+exports.getProjectContributionsByHousehold = function getProjectContributionsByHousehold(dcOrVars, varsOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
+  return executeQuery(getProjectContributionsByHouseholdRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
+}
+;
+
+const getProjectMilestonesByHouseholdRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetProjectMilestonesByHousehold', inputVars);
+}
+getProjectMilestonesByHouseholdRef.operationName = 'GetProjectMilestonesByHousehold';
+exports.getProjectMilestonesByHouseholdRef = getProjectMilestonesByHouseholdRef;
+
+exports.getProjectMilestonesByHousehold = function getProjectMilestonesByHousehold(dcOrVars, varsOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
+  return executeQuery(getProjectMilestonesByHouseholdRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
 }
 ;
 

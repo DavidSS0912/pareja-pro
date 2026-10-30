@@ -12,6 +12,7 @@ export interface AccountSlice {
   deleteAccount: (id: string) => Promise<void>;
   archiveAccount: (id: string, isArchived: boolean) => Promise<void>;
   payCreditCard: (sourceAccountId: string, targetAccountId: string, amount: number, date: string, ownerUid: string, isShared: boolean) => Promise<void>;
+  createTransfer: (sourceAccountId: string, targetAccountId: string, amount: number, date: string, ownerUid: string, isShared: boolean, description?: string) => Promise<void>;
 }
 
 export const createAccountSlice: StateCreator<AccountSlice & AuthSlice, [], [], AccountSlice> = (set, get) => ({
@@ -140,6 +141,29 @@ export const createAccountSlice: StateCreator<AccountSlice & AuthSlice, [], [], 
         householdId: houseId,
         date: new Date(date).toISOString(),
         description: "Pago de Tarjeta",
+        amount: amount,
+        debitAccountId: targetAccountId,
+        creditAccountId: sourceAccountId,
+        prorataFactor: 1.0,
+        ownerUid: ownerUid,
+        isShared: isShared,
+        isInternalTransfer: true
+      });
+      await (get() as any).fetchDashboardData?.(houseId);
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+  },
+  createTransfer: async (sourceAccountId, targetAccountId, amount, date, ownerUid, isShared, description) => {
+    const houseId = (get() as any).houseId;
+    if (!houseId) return;
+    const resolvedDescription = description?.trim() || "Transferencia entre cuentas";
+    try {
+      await createJournalWithEntries({
+        householdId: houseId,
+        date: new Date(date).toISOString(),
+        description: resolvedDescription,
         amount: amount,
         debitAccountId: targetAccountId,
         creditAccountId: sourceAccountId,

@@ -203,6 +203,18 @@ export function updateProjectProgress(dcOrVars, vars) {
   return executeMutation(updateProjectProgressRef(dcInstance, inputVars));
 }
 
+export const createProjectContributionRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'CreateProjectContribution', inputVars);
+}
+createProjectContributionRef.operationName = 'CreateProjectContribution';
+
+export function createProjectContribution(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(createProjectContributionRef(dcInstance, inputVars));
+}
+
 export const updateSavingsProjectRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();
@@ -213,6 +225,54 @@ updateSavingsProjectRef.operationName = 'UpdateSavingsProject';
 export function updateSavingsProject(dcOrVars, vars) {
   const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
   return executeMutation(updateSavingsProjectRef(dcInstance, inputVars));
+}
+
+export const createProjectMilestoneRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'CreateProjectMilestone', inputVars);
+}
+createProjectMilestoneRef.operationName = 'CreateProjectMilestone';
+
+export function createProjectMilestone(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(createProjectMilestoneRef(dcInstance, inputVars));
+}
+
+export const updateProjectMilestoneRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpdateProjectMilestone', inputVars);
+}
+updateProjectMilestoneRef.operationName = 'UpdateProjectMilestone';
+
+export function updateProjectMilestone(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(updateProjectMilestoneRef(dcInstance, inputVars));
+}
+
+export const toggleProjectMilestoneRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'ToggleProjectMilestone', inputVars);
+}
+toggleProjectMilestoneRef.operationName = 'ToggleProjectMilestone';
+
+export function toggleProjectMilestone(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(toggleProjectMilestoneRef(dcInstance, inputVars));
+}
+
+export const deleteProjectMilestoneRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'DeleteProjectMilestone', inputVars);
+}
+deleteProjectMilestoneRef.operationName = 'DeleteProjectMilestone';
+
+export function deleteProjectMilestone(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(deleteProjectMilestoneRef(dcInstance, inputVars));
 }
 
 export const createExternalAssetRef = (dcOrVars, vars) => {
@@ -555,6 +615,32 @@ export function getSavingsProjects(dcOrVars, varsOrOptions, options) {
   
   const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
   return executeQuery(getSavingsProjectsRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
+}
+
+export const getProjectContributionsByHouseholdRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetProjectContributionsByHousehold', inputVars);
+}
+getProjectContributionsByHouseholdRef.operationName = 'GetProjectContributionsByHousehold';
+
+export function getProjectContributionsByHousehold(dcOrVars, varsOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
+  return executeQuery(getProjectContributionsByHouseholdRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
+}
+
+export const getProjectMilestonesByHouseholdRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetProjectMilestonesByHousehold', inputVars);
+}
+getProjectMilestonesByHouseholdRef.operationName = 'GetProjectMilestonesByHousehold';
+
+export function getProjectMilestonesByHousehold(dcOrVars, varsOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
+  return executeQuery(getProjectMilestonesByHouseholdRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
 }
 
 export const getExternalAssetsRef = (dcOrVars, vars) => {

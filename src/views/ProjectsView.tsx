@@ -19,7 +19,8 @@ import {
   ArrowRight,
   ArrowDownUp,
   CheckCircle,
-  X
+  X,
+  Trash2
 } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -29,6 +30,7 @@ import { distribuirEnCascada, SavingsProjectData } from '../services/proyectosSe
 import { ProjectForm, ProjectFormData } from '../components/forms/ProjectForm';
 import { ProjectContributionModal } from '../components/forms/ProjectContributionModal';
 import { ProjectContributionPlan } from '../utils/projectCalculations';
+import { useAppStore } from '../store/useAppStore';
 
 export interface ProjectsViewProps {
   data?: any;
@@ -61,6 +63,15 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [editingMilestoneId, setEditingMilestoneId] = useState<string | null>(null);
   const [newMilestone, setNewMilestone] = useState({ title: '', amountThreshold: '', dateThreshold: '' });
+
+  // Acciones de hitos desde store o props
+  const storeAddMilestone = useAppStore((state) => state.addMilestone);
+  const storeToggleMilestone = useAppStore((state) => state.toggleMilestone);
+  const storeDeleteMilestone = useAppStore((state) => state.deleteMilestone);
+
+  const addMilestoneAction = methods?.addMilestone || storeAddMilestone;
+  const toggleMilestoneAction = methods?.toggleMilestone || storeToggleMilestone;
+  const deleteMilestoneAction = methods?.deleteMilestone || storeDeleteMilestone;
 
   // Cálculo de ingresos mensuales por integrante del hogar
   const incomePerUser = useMemo(() => {
@@ -135,6 +146,30 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
     if (!accountRef) return 'Sin cuenta asignada';
     const acc = accounts.find((a: any) => a.id === accountRef || a.name === accountRef);
     return acc ? acc.name : accountRef;
+  };
+
+  // Helper para formato de fecha DD/MM/AAAA
+  const formatDateDDMMAAAA = (rawDate: string | Date | undefined | null): string => {
+    if (!rawDate) return '';
+    const str = String(rawDate).trim();
+    const dateOnly = str.split('T')[0];
+    const parts = dateOnly.split('-');
+    if (parts.length === 3 && parts[0].length === 4) {
+      const [yyyy, mm, dd] = parts;
+      return `${dd.padStart(2, '0')}/${mm.padStart(2, '0')}/${yyyy}`;
+    }
+    try {
+      const d = new Date(rawDate);
+      if (!isNaN(d.getTime())) {
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const yyyy = d.getFullYear();
+        return `${dd}/${mm}/${yyyy}`;
+      }
+    } catch {
+      // fallback
+    }
+    return str;
   };
 
   // Apertura y guardado de proyectos
@@ -319,6 +354,12 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
     }
   };
 
+  const reactivateProject = async (project: any) => {
+    if (methods?.updateProject) {
+      await methods.updateProject(project.id, { status: 'pending' });
+    }
+  };
+
   // Manejo de Hitos
   const handleOpenAddMilestone = () => {
     setEditingMilestoneId(null);
@@ -331,43 +372,55 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
     const targetProj = currentProject || activeProject;
     if (!targetProj || !newMilestone.title.trim()) return;
 
-    let updatedMilestones;
-    if (editingMilestoneId) {
-      updatedMilestones = (targetProj.milestones || []).map((m: any) =>
-        m.id === editingMilestoneId
-          ? {
-              ...m,
-              title: newMilestone.title.trim(),
-              amountThreshold: newMilestone.amountThreshold ? Number(newMilestone.amountThreshold) : null,
-              dateThreshold: newMilestone.dateThreshold || null
-            }
-          : m
-      );
-    } else {
-      const milestone = {
-        id: Date.now().toString(),
-        title: newMilestone.title.trim(),
-        amountThreshold: newMilestone.amountThreshold ? Number(newMilestone.amountThreshold) : null,
-        dateThreshold: newMilestone.dateThreshold || null,
-        isCompleted: false
-      };
-      updatedMilestones = [...(targetProj.milestones || []), milestone];
-    }
-
-    if (methods?.updateProject) {
+    if (addMilestoneAction) {
+      await addMilestoneAction(targetProj.id, newMilestone);
+    } else if (methods?.updateProject) {
+      let updatedMilestones;
+      if (editingMilestoneId) {
+        updatedMilestones = (targetProj.milestones || []).map((m: any) =>
+          m.id === editingMilestoneId
+            ? {
+                ...m,
+                title: newMilestone.title.trim(),
+                amountThreshold: newMilestone.amountThreshold ? Number(newMilestone.amountThreshold) : null,
+                dateThreshold: newMilestone.dateThreshold || null
+              }
+            : m
+        );
+      } else {
+        const milestone = {
+          id: Date.now().toString(),
+          title: newMilestone.title.trim(),
+          amountThreshold: newMilestone.amountThreshold ? Number(newMilestone.amountThreshold) : null,
+          dateThreshold: newMilestone.dateThreshold || null,
+          isCompleted: false
+        };
+        updatedMilestones = [...(targetProj.milestones || []), milestone];
+      }
       await methods.updateProject(targetProj.id, { milestones: updatedMilestones });
     }
+
     setShowMilestoneModal(false);
     setEditingMilestoneId(null);
     setNewMilestone({ title: '', amountThreshold: '', dateThreshold: '' });
   };
 
   const toggleMilestone = async (targetProj: any, mId: string, isCompleted: boolean) => {
-    if (!targetProj || !methods?.updateProject) return;
-    const updatedMilestones = (targetProj.milestones || []).map((m: any) =>
-      m.id === mId ? { ...m, isCompleted } : m
-    );
-    await methods.updateProject(targetProj.id, { milestones: updatedMilestones });
+    if (!targetProj) return;
+    if (toggleMilestoneAction) {
+      await toggleMilestoneAction(mId, isCompleted);
+    } else if (methods?.updateProject) {
+      const updatedMilestones = (targetProj.milestones || []).map((m: any) =>
+        m.id === mId ? { ...m, isCompleted } : m
+      );
+      await methods.updateProject(targetProj.id, { milestones: updatedMilestones });
+    }
+  };
+
+  const handleDeleteMilestone = async (mId: string) => {
+    if (deleteMilestoneAction) {
+      await deleteMilestoneAction(mId);
+    }
   };
 
   // Cascada de Excedentes
@@ -398,11 +451,14 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
   // NIVEL 2: VISTA DETALLADA DEL PROYECTO
   // =========================================================================
   if (selectedProjectId && currentProject) {
-    const saved = Number(currentProject.savedAmount ?? currentProject.currentAmount ?? 0);
+    const projectContributions = (contributions || []).filter(
+      (c: any) => c.projectId === currentProject.id || c.savingsProjectId === currentProject.id
+    );
+    const contributionsTotal = projectContributions.reduce((acc: number, c: any) => acc + Number(c.amount || 0), 0);
+    const saved = contributionsTotal > 0 ? contributionsTotal : Number(currentProject.savedAmount ?? currentProject.currentAmount ?? 0);
     const target = Number(currentProject.targetAmount || 0);
     const remaining = Math.max(0, target - saved);
     const pct = target > 0 ? Math.min(100, Math.round((saved / target) * 100)) : 0;
-    const projectContributions = (contributions || []).filter((c: any) => c.projectId === currentProject.id);
 
     return (
       <div className="space-y-6 animate-in fade-in duration-300">
@@ -517,13 +573,21 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
                 Hacer esta mi Meta Activa
               </button>
             )}
-            {currentProject.status !== 'completed' && (
+            {currentProject.status !== 'completed' ? (
               <button
                 type="button"
                 onClick={() => completeProject(currentProject)}
                 className="px-4 py-2 bg-emerald-600/80 hover:bg-emerald-600 text-white font-bold rounded-xl transition-colors cursor-pointer"
               >
                 Marcar como Completada
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => reactivateProject(currentProject)}
+                className="px-4 py-2 bg-amber-600/80 hover:bg-amber-600 text-white font-bold rounded-xl transition-colors cursor-pointer"
+              >
+                Reactivar Meta / Proyecto
               </button>
             )}
           </div>
@@ -625,16 +689,26 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
                         </p>
                         <div className="flex items-center gap-3 text-xs text-slate-500 mt-0.5">
                           {m.amountThreshold && <span>Disparador: {FormatCurrency(Number(m.amountThreshold))}</span>}
-                          {m.dateThreshold && <span>Fecha: {m.dateThreshold}</span>}
+                          {m.dateThreshold && <span>Fecha: {formatDateDDMMAAAA(m.dateThreshold)}</span>}
                         </div>
                       </div>
                     </div>
 
-                    {isReached && !m.isCompleted && (
-                      <span className="text-[11px] font-bold text-amber-700 bg-amber-100/80 px-2.5 py-1 rounded-lg">
-                        ¡Monto alcanzado!
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {isReached && !m.isCompleted && (
+                        <span className="text-[11px] font-bold text-amber-700 bg-amber-100/80 px-2.5 py-1 rounded-lg">
+                          ¡Monto alcanzado!
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteMilestone(m.id)}
+                        title="Eliminar hito"
+                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -661,31 +735,60 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
           ) : (
             <div className="space-y-2.5">
               {projectContributions
-                .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                .slice()
+                .sort((a: any, b: any) => {
+                  const dateDiff = new Date(b.date || b.createdAt).getTime() - new Date(a.date || a.createdAt).getTime();
+                  if (dateDiff !== 0) return dateDiff;
+                  return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+                })
                 .map((c: any) => {
-                  const user = users.find((u: any) => u.id === c.userId);
+                  const user = users.find((u: any) => u.id === c.userId || u.id === c.user?.id || u.id === c.user?.uid);
+                  const userName = c.user?.displayName || c.userName || user?.displayName || user?.name || user?.email || 'Usuario';
+                  const userPhoto = c.user?.photoUrl || c.userPhotoUrl || user?.photoURL || user?.photoUrl;
+                  const formattedDate = formatDateDDMMAAAA(c.date || c.createdAt);
+
                   return (
                     <div
                       key={c.id}
                       className="p-3.5 bg-slate-50 border border-slate-200/70 rounded-2xl flex items-center justify-between"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-emerald-100 text-emerald-700">
-                          {c.isInternalPiggyBank ? <Sparkles size={16} /> : <ArrowDownUp size={16} />}
-                        </div>
+                        {userPhoto ? (
+                          <img
+                            src={userPhoto}
+                            alt={userName}
+                            referrerPolicy="no-referrer"
+                            className="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-indigo-100 text-primary font-bold text-sm flex items-center justify-center shrink-0">
+                            {userName.charAt(0).toUpperCase()}
+                          </div>
+                        )}
                         <div>
-                          <p className="text-sm font-bold text-slate-800 leading-tight">
-                            {c.notes || 'Aportación a proyecto'}
-                          </p>
-                          <p className="text-xs text-slate-500 mt-0.5">
-                            {c.date} • {user?.name || 'Usuario'}
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-slate-800 leading-tight">
+                              {userName}
+                            </span>
                             {c.isInternalPiggyBank && (
-                              <span className="ml-2 text-emerald-700 font-semibold">• Apartado interno</span>
+                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/50">
+                                <Sparkles size={11} />
+                                Apartado interno
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                            <span className="font-semibold text-slate-700">{formattedDate}</span>
+                            {c.notes && (
+                              <>
+                                <span>•</span>
+                                <span className="text-slate-600">{c.notes}</span>
+                              </>
                             )}
                           </p>
                         </div>
                       </div>
-                      <span className="font-black text-emerald-600 text-sm tabular-nums">
+                      <span className="font-black text-emerald-600 text-sm tabular-nums shrink-0">
                         + {FormatCurrency(c.amount)}
                       </span>
                     </div>
@@ -723,7 +826,11 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
 
         <Modal
           isOpen={showMilestoneModal}
-          onClose={() => setShowMilestoneModal(false)}
+          onClose={() => {
+            setShowMilestoneModal(false);
+            setEditingMilestoneId(null);
+            setNewMilestone({ title: '', amountThreshold: '', dateThreshold: '' });
+          }}
           title="Añadir Hito o Tarea"
         >
           <form onSubmit={handleSaveMilestone} className="space-y-4">
@@ -767,7 +874,15 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
               />
             </div>
             <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
-              <Button variant="secondary" onClick={() => setShowMilestoneModal(false)} type="button">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setShowMilestoneModal(false);
+                  setEditingMilestoneId(null);
+                  setNewMilestone({ title: '', amountThreshold: '', dateThreshold: '' });
+                }}
+                type="button"
+              >
                 Cancelar
               </Button>
               <Button type="submit">Guardar Hito</Button>

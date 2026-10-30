@@ -1,8 +1,17 @@
 import { StateCreator } from 'zustand';
-import { RecordItem } from '../types';
+import { RecordItem, ProjectContribution, ProjectMilestone } from '../types';
 import { AuthSlice } from './authSlice';
 import { DataSlice } from './dataSlice';
-import { createSavingsProject, updateProjectProgress, updateSavingsProject } from '../../lib/dataconnect';
+import {
+  createProjectContribution,
+  createSavingsProject,
+  updateProjectProgress,
+  updateSavingsProject,
+  createProjectMilestone,
+  updateProjectMilestone,
+  deleteProjectMilestone,
+  toggleProjectMilestone
+} from '../../lib/dataconnect';
 import { useToastStore } from '../useToastStore';
 
 export interface ProjectSlice {
@@ -12,12 +21,15 @@ export interface ProjectSlice {
   updateProject: (id: string, item: any) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
   reorderProjects: (updates: Array<{ id: string; priority: number }>) => Promise<void>;
-  contributions: RecordItem[];
-  setContributions: (items: RecordItem[]) => void;
+  contributions: ProjectContribution[];
+  setContributions: (items: ProjectContribution[]) => void;
   addContribution: (item: any) => Promise<void>;
-  addContributionAndUpdateProject: (c: any, p: any) => Promise<void>;
+  addContributionAndUpdateProject: (c: any, p: any, maybeNewAmount?: any) => Promise<void>;
   updateContribution: (id: string, item: any) => Promise<void>;
   deleteContribution: (id: string) => Promise<void>;
+  addMilestone: (projectId: string, milestoneData: any) => Promise<void>;
+  toggleMilestone: (milestoneId: string, isCompleted: boolean) => Promise<void>;
+  deleteMilestone: (milestoneId: string) => Promise<void>;
 }
 
 export const createProjectSlice: StateCreator<ProjectSlice & AuthSlice & DataSlice, [], [], ProjectSlice> = (set, get) => ({
@@ -132,27 +144,205 @@ export const createProjectSlice: StateCreator<ProjectSlice & AuthSlice & DataSli
   
   contributions: [],
   setContributions: (items) => set({ contributions: items }),
-  addContribution: async (_item) => { useToastStore.getState().addToast("Operación no disponible", "error"); },
-  addContributionAndUpdateProject: async (c, p) => {
+  addContribution: async (item) => {
+    const projId = item.projectId || item.savingsProjectId;
+    if (projId) {
+      await get().addContributionAndUpdateProject(projId, item);
+    }
+  },
+  addContributionAndUpdateProject: async (c, p, _maybeNewAmount) => {
     const state = get();
     const houseId = state.houseId;
     if (!houseId) return;
-    const projectId = typeof c === 'string' ? c : p?.id;
-    const amountToAdd = typeof c === 'string' ? Number(p?.amount || 0) : Number(c?.amount || 0);
+
+    const projectId = typeof c === 'string' ? c : (c?.projectId || p?.id || p?.projectId);
     if (!projectId) return;
+
+    const contribData = typeof c === 'string' ? p : c;
+    const contributionAmount = Number(contribData?.amount || 0);
+
+    const project = (state.projects || []).find((pr: any) => pr.id === projectId);
+    const existingContributionsSum = (state.contributions || [])
+      .filter((con: any) => (con.projectId === projectId || con.savingsProjectId === projectId) && !String(con.id).startsWith('temp-'))
+      .reduce((sum: number, con: any) => sum + Number(con.amount || 0), 0);
+    const currentAmount = existingContributionsSum > 0 ? existingContributionsSum : Number(project?.currentAmount ?? project?.savedAmount ?? 0);
+    const newAccumulated = existingContributionsSum + contributionAmount;
+
+    const optimisticContribution: ProjectContribution = {
+      id: `temp-${Date.now()}`,
+      projectId,
+      savingsProjectId: projectId,
+      userId: contribData?.userId || state.user?.uid || '',
+      amount: contributionAmount,
+      date: contribData?.date || new Date().toISOString().split('T')[0],
+      notes: contribData?.notes || null,
+      sourceAccountId: contribData?.sourceAccountId || null,
+      targetAccountId: contribData?.targetAccountId || null,
+      isInternalPiggyBank: !!contribData?.isInternalPiggyBank,
+      createdAt: new Date().toISOString()
+    };
+
+    set((s) => ({
+      contributions: [optimisticContribution, ...(s.contributions || [])],
+      projects: (s.projects || []).map((pr: any) =>
+        pr.id === projectId
+          ? {
+              ...pr,
+              currentAmount: newAccumulated,
+              savedAmount: newAccumulated,
+              isCompleted: pr.targetAmount ? newAccumulated >= pr.targetAmount : pr.isCompleted,
+              status: pr.targetAmount && newAccumulated >= pr.targetAmount ? 'completed' : pr.status
+            }
+          : pr
+      )
+    }));
+
     try {
+      if (typeof createProjectContribution === 'function') {
+        await createProjectContribution({
+          projectId,
+          householdId: houseId,
+          amount: contributionAmount,
+          date: contribData?.date || new Date().toISOString().split('T')[0],
+          notes: contribData?.notes || null,
+          sourceAccountId: contribData?.sourceAccountId || null,
+          targetAccountId: contribData?.targetAccountId || null,
+          userId: contribData?.userId || state.user?.uid || null
+        });
+      }
+
       await updateProjectProgress({
         projectId,
         householdId: houseId,
-        amountToAdd
+        amountToAdd: newAccumulated
       });
+
       useToastStore.getState().addToast("Aportación registrada", "success");
       await get().fetchDashboardData(houseId);
     } catch(error) {
       console.error(error);
       useToastStore.getState().addToast("Error al registrar aportación", "error");
+      set((s) => ({
+        contributions: (s.contributions || []).filter((con: any) => con.id !== optimisticContribution.id),
+        projects: (s.projects || []).map((pr: any) =>
+          pr.id === projectId
+            ? {
+                ...pr,
+                currentAmount,
+                savedAmount: currentAmount,
+                isCompleted: project?.isCompleted ?? pr.isCompleted,
+                status: project?.status ?? pr.status
+              }
+            : pr
+        )
+      }));
     }
   },
   updateContribution: async (_id, _item) => { useToastStore.getState().addToast("Operación no disponible", "error"); },
-  deleteContribution: async (_id) => { useToastStore.getState().addToast("Operación no disponible", "error"); }
+  deleteContribution: async (_id) => { useToastStore.getState().addToast("Operación no disponible", "error"); },
+
+  addMilestone: async (projectId: string, milestoneData: any) => {
+    const state = get();
+    const houseId = state.houseId;
+    if (!houseId) return;
+
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMilestone: ProjectMilestone = {
+      id: tempId,
+      projectId,
+      title: milestoneData.title?.trim() || '',
+      amountThreshold: milestoneData.amountThreshold ? Number(milestoneData.amountThreshold) : undefined,
+      dateThreshold: milestoneData.dateThreshold || undefined,
+      isCompleted: false,
+      createdAt: new Date().toISOString()
+    };
+
+    const updatedProjects = (state.projects || []).map((p: any) => {
+      if (p.id === projectId) {
+        return {
+          ...p,
+          milestones: [...(p.milestones || []), optimisticMilestone]
+        };
+      }
+      return p;
+    });
+    set({ projects: updatedProjects });
+
+    try {
+      await createProjectMilestone({
+        projectId,
+        householdId: houseId,
+        title: milestoneData.title?.trim() || '',
+        amountThreshold: milestoneData.amountThreshold ? Number(milestoneData.amountThreshold) : null,
+        dateThreshold: milestoneData.dateThreshold || null
+      });
+      useToastStore.getState().addToast("Hito agregado exitosamente", "success");
+      await get().fetchDashboardData(houseId);
+    } catch (error) {
+      console.error("Error al agregar hito:", error);
+      useToastStore.getState().addToast("Error al agregar hito", "error");
+      await get().fetchDashboardData(houseId);
+    }
+  },
+
+  toggleMilestone: async (milestoneId: string, isCompleted: boolean) => {
+    const state = get();
+    const houseId = state.houseId;
+    if (!houseId) return;
+
+    const updatedProjects = (state.projects || []).map((p: any) => {
+      const hasMilestone = (p.milestones || []).some((m: any) => m.id === milestoneId);
+      if (!hasMilestone) return p;
+      return {
+        ...p,
+        milestones: (p.milestones || []).map((m: any) =>
+          m.id === milestoneId ? { ...m, isCompleted } : m
+        )
+      };
+    });
+    set({ projects: updatedProjects });
+
+    try {
+      await toggleProjectMilestone({
+        milestoneId,
+        householdId: houseId,
+        isCompleted
+      });
+      useToastStore.getState().addToast(isCompleted ? "Hito completado" : "Hito marcado como pendiente", "success");
+      await get().fetchDashboardData(houseId);
+    } catch (error) {
+      console.error("Error al actualizar hito:", error);
+      useToastStore.getState().addToast("Error al actualizar hito", "error");
+      await get().fetchDashboardData(houseId);
+    }
+  },
+
+  deleteMilestone: async (milestoneId: string) => {
+    const state = get();
+    const houseId = state.houseId;
+    if (!houseId) return;
+
+    const updatedProjects = (state.projects || []).map((p: any) => {
+      const hasMilestone = (p.milestones || []).some((m: any) => m.id === milestoneId);
+      if (!hasMilestone) return p;
+      return {
+        ...p,
+        milestones: (p.milestones || []).filter((m: any) => m.id !== milestoneId)
+      };
+    });
+    set({ projects: updatedProjects });
+
+    try {
+      await deleteProjectMilestone({
+        milestoneId,
+        householdId: houseId
+      });
+      useToastStore.getState().addToast("Hito eliminado", "success");
+      await get().fetchDashboardData(houseId);
+    } catch (error) {
+      console.error("Error al eliminar hito:", error);
+      useToastStore.getState().addToast("Error al eliminar hito", "error");
+      await get().fetchDashboardData(houseId);
+    }
+  }
 });

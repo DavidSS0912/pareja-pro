@@ -133,6 +133,63 @@ query GetSavingsProjects($householdId: UUID!) @auth(level: USER) {
   }
 }
 
+query GetProjectContributionsByHousehold($householdId: UUID!) @auth(level: USER) {
+  user(key: { uid_expr: "auth.uid" })
+    @redact
+    @check(expr: "this != null && this.household.id == vars.householdId", message: "El recurso no pertenece a este hogar") {
+    household { id }
+  }
+  projectContributions(
+    where: { 
+      householdId: { eq: $householdId } 
+    },
+    orderBy: { createdAt: DESC }
+  ) {
+    id
+    amount
+    date
+    notes
+    createdAt
+    sourceAccountId
+    targetAccountId
+    savingsProject {
+      id
+      name
+    }
+    user {
+      uid
+      id: uid
+      displayName
+      photoUrl
+    }
+  }
+}
+
+query GetProjectMilestonesByHousehold($householdId: UUID!) @auth(level: USER) {
+  user(key: { uid_expr: "auth.uid" })
+    @redact
+    @check(expr: "this != null && this.household.id == vars.householdId", message: "El recurso no pertenece a este hogar") {
+    household { id }
+  }
+  projectMilestones(
+    where: { 
+      householdId: { eq: $householdId } 
+    },
+    orderBy: { createdAt: ASC }
+  ) {
+    id
+    title
+    amountThreshold
+    dateThreshold
+    isCompleted
+    savingsProject {
+      id
+    }
+    createdAt
+  }
+}
+
+
 query GetExternalAssets($householdId: UUID!) @auth(level: USER) {
   user(key: { uid_expr: "auth.uid" })
     @redact
