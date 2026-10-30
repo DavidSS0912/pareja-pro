@@ -416,6 +416,10 @@ export interface GetBudgetsData {
       id: UUIDString;
       name: string;
     } & Category_Key;
+    icon?: string | null;
+    splitType?: string | null;
+    customUserId?: string | null;
+    customUserAmount?: number | null;
   } & Budget_Key)[];
 }
 ```
@@ -535,6 +539,10 @@ export interface GetBudgetsByMonthData {
     ownerType: OwnerType;
     assignedAmount: number;
     period: DateString;
+    icon?: string | null;
+    splitType?: string | null;
+    customUserId?: string | null;
+    customUserAmount?: number | null;
   } & Budget_Key)[];
 }
 ```
@@ -3177,6 +3185,10 @@ export interface CreateBudgetVariables {
   ownerType: OwnerType;
   period: DateString;
   assignedAmount: number;
+  icon?: string | null;
+  splitType?: string | null;
+  customUserId?: string | null;
+  customUserAmount?: number | null;
 }
 ```
 ### Return Type
@@ -3201,13 +3213,17 @@ const createBudgetVars: CreateBudgetVariables = {
   ownerType: ..., 
   period: ..., 
   assignedAmount: ..., 
+  icon: ..., // optional
+  splitType: ..., // optional
+  customUserId: ..., // optional
+  customUserAmount: ..., // optional
 };
 
 // Call the `createBudget()` function to execute the mutation.
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await createBudget(createBudgetVars);
 // Variables can be defined inline as well.
-const { data } = await createBudget({ householdId: ..., categoryId: ..., ownerType: ..., period: ..., assignedAmount: ..., });
+const { data } = await createBudget({ householdId: ..., categoryId: ..., ownerType: ..., period: ..., assignedAmount: ..., icon: ..., splitType: ..., customUserId: ..., customUserAmount: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -3235,12 +3251,16 @@ const createBudgetVars: CreateBudgetVariables = {
   ownerType: ..., 
   period: ..., 
   assignedAmount: ..., 
+  icon: ..., // optional
+  splitType: ..., // optional
+  customUserId: ..., // optional
+  customUserAmount: ..., // optional
 };
 
 // Call the `createBudgetRef()` function to get a reference to the mutation.
 const ref = createBudgetRef(createBudgetVars);
 // Variables can be defined inline as well.
-const ref = createBudgetRef({ householdId: ..., categoryId: ..., ownerType: ..., period: ..., assignedAmount: ..., });
+const ref = createBudgetRef({ householdId: ..., categoryId: ..., ownerType: ..., period: ..., assignedAmount: ..., icon: ..., splitType: ..., customUserId: ..., customUserAmount: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -3296,6 +3316,10 @@ export interface UpdateBudgetVariables {
   id: UUIDString;
   householdId: UUIDString;
   assignedAmount: number;
+  icon?: string | null;
+  splitType?: string | null;
+  customUserId?: string | null;
+  customUserAmount?: number | null;
 }
 ```
 ### Return Type
@@ -3318,13 +3342,17 @@ const updateBudgetVars: UpdateBudgetVariables = {
   id: ..., 
   householdId: ..., 
   assignedAmount: ..., 
+  icon: ..., // optional
+  splitType: ..., // optional
+  customUserId: ..., // optional
+  customUserAmount: ..., // optional
 };
 
 // Call the `updateBudget()` function to execute the mutation.
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await updateBudget(updateBudgetVars);
 // Variables can be defined inline as well.
-const { data } = await updateBudget({ id: ..., householdId: ..., assignedAmount: ..., });
+const { data } = await updateBudget({ id: ..., householdId: ..., assignedAmount: ..., icon: ..., splitType: ..., customUserId: ..., customUserAmount: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -3350,12 +3378,16 @@ const updateBudgetVars: UpdateBudgetVariables = {
   id: ..., 
   householdId: ..., 
   assignedAmount: ..., 
+  icon: ..., // optional
+  splitType: ..., // optional
+  customUserId: ..., // optional
+  customUserAmount: ..., // optional
 };
 
 // Call the `updateBudgetRef()` function to get a reference to the mutation.
 const ref = updateBudgetRef(updateBudgetVars);
 // Variables can be defined inline as well.
-const ref = updateBudgetRef({ id: ..., householdId: ..., assignedAmount: ..., });
+const ref = updateBudgetRef({ id: ..., householdId: ..., assignedAmount: ..., icon: ..., splitType: ..., customUserId: ..., customUserAmount: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);

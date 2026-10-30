@@ -71,6 +71,10 @@ query GetBudgets($householdId: UUID!) @auth(level: USER) {
     period
     categoryId
     category { id name }
+    icon
+    splitType
+    customUserId
+    customUserAmount
   }
 }
 
@@ -89,6 +93,10 @@ query GetBudgetsByMonth($householdId: UUID!, $period: Date!) @auth(level: USER) 
     ownerType
     assignedAmount
     period
+    icon
+    splitType
+    customUserId
+    customUserAmount
   }
 }
 

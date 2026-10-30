@@ -15,3 +15,17 @@ export interface Transfer {
   type: 'TRANSFER' | 'CARD_PAYMENT';
 }
 
+export interface Budget extends RecordItem {
+  id: string;
+  categoryId: string;
+  category?: string;
+  assignedAmount: number;
+  base?: number;
+  period: string;
+  ownerType: string;
+  icon?: string;
+  splitType?: string;
+  customUserId?: string | null;
+  customUserAmount?: number | null;
+}
+

@@ -114,6 +114,10 @@ export interface CreateBudgetVariables {
   ownerType: OwnerType;
   period: DateString;
   assignedAmount: number;
+  icon?: string | null;
+  splitType?: string | null;
+  customUserId?: string | null;
+  customUserAmount?: number | null;
 }
 
 export interface CreateCategoryData {
@@ -333,6 +337,10 @@ export interface GetBudgetsByMonthData {
     ownerType: OwnerType;
     assignedAmount: number;
     period: DateString;
+    icon?: string | null;
+    splitType?: string | null;
+    customUserId?: string | null;
+    customUserAmount?: number | null;
   } & Budget_Key)[];
 }
 
@@ -352,6 +360,10 @@ export interface GetBudgetsData {
       id: UUIDString;
       name: string;
     } & Category_Key;
+    icon?: string | null;
+    splitType?: string | null;
+    customUserId?: string | null;
+    customUserAmount?: number | null;
   } & Budget_Key)[];
 }
 
@@ -824,6 +836,10 @@ export interface UpdateBudgetVariables {
   id: UUIDString;
   householdId: UUIDString;
   assignedAmount: number;
+  icon?: string | null;
+  splitType?: string | null;
+  customUserId?: string | null;
+  customUserAmount?: number | null;
 }
 
 export interface UpdateCategoryData {

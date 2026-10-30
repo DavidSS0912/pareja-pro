@@ -168,12 +168,13 @@ export function BudgetsView({ data, methods, appContext }: BudgetsViewProps) {
   return (
     <div className="space-y-6 animate-in">
       {/* 2. Cabecera y Resumen Ejecutivo Superior */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-2">
-        <div>
-          <h2 className="text-3xl font-black tracking-tight text-slate-800">Presupuestos</h2>
-          <p className="text-slate-600 mt-2 font-medium">Guía y plantillas de asignación de fondos.</p>
-        </div>
-        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+      <div className="flex flex-col gap-4 mb-2">
+        {/* Fila superior: Título y subtítulo a la izquierda, selector de mes a la derecha */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h2 className="text-3xl font-black tracking-tight text-slate-800">Presupuestos</h2>
+            <p className="text-slate-600 mt-1 font-medium">Guía y plantillas de asignación de fondos.</p>
+          </div>
           <input 
             type="month" 
             className="px-4 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-700 w-full sm:w-auto focus:ring-2 focus:ring-primary focus:border-primary shadow-xs"
@@ -184,30 +185,32 @@ export function BudgetsView({ data, methods, appContext }: BudgetsViewProps) {
               }
             }}
           />
-          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-            <Button 
-              variant="outline" 
-              onClick={() => setIsCategoriesModalOpen(true)}
-              className="flex-1 sm:flex-none whitespace-nowrap flex items-center gap-2 border-slate-200 hover:bg-slate-50 text-slate-700"
-              title="Gestionar Categorías y Etiquetas"
-            >
-              <FolderPlus size={18} className="text-indigo-600" />
-              <span>Categorías / Tags</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={handleCopyPrevious} 
-              className="flex-1 sm:flex-none whitespace-nowrap"
-            >
-              Copiar anterior
-            </Button>
-            <Button 
-              onClick={() => handleOpenModal()} 
-              className="flex-1 sm:flex-none whitespace-nowrap"
-            >
-              <Plus size={18} className="mr-1.5" /> Nuevo
-            </Button>
-          </div>
+        </div>
+
+        {/* Fila inferior: Botones de acción */}
+        <div className="flex flex-wrap gap-2 w-full justify-start sm:justify-end">
+          <Button 
+            variant="outline" 
+            onClick={() => setIsCategoriesModalOpen(true)}
+            className="flex-1 sm:flex-none whitespace-nowrap flex items-center gap-2 border-slate-200 hover:bg-slate-50 text-slate-700"
+            title="Gestionar Categorías y Etiquetas"
+          >
+            <FolderPlus size={18} className="text-indigo-600" />
+            <span>Categorías / Tags</span>
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={handleCopyPrevious} 
+            className="flex-1 sm:flex-none whitespace-nowrap"
+          >
+            Copiar anterior
+          </Button>
+          <Button 
+            onClick={() => handleOpenModal()} 
+            className="flex-1 sm:flex-none whitespace-nowrap"
+          >
+            <Plus size={18} className="mr-1.5" /> Nuevo
+          </Button>
         </div>
       </div>
 
@@ -232,11 +235,6 @@ export function BudgetsView({ data, methods, appContext }: BudgetsViewProps) {
           <div className="flex-1 lg:max-w-xl">
             <div className="text-xs font-bold text-indigo-200 uppercase tracking-wider mb-2 flex items-center justify-between">
               <span>Desglose por Integrante</span>
-              {incomeShares.isDefaultRatio && (
-                <span className="text-[10px] text-amber-300 font-semibold bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-400/20">
-                  Aportación Equitativa
-                </span>
-              )}
             </div>
             
             {incomeShares.userShares.length > 0 ? (
@@ -300,6 +298,21 @@ export function BudgetsView({ data, methods, appContext }: BudgetsViewProps) {
               ? { userId: budget.customUserId, amount: Number(budget.customUserAmount) || 0 } 
               : null;
             const splitCalc = calculateBudgetSplit(assignedAmount, incomeShares.userShares, manualContrib);
+
+            let budgetSplits = splitCalc.splits;
+            if (budget.ownerType && budget.ownerType !== 'SHARED') {
+              const ownerUser = (data?.users || []).find((u: any) => u.memberSlot === budget.ownerType || u.id === budget.ownerType) || (data?.users || [])[0];
+              if (ownerUser) {
+                budgetSplits = [{
+                  userId: ownerUser.id,
+                  userName: ownerUser.name || ownerUser.displayName || ownerUser.email,
+                  contribution: assignedAmount,
+                  ratio: 1,
+                  percentage: 100,
+                  isManual: true
+                }];
+              }
+            }
 
             const computedSpent = (data?.expenses || [])
               .filter(e => {
@@ -414,34 +427,50 @@ export function BudgetsView({ data, methods, appContext }: BudgetsViewProps) {
                 </div>
 
                 {/* Desglose de aportación por integrante */}
-                {splitCalc.splits.length > 0 && (
+                {budgetSplits.length > 0 && (
                   <div className="pt-3 border-t border-slate-100">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
                       Aportación por Integrante
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                      {splitCalc.splits.map(split => (
-                        <div 
-                          key={split.userId}
-                          className="flex items-center justify-between px-2.5 py-1.5 bg-slate-50/80 rounded-xl border border-slate-100 text-xs"
-                        >
-                          <div className="flex items-center gap-1.5 truncate mr-2">
-                            <span className="font-semibold text-slate-700 truncate">
-                              {split.userName || split.userId}
-                            </span>
-                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
-                              split.isManual 
-                                ? 'bg-amber-100 text-amber-800' 
-                                : 'bg-indigo-100 text-indigo-700'
-                            }`}>
-                              {split.isManual ? 'Fija' : 'Proporcional'}
+                      {budgetSplits.map(split => {
+                        const splitUser = (data?.users || []).find((u: any) => u.id === split.userId);
+                        const userPhoto = splitUser?.photoURL || splitUser?.photoUrl;
+                        const userName = splitUser?.displayName || splitUser?.name || split.userName || 'Usuario';
+                        const initial = userName.charAt(0).toUpperCase();
+
+                        return (
+                          <div 
+                            key={split.userId}
+                            className="flex items-center justify-between px-2.5 py-1.5 bg-slate-50/80 rounded-xl border border-slate-100 text-xs"
+                          >
+                            <div className="flex items-center gap-2 truncate mr-2">
+                              <div className="w-7 h-7 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center font-bold text-xs text-slate-700 shrink-0 border border-slate-300">
+                                {userPhoto ? (
+                                  <img
+                                    src={userPhoto}
+                                    alt={userName}
+                                    referrerPolicy="no-referrer"
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <span>{initial}</span>
+                                )}
+                              </div>
+                              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                                split.isManual 
+                                  ? 'bg-amber-100 text-amber-800' 
+                                  : 'bg-indigo-100 text-indigo-700'
+                              }`}>
+                                {split.isManual ? 'Fija' : 'Proporcional'}
+                              </span>
+                            </div>
+                            <span className="font-bold text-slate-900 shrink-0">
+                              {FormatCurrency(split.contribution)}
                             </span>
                           </div>
-                          <span className="font-bold text-slate-900 shrink-0">
-                            {FormatCurrency(split.contribution)}
-                          </span>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}

@@ -120,14 +120,20 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
         get().setUsers(mappedUsers);
       }
       if (budgets.data?.budgets) {
-        const mappedBudgets = budgets.data.budgets.map((b: any) => ({
-          ...b,
-          categoryId: b.category?.id || b.categoryId,
-          category: b.category?.name,
-          base: b.assignedAmount,
-          icon: '🛒' // default icon for now, ideally store in category or local state
-        }));
         const currentBudgets = get().budgets || [];
+        const mappedBudgets = budgets.data.budgets.map((b: any) => {
+          const existing = currentBudgets.find((eb: any) => eb.id === b.id);
+          return {
+            ...b,
+            categoryId: b.category?.id || b.categoryId,
+            category: b.category?.name,
+            base: b.assignedAmount,
+            icon: b.icon || existing?.icon || '🛒',
+            splitType: b.splitType || existing?.splitType || 'PROPORTIONAL',
+            customUserId: b.customUserId || existing?.customUserId || null,
+            customUserAmount: b.customUserAmount ?? existing?.customUserAmount ?? null
+          };
+        });
         const tempBudgets = currentBudgets.filter(b => b.id && typeof b.id === 'string' && b.id.startsWith('temp-'));
         const unmergedTempBudgets = tempBudgets.filter(tb => !mappedBudgets.find((mb: any) => mb.categoryId === tb.categoryId && mb.ownerType === tb.ownerType));
         const mergedBudgets = [...mappedBudgets, ...unmergedTempBudgets];
@@ -255,13 +261,20 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
     try {
       const budgets = await getBudgetsByMonth({ householdId: houseId, period: month }, SERVER_ONLY);
       if (budgets.data?.budgets) {
-        const mappedBudgets = budgets.data.budgets.map((b: any) => ({
-          ...b,
-          categoryId: b.category?.id || b.categoryId,
-          category: b.category?.name,
-          base: b.assignedAmount,
-          icon: '🛒'
-        }));
+        const currentBudgets = get().budgets || [];
+        const mappedBudgets = budgets.data.budgets.map((b: any) => {
+          const existing = currentBudgets.find((eb: any) => eb.id === b.id);
+          return {
+            ...b,
+            categoryId: b.category?.id || b.categoryId,
+            category: b.category?.name,
+            base: b.assignedAmount,
+            icon: b.icon || existing?.icon || '🛒',
+            splitType: b.splitType || existing?.splitType || 'PROPORTIONAL',
+            customUserId: b.customUserId || existing?.customUserId || null,
+            customUserAmount: b.customUserAmount ?? existing?.customUserAmount ?? null
+          };
+        });
         get().setBudgets(mappedBudgets as any);
       }
     } catch(e) {

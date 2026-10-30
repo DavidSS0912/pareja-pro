@@ -182,7 +182,11 @@ mutation CreateBudget(
   $categoryId: UUID!,
   $ownerType: OwnerType!,
   $period: Date!,                  # día 1 del mes, formato YYYY-MM-01
-  $assignedAmount: Float!
+  $assignedAmount: Float!,
+  $icon: String = null,
+  $splitType: String = null,
+  $customUserId: String = null,
+  $customUserAmount: Float = null
 ) @auth(level: USER) @transaction {
 
   query @redact {
@@ -219,7 +223,11 @@ mutation CreateBudget(
     categoryId: $categoryId,
     ownerType: $ownerType,
     period: $period,
-    assignedAmount: $assignedAmount
+    assignedAmount: $assignedAmount,
+    icon: $icon,
+    splitType: $splitType,
+    customUserId: $customUserId,
+    customUserAmount: $customUserAmount
   })
 }
 
@@ -227,7 +235,11 @@ mutation CreateBudget(
 mutation UpdateBudget(
   $id: UUID!,
   $householdId: UUID!,
-  $assignedAmount: Float!
+  $assignedAmount: Float!,
+  $icon: String = null,
+  $splitType: String = null,
+  $customUserId: String = null,
+  $customUserAmount: Float = null
 ) @auth(level: USER) @transaction {
   query @redact {
     user(key: { uid_expr: "auth.uid" })
@@ -241,7 +253,13 @@ mutation UpdateBudget(
       household { id }
     }
   }
-  budget_update(id: $id, data: { assignedAmount: $assignedAmount })
+  budget_update(id: $id, data: {
+    assignedAmount: $assignedAmount,
+    icon: $icon,
+    splitType: $splitType,
+    customUserId: $customUserId,
+    customUserAmount: $customUserAmount
+  })
 }
 
 mutation DeleteBudget($id: UUID!, $householdId: UUID!)

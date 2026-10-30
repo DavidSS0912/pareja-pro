@@ -17,35 +17,18 @@ const budgetSchema = z.object({
   customUserAmount: z.number().optional().nullable(),
   shared: z.boolean().optional(),
 }).superRefine((data, ctx) => {
-  if (data.mode === 'PERCENTAGE') {
-    if (data.percentage === undefined || data.percentage === null || isNaN(data.percentage)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'El porcentaje es obligatorio',
-        path: ['percentage'],
-      });
-    } else if (data.percentage < 0.01 || data.percentage > 100) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'El porcentaje debe estar entre 0.01% y 100%',
-        path: ['percentage'],
-      });
-    }
-  } else {
-    // Modo FIXED
-    if (data.base === undefined || data.base === null || isNaN(data.base)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'El monto fijo es obligatorio',
-        path: ['base'],
-      });
-    } else if (data.base < 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'El monto asignado no puede ser negativo',
-        path: ['base'],
-      });
-    }
+  if (data.base === undefined || data.base === null || isNaN(data.base)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'El monto fijo es obligatorio',
+      path: ['base'],
+    });
+  } else if (data.base < 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'El monto asignado no puede ser negativo',
+      path: ['base'],
+    });
   }
 
   if (data.splitType === 'CUSTOM') {
@@ -127,8 +110,6 @@ export function BudgetForm({
   }, [resolvedUsers, initialData?.customUserId, initialData?.customUserName]);
 
   const defaultValues: BudgetFormData = useMemo(() => {
-    const rawMode = initialData?.mode ? String(initialData.mode).toUpperCase() : 'FIXED';
-    const mode: 'PERCENTAGE' | 'FIXED' = rawMode === 'PERCENTAGE' ? 'PERCENTAGE' : 'FIXED';
     const rawSplit = initialData?.splitType ? String(initialData.splitType).toUpperCase() : 'PROPORTIONAL';
     const splitType: 'PROPORTIONAL' | 'CUSTOM' = rawSplit === 'CUSTOM' ? 'CUSTOM' : 'PROPORTIONAL';
     const baseValue = Number(initialData?.base ?? initialData?.fixedAmount ?? initialData?.assignedAmount ?? 0);
@@ -136,14 +117,10 @@ export function BudgetForm({
     return {
       categoryId: initialData?.categoryId || '',
       icon: initialData?.icon || '🛒',
-      mode,
-      percentage: initialData?.percentage !== undefined && initialData?.percentage !== null 
-        ? Number(initialData.percentage) 
-        : 10,
+      mode: 'FIXED',
+      percentage: 0,
       base: baseValue,
-      fixedAmount: initialData?.fixedAmount !== undefined && initialData?.fixedAmount !== null 
-        ? Number(initialData.fixedAmount) 
-        : baseValue,
+      fixedAmount: baseValue,
       splitType,
       customUserId: initialData?.customUserId || userOptions[0]?.id || '',
       customUserAmount: initialData?.customUserAmount !== undefined && initialData?.customUserAmount !== null 
@@ -166,51 +143,44 @@ export function BudgetForm({
     defaultValues
   });
 
-  const currentMode = watch('mode');
   const currentSplitType = watch('splitType');
 
   useEffect(() => {
     reset(defaultValues);
   }, [initialData, reset]);
 
-  const showCoupleConfig = appContext === 'household' || (resolvedUsers && resolvedUsers.length > 0);
+  const showCoupleConfig = appContext === 'household';
 
   const onFormSubmit = (data: BudgetFormData) => {
     const selectedCategory = categories.find(c => c.id === data.categoryId);
-    const isPercentage = data.mode === 'PERCENTAGE';
-    const isCustomSplit = data.splitType === 'CUSTOM';
+    const isHousehold = appContext === 'household';
+    const isCustomSplit = isHousehold && data.splitType === 'CUSTOM';
 
     const rawBase = Number(data.base ?? data.fixedAmount ?? 0);
-    const baseVal = isPercentage || isNaN(rawBase) ? 0 : rawBase;
-    const fixedAmountVal = isPercentage ? 0 : baseVal;
-
-    const rawPct = Number(data.percentage ?? 0);
-    const percentageVal = isPercentage ? (isNaN(rawPct) ? 0 : rawPct) : 0;
+    const baseVal = isNaN(rawBase) ? 0 : rawBase;
 
     const rawCustomAmount = Number(data.customUserAmount ?? 0);
     const customUserAmountVal = isCustomSplit ? (isNaN(rawCustomAmount) ? 0 : rawCustomAmount) : 0;
     const customUserIdVal = isCustomSplit ? (data.customUserId || userOptions[0]?.id || '') : null;
 
+    const activeUserSlot = useAppStore.getState().memberSlot || useAppStore.getState().user?.memberSlot || 'USER_A';
+
     const payload = {
       ...(initialData || {}),
       ...data,
       category: selectedCategory?.name || '',
-      mode: data.mode,
-      percentage: percentageVal,
+      mode: 'FIXED',
+      percentage: 0,
       base: baseVal,
-      fixedAmount: fixedAmountVal,
-      splitType: data.splitType,
-      customUserId: customUserIdVal,
-      customUserAmount: customUserAmountVal,
-      shared: appContext === 'household',
+      fixedAmount: baseVal,
+      splitType: isHousehold ? data.splitType : 'PROPORTIONAL',
+      customUserId: isHousehold ? customUserIdVal : null,
+      customUserAmount: isHousehold ? customUserAmountVal : 0,
+      shared: isHousehold,
+      ownerType: isHousehold ? 'SHARED' : activeUserSlot,
     };
 
     onSubmit(payload);
-  };
-
-  const handleModeChange = (newMode: 'PERCENTAGE' | 'FIXED') => {
-    setValue('mode', newMode, { shouldValidate: true, shouldDirty: true });
-    clearErrors(['percentage', 'base']);
   };
 
   const handleSplitTypeChange = (newSplit: 'PROPORTIONAL' | 'CUSTOM') => {
@@ -269,106 +239,36 @@ export function BudgetForm({
         </div>
       </div>
 
-      {/* Selector de Modo de Asignación */}
-      <div className="space-y-1.5">
-        <label className="block text-sm font-bold text-slate-700">
-          Modo de Asignación
+      {/* Meta Fija Mensual ($) */}
+      <div>
+        <label htmlFor="budget-base" className="block text-sm font-bold text-slate-700 mb-1">
+          Meta Fija Mensual ($)
         </label>
-        <div 
-          className="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-xl"
-          role="radiogroup" 
-          aria-label="Modo de asignación de presupuesto"
-        >
-          <button
-            type="button"
-            role="radio"
-            aria-checked={currentMode === 'PERCENTAGE'}
-            onClick={() => handleModeChange('PERCENTAGE')}
-            className={`py-2 px-3 text-xs sm:text-sm font-semibold rounded-lg transition-all ${
-              currentMode === 'PERCENTAGE'
-                ? 'bg-white text-indigo-600 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
-            }`}
-          >
-            Porcentaje del Ingreso (%)
-          </button>
-          <button
-            type="button"
-            role="radio"
-            aria-checked={currentMode === 'FIXED'}
-            onClick={() => handleModeChange('FIXED')}
-            className={`py-2 px-3 text-xs sm:text-sm font-semibold rounded-lg transition-all ${
-              currentMode === 'FIXED'
-                ? 'bg-white text-indigo-600 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
-            }`}
-          >
-            Meta Fija Mensual ($)
-          </button>
+        <div className="relative">
+          <input 
+            id="budget-base"
+            type="number"
+            step="0.01"
+            min="0"
+            placeholder="0.00"
+            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm"
+            aria-invalid={!!errors.base}
+            aria-describedby={errors.base ? "budget-base-error" : undefined}
+            {...register('base', { 
+              valueAsNumber: true,
+              onChange: (e) => {
+                const val = parseFloat(e.target.value);
+                setValue('fixedAmount', isNaN(val) ? 0 : val);
+              }
+            })}
+          />
         </div>
-      </div>
-
-      {/* Campo condicional según el modo */}
-      {currentMode === 'PERCENTAGE' ? (
-        <div>
-          <label htmlFor="budget-percentage" className="block text-sm font-bold text-slate-700 mb-1">
-            Porcentaje del Ingreso (%)
-          </label>
-          <div className="relative">
-            <input 
-              id="budget-percentage"
-              type="number"
-              step="0.1"
-              min="0.01"
-              max="100"
-              placeholder="Ej. 15.0"
-              className="w-full px-4 py-2 pr-8 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm"
-              aria-invalid={!!errors.percentage}
-              aria-describedby={errors.percentage ? "budget-percentage-error" : "budget-percentage-hint"}
-              {...register('percentage', { valueAsNumber: true })}
-            />
-            <span className="absolute right-3 top-2.5 text-slate-400 font-bold text-sm">%</span>
-          </div>
-          <p id="budget-percentage-hint" className="text-xs text-slate-500 mt-1">
-            Se calculará automáticamente según la suma de ingresos que tú y tu pareja registren en el mes.
+        {errors.base && (
+          <p id="budget-base-error" className="text-red-500 text-xs mt-1">
+            {errors.base.message}
           </p>
-          {errors.percentage && (
-            <p id="budget-percentage-error" className="text-red-500 text-xs mt-1">
-              {errors.percentage.message}
-            </p>
-          )}
-        </div>
-      ) : (
-        <div>
-          <label htmlFor="budget-base" className="block text-sm font-bold text-slate-700 mb-1">
-            Meta Fija Mensual ($)
-          </label>
-          <div className="relative">
-            <input 
-              id="budget-base"
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="0.00"
-              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm"
-              aria-invalid={!!errors.base}
-              aria-describedby={errors.base ? "budget-base-error" : undefined}
-              {...register('base', { 
-                valueAsNumber: true,
-                onChange: (e) => {
-                  const val = parseFloat(e.target.value);
-                  setValue('fixedAmount', isNaN(val) ? 0 : val);
-                }
-              })}
-            />
-          </div>
-          {errors.base && (
-            <p id="budget-base-error" className="text-red-500 text-xs mt-1">
-              {errors.base.message}
-            </p>
-          )}
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Configuración de Aportación de Pareja */}
       {showCoupleConfig && (

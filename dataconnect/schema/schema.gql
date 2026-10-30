@@ -121,6 +121,10 @@ type Budget @table @index(fields: ["householdId", "categoryId", "ownerType", "pe
   assignedAmount: Float! @col(dataType: "numeric(14,2)")
   household: Household!
   ownerType: OwnerType!  # Si es personal o compartido
+  icon: String
+  splitType: String
+  customUserId: String
+  customUserAmount: Float @col(dataType: "numeric(14,2)")
   createdAt: Timestamp! @default(expr: "request.time")
   period: Date!
   category: Category!

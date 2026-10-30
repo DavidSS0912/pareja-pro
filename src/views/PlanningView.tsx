@@ -24,7 +24,7 @@ export function PlanningView({
     <div className="space-y-6">
       {/* Selector segmentado superior */}
       <div className="flex items-center justify-center sm:justify-start">
-        <div className="bg-white p-1 rounded-2xl border border-slate-200/80 shadow-sm flex items-center w-full sm:w-auto min-w-[320px] max-w-md">
+        <div className="bg-white p-1 rounded-2xl border border-slate-200/80 shadow-sm flex items-center w-full">
           <button
             type="button"
             onClick={() => setActiveSubTab('budgets')}

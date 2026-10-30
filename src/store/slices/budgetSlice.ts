@@ -35,11 +35,19 @@ export const createBudgetSlice: StateCreator<BudgetSlice & AuthSlice & DataSlice
       }
     }
 
-    const optimisticOwnerType = (item.shared || item.type === 'SHARED') 
+    const optimisticOwnerType = (item.shared || item.type === 'SHARED' || item.ownerType === 'SHARED') 
       ? OwnerType.SHARED 
       : (item.ownerType || userSlot);
 
-    const optimisticBudget = { ...item, ownerType: optimisticOwnerType, id: `temp-${Date.now()}` };
+    const optimisticBudget = { 
+      ...item, 
+      ownerType: optimisticOwnerType,
+      icon: item.icon || '🛒',
+      splitType: item.splitType || 'PROPORTIONAL',
+      customUserId: item.customUserId || null,
+      customUserAmount: item.customUserAmount || null,
+      id: `temp-${Date.now()}` 
+    };
     set({ budgets: [optimisticBudget, ...state.budgets] });
     
     try {
@@ -48,7 +56,11 @@ export const createBudgetSlice: StateCreator<BudgetSlice & AuthSlice & DataSlice
         categoryId: item.categoryId,
         period: item.period,
         assignedAmount: item.base || 0,
-        ownerType: optimisticOwnerType
+        ownerType: optimisticOwnerType,
+        icon: item.icon || '🛒',
+        splitType: item.splitType || null,
+        customUserId: item.customUserId || null,
+        customUserAmount: item.customUserAmount !== undefined && item.customUserAmount !== null ? Number(item.customUserAmount) : null
       });
       useToastStore.getState().addToast("Presupuesto agregado", "success");
       await get().fetchBudgetsForMonth(item.period);
@@ -81,7 +93,7 @@ export const createBudgetSlice: StateCreator<BudgetSlice & AuthSlice & DataSlice
       }
     }
 
-    const updatedOwnerType = (item.shared || item.type === 'SHARED')
+    const updatedOwnerType = (item.shared || item.type === 'SHARED' || item.ownerType === 'SHARED')
       ? OwnerType.SHARED
       : (item.ownerType || userSlot);
 
@@ -91,7 +103,11 @@ export const createBudgetSlice: StateCreator<BudgetSlice & AuthSlice & DataSlice
       ...item, 
       category: item.category?.name || item.category || b.category, 
       base: item.base !== undefined ? item.base : (item.assignedAmount !== undefined ? item.assignedAmount : b.base),
-      ownerType: updatedOwnerType
+      ownerType: updatedOwnerType,
+      icon: item.icon || b.icon || '🛒',
+      splitType: item.splitType !== undefined ? item.splitType : b.splitType,
+      customUserId: item.customUserId !== undefined ? item.customUserId : b.customUserId,
+      customUserAmount: item.customUserAmount !== undefined ? item.customUserAmount : b.customUserAmount
     } : b);
     set({ budgets: updatedBudgets });
 
@@ -99,7 +115,11 @@ export const createBudgetSlice: StateCreator<BudgetSlice & AuthSlice & DataSlice
       await updateBudget({
         id: id,
         householdId: houseId,
-        assignedAmount: item.base !== undefined ? item.base : (item.assignedAmount || 0)
+        assignedAmount: item.base !== undefined ? item.base : (item.assignedAmount || 0),
+        icon: item.icon !== undefined ? item.icon : undefined,
+        splitType: item.splitType !== undefined ? item.splitType : undefined,
+        customUserId: item.customUserId !== undefined ? item.customUserId : undefined,
+        customUserAmount: item.customUserAmount !== undefined && item.customUserAmount !== null ? Number(item.customUserAmount) : undefined
       });
       useToastStore.getState().addToast("Presupuesto actualizado", "success");
       const targetPeriod = item.period || updatedBudgets.find(b => b.id === id)?.period;
@@ -169,7 +189,11 @@ export const createBudgetSlice: StateCreator<BudgetSlice & AuthSlice & DataSlice
             categoryId: pb.category.id,
             period: currentPeriod,
             assignedAmount: pb.assignedAmount,
-            ownerType: pb.ownerType
+            ownerType: pb.ownerType,
+            icon: pb.icon || '🛒',
+            splitType: pb.splitType || null,
+            customUserId: pb.customUserId || null,
+            customUserAmount: pb.customUserAmount || null
           });
           copied++;
         }
