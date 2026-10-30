@@ -404,6 +404,7 @@ export interface GetExpensesByHouseholdData {
     createdAt: TimestampString;
     ownerUid: string;
     isShared: boolean;
+    prorataFactor: number;
     journal: {
       id: UUIDString;
       description: string;
@@ -508,6 +509,7 @@ export interface GetIncomesByHouseholdData {
     createdAt: TimestampString;
     ownerUid: string;
     isShared: boolean;
+    prorataFactor: number;
     journal: {
       id: UUIDString;
       description: string;

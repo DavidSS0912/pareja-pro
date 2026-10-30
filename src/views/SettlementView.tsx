@@ -7,6 +7,26 @@ import { MovementForm } from '../components/forms/MovementForm';
 import { FormatCurrency, exportToCSV } from '../utils';
 import { createInvitation } from '../services/userService';
 
+const formatDateDDMMAAAA = (dateStr?: string) => {
+  if (!dateStr) return 'N/A';
+  if (typeof dateStr === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
+    const [year, month, day] = dateStr.slice(0, 10).split('-');
+    return `${day}/${month}/${year}`;
+  }
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+const getSplitLabel = (exp: any) => {
+  if (exp.isPrivate || exp.splitType === 'individual') return 'Individual';
+  if (exp.splitType === 'proporcional') return 'Proporcional';
+  return '50/50';
+};
+
 export function SettlementView({ data, calc, methods }: { data?: any; calc?: any; methods?: any }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
@@ -154,20 +174,46 @@ export function SettlementView({ data, calc, methods }: { data?: any; calc?: any
               {FormatCurrency(settlementAmount)}
             </div>
             
-            <div className="inline-flex items-center gap-5 bg-white/10 p-2.5 pr-8 rounded-xl border border-white/10">
+            <div className="inline-flex items-center gap-3 sm:gap-4 bg-white/10 p-2.5 px-5 rounded-2xl border border-white/10 max-w-full">
               {netSettlement > 0 ? (
                  <>
-                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center font-black text-xl shadow-inner border border-purple-300/30">
-                     {initialB}
+                   <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center font-black text-lg text-white shadow-inner border border-purple-300/30 shrink-0">
+                     {(userB?.photoURL || userB?.photoUrl) ? (
+                       <img src={userB.photoURL || userB.photoUrl} alt={nameB} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                     ) : (
+                       <span>{initialB}</span>
+                     )}
                    </div> 
-                   <span className="font-bold text-lg tracking-tight">{nameB} transfiere a {nameA}</span>
+                   <span className="font-bold text-base sm:text-lg tracking-tight">
+                     {nameB} <span className="text-slate-300 font-normal">transfiere a</span> {nameA}
+                   </span>
+                   <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center font-black text-lg text-white shadow-inner border border-blue-300/30 shrink-0">
+                     {(userA?.photoURL || userA?.photoUrl) ? (
+                       <img src={userA.photoURL || userA.photoUrl} alt={nameA} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                     ) : (
+                       <span>{initialA}</span>
+                     )}
+                   </div>
                  </>
               ) : netSettlement < 0 ? (
                  <>
-                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center font-black text-xl shadow-inner border border-blue-300/30">
-                     {initialA}
+                   <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center font-black text-lg text-white shadow-inner border border-blue-300/30 shrink-0">
+                     {(userA?.photoURL || userA?.photoUrl) ? (
+                       <img src={userA.photoURL || userA.photoUrl} alt={nameA} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                     ) : (
+                       <span>{initialA}</span>
+                     )}
                    </div> 
-                   <span className="font-bold text-lg tracking-tight">{nameA} transfiere a {nameB}</span>
+                   <span className="font-bold text-base sm:text-lg tracking-tight">
+                     {nameA} <span className="text-slate-300 font-normal">transfiere a</span> {nameB}
+                   </span>
+                   <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center font-black text-lg text-white shadow-inner border border-purple-300/30 shrink-0">
+                     {(userB?.photoURL || userB?.photoUrl) ? (
+                       <img src={userB.photoURL || userB.photoUrl} alt={nameB} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                     ) : (
+                       <span>{initialB}</span>
+                     )}
+                   </div>
                  </>
               ) : (
                 <span className="px-6 py-2 font-bold text-lg tracking-tight">Cuentas Saldadas 🙌</span>
@@ -228,7 +274,7 @@ export function SettlementView({ data, calc, methods }: { data?: any; calc?: any
                     <div>
                       <p className="font-bold text-slate-800">{exp.desc} {exp.isPrivate && <span className="text-xs ml-2 bg-slate-200 text-slate-600 px-2 py-1 rounded">Privado</span>}</p>
                       <p className="text-xs font-medium text-slate-600 mt-1">
-                        Pagado por {payerName} • Fecha: {exp.date || 'N/A'} • División: {exp.isPrivate ? 'No aplica (Privado)' : (exp.splitType === 'proporcional' ? 'Proporcional' : '50/50')} • Moneda: {exp.currency || 'MXN'}
+                        Pagado por {payerName} • Fecha: {formatDateDDMMAAAA(exp.date)} • División: {getSplitLabel(exp)} • Moneda: {exp.currency || 'MXN'}
                       </p>
                     </div>
                   </div>

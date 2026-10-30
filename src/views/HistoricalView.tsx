@@ -25,8 +25,11 @@ export function HistoricalView({ data, methods }: any) {
     const cats = new Set<string>();
     expenses.forEach((e: any) => cats.add(e.category || 'Otros'));
     incomes.forEach((i: any) => cats.add(i.category || i.source || 'Otros'));
+    transfers.forEach((t: any) => {
+      cats.add(t.type === 'CARD_PAYMENT' ? 'Pago de Tarjeta' : 'Transferencia');
+    });
     return Array.from(cats).sort();
-  }, [expenses, incomes]);
+  }, [expenses, incomes, transfers]);
 
   const categoryColorMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -104,12 +107,14 @@ export function HistoricalView({ data, methods }: any) {
     return (transfers || []).filter((t: any) => {
       const uid = t.userId || t.ownerUid;
       if (uid && deselectedUsers.has(uid)) return false;
+      const cat = t.type === 'CARD_PAYMENT' ? 'Pago de Tarjeta' : 'Transferencia';
+      if (deselectedCategories.has(cat)) return false;
       const dateStr = t.date ? t.date.slice(0, 10) : null;
       if (start && dateStr && dateStr < start) return false;
       if (end && dateStr && dateStr > end) return false;
       return true;
     });
-  }, [transfers, deselectedUsers, methods?.dateRange]);
+  }, [transfers, deselectedUsers, deselectedCategories, methods?.dateRange]);
 
   const detailedRecords = useMemo(() => {
     const expRecords = filteredExpenses.map((e: any) => ({
@@ -141,6 +146,7 @@ export function HistoricalView({ data, methods }: any) {
     }));
 
     const trRecords = filteredTransfers.map((t: any) => ({
+      ...t,
       id: t.id,
       date: t.date,
       recordType: 'transfer',
@@ -148,11 +154,12 @@ export function HistoricalView({ data, methods }: any) {
       typeLabel: t.type === 'CARD_PAYMENT' ? 'Pago de Tarjeta' : 'Transferencia',
       category: `${t.sourceAccountName || 'Origen'} → ${t.targetAccountName || 'Destino'}`,
       description: t.description || '',
-      amount: t.amount,
+      amount: Math.abs(Number(t.amount) || 0),
       sourceAccountName: t.sourceAccountName || '',
       targetAccountName: t.targetAccountName || '',
       userId: t.ownerUid || t.userId || '',
-      ...t
+      ownerUid: t.ownerUid || t.userId || '',
+      isPrivate: t.isPrivate
     }));
 
     let combined: any[] = [];
@@ -177,48 +184,114 @@ export function HistoricalView({ data, methods }: any) {
     exportToCSV(detailedRecords, 'historial_orbita2');
   };
 
-  const expensesByCategory = useMemo(() => {
+  const recordsByCategory = useMemo(() => {
     const totals: Record<string, number> = {};
-    let totalExpense = 0;
-    (filteredExpenses || []).forEach((e: any) => {
-      const amt = Number(e.amount) || 0;
-      const cat = e.category || 'Otros';
-      totals[cat] = (totals[cat] || 0) + amt;
-      totalExpense += amt;
-    });
+    let totalAmt = 0;
+
+    if (movementFilter === 'incomes') {
+      (filteredIncomes || []).forEach((i: any) => {
+        const amt = Math.abs(Number(i.amount) || 0);
+        const cat = i.category || i.source || 'Otros';
+        totals[cat] = (totals[cat] || 0) + amt;
+        totalAmt += amt;
+      });
+    } else if (movementFilter === 'transfers') {
+      (filteredTransfers || []).forEach((t: any) => {
+        const amt = Math.abs(Number(t.amount) || 0);
+        const cat = t.type === 'CARD_PAYMENT' ? 'Pago de Tarjeta' : 'Transferencia';
+        totals[cat] = (totals[cat] || 0) + amt;
+        totalAmt += amt;
+      });
+    } else {
+      (filteredExpenses || []).forEach((e: any) => {
+        const amt = Math.abs(Number(e.amount) || 0);
+        const cat = e.category || 'Otros';
+        totals[cat] = (totals[cat] || 0) + amt;
+        totalAmt += amt;
+      });
+    }
+
     return Object.entries(totals)
       .map(([name, amount]) => ({
         name,
         amount,
-        percentage: totalExpense > 0 ? (amount / totalExpense) * 100 : 0
+        percentage: totalAmt > 0 ? (amount / totalAmt) * 100 : 0
       }))
       .sort((a, b) => b.amount - a.amount);
-  }, [filteredExpenses]);
+  }, [filteredExpenses, filteredIncomes, filteredTransfers, movementFilter]);
+
+  const expensesByCategory = recordsByCategory;
+
+  const categoryBreakdownTitle = useMemo(() => {
+    if (movementFilter === 'incomes') return 'Ingresos por Categoría';
+    if (movementFilter === 'transfers') return 'Transferencias por Tipo';
+    return 'Gastos por Categoría';
+  }, [movementFilter]);
 
   const snapshots = useMemo(() => {
-    const monthlyData: Record<string, { income: number; expense: number; count: number; incomeByCategory: Record<string, number>; expenseByCategory: Record<string, number> }> = {};
-    
-    (filteredExpenses || []).forEach((e: any) => {
-      if (!e?.date) return;
-      const month = e.date.substring(0, 7);
-      if (!monthlyData[month]) monthlyData[month] = { income: 0, expense: 0, count: 0, incomeByCategory: {}, expenseByCategory: {} };
-      const amt = Number(e.amount) || 0;
-      monthlyData[month].expense += amt;
-      monthlyData[month].count += 1;
-      const cat = e.category || 'Otros';
-      monthlyData[month].expenseByCategory[cat] = (monthlyData[month].expenseByCategory[cat] || 0) + amt;
-    });
+    const monthlyData: Record<string, {
+      income: number;
+      expense: number;
+      transfer: number;
+      count: number;
+      incomeByCategory: Record<string, number>;
+      expenseByCategory: Record<string, number>;
+      transferByCategory: Record<string, number>;
+    }> = {};
 
-    (filteredIncomes || []).forEach((i: any) => {
-      if (!i?.date) return;
-      const month = i.date.substring(0, 7);
-      if (!monthlyData[month]) monthlyData[month] = { income: 0, expense: 0, count: 0, incomeByCategory: {}, expenseByCategory: {} };
-      const amt = Number(i.amount) || 0;
-      monthlyData[month].income += amt;
-      monthlyData[month].count += 1;
-      const cat = i.category || i.source || 'Otros';
-      monthlyData[month].incomeByCategory[cat] = (monthlyData[month].incomeByCategory[cat] || 0) + amt;
-    });
+    const getMonthEntry = (month: string) => {
+      if (!monthlyData[month]) {
+        monthlyData[month] = {
+          income: 0,
+          expense: 0,
+          transfer: 0,
+          count: 0,
+          incomeByCategory: {},
+          expenseByCategory: {},
+          transferByCategory: {}
+        };
+      }
+      return monthlyData[month];
+    };
+    
+    if (movementFilter === 'all' || movementFilter === 'expenses') {
+      (filteredExpenses || []).forEach((e: any) => {
+        if (!e?.date) return;
+        const month = e.date.substring(0, 7);
+        const entry = getMonthEntry(month);
+        const amt = Math.abs(Number(e.amount) || 0);
+        entry.expense += amt;
+        entry.count += 1;
+        const cat = e.category || 'Otros';
+        entry.expenseByCategory[cat] = (entry.expenseByCategory[cat] || 0) + amt;
+      });
+    }
+
+    if (movementFilter === 'all' || movementFilter === 'incomes') {
+      (filteredIncomes || []).forEach((i: any) => {
+        if (!i?.date) return;
+        const month = i.date.substring(0, 7);
+        const entry = getMonthEntry(month);
+        const amt = Math.abs(Number(i.amount) || 0);
+        entry.income += amt;
+        entry.count += 1;
+        const cat = i.category || i.source || 'Otros';
+        entry.incomeByCategory[cat] = (entry.incomeByCategory[cat] || 0) + amt;
+      });
+    }
+
+    if (movementFilter === 'all' || movementFilter === 'transfers') {
+      (filteredTransfers || []).forEach((t: any) => {
+        if (!t?.date) return;
+        const month = t.date.substring(0, 7);
+        const entry = getMonthEntry(month);
+        const amt = Math.abs(Number(t.amount) || 0);
+        entry.transfer += amt;
+        entry.count += 1;
+        const cat = t.type === 'CARD_PAYMENT' ? 'Pago de Tarjeta' : 'Transferencia';
+        entry.transferByCategory[cat] = (entry.transferByCategory[cat] || 0) + amt;
+      });
+    }
 
     return Object.entries(monthlyData)
       .sort(([monthA], [monthB]) => monthA.localeCompare(monthB))
@@ -233,24 +306,26 @@ export function HistoricalView({ data, methods }: any) {
           rawMonth: month,
           income: data.income,
           expense: data.expense,
+          transfer: data.transfer,
           count: data.count,
           incomeByCategory: data.incomeByCategory,
           expenseByCategory: data.expenseByCategory,
+          transferByCategory: data.transferByCategory,
           balance: data.income - data.expense,
           margin: data.income > 0 ? ((data.income - data.expense) / data.income) * 100 : 0
         };
       });
-  }, [filteredExpenses, filteredIncomes]);
+  }, [filteredExpenses, filteredIncomes, filteredTransfers, movementFilter]);
 
   const maxVal = snapshots.length > 0 
-    ? Math.max(1, ...snapshots.map(s => Math.max(s.income, s.expense))) 
+    ? Math.max(1, ...snapshots.map(s => Math.max(s.income || 0, s.expense || 0, s.transfer || 0))) 
     : 1;
 
   return (
     <div className="space-y-6 animate-in">
       <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-black tracking-tight text-slate-800">Histórico Anual</h2>
+          <h2 className="text-3xl font-black tracking-tight text-slate-800">Histórico</h2>
           <p className="text-slate-600 mt-2 font-medium">Comparativa de ingresos vs gastos por mes.</p>
         </div>
         
@@ -462,38 +537,79 @@ export function HistoricalView({ data, methods }: any) {
                             </div>
                           ))}
 
-                          <div className="mt-2 pt-2 border-t border-slate-700 flex justify-between gap-4 font-bold">
-                            <span className={snap.balance >= 0 ? 'text-emerald-400' : 'text-rose-400'}>Bal:</span>
-                            <span className="font-mono text-white">{FormatCurrency(snap.balance)}</span>
-                          </div>
+                          {Object.entries(snap.transferByCategory).length > 0 && (
+                            <div className="mt-2 mb-1 text-[10px] uppercase text-indigo-400 font-bold border-b border-slate-700 pb-1">Transferencias</div>
+                          )}
+                          {Object.entries(snap.transferByCategory).map(([cat, amt]) => (
+                            <div key={cat} className="flex justify-between gap-4 text-xs mt-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className={`w-2 h-2 rounded-full ${categoryColorMap[cat] || 'bg-indigo-500'}`}></span>
+                                <span className="text-slate-300">{cat}</span>
+                              </div>
+                              <span className="font-mono text-white">{FormatCurrency(amt)}</span>
+                            </div>
+                          ))}
+
+                          {movementFilter === 'transfers' ? (
+                            <div className="mt-2 pt-2 border-t border-slate-700 flex justify-between gap-4 font-bold">
+                              <span className="text-indigo-400">Total:</span>
+                              <span className="font-mono text-white">{FormatCurrency(snap.transfer)}</span>
+                            </div>
+                          ) : (
+                            <div className="mt-2 pt-2 border-t border-slate-700 flex justify-between gap-4 font-bold">
+                              <span className={snap.balance >= 0 ? 'text-emerald-400' : 'text-rose-400'}>Bal:</span>
+                              <span className="font-mono text-white">{FormatCurrency(snap.balance)}</span>
+                            </div>
+                          )}
                           <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900"></div>
                         </div>
 
                         <div className="flex gap-1.5 w-full justify-center items-end h-full">
-                          <div className="w-4 md:w-8 h-full flex flex-col-reverse justify-start gap-[1px]">
-                            {Object.entries(snap.incomeByCategory).map(([cat, amt]) => {
-                              const h = (amt / maxVal) * 100;
-                              return (
-                                <div
-                                  key={cat}
-                                  className={`${categoryColorMap[cat] || 'bg-slate-500'} w-full transition-all duration-700 hover:brightness-110 shadow-sm first:rounded-b-md last:rounded-t-md`}
-                                  style={{ height: `${h}%` }}
-                                ></div>
-                              );
-                            })}
-                          </div>
-                          <div className="w-4 md:w-8 h-full flex flex-col-reverse justify-start gap-[1px]">
-                            {Object.entries(snap.expenseByCategory).map(([cat, amt]) => {
-                              const h = (amt / maxVal) * 100;
-                              return (
-                                <div
-                                  key={cat}
-                                  className={`${categoryColorMap[cat] || 'bg-slate-500'} w-full transition-all duration-700 hover:brightness-110 shadow-sm first:rounded-b-md last:rounded-t-md opacity-90`}
-                                  style={{ height: `${h}%` }}
-                                ></div>
-                              );
-                            })}
-                          </div>
+                          {movementFilter === 'transfers' ? (
+                            <div className="w-4 md:w-8 h-full flex flex-col-reverse justify-start gap-[1px]">
+                              {Object.entries(snap.transferByCategory).map(([cat, amt]) => {
+                                const h = (amt / maxVal) * 100;
+                                return (
+                                  <div
+                                    key={cat}
+                                    className={`${categoryColorMap[cat] || 'bg-indigo-500'} w-full transition-all duration-700 hover:brightness-110 shadow-sm first:rounded-b-md last:rounded-t-md`}
+                                    style={{ height: `${h}%` }}
+                                  ></div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <>
+                              {(movementFilter === 'all' || movementFilter === 'incomes') && (
+                                <div className="w-4 md:w-8 h-full flex flex-col-reverse justify-start gap-[1px]">
+                                  {Object.entries(snap.incomeByCategory).map(([cat, amt]) => {
+                                    const h = (amt / maxVal) * 100;
+                                    return (
+                                      <div
+                                        key={cat}
+                                        className={`${categoryColorMap[cat] || 'bg-slate-500'} w-full transition-all duration-700 hover:brightness-110 shadow-sm first:rounded-b-md last:rounded-t-md`}
+                                        style={{ height: `${h}%` }}
+                                      ></div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                              {(movementFilter === 'all' || movementFilter === 'expenses') && (
+                                <div className="w-4 md:w-8 h-full flex flex-col-reverse justify-start gap-[1px]">
+                                  {Object.entries(snap.expenseByCategory).map(([cat, amt]) => {
+                                    const h = (amt / maxVal) * 100;
+                                    return (
+                                      <div
+                                        key={cat}
+                                        className={`${categoryColorMap[cat] || 'bg-slate-500'} w-full transition-all duration-700 hover:brightness-110 shadow-sm first:rounded-b-md last:rounded-t-md opacity-90`}
+                                        style={{ height: `${h}%` }}
+                                      ></div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </>
+                          )}
                         </div>
                       </div>
                     );
@@ -676,7 +792,7 @@ export function HistoricalView({ data, methods }: any) {
 
       {expensesByCategory.length > 0 && (
         <Card className="p-6">
-          <h3 className="text-xl font-bold text-slate-800 mb-6">Gastos por Categoría</h3>
+          <h3 className="text-xl font-bold text-slate-800 mb-6">{categoryBreakdownTitle}</h3>
           <div className="space-y-5">
             {expensesByCategory.map((cat, idx) => (
               <div key={idx}>

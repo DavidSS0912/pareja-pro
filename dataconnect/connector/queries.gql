@@ -194,6 +194,7 @@ query GetExpensesByHousehold($householdId: UUID!) @auth(level: USER) {
     createdAt
     ownerUid
     isShared
+    prorataFactor
     journal {
       id
       description
@@ -238,6 +239,7 @@ query GetIncomesByHousehold($householdId: UUID!) @auth(level: USER) {
     createdAt
     ownerUid
     isShared
+    prorataFactor
     journal {
       id
       description

@@ -83,6 +83,7 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
     
     const baseUser1Amount = user1Cents / 100;
     const baseUser2Amount = (totalCents - user1Cents) / 100;
+    const prorataFactor = item.splitType === 'proporcional' ? 0.0 : (item.splitType === 'individual' || !isShared) ? 1.0 : 0.5;
 
     const optimisticExpenses = [];
     const msiRefId = isMsi ? Date.now().toString() : null;
@@ -92,6 +93,8 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
       const expenseDate = calculateMsiInstallmentDate(item.date, i);
       optimisticExpenses.push({
         ...item,
+        splitType: item.splitType || (!isShared ? 'individual' : '50/50'),
+        prorataFactor,
         desc: expenseDesc,
         description: expenseDesc,
         userId: resolvedOwner,
@@ -120,7 +123,7 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
           date: expenseDate.toISOString(),
           description: item.desc || item.category || 'Gasto',
           totalAmount: amountPerMonth,
-          prorataFactor: 1.0,
+          prorataFactor: prorataFactor,
           payerAccountId: payerAccountId,
           user1ExpenseAccountId: user1ExpenseAccountId,
           user2ExpenseAccountId: user2ExpenseAccountId,
@@ -211,12 +214,23 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
     
     const user1Amount = user1Cents / 100;
     const user2Amount = (totalCents - user1Cents) / 100;
+    const prorataFactor = item.splitType === 'proporcional' ? 0.0 : (item.splitType === 'individual' || !isShared) ? 1.0 : 0.5;
 
     const expenseDesc = item.desc || item.category || 'Gasto';
     // Optimistic update
     const previousExpenses = [...state.expenses];
     set((s) => ({
-      expenses: s.expenses.map((e) => e.id === id ? { ...e, ...item, desc: expenseDesc, description: expenseDesc, userId: resolvedOwner, ownerUid: resolvedOwner, paidBy: resolvedOwner } : e)
+      expenses: s.expenses.map((e) => e.id === id ? { 
+        ...e, 
+        ...item, 
+        splitType: item.splitType || (!isShared ? 'individual' : e.splitType || '50/50'),
+        prorataFactor,
+        desc: expenseDesc, 
+        description: expenseDesc, 
+        userId: resolvedOwner, 
+        ownerUid: resolvedOwner, 
+        paidBy: resolvedOwner 
+      } : e)
     }));
 
     try {
@@ -230,7 +244,7 @@ export const createExpenseSlice: StateCreator<ExpenseSlice & AuthSlice & DataSli
         date: new Date(item.date).toISOString(),
         description: item.desc || item.category || 'Gasto',
         totalAmount: item.amount,
-        prorataFactor: 1.0,
+        prorataFactor: prorataFactor,
         payerAccountId: payerAccountId,
         user1ExpenseAccountId: user1ExpenseAccountId,
         user2ExpenseAccountId: user2ExpenseAccountId,

@@ -73,6 +73,7 @@ export default function App() {
     authLoading: state.authLoading,
     dateRange: state.dateRange,
     expenses: state.expenses,
+    transfers: state.transfers,
     budgets: state.budgets,
     assets: state.assets,
     incomes: state.incomes,
@@ -158,10 +159,24 @@ export default function App() {
     // Para presupuestos y cuentas: en contexto personal se filtran estrictamente por el memberSlot activo
     const contextMode = appContext === 'personal' ? 'personal' : 'shared';
 
+    const filterTransfers = (items: any[]) => {
+      const userUid = user?.uid || '';
+      return items.filter((t: any) => {
+        const ownerUid = t.ownerUid || t.userId;
+        const isShared = t.isPrivate !== undefined ? !t.isPrivate : true;
+        if (appContext === 'personal') {
+          return ownerUid === userUid && !isShared;
+        }
+        // appContext === 'household'
+        return isShared;
+      });
+    };
+
     return {
       ...data,
       incomes: filterContext(data.incomes.filter(i => inDateRange(i.date)), true),
       expenses: filterContext(data.expenses.filter(e => inDateRange(e.date)), false),
+      transfers: filterTransfers((data.transfers || []).filter((t: any) => inDateRange(t.date))),
       budgets: filterByContext<any>(data.budgets, contextMode, memberSlot),
       accounts: filterByContext(data.accounts || [], contextMode, memberSlot)
     };

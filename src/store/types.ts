@@ -13,6 +13,9 @@ export interface Transfer {
   targetAccountId: string;
   targetAccountName: string;
   type: 'TRANSFER' | 'CARD_PAYMENT';
+  ownerUid?: string;
+  userId?: string;
+  isPrivate?: boolean;
 }
 
 export interface Budget extends RecordItem {

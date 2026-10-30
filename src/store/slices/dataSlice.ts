@@ -26,6 +26,14 @@ export type { Transfer };
 
 const SERVER_ONLY = { fetchPolicy: QueryFetchPolicy.SERVER_ONLY };
 
+const resolveSplitType = (factor: any): '50/50' | 'proporcional' | 'individual' => {
+  if (factor === undefined || factor === null) return '50/50';
+  const num = Number(factor);
+  if (num === 0) return 'proporcional';
+  if (num === 1 || num === 1.0) return 'individual';
+  return '50/50';
+};
+
 export interface DataSlice {
   selectedBudgetMonth?: string;
   transfers: Transfer[];
@@ -186,6 +194,8 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
               ownerUid: e.ownerUid,
               paidBy: e.ownerUid,
               isPrivate: !e.isShared,
+              prorataFactor: e.prorataFactor !== undefined && e.prorataFactor !== null ? Number(e.prorataFactor) : 0.5,
+              splitType: resolveSplitType(e.prorataFactor),
               isMsi: e.journal.isMsi,
               msiMonthNumber: e.journal.msiMonthNumber,
               msiRefId: e.journal.msiRefId,
@@ -234,8 +244,11 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
           const creditEntry = j.entries_on_journal?.find((e: any) => e.entryType === 'CREDIT');
           const debitEntry = j.entries_on_journal?.find((e: any) => e.entryType === 'DEBIT');
           const isCardPayment = debitEntry?.account?.type === 'LIABILITY';
+          const primaryEntry = creditEntry || debitEntry;
+          const ownerUid = primaryEntry?.ownerUid;
+          const isPrivate = primaryEntry ? !primaryEntry.isShared : false;
 
-          return {
+          const transferItem: Transfer = {
             id: j.id,
             date: j.date,
             amount: debitEntry?.amount ?? creditEntry?.amount ?? 0,
@@ -246,6 +259,14 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
             targetAccountName: debitEntry?.account?.name || '',
             type: isCardPayment ? 'CARD_PAYMENT' : 'TRANSFER'
           };
+
+          Object.defineProperties(transferItem, {
+            ownerUid: { value: ownerUid, enumerable: false, writable: true, configurable: true },
+            userId: { value: ownerUid, enumerable: false, writable: true, configurable: true },
+            isPrivate: { value: isPrivate, enumerable: false, writable: true, configurable: true }
+          });
+
+          return transferItem;
         });
         get().setTransfers(mappedTransfers);
       }
@@ -308,6 +329,8 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
               ownerUid: e.ownerUid,
               paidBy: e.ownerUid,
               isPrivate: !e.isShared,
+              prorataFactor: e.prorataFactor !== undefined && e.prorataFactor !== null ? Number(e.prorataFactor) : 0.5,
+              splitType: resolveSplitType(e.prorataFactor),
               isMsi: e.journal.isMsi,
               msiMonthNumber: e.journal.msiMonthNumber,
               msiRefId: e.journal.msiRefId,
