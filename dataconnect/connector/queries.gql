@@ -345,6 +345,7 @@ query GetInternalTransfersByHousehold($householdId: UUID!) @auth(level: USER) {
         id
         name
         type
+        ownerType
       }
     }
   }

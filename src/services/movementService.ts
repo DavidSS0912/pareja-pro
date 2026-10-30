@@ -179,6 +179,11 @@ export interface MovementValidationInput {
   targetAccountId?: string;
   note?: string;
   options?: ExpenseAdvancedOptions;
+  sourceOwnerUid?: string;
+  targetOwnerUid?: string;
+  sourceOwnerType?: 'USER_A' | 'USER_B' | 'SHARED';
+  targetOwnerType?: 'USER_A' | 'USER_B' | 'SHARED';
+  transferKind?: 'SAME_USER' | 'CROSS_USERS' | 'CARD_PAYMENT';
 }
 
 export interface MovementValidationResult {
@@ -316,6 +321,13 @@ export type MovementAction =
         date: string;
         ownerUid: string;
         isShared: boolean;
+        description?: string;
+        note?: string;
+        sourceOwnerUid?: string;
+        targetOwnerUid?: string;
+        sourceOwnerType?: 'USER_A' | 'USER_B' | 'SHARED';
+        targetOwnerType?: 'USER_A' | 'USER_B' | 'SHARED';
+        transferKind?: 'SAME_USER' | 'CROSS_USERS' | 'CARD_PAYMENT';
       };
     };
 
@@ -401,16 +413,28 @@ export function buildMovementAction(input: MovementValidationInput): MovementAct
   }
 
   // TRANSFER
+  const transferPayload: any = {
+    sourceAccountId: input.sourceAccountId!,
+    targetAccountId: input.targetAccountId!,
+    amount,
+    date: input.date,
+    ownerUid: input.currentUserId!,
+    isShared: flags.isShared,
+  };
+
+  if (note) {
+    transferPayload.description = note;
+    transferPayload.note = note;
+  }
+  if (input.sourceOwnerUid) transferPayload.sourceOwnerUid = input.sourceOwnerUid;
+  if (input.targetOwnerUid) transferPayload.targetOwnerUid = input.targetOwnerUid;
+  if (input.sourceOwnerType) transferPayload.sourceOwnerType = input.sourceOwnerType;
+  if (input.targetOwnerType) transferPayload.targetOwnerType = input.targetOwnerType;
+  if (input.transferKind) transferPayload.transferKind = input.transferKind;
+
   return {
     type: 'TRANSFER',
-    payload: {
-      sourceAccountId: input.sourceAccountId!,
-      targetAccountId: input.targetAccountId!,
-      amount,
-      date: input.date,
-      ownerUid: input.currentUserId!,
-      isShared: flags.isShared,
-    },
+    payload: transferPayload,
   };
 }
 

@@ -1,7 +1,7 @@
 import { StateCreator } from 'zustand';
 import { RecordItem } from '../types';
 import { AuthSlice } from './authSlice';
-import { createAccount, updateAccount, deleteAccount, archiveAccount, createJournalWithEntries, OwnerType } from '../../lib/dataconnect';
+import { createAccount, updateAccount, deleteAccount, archiveAccount, createJournalWithEntries, createInternalTransfer, OwnerType } from '../../lib/dataconnect';
 import { useToastStore } from '../useToastStore';
 
 export interface AccountSlice {
@@ -12,7 +12,17 @@ export interface AccountSlice {
   deleteAccount: (id: string) => Promise<void>;
   archiveAccount: (id: string, isArchived: boolean) => Promise<void>;
   payCreditCard: (sourceAccountId: string, targetAccountId: string, amount: number, date: string, ownerUid: string, isShared: boolean) => Promise<void>;
-  createTransfer: (sourceAccountId: string, targetAccountId: string, amount: number, date: string, ownerUid: string, isShared: boolean, description?: string) => Promise<void>;
+  createTransfer: (
+    sourceAccountId: string,
+    targetAccountId: string,
+    amount: number,
+    date: string,
+    ownerUid: string,
+    isShared: boolean,
+    description?: string,
+    sourceOwnerUid?: string,
+    targetOwnerUid?: string
+  ) => Promise<void>;
 }
 
 export const createAccountSlice: StateCreator<AccountSlice & AuthSlice, [], [], AccountSlice> = (set, get) => ({
@@ -155,22 +165,63 @@ export const createAccountSlice: StateCreator<AccountSlice & AuthSlice, [], [], 
       throw e;
     }
   },
-  createTransfer: async (sourceAccountId, targetAccountId, amount, date, ownerUid, isShared, description) => {
+  createTransfer: async (
+    sourceAccountId,
+    targetAccountId,
+    amount,
+    date,
+    ownerUid,
+    isShared,
+    description,
+    sourceOwnerUid,
+    targetOwnerUid
+  ) => {
     const houseId = (get() as any).houseId;
     if (!houseId) return;
     const resolvedDescription = description?.trim() || "Transferencia entre cuentas";
+
+    const state = get() as any;
+    const accounts = state.accounts || [];
+    const users = state.users || [];
+    const userA = users.find((u: any) => u.memberSlot === 'USER_A');
+    const userB = users.find((u: any) => u.memberSlot === 'USER_B');
+
+    let resolvedSourceOwnerUid = sourceOwnerUid;
+    let resolvedTargetOwnerUid = targetOwnerUid;
+
+    if (!resolvedSourceOwnerUid) {
+      const srcAcc = accounts.find((a: any) => a.id === sourceAccountId);
+      if (srcAcc?.ownerType === 'USER_A') {
+        resolvedSourceOwnerUid = userA?.id || userA?.uid || ownerUid;
+      } else if (srcAcc?.ownerType === 'USER_B') {
+        resolvedSourceOwnerUid = userB?.id || userB?.uid || ownerUid;
+      } else {
+        resolvedSourceOwnerUid = ownerUid;
+      }
+    }
+
+    if (!resolvedTargetOwnerUid) {
+      const tgtAcc = accounts.find((a: any) => a.id === targetAccountId);
+      if (tgtAcc?.ownerType === 'USER_A') {
+        resolvedTargetOwnerUid = userA?.id || userA?.uid || ownerUid;
+      } else if (tgtAcc?.ownerType === 'USER_B') {
+        resolvedTargetOwnerUid = userB?.id || userB?.uid || ownerUid;
+      } else {
+        resolvedTargetOwnerUid = ownerUid;
+      }
+    }
+
     try {
-      await createJournalWithEntries({
+      await createInternalTransfer({
         householdId: houseId,
         date: new Date(date).toISOString(),
         description: resolvedDescription,
         amount: amount,
-        debitAccountId: targetAccountId,
-        creditAccountId: sourceAccountId,
-        prorataFactor: 1.0,
-        ownerUid: ownerUid,
-        isShared: isShared,
-        isInternalTransfer: true
+        sourceAccountId: sourceAccountId,
+        targetAccountId: targetAccountId,
+        sourceOwnerUid: resolvedSourceOwnerUid,
+        targetOwnerUid: resolvedTargetOwnerUid,
+        isShared: isShared
       });
       await (get() as any).fetchDashboardData?.(houseId);
     } catch (e) {

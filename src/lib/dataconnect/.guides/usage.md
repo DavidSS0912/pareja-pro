@@ -14,11 +14,14 @@ If a user is not using a supported framework, they can use the generated SDK dir
 Here's an example of how to use it with the first 5 operations:
 
 ```js
-import { createJournalWithEntries, createSharedExpenseWithProration, createBudget, updateBudget, deleteBudget, createAccount, updateAccount, archiveAccount, deleteAccount, reassignEntries } from '@pareja-pro/dataconnect';
+import { createJournalWithEntries, createInternalTransfer, createSharedExpenseWithProration, createBudget, updateBudget, deleteBudget, createAccount, updateAccount, archiveAccount, deleteAccount } from '@pareja-pro/dataconnect';
 
 
 // Operation CreateJournalWithEntries:  For variables, look at type CreateJournalWithEntriesVars in ../index.d.ts
 const { data } = await CreateJournalWithEntries(dataConnect, createJournalWithEntriesVars);
+
+// Operation CreateInternalTransfer:  For variables, look at type CreateInternalTransferVars in ../index.d.ts
+const { data } = await CreateInternalTransfer(dataConnect, createInternalTransferVars);
 
 // Operation CreateSharedExpenseWithProration:  For variables, look at type CreateSharedExpenseWithProrationVars in ../index.d.ts
 const { data } = await CreateSharedExpenseWithProration(dataConnect, createSharedExpenseWithProrationVars);
@@ -43,9 +46,6 @@ const { data } = await ArchiveAccount(dataConnect, archiveAccountVars);
 
 // Operation DeleteAccount:  For variables, look at type DeleteAccountVars in ../index.d.ts
 const { data } = await DeleteAccount(dataConnect, deleteAccountVars);
-
-// Operation ReassignEntries:  For variables, look at type ReassignEntriesVars in ../index.d.ts
-const { data } = await ReassignEntries(dataConnect, reassignEntriesVars);
 
 
 ```

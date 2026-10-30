@@ -56,6 +56,20 @@ exports.createJournalWithEntries = function createJournalWithEntries(dcOrVars, v
 }
 ;
 
+const createInternalTransferRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'CreateInternalTransfer', inputVars);
+}
+createInternalTransferRef.operationName = 'CreateInternalTransfer';
+exports.createInternalTransferRef = createInternalTransferRef;
+
+exports.createInternalTransfer = function createInternalTransfer(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(createInternalTransferRef(dcInstance, inputVars));
+}
+;
+
 const createSharedExpenseWithProrationRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();

@@ -10,9 +10,16 @@ export interface Transfer {
   description: string;
   sourceAccountId: string;
   sourceAccountName: string;
+  sourceOwnerType?: 'USER_A' | 'USER_B' | 'SHARED';
+  sourceOwnerUid?: string;
   targetAccountId: string;
   targetAccountName: string;
+  targetOwnerType?: 'USER_A' | 'USER_B' | 'SHARED';
+  targetOwnerUid?: string;
   type: 'TRANSFER' | 'CARD_PAYMENT';
+  transferKind?: 'SAME_USER' | 'CROSS_USERS' | 'CARD_PAYMENT';
+  senderUid?: string;
+  receiverUid?: string;
   ownerUid?: string;
   userId?: string;
   isPrivate?: boolean;

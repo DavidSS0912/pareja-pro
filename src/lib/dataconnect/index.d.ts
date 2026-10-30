@@ -158,6 +158,24 @@ export interface CreateHouseholdAndUserVariables {
   photoUrl?: string | null;
 }
 
+export interface CreateInternalTransferData {
+  journal_insert: Journal_Key;
+  creditEntry: Entry_Key;
+  debitEntry: Entry_Key;
+}
+
+export interface CreateInternalTransferVariables {
+  householdId: UUIDString;
+  date: TimestampString;
+  description: string;
+  amount: number;
+  sourceAccountId: UUIDString;
+  targetAccountId: UUIDString;
+  sourceOwnerUid: string;
+  targetOwnerUid: string;
+  isShared: boolean;
+}
+
 export interface CreateInvitationData {
   invitation_insert: Invitation_Key;
 }
@@ -587,6 +605,7 @@ export interface GetInternalTransfersByHouseholdData {
         id: UUIDString;
         name: string;
         type: AccountType;
+        ownerType: OwnerType;
       } & Account_Key;
     } & Entry_Key)[];
   } & Journal_Key)[];
@@ -1091,6 +1110,18 @@ export const createJournalWithEntriesRef: CreateJournalWithEntriesRef;
 
 export function createJournalWithEntries(vars: CreateJournalWithEntriesVariables): MutationPromise<CreateJournalWithEntriesData, CreateJournalWithEntriesVariables>;
 export function createJournalWithEntries(dc: DataConnect, vars: CreateJournalWithEntriesVariables): MutationPromise<CreateJournalWithEntriesData, CreateJournalWithEntriesVariables>;
+
+interface CreateInternalTransferRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateInternalTransferVariables): MutationRef<CreateInternalTransferData, CreateInternalTransferVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: CreateInternalTransferVariables): MutationRef<CreateInternalTransferData, CreateInternalTransferVariables>;
+  operationName: string;
+}
+export const createInternalTransferRef: CreateInternalTransferRef;
+
+export function createInternalTransfer(vars: CreateInternalTransferVariables): MutationPromise<CreateInternalTransferData, CreateInternalTransferVariables>;
+export function createInternalTransfer(dc: DataConnect, vars: CreateInternalTransferVariables): MutationPromise<CreateInternalTransferData, CreateInternalTransferVariables>;
 
 interface CreateSharedExpenseWithProrationRef {
   /* Allow users to create refs without passing in DataConnect */

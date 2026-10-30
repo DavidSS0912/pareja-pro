@@ -388,6 +388,21 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
           const ownerUid = primaryEntry?.ownerUid;
           const isPrivate = primaryEntry ? !primaryEntry.isShared : false;
 
+          const sourceOwnerUid = creditEntry?.ownerUid || ownerUid;
+          const targetOwnerUid = debitEntry?.ownerUid || ownerUid;
+          const sourceOwnerType = creditEntry?.account?.ownerType;
+          const targetOwnerType = debitEntry?.account?.ownerType;
+
+          let transferKind: 'SAME_USER' | 'CROSS_USERS' | 'CARD_PAYMENT' = 'SAME_USER';
+          if (isCardPayment) {
+            transferKind = 'CARD_PAYMENT';
+          } else if (
+            (sourceOwnerType && targetOwnerType && sourceOwnerType !== 'SHARED' && targetOwnerType !== 'SHARED' && sourceOwnerType !== targetOwnerType) ||
+            (sourceOwnerUid && targetOwnerUid && sourceOwnerUid !== targetOwnerUid)
+          ) {
+            transferKind = 'CROSS_USERS';
+          }
+
           const transferItem: Transfer = {
             id: j.id,
             date: j.date,
@@ -395,8 +410,15 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
             description: j.description,
             sourceAccountId: creditEntry?.account?.id || '',
             sourceAccountName: creditEntry?.account?.name || '',
+            sourceOwnerType,
+            sourceOwnerUid,
             targetAccountId: debitEntry?.account?.id || '',
             targetAccountName: debitEntry?.account?.name || '',
+            targetOwnerType,
+            targetOwnerUid,
+            senderUid: sourceOwnerUid,
+            receiverUid: targetOwnerUid,
+            transferKind,
             type: isCardPayment ? 'CARD_PAYMENT' : 'TRANSFER'
           };
 

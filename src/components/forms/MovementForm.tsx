@@ -21,7 +21,7 @@ import {
 
 export interface MovementFormProps {
   categories?: Array<{ id: string; name: string; type?: string }>;
-  accounts?: Array<{ id: string; name: string; type?: string }>;
+  accounts?: Array<{ id: string; name: string; type?: string; ownerType?: string }>;
   currentUserId?: string | null;
   appContext?: string;
   initialMode?: 'expense' | 'income' | 'transfer' | 'EXPENSE' | 'INCOME' | 'TRANSFER';
@@ -91,6 +91,30 @@ export function MovementForm({
   // F3.2: Etiquetas del store
   const tags = useAppStore((state) => state.tags);
 
+  // Usuarios del hogar del store para resolver titulares
+  const users = useAppStore((state) => (state as any).users || []);
+  const userA = users.find((u: any) => u.memberSlot === 'USER_A');
+  const userB = users.find((u: any) => u.memberSlot === 'USER_B');
+
+  const getAccountOwnerLabel = (acc: any): string | null => {
+    if (!acc) return null;
+    if (acc.ownerType === 'USER_A') {
+      return userA?.name || userA?.displayName || 'Usuario A';
+    }
+    if (acc.ownerType === 'USER_B') {
+      return userB?.name || userB?.displayName || 'Usuario B';
+    }
+    if (acc.ownerType === 'SHARED') {
+      return 'Compartida';
+    }
+    return null;
+  };
+
+  const formatAccountOption = (acc: any): string => {
+    const label = getAccountOwnerLabel(acc);
+    return label ? `[${label}] ${acc.name}` : acc.name;
+  };
+
   // Filtrado de catálogos según la modalidad
   const expenseCategories = categories.filter((c) => c.type === 'EXPENSE' || !c.type);
   const serverIncomeCats = categories.filter((c) => c.type === 'INCOME');
@@ -140,6 +164,39 @@ export function MovementForm({
   const depositAccounts = accounts.filter(
     (a) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT'
   );
+
+  const selectedSourceAcc = assetOrBankAccounts.find((a) => a.id === sourceAccountId);
+  const selectedTargetAcc = assetOrBankAccounts.find((a) => a.id === targetAccountId);
+
+  const transferOperationInfo = (() => {
+    if (type !== 'TRANSFER' || !selectedSourceAcc || !selectedTargetAcc) return null;
+    const isTargetLiability = selectedTargetAcc.type === 'LIABILITY' || selectedTargetAcc.type === 'CREDIT_CARD';
+    if (isTargetLiability) {
+      return {
+        kind: 'CARD_PAYMENT' as const,
+        label: 'Pago de Tarjeta de Crédito',
+        badgeClass: 'bg-indigo-50 border-indigo-200 text-indigo-700'
+      };
+    }
+    const srcOwner = selectedSourceAcc.ownerType;
+    const tgtOwner = selectedTargetAcc.ownerType;
+    const srcLabel = getAccountOwnerLabel(selectedSourceAcc) || 'Emisor';
+    const tgtLabel = getAccountOwnerLabel(selectedTargetAcc) || 'Receptor';
+
+    if (srcOwner && tgtOwner && srcOwner !== 'SHARED' && tgtOwner !== 'SHARED' && srcOwner !== tgtOwner) {
+      return {
+        kind: 'CROSS_USERS' as const,
+        label: `Transferencia a pareja (${srcLabel} → ${tgtLabel})`,
+        badgeClass: 'bg-purple-50 border-purple-200 text-purple-700'
+      };
+    }
+
+    return {
+      kind: 'SAME_USER' as const,
+      label: 'Traspaso entre cuentas propias',
+      badgeClass: 'bg-emerald-50 border-emerald-200 text-emerald-700'
+    };
+  })();
 
   // F3.2: Memoria de última cuenta al montar o cambiar de modalidad
   useEffect(() => {
@@ -210,6 +267,28 @@ export function MovementForm({
     const activeCatList = type === 'EXPENSE' ? expenseCategories : incomeCategories;
     const selectedCategory = activeCatList.find((c) => c.id === categoryId);
 
+    let sourceOwnerUid: string | undefined;
+    let targetOwnerUid: string | undefined;
+    let sourceOwnerType: 'USER_A' | 'USER_B' | 'SHARED' | undefined;
+    let targetOwnerType: 'USER_A' | 'USER_B' | 'SHARED' | undefined;
+    let transferKind: 'SAME_USER' | 'CROSS_USERS' | 'CARD_PAYMENT' | undefined;
+
+    if (type === 'TRANSFER' && selectedSourceAcc && selectedTargetAcc) {
+      sourceOwnerType = selectedSourceAcc.ownerType as any;
+      targetOwnerType = selectedTargetAcc.ownerType as any;
+      transferKind = transferOperationInfo?.kind;
+
+      const resolveUid = (acc: any) => {
+        if (!acc || acc.ownerType === 'SHARED') return currentUserId || '';
+        if (acc.ownerType === 'USER_A') return userA?.id || userA?.uid || currentUserId || '';
+        if (acc.ownerType === 'USER_B') return userB?.id || userB?.uid || currentUserId || '';
+        return currentUserId || '';
+      };
+
+      sourceOwnerUid = resolveUid(selectedSourceAcc);
+      targetOwnerUid = resolveUid(selectedTargetAcc);
+    }
+
     const validationInput: MovementValidationInput = {
       type,
       amount,
@@ -220,7 +299,12 @@ export function MovementForm({
       categoryName: selectedCategory?.name,
       sourceAccountId: type === 'EXPENSE' || type === 'TRANSFER' ? sourceAccountId : undefined,
       targetAccountId: type === 'INCOME' || type === 'TRANSFER' ? targetAccountId : undefined,
-      note: type !== 'TRANSFER' ? note : undefined,
+      note: note,
+      sourceOwnerUid,
+      targetOwnerUid,
+      sourceOwnerType,
+      targetOwnerType,
+      transferKind,
       ...(type === 'EXPENSE'
         ? {
             options: {
@@ -519,7 +603,7 @@ export function MovementForm({
               <option value="">Selecciona cuenta origen</option>
               {assetOrBankAccounts.map((a) => (
                 <option key={a.id} value={a.id}>
-                  {a.name}
+                  {formatAccountOption(a)}
                 </option>
               ))}
             </select>
@@ -543,35 +627,47 @@ export function MovementForm({
               <option value="">Selecciona cuenta destino</option>
               {assetOrBankAccounts.map((a) => (
                 <option key={a.id} value={a.id}>
-                  {a.name}
+                  {formatAccountOption(a)}
                 </option>
               ))}
             </select>
           </div>
+
+          {transferOperationInfo && (
+            <div className="col-span-1 sm:col-span-2">
+              <div
+                data-testid="transfer-operation-indicator"
+                className={`p-2.5 rounded-lg border text-xs font-semibold flex items-center gap-2 ${transferOperationInfo.badgeClass}`}
+              >
+                <ArrowLeftRight size={14} className="shrink-0" />
+                <span>{transferOperationInfo.label}</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Nota opcional (D1: omitida en TRANSFER) */}
-      {type !== 'TRANSFER' && (
-        <div>
-          <label htmlFor="mov-note" className={LABEL_CLASS}>
-            Nota o detalle (opcional)
-          </label>
-          <input
-            id="mov-note"
-            type="text"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder={
-              type === 'EXPENSE'
-                ? 'Ej. Supermercado, Almuerzo...'
-                : 'Ej. Sueldo quincenal, Bono...'
-            }
-            className={INPUT_CLASS}
-            disabled={isFormBlocked}
-          />
-        </div>
-      )}
+      {/* Nota opcional */}
+      <div>
+        <label htmlFor="mov-note" className={LABEL_CLASS}>
+          Nota o detalle (opcional)
+        </label>
+        <input
+          id="mov-note"
+          type="text"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder={
+            type === 'EXPENSE'
+              ? 'Ej. Supermercado, Almuerzo...'
+              : type === 'INCOME'
+              ? 'Ej. Sueldo quincenal, Bono...'
+              : 'Ej. Traspaso ahorro, Préstamo...'
+          }
+          className={INPUT_CLASS}
+          disabled={isFormBlocked}
+        />
+      </div>
 
       {/* Acordeón / Colapsable "Más opciones" para Gasto */}
       {type === 'EXPENSE' && (

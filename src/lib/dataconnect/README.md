@@ -35,6 +35,7 @@ This README will guide you through the process of using the generated JavaScript
   - [*UnbalancedJournals*](#unbalancedjournals)
 - [**Mutations**](#mutations)
   - [*CreateJournalWithEntries*](#createjournalwithentries)
+  - [*CreateInternalTransfer*](#createinternaltransfer)
   - [*CreateSharedExpenseWithProration*](#createsharedexpensewithproration)
   - [*CreateBudget*](#createbudget)
   - [*UpdateBudget*](#updatebudget)
@@ -1759,6 +1760,7 @@ export interface GetInternalTransfersByHouseholdData {
         id: UUIDString;
         name: string;
         type: AccountType;
+        ownerType: OwnerType;
       } & Account_Key;
     } & Entry_Key)[];
   } & Journal_Key)[];
@@ -3222,6 +3224,149 @@ executeMutation(ref).then((response) => {
   console.log(data.journal_insert);
   console.log(data.debitEntry);
   console.log(data.creditEntry);
+});
+```
+
+## CreateInternalTransfer
+You can execute the `CreateInternalTransfer` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+createInternalTransfer(vars: CreateInternalTransferVariables): MutationPromise<CreateInternalTransferData, CreateInternalTransferVariables>;
+
+interface CreateInternalTransferRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateInternalTransferVariables): MutationRef<CreateInternalTransferData, CreateInternalTransferVariables>;
+}
+export const createInternalTransferRef: CreateInternalTransferRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+createInternalTransfer(dc: DataConnect, vars: CreateInternalTransferVariables): MutationPromise<CreateInternalTransferData, CreateInternalTransferVariables>;
+
+interface CreateInternalTransferRef {
+  ...
+  (dc: DataConnect, vars: CreateInternalTransferVariables): MutationRef<CreateInternalTransferData, CreateInternalTransferVariables>;
+}
+export const createInternalTransferRef: CreateInternalTransferRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the createInternalTransferRef:
+```typescript
+const name = createInternalTransferRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `CreateInternalTransfer` mutation requires an argument of type `CreateInternalTransferVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface CreateInternalTransferVariables {
+  householdId: UUIDString;
+  date: TimestampString;
+  description: string;
+  amount: number;
+  sourceAccountId: UUIDString;
+  targetAccountId: UUIDString;
+  sourceOwnerUid: string;
+  targetOwnerUid: string;
+  isShared: boolean;
+}
+```
+### Return Type
+Recall that executing the `CreateInternalTransfer` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `CreateInternalTransferData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface CreateInternalTransferData {
+  journal_insert: Journal_Key;
+  creditEntry: Entry_Key;
+  debitEntry: Entry_Key;
+}
+```
+### Using `CreateInternalTransfer`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, createInternalTransfer, CreateInternalTransferVariables } from '@pareja-pro/dataconnect';
+
+// The `CreateInternalTransfer` mutation requires an argument of type `CreateInternalTransferVariables`:
+const createInternalTransferVars: CreateInternalTransferVariables = {
+  householdId: ..., 
+  date: ..., 
+  description: ..., 
+  amount: ..., 
+  sourceAccountId: ..., 
+  targetAccountId: ..., 
+  sourceOwnerUid: ..., 
+  targetOwnerUid: ..., 
+  isShared: ..., 
+};
+
+// Call the `createInternalTransfer()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await createInternalTransfer(createInternalTransferVars);
+// Variables can be defined inline as well.
+const { data } = await createInternalTransfer({ householdId: ..., date: ..., description: ..., amount: ..., sourceAccountId: ..., targetAccountId: ..., sourceOwnerUid: ..., targetOwnerUid: ..., isShared: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await createInternalTransfer(dataConnect, createInternalTransferVars);
+
+console.log(data.journal_insert);
+console.log(data.creditEntry);
+console.log(data.debitEntry);
+
+// Or, you can use the `Promise` API.
+createInternalTransfer(createInternalTransferVars).then((response) => {
+  const data = response.data;
+  console.log(data.journal_insert);
+  console.log(data.creditEntry);
+  console.log(data.debitEntry);
+});
+```
+
+### Using `CreateInternalTransfer`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, createInternalTransferRef, CreateInternalTransferVariables } from '@pareja-pro/dataconnect';
+
+// The `CreateInternalTransfer` mutation requires an argument of type `CreateInternalTransferVariables`:
+const createInternalTransferVars: CreateInternalTransferVariables = {
+  householdId: ..., 
+  date: ..., 
+  description: ..., 
+  amount: ..., 
+  sourceAccountId: ..., 
+  targetAccountId: ..., 
+  sourceOwnerUid: ..., 
+  targetOwnerUid: ..., 
+  isShared: ..., 
+};
+
+// Call the `createInternalTransferRef()` function to get a reference to the mutation.
+const ref = createInternalTransferRef(createInternalTransferVars);
+// Variables can be defined inline as well.
+const ref = createInternalTransferRef({ householdId: ..., date: ..., description: ..., amount: ..., sourceAccountId: ..., targetAccountId: ..., sourceOwnerUid: ..., targetOwnerUid: ..., isShared: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = createInternalTransferRef(dataConnect, createInternalTransferVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.journal_insert);
+console.log(data.creditEntry);
+console.log(data.debitEntry);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.journal_insert);
+  console.log(data.creditEntry);
+  console.log(data.debitEntry);
 });
 ```
 
