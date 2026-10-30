@@ -423,6 +423,7 @@ export interface GetExpensesByHouseholdData {
     } & Journal_Key;
     account: {
       name: string;
+      type: AccountType;
     };
   } & Entry_Key)[];
 }
@@ -524,6 +525,7 @@ export interface GetIncomesByHouseholdData {
     } & Journal_Key;
     account: {
       name: string;
+      type: AccountType;
     };
   } & Entry_Key)[];
 }

@@ -93,6 +93,7 @@ export default function App() {
     addExpense: state.addExpense,
     addProject: state.addProject,
     updateProject: state.updateProject,
+    reorderProjects: state.reorderProjects,
     deleteProject: state.deleteProject,
     addContribution: state.addContribution,
     addContributionAndUpdateProject: state.addContributionAndUpdateProject,
@@ -174,6 +175,8 @@ export default function App() {
 
     return {
       ...data,
+      allIncomes: filterContext(data.incomes, true),
+      rawIncomes: filterContext(data.incomes, true),
       incomes: filterContext(data.incomes.filter(i => inDateRange(i.date)), true),
       expenses: filterContext(data.expenses.filter(e => inDateRange(e.date)), false),
       transfers: filterTransfers((data.transfers || []).filter((t: any) => inDateRange(t.date))),

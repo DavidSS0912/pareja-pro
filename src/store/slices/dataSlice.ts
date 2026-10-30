@@ -96,6 +96,43 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
 
       const mergedAccounts = mergeAccountsWithBalances(serverAccounts, balanceEntries, currentAccounts);
       get().setAccounts(mergedAccounts as any);
+
+      // Ensure default income categories exist
+      try {
+        const dc = await import('../../lib/dataconnect');
+        if (dc && typeof (dc as any).getCategories === 'function') {
+          const catsRes = await (dc as any).getCategories({ householdId: houseId }, SERVER_ONLY);
+          let cats = catsRes.data?.categories || [];
+          const hasIncomeCat = cats.some((c: any) => c.type === 'INCOME');
+          if (!hasIncomeCat && typeof (dc as any).createCategory === 'function') {
+            const defaultIncomeCategories = [
+              { name: 'Sueldo / Salario', type: 'INCOME', color: '#10b981', ownerType: 'SHARED' },
+              { name: 'Honorarios / Ventas', type: 'INCOME', color: '#3b82f6', ownerType: 'SHARED' },
+              { name: 'Otros Ingresos', type: 'INCOME', color: '#8b5cf6', ownerType: 'SHARED' }
+            ];
+            for (const d of defaultIncomeCategories) {
+              try {
+                await (dc as any).createCategory({
+                  householdId: houseId,
+                  name: d.name,
+                  type: d.type as any,
+                  color: d.color,
+                  ownerType: d.ownerType as any
+                });
+              } catch (err) {
+                console.warn('Could not create default income category:', err);
+              }
+            }
+            const reloadedCats = await (dc as any).getCategories({ householdId: houseId }, SERVER_ONLY);
+            cats = reloadedCats.data?.categories || [];
+          }
+          (set as any)({ categories: cats });
+        }
+      } catch (catErr: any) {
+        if (!catErr?.message?.includes('No "getCategories" export')) {
+          console.warn('Error loading or seeding categories:', catErr);
+        }
+      }
       if (accountsResult.data?.householdUsers) {
         const existingUsers = get().users || [];
         const currentUser = get().user;
@@ -155,7 +192,12 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
           monthlyQuota: p.monthlyQuota || 0,
           targetAccount: p.targetAccount || '',
           milestones: []
-        })).sort((a: any, b: any) => a.priority - b.priority);
+        })).sort((a: any, b: any) => {
+          if ((a.priority || 0) !== (b.priority || 0)) {
+            return (a.priority || 0) - (b.priority || 0);
+          }
+          return (a.createdAt || '').localeCompare(b.createdAt || '');
+        });
         
         let hasActive = false;
         mappedProjects.forEach((p: any) => {

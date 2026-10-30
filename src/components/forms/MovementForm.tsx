@@ -93,7 +93,46 @@ export function MovementForm({
 
   // Filtrado de catálogos según la modalidad
   const expenseCategories = categories.filter((c) => c.type === 'EXPENSE' || !c.type);
-  const incomeCategories = categories.filter((c) => c.type === 'INCOME');
+  const serverIncomeCats = categories.filter((c) => c.type === 'INCOME');
+  const DEFAULT_INCOME_CATS = [
+    { id: 'default-inc-1', name: 'Sueldo / Salario', type: 'INCOME' },
+    { id: 'default-inc-2', name: 'Honorarios / Ventas', type: 'INCOME' },
+    { id: 'default-inc-3', name: 'Otros Ingresos', type: 'INCOME' }
+  ];
+  const effectiveIncomeCategories = serverIncomeCats.length > 0 ? serverIncomeCats : DEFAULT_INCOME_CATS;
+  const incomeCategories = effectiveIncomeCategories;
+
+  useEffect(() => {
+    if (type === 'INCOME' && serverIncomeCats.length === 0) {
+      const houseId = (useAppStore.getState() as any).houseId;
+      if (houseId) {
+        import('../../lib/dataconnect').then(async ({ createCategory, getCategories }) => {
+          const defaults = [
+            { name: 'Sueldo / Salario', type: 'INCOME', color: '#10b981', ownerType: 'SHARED' },
+            { name: 'Honorarios / Ventas', type: 'INCOME', color: '#3b82f6', ownerType: 'SHARED' },
+            { name: 'Otros Ingresos', type: 'INCOME', color: '#8b5cf6', ownerType: 'SHARED' }
+          ];
+          for (const d of defaults) {
+            try {
+              await createCategory({
+                householdId: houseId,
+                name: d.name,
+                type: d.type as any,
+                color: d.color,
+                ownerType: d.ownerType as any
+              });
+            } catch (e) {
+              console.warn('Category already exists or failed:', e);
+            }
+          }
+          const res = await getCategories({ householdId: houseId }, { fetchPolicy: 'SERVER_ONLY' as any });
+          if (res.data?.categories) {
+            useAppStore.setState({ categories: res.data.categories as any });
+          }
+        });
+      }
+    }
+  }, [type, serverIncomeCats.length]);
 
   const assetOrBankAccounts = accounts.filter(
     (a) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT' || a.type === 'LIABILITY'
@@ -202,6 +241,32 @@ export function MovementForm({
 
     try {
       setIsSubmitting(true);
+      if (type === 'INCOME' && validationInput.categoryId && validationInput.categoryId.startsWith('default-inc-')) {
+        const houseId = (useAppStore.getState() as any).houseId;
+        if (houseId) {
+          try {
+            const { createCategory, getCategories } = await import('../../lib/dataconnect');
+            const catName = selectedCategory?.name || 'Sueldo / Salario';
+            const createRes = await createCategory({
+              householdId: houseId,
+              name: catName,
+              type: 'INCOME' as any,
+              color: '#10b981',
+              ownerType: 'SHARED' as any
+            });
+            const realCatId = createRes.data?.category_insert?.id;
+            if (realCatId) {
+              validationInput.categoryId = realCatId;
+              const res = await getCategories({ householdId: houseId }, { fetchPolicy: 'SERVER_ONLY' as any });
+              if (res.data?.categories) {
+                useAppStore.setState({ categories: res.data.categories as any });
+              }
+            }
+          } catch (catErr) {
+            console.warn('Could not auto-create real category UUID on submit:', catErr);
+          }
+        }
+      }
       const action = buildMovementAction(validationInput);
       await onSubmit(action);
 

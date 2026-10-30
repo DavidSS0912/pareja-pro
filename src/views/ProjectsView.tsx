@@ -83,7 +83,10 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
 
   // Clasificación y orden de proyectos
   const sortedProjects = useMemo(() => {
-    return [...projects].sort((a, b) => (a.priority || 0) - (b.priority || 0));
+    return [...projects].sort((a, b) => {
+      if ((a.priority || 0) !== (b.priority || 0)) return (a.priority || 0) - (b.priority || 0);
+      return (a.createdAt || '').localeCompare(b.createdAt || '');
+    });
   }, [projects]);
 
   const activeProject = useMemo(() => {
@@ -245,27 +248,68 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
   // Reordenamiento y cambio de estado
   const changePriority = async (project: any, direction: 'up' | 'down') => {
     const currentIndex = pendingProjects.findIndex((p) => p.id === project.id);
-    if (direction === 'up' && currentIndex > 0) {
-      const other = pendingProjects[currentIndex - 1];
-      if (methods?.updateProject) {
-        await methods.updateProject(project.id, { priority: other.priority });
-        await methods.updateProject(other.id, { priority: project.priority });
+    if (currentIndex === -1) return;
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= pendingProjects.length) return;
+
+    const other = pendingProjects[targetIndex];
+    let pPriority = Number(project.priority) || 1;
+    let oPriority = Number(other.priority) || 1;
+
+    if (pPriority === oPriority) {
+      if (direction === 'up') {
+        pPriority = Math.max(1, oPriority - 1);
+      } else {
+        pPriority = oPriority + 1;
       }
-    } else if (direction === 'down' && currentIndex < pendingProjects.length - 1) {
-      const other = pendingProjects[currentIndex + 1];
-      if (methods?.updateProject) {
-        await methods.updateProject(project.id, { priority: other.priority });
-        await methods.updateProject(other.id, { priority: project.priority });
-      }
+    } else {
+      const temp = pPriority;
+      pPriority = oPriority;
+      oPriority = temp;
+    }
+
+    const updates = [
+      { id: project.id, priority: pPriority },
+      { id: other.id, priority: oPriority }
+    ];
+
+    if (methods?.reorderProjects) {
+      await methods.reorderProjects(updates);
+    } else if (methods?.updateProject) {
+      await methods.updateProject(project.id, { priority: pPriority });
+      await methods.updateProject(other.id, { priority: oPriority });
     }
   };
 
   const activateProject = async (project: any) => {
-    if (activeProject && methods?.updateProject) {
-      await methods.updateProject(activeProject.id, { status: 'pending' });
+    if (!activeProject || activeProject.id === project.id) return;
+
+    let activePriority = Number(activeProject.priority) || 1;
+    let selectedPriority = Number(project.priority) || (activePriority + 1);
+
+    if (selectedPriority === activePriority) {
+      selectedPriority = activePriority;
+      activePriority = activePriority + 1;
+    } else if (selectedPriority < activePriority) {
+      const temp = selectedPriority;
+      selectedPriority = activePriority;
+      activePriority = temp;
+    } else {
+      const temp = activePriority;
+      activePriority = selectedPriority;
+      selectedPriority = temp;
     }
-    if (methods?.updateProject) {
-      await methods.updateProject(project.id, { status: 'active' });
+
+    const updates = [
+      { id: project.id, priority: selectedPriority },
+      { id: activeProject.id, priority: activePriority }
+    ];
+
+    if (methods?.reorderProjects) {
+      await methods.reorderProjects(updates);
+    } else if (methods?.updateProject) {
+      await methods.updateProject(project.id, { priority: selectedPriority });
+      await methods.updateProject(activeProject.id, { priority: activePriority });
     }
   };
 

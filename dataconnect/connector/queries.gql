@@ -214,6 +214,7 @@ query GetExpensesByHousehold($householdId: UUID!) @auth(level: USER) {
     }
     account {
       name
+      type
     }
   }
 }
@@ -254,6 +255,7 @@ query GetIncomesByHousehold($householdId: UUID!) @auth(level: USER) {
     }
     account {
       name
+      type
     }
   }
 }

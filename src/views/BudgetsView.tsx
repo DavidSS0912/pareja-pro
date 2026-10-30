@@ -150,10 +150,11 @@ export function BudgetsView({ data, methods, appContext }: BudgetsViewProps) {
 
   // Requisitos 1 y 2: Cálculos de ingresos y proporciones del hogar
   const periodIncomes = useMemo(() => {
-    return (data?.incomes || []).filter(
+    const sourceIncomes = data?.allIncomes || data?.rawIncomes || data?.incomes || [];
+    return sourceIncomes.filter(
       inc => !selectedMonth || String(inc.date || '').substring(0, 7) === selectedMonth.substring(0, 7)
     );
-  }, [data?.incomes, selectedMonth]);
+  }, [data?.allIncomes, data?.rawIncomes, data?.incomes, selectedMonth]);
 
   const incomeShares = useMemo(() => {
     return calculateHouseholdIncomeShares(periodIncomes, data?.users);

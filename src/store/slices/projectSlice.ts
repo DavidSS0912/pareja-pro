@@ -11,6 +11,7 @@ export interface ProjectSlice {
   addProject: (item: any) => Promise<void>;
   updateProject: (id: string, item: any) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
+  reorderProjects: (updates: Array<{ id: string; priority: number }>) => Promise<void>;
   contributions: RecordItem[];
   setContributions: (items: RecordItem[]) => void;
   addContribution: (item: any) => Promise<void>;
@@ -25,8 +26,13 @@ export const createProjectSlice: StateCreator<ProjectSlice & AuthSlice & DataSli
   addProject: async (item) => {
     const state = get();
     const houseId = state.houseId || "00000000-0000-0000-0000-000000000000";
-    
-    const optimisticProject = { ...item, id: `temp-${Date.now()}` };
+    const maxPriority = (state.projects || []).reduce(
+      (max: number, p: any) => Math.max(max, Number(p.priority) || 0),
+      0
+    );
+    const resolvedPriority = item.priority !== undefined ? Number(item.priority) : (maxPriority + 1);
+
+    const optimisticProject = { ...item, priority: resolvedPriority, id: `temp-${Date.now()}` };
     set((s) => ({ projects: [optimisticProject, ...s.projects] }));
     
     try {
@@ -34,7 +40,7 @@ export const createProjectSlice: StateCreator<ProjectSlice & AuthSlice & DataSli
         householdId: houseId,
         name: item.name,
         targetAmount: item.targetAmount || 0,
-        priority: item.priority || 1,
+        priority: resolvedPriority,
         monthlyQuota: item.monthlyQuota,
         targetAccount: item.targetAccount
       });
@@ -81,6 +87,48 @@ export const createProjectSlice: StateCreator<ProjectSlice & AuthSlice & DataSli
     }
   },
   deleteProject: async (_id) => { useToastStore.getState().addToast("Operación no disponible", "error"); },
+  reorderProjects: async (updates: Array<{ id: string; priority: number }>) => {
+    const state = get();
+    const houseId = state.houseId;
+    if (!houseId || !updates.length) return;
+    const previousProjects = [...state.projects];
+    const updateMap = new Map(updates.map((u) => [u.id, u.priority]));
+    const updatedProjects = state.projects
+      .map((p) => (updateMap.has(p.id) ? { ...p, priority: updateMap.get(p.id) } : p))
+      .sort((a: any, b: any) =>
+        (a.priority || 0) !== (b.priority || 0)
+          ? (a.priority || 0) - (b.priority || 0)
+          : (a.createdAt || '').localeCompare(b.createdAt || '')
+      );
+    let hasActive = false;
+    updatedProjects.forEach((p: any) => {
+      if (!p.isCompleted && !hasActive) {
+        p.status = 'active';
+        hasActive = true;
+      } else if (!p.isCompleted) {
+        p.status = 'pending';
+      }
+    });
+    set({ projects: updatedProjects });
+
+    try {
+      await Promise.all(
+        updates.map((u) =>
+          updateSavingsProject({
+            projectId: u.id,
+            householdId: houseId,
+            priority: u.priority
+          })
+        )
+      );
+      useToastStore.getState().addToast("Prioridad actualizada", "success");
+      await get().fetchDashboardData(houseId);
+    } catch (error) {
+      console.error("Error al reordenar proyectos:", error);
+      useToastStore.getState().addToast("Error al actualizar prioridades", "error");
+      set({ projects: previousProjects });
+    }
+  },
   
   contributions: [],
   setContributions: (items) => set({ contributions: items }),

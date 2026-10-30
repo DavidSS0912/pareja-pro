@@ -3,6 +3,7 @@ import { Target, Wallet, AlertCircle, Sparkles } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { FormatCurrency } from '../../utils';
 import { validateProjectTargetAccount } from '../../utils/projectCalculations';
+import { useAppStore } from '../../store/useAppStore';
 
 export interface ProjectFormData {
   name: string;
@@ -59,7 +60,9 @@ export function ProjectForm({
       setTargetAmount('');
       setMonthlyQuota('');
       setTargetAccountId(validAssetAccounts[0]?.id || '');
-      setPriority(1);
+      const existingProjects = (useAppStore.getState() as any).projects || [];
+      const maxPriority = existingProjects.reduce((max: number, p: any) => Math.max(max, Number(p.priority) || 0), 0);
+      setPriority(maxPriority + 1);
     }
     setErrorMessage(null);
   }, [initialData, validAssetAccounts]);
