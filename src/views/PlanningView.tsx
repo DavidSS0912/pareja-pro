@@ -101,7 +101,7 @@ export function PlanningView({
         <div className="absolute top-0 right-0 -mt-8 -mr-8 w-48 h-48 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
         
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-3">
+          <div className="flex-1 space-y-3 min-w-0">
             <div className="flex items-center gap-2 text-indigo-300 text-xs font-bold uppercase tracking-wider">
               <TrendingUp size={15} className="text-indigo-400" />
               <span>Resumen Ejecutivo de Ingresos ({selectedMonth.substring(0, 7)})</span>
@@ -141,27 +141,54 @@ export function PlanningView({
           </div>
 
           {/* Desglose por Integrante */}
-          <div className="flex-1 lg:max-w-md pt-3 lg:pt-0 border-t lg:border-t-0 lg:border-l border-white/10 lg:pl-6">
-            <div className="text-xs font-bold text-indigo-200 uppercase tracking-wider mb-2 flex items-center justify-between">
+          <div className="w-full lg:w-auto lg:min-w-[300px] xl:min-w-[320px] pt-4 lg:pt-0 border-t lg:border-t-0 lg:border-l border-white/10 lg:pl-6 shrink-0">
+            <div className="text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2.5">
               <span>Aporte por Integrante</span>
             </div>
             
             {incomeShares.userShares.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {incomeShares.userShares.map((user) => (
-                  <div 
-                    key={user.userId}
-                    className="bg-white/10 backdrop-blur-sm rounded-xl p-2.5 border border-white/10 flex items-center justify-between shadow-xs"
-                  >
-                    <div className="truncate mr-2">
-                      <p className="text-xs font-medium text-indigo-200 truncate">{user.userName}</p>
-                      <p className="text-xs font-bold text-white">{FormatCurrency(user.income)}</p>
+              <div className="flex flex-col gap-2">
+                {incomeShares.userShares.map((user) => {
+                  const userObj = (data?.users || []).find((u: any) => u.id === user.userId || u.uid === user.userId);
+                  const photo = userObj?.photoUrl || userObj?.photoURL;
+                  const initial = (user.userName || 'U').trim().charAt(0).toUpperCase();
+
+                  return (
+                    <div 
+                      key={user.userId}
+                      className="flex items-center justify-between gap-3 p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                    >
+                      {/* Lado izquierdo: Avatar/inicial circular pequeño (24px) + Nombre completo legible */}
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        {photo ? (
+                          <img
+                            src={photo}
+                            alt={user.userName || 'Usuario'}
+                            className="w-6 h-6 rounded-full object-cover border border-white/20 shrink-0"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-500 to-primary text-white flex items-center justify-center text-[11px] font-black shrink-0 border border-white/20 select-none">
+                            {initial}
+                          </div>
+                        )}
+                        <span className="text-xs font-medium text-slate-200 truncate">
+                          {user.userName}
+                        </span>
+                      </div>
+
+                      {/* Lado derecho: Monto completo formateado con FormatCurrency + Badge de porcentaje */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="font-mono text-xs font-bold text-white whitespace-nowrap">
+                          {FormatCurrency(user.income)}
+                        </span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 whitespace-nowrap">
+                          {user.percentage.toFixed(1)}%
+                        </span>
+                      </div>
                     </div>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-black bg-indigo-500/30 text-indigo-100 border border-indigo-400/25 shrink-0">
-                      {user.percentage.toFixed(1)}%
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="text-xs text-indigo-200">No hay integrantes registrados en el hogar.</p>
