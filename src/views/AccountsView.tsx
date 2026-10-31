@@ -463,6 +463,18 @@ export function AccountsView({ data = {}, methods = {}, appContext = 'household'
                           <span className="text-[10px] bg-white/20 px-2.5 py-1 rounded-lg font-bold uppercase tracking-wider border border-white/10 backdrop-blur-sm">
                             Débito / Efectivo
                           </span>
+                          {account.ownerType !== 'SHARED' && (
+                            <span
+                              data-testid={`account-partner-status-${account.id}`}
+                              className={`text-[10px] px-2.5 py-1 rounded-lg font-bold uppercase tracking-wider border backdrop-blur-sm ${
+                                account.allowPartnerTransfers
+                                  ? 'bg-emerald-500/25 text-emerald-200 border-emerald-400/30'
+                                  : 'bg-slate-500/20 text-slate-300 border-white/10'
+                              }`}
+                            >
+                              {account.allowPartnerTransfers ? 'Transferencias Pareja: Activo' : 'Transferencias Pareja: Privado'}
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -583,6 +595,18 @@ export function AccountsView({ data = {}, methods = {}, appContext = 'household'
                           <span className="text-[10px] bg-indigo-500/30 px-2.5 py-1 rounded-lg font-bold uppercase tracking-wider border border-indigo-400/20 backdrop-blur-sm">
                             Crédito
                           </span>
+                          {account.ownerType !== 'SHARED' && (
+                            <span
+                              data-testid={`account-partner-status-${account.id}`}
+                              className={`text-[10px] px-2.5 py-1 rounded-lg font-bold uppercase tracking-wider border backdrop-blur-sm ${
+                                account.allowPartnerTransfers
+                                  ? 'bg-emerald-500/25 text-emerald-200 border-emerald-400/30'
+                                  : 'bg-slate-500/20 text-slate-300 border-white/10'
+                              }`}
+                            >
+                              {account.allowPartnerTransfers ? 'Transferencias Pareja: Activo' : 'Transferencias Pareja: Privado'}
+                            </span>
+                          )}
                         </div>
                       </div>
 

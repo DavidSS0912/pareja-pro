@@ -178,6 +178,7 @@ export interface GetHouseholdAccountsData {
     creditLimit?: number | null;
     color?: string | null;
     isArchived: boolean;
+    allowPartnerTransfers: boolean;
   } & Account_Key)[];
   householdUsers: ({
     uid: string;
@@ -4114,6 +4115,7 @@ export interface CreateAccountVariables {
   paymentDay?: number | null;
   creditLimit?: number | null;
   color?: string | null;
+  allowPartnerTransfers?: boolean | null;
 }
 ```
 ### Return Type
@@ -4141,13 +4143,14 @@ const createAccountVars: CreateAccountVariables = {
   paymentDay: ..., // optional
   creditLimit: ..., // optional
   color: ..., // optional
+  allowPartnerTransfers: ..., // optional
 };
 
 // Call the `createAccount()` function to execute the mutation.
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await createAccount(createAccountVars);
 // Variables can be defined inline as well.
-const { data } = await createAccount({ householdId: ..., name: ..., type: ..., ownerType: ..., cutDay: ..., paymentDay: ..., creditLimit: ..., color: ..., });
+const { data } = await createAccount({ householdId: ..., name: ..., type: ..., ownerType: ..., cutDay: ..., paymentDay: ..., creditLimit: ..., color: ..., allowPartnerTransfers: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -4178,12 +4181,13 @@ const createAccountVars: CreateAccountVariables = {
   paymentDay: ..., // optional
   creditLimit: ..., // optional
   color: ..., // optional
+  allowPartnerTransfers: ..., // optional
 };
 
 // Call the `createAccountRef()` function to get a reference to the mutation.
 const ref = createAccountRef(createAccountVars);
 // Variables can be defined inline as well.
-const ref = createAccountRef({ householdId: ..., name: ..., type: ..., ownerType: ..., cutDay: ..., paymentDay: ..., creditLimit: ..., color: ..., });
+const ref = createAccountRef({ householdId: ..., name: ..., type: ..., ownerType: ..., cutDay: ..., paymentDay: ..., creditLimit: ..., color: ..., allowPartnerTransfers: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -4244,6 +4248,7 @@ export interface UpdateAccountVariables {
   paymentDay?: number | null;
   creditLimit?: number | null;
   color?: string | null;
+  allowPartnerTransfers?: boolean | null;
 }
 ```
 ### Return Type
@@ -4271,13 +4276,14 @@ const updateAccountVars: UpdateAccountVariables = {
   paymentDay: ..., // optional
   creditLimit: ..., // optional
   color: ..., // optional
+  allowPartnerTransfers: ..., // optional
 };
 
 // Call the `updateAccount()` function to execute the mutation.
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await updateAccount(updateAccountVars);
 // Variables can be defined inline as well.
-const { data } = await updateAccount({ accountId: ..., householdId: ..., name: ..., ownerType: ..., cutDay: ..., paymentDay: ..., creditLimit: ..., color: ..., });
+const { data } = await updateAccount({ accountId: ..., householdId: ..., name: ..., ownerType: ..., cutDay: ..., paymentDay: ..., creditLimit: ..., color: ..., allowPartnerTransfers: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -4308,12 +4314,13 @@ const updateAccountVars: UpdateAccountVariables = {
   paymentDay: ..., // optional
   creditLimit: ..., // optional
   color: ..., // optional
+  allowPartnerTransfers: ..., // optional
 };
 
 // Call the `updateAccountRef()` function to get a reference to the mutation.
 const ref = updateAccountRef(updateAccountVars);
 // Variables can be defined inline as well.
-const ref = updateAccountRef({ accountId: ..., householdId: ..., name: ..., ownerType: ..., cutDay: ..., paymentDay: ..., creditLimit: ..., color: ..., });
+const ref = updateAccountRef({ accountId: ..., householdId: ..., name: ..., ownerType: ..., cutDay: ..., paymentDay: ..., creditLimit: ..., color: ..., allowPartnerTransfers: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);

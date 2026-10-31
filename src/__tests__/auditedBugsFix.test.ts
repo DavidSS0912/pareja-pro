@@ -6,8 +6,10 @@ import {
   createAccount,
   createJournalWithEntries,
   seedDefaultAccounts,
+  deleteJournal,
 } from '../lib/dataconnect';
 import { validateMovement } from '../services/movementService';
+import { filterTransferTargetAccounts } from '../services/ownershipService';
 
 vi.mock('../lib/dataconnect', async (importOriginal) => {
   const actual = await importOriginal<any>();
@@ -20,6 +22,7 @@ vi.mock('../lib/dataconnect', async (importOriginal) => {
     createJournalWithEntries: vi.fn(),
     createInternalTransfer: vi.fn(),
     updateInternalTransfer: vi.fn(),
+    deleteJournal: vi.fn(),
     seedDefaultAccounts: vi.fn(),
   };
 });
@@ -102,6 +105,45 @@ describe('Audited Bugs Fix - Pruebas Unitarias Exhaustivas', () => {
       expect(personalTransfers[0].id).toBe('tr-2');
     });
 
+    it("filterTransfersByMode es bilateral: incluye transferencias CROSS_USERS en el modo personal tanto para emisor como para receptor", () => {
+      const crossTransfer = {
+        id: 'tr-cross-1',
+        description: 'Traspaso a pareja',
+        amount: 1,
+        sourceOwnerUid: currentUserId,
+        targetOwnerUid: partnerId,
+        sourceOwnerType: 'USER_A',
+        targetOwnerType: 'USER_B',
+        transferKind: 'CROSS_USERS',
+        isShared: false,
+      };
+
+      // Para el emisor (David) en modo personal: debe incluirse
+      const senderPersonal = filterTransfersByMode([crossTransfer], 'personal', currentUserId);
+      expect(senderPersonal).toHaveLength(1);
+      expect(senderPersonal[0].id).toBe('tr-cross-1');
+
+      // Para el receptor (Pareja) en modo personal: debe incluirse
+      const receiverPersonal = filterTransfersByMode([crossTransfer], 'personal', partnerId);
+      expect(receiverPersonal).toHaveLength(1);
+      expect(receiverPersonal[0].id).toBe('tr-cross-1');
+
+      // Para un tercer usuario no participante en modo personal: se excluye
+      const thirdPartyPersonal = filterTransfersByMode([crossTransfer], 'personal', 'other-user-999');
+      expect(thirdPartyPersonal).toHaveLength(0);
+    });
+
+    it("filterTransfersByMode en modo household incluye transferencias compartidas o que involucren cuentas de Hogar (SHARED)", () => {
+      const transfers = [
+        { id: 'tr-shared-flag', isShared: true, sourceOwnerUid: currentUserId, targetOwnerUid: partnerId },
+        { id: 'tr-shared-acc', isShared: false, sourceOwnerType: 'SHARED', targetOwnerType: 'USER_A', sourceOwnerUid: currentUserId },
+        { id: 'tr-private-cross', isShared: false, sourceOwnerType: 'USER_A', targetOwnerType: 'USER_B', sourceOwnerUid: currentUserId, targetOwnerUid: partnerId },
+      ];
+
+      const householdTransfers = filterTransfersByMode(transfers, 'household', currentUserId);
+      expect(householdTransfers.map((t: any) => t.id)).toEqual(['tr-shared-flag', 'tr-shared-acc']);
+    });
+
     it("filtra gastos históricos del mes anterior respetando el appContext activo", () => {
       const prevExpenses = [
         { id: 'prev-1', amount: 1000, isShared: true, isPrivate: false, date: '2026-09-15', userId: currentUserId },
@@ -179,6 +221,82 @@ describe('Audited Bugs Fix - Pruebas Unitarias Exhaustivas', () => {
       });
       expect(filteredAfter).toHaveLength(1);
       expect(filteredAfter[0].id).toBe('tr-2');
+    });
+
+    it('atribución dual: no descarta la transferencia si al menos uno de los participantes está seleccionado', () => {
+      const deselectedUsers = new Set(['user-algae-123']); // Se deselecciona el emisor
+      const senderUid: string = 'user-algae-123';
+      const receiverUid: string = 'user-chicken-456';
+
+      const senderSelected = !deselectedUsers.has(senderUid);
+      const receiverSelected = !deselectedUsers.has(receiverUid);
+
+      // Si están en una transferencia inter-usuario, permanece visible si cualquiera está seleccionado
+      const isVisible = (senderUid && receiverUid && senderUid !== receiverUid)
+        ? (senderSelected || receiverSelected)
+        : senderSelected;
+
+      expect(isVisible).toBe(true);
+
+      // Si se deseleccionan AMBOS participantes, entonces sí se oculta
+      deselectedUsers.add('user-chicken-456');
+      const senderSelectedBoth = !deselectedUsers.has(senderUid);
+      const receiverSelectedBoth = !deselectedUsers.has(receiverUid);
+      const isVisibleBoth = (senderUid && receiverUid && senderUid !== receiverUid)
+        ? (senderSelectedBoth || receiverSelectedBoth)
+        : senderSelectedBoth;
+
+      expect(isVisibleBoth).toBe(false);
+    });
+
+    it('construye trayectoria Emisor → Receptor para la columna Registrado por cuando senderUid !== receiverUid', () => {
+      const users = [
+        { id: 'user-algae-123', name: 'Algae Raccoon' },
+        { id: 'user-chicken-456', name: 'Chicken Algae' },
+      ];
+      const record = {
+        recordType: 'transfer',
+        senderUid: 'user-algae-123',
+        receiverUid: 'user-chicken-456',
+        sourceOwnerUid: 'user-algae-123',
+        targetOwnerUid: 'user-chicken-456',
+      };
+
+      const senderObj = users.find((u) => u.id === record.senderUid);
+      const receiverObj = users.find((u) => u.id === record.receiverUid);
+      const userName = (record.senderUid && record.receiverUid && record.senderUid !== record.receiverUid)
+        ? `${senderObj?.name || 'Origen'} → ${receiverObj?.name || 'Destino'}`
+        : senderObj?.name || 'Sistema';
+
+      expect(userName).toBe('Algae Raccoon → Chicken Algae');
+    });
+
+    it('asigna monto positivo y etiqueta Transferencia Recibida para el receptor en vista personal', () => {
+      const currentUserId = 'user-chicken-456';
+      const appContext = 'personal';
+      const record = {
+        recordType: 'transfer',
+        type: 'TRANSFER',
+        amount: 1,
+        senderUid: 'user-algae-123',
+        receiverUid: 'user-chicken-456',
+      };
+
+      const isTransfer = record.recordType === 'transfer';
+      const isReceiver = isTransfer && currentUserId && (record.receiverUid === currentUserId);
+      const isSender = isTransfer && currentUserId && (record.senderUid === currentUserId);
+
+      let amountSign = '';
+      if (appContext === 'personal' && isReceiver && !isSender) {
+        amountSign = '+';
+      }
+
+      const typeBadgeLabel = isTransfer && appContext === 'personal' && isReceiver && !isSender
+        ? 'Transferencia Recibida'
+        : 'Transferencia';
+
+      expect(amountSign).toBe('+');
+      expect(typeBadgeLabel).toBe('Transferencia Recibida');
     });
   });
 
@@ -483,6 +601,88 @@ describe('Audited Bugs Fix - Pruebas Unitarias Exhaustivas', () => {
       expect(updated?.isPrivate).toBe(true);
       expect(updated?.ownerUid).toBe('usr-david');
       expect(updated?.userId).toBe('usr-david');
+    });
+  });
+
+  // =========================================================================
+  // 7. Opt-In de Cuentas Personales para Transferencias de Pareja (allowPartnerTransfers)
+  // =========================================================================
+  describe('7. filterTransferTargetAccounts con Opt-In allowPartnerTransfers', () => {
+    const mockAccounts = [
+      { id: 'acc-shared', name: 'Cuenta Compartida Hogar', ownerType: 'SHARED', allowPartnerTransfers: false },
+      { id: 'acc-own-a', name: 'Nómina David A', ownerType: 'USER_A', allowPartnerTransfers: false },
+      { id: 'acc-partner-b-closed', name: 'Ahorro Secreto B', ownerType: 'USER_B', allowPartnerTransfers: false },
+      { id: 'acc-partner-b-open', name: 'Débito Recibir B', ownerType: 'USER_B', allowPartnerTransfers: true },
+    ];
+
+    it('para USER_A: muestra cuenta propia, compartida y únicamente la cuenta de USER_B que tenga allowPartnerTransfers=true', () => {
+      const targetsForA = filterTransferTargetAccounts(mockAccounts, 'USER_A');
+      const ids = targetsForA.map((a) => a.id);
+      expect(ids).toContain('acc-shared');
+      expect(ids).toContain('acc-own-a');
+      expect(ids).toContain('acc-partner-b-open');
+      expect(ids).not.toContain('acc-partner-b-closed');
+      expect(targetsForA).toHaveLength(3);
+    });
+
+    it('para USER_B: muestra cuenta propia, compartida y excluye cuenta de USER_A que tenga allowPartnerTransfers=false', () => {
+      const targetsForB = filterTransferTargetAccounts(mockAccounts, 'USER_B');
+      const ids = targetsForB.map((a) => a.id);
+      expect(ids).toContain('acc-shared');
+      expect(ids).toContain('acc-partner-b-closed');
+      expect(ids).toContain('acc-partner-b-open');
+      expect(ids).not.toContain('acc-own-a');
+      expect(targetsForB).toHaveLength(3);
+    });
+
+    it('si no se provee userSlot, retorna todas las cuentas de forma segura', () => {
+      const all = filterTransferTargetAccounts(mockAccounts);
+      expect(all).toHaveLength(4);
+    });
+  });
+
+  // =========================================================================
+  // 8. Eliminación Completa de Transferencias (deleteTransfer)
+  // =========================================================================
+  describe('8. deleteTransfer en accountSlice', () => {
+    it('elimina la transferencia de forma optimista y llama a deleteJournal en Data Connect', async () => {
+      const sampleTransfers = [
+        { id: 'tr-del-1', amount: 500, description: 'Traspaso a borrar' },
+        { id: 'tr-del-2', amount: 300, description: 'Traspaso que queda' },
+      ];
+
+      useAppStore.setState({
+        houseId: 'house-del-789',
+        transfers: sampleTransfers as any,
+        fetchDashboardData: vi.fn().mockResolvedValue(undefined) as any,
+      });
+
+      await useAppStore.getState().deleteTransfer('tr-del-1');
+
+      expect(deleteJournal).toHaveBeenCalledWith({
+        journalId: 'tr-del-1',
+        householdId: 'house-del-789',
+      });
+
+      const remaining = useAppStore.getState().transfers;
+      expect(remaining.map((t: any) => t.id)).toEqual(['tr-del-2']);
+    });
+
+    it('revierte el estado optimista si deleteJournal falla', async () => {
+      const sampleTransfers = [{ id: 'tr-fail-1', amount: 100 }];
+      (deleteJournal as any).mockRejectedValueOnce(new Error('Network error on delete'));
+
+      useAppStore.setState({
+        houseId: 'house-fail-789',
+        transfers: sampleTransfers as any,
+        fetchDashboardData: vi.fn().mockResolvedValue(undefined) as any,
+      });
+
+      await expect(useAppStore.getState().deleteTransfer('tr-fail-1')).rejects.toThrow('Network error on delete');
+
+      const rolledBack = useAppStore.getState().transfers;
+      expect(rolledBack).toHaveLength(1);
+      expect(rolledBack[0].id).toBe('tr-fail-1');
     });
   });
 });

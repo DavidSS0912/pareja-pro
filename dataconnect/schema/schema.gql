@@ -45,6 +45,7 @@ type Account @table {
   creditLimit: Float @col(dataType: "numeric(14,2)")
   color: String
   isArchived: Boolean! @default(value: false)
+  allowPartnerTransfers: Boolean! @default(value: false)
   createdAt: Timestamp! @default(expr: "request.time")
 }
 

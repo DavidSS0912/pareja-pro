@@ -11,8 +11,9 @@ const CATEGORY_COLORS = [
   'bg-teal-500', 'bg-indigo-500', 'bg-fuchsia-500', 'bg-lime-500'
 ];
 
-export function HistoricalView({ data, methods }: any) {
+export function HistoricalView({ data, methods, appContext = 'household' }: any) {
   const { expenses = [], incomes = [], users = [], transfers = [] } = data || {};
+  const currentUserId = data?.user?.uid || data?.user?.id || '';
 
   const [deselectedUsers, setDeselectedUsers] = useState<Set<string>>(new Set());
   const [deselectedCategories, setDeselectedCategories] = useState<Set<string>>(new Set());
@@ -125,8 +126,22 @@ export function HistoricalView({ data, methods }: any) {
 
   const filteredTransfers = useMemo(() => {
     return (transfers || []).filter((t: any) => {
-      const uid = t.userId || t.ownerUid || t.sourceOwnerUid;
-      if (uid && deselectedUsers.has(uid)) return false;
+      const senderUid = t.sourceOwnerUid || t.senderUid || t.ownerUid || t.userId;
+      const receiverUid = t.targetOwnerUid || t.receiverUid;
+
+      if (deselectedUsers.size > 0) {
+        const senderSelected = senderUid ? !deselectedUsers.has(senderUid) : false;
+        const receiverSelected = receiverUid ? !deselectedUsers.has(receiverUid) : false;
+        // Permanece visible si está seleccionado el emisor O el receptor
+        if (senderUid && receiverUid && senderUid !== receiverUid) {
+          if (!senderSelected && !receiverSelected) return false;
+        } else if (senderUid && deselectedUsers.has(senderUid)) {
+          return false;
+        } else if (!senderUid && receiverUid && deselectedUsers.has(receiverUid)) {
+          return false;
+        }
+      }
+
       const cat = t.type === 'CARD_PAYMENT' ? 'Pago de Tarjeta' : 'Transferencia';
       if (deselectedCategories.has(cat)) return false;
       return true;
@@ -174,6 +189,10 @@ export function HistoricalView({ data, methods }: any) {
       amount: Math.abs(Number(t.amount) || 0),
       sourceAccountName: t.sourceAccountName || '',
       targetAccountName: t.targetAccountName || '',
+      sourceOwnerUid: t.sourceOwnerUid || t.senderUid || t.ownerUid || '',
+      targetOwnerUid: t.targetOwnerUid || t.receiverUid || '',
+      senderUid: t.sourceOwnerUid || t.senderUid || t.ownerUid || '',
+      receiverUid: t.targetOwnerUid || t.receiverUid || '',
       userId: t.ownerUid || t.userId || t.sourceOwnerUid || '',
       ownerUid: t.ownerUid || t.userId || t.sourceOwnerUid || '',
       isPrivate: t.isPrivate
@@ -724,28 +743,90 @@ export function HistoricalView({ data, methods }: any) {
                     <th className="px-6 py-4">Categoría / Fuente</th>
                     <th className="px-6 py-4">Descripción</th>
                     <th className="px-6 py-4 text-right">Monto</th>
-                    <th className="px-6 py-4 rounded-tr-xl">Registrado por</th>
+                    <th className="px-6 py-4">Registrado por</th>
+                    <th className="px-6 py-4 text-right rounded-tr-xl">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {detailedRecords.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-8 text-center text-slate-500 font-medium">
+                      <td colSpan={8} className="px-6 py-8 text-center text-slate-500 font-medium">
                         No hay datos para mostrar
                       </td>
                     </tr>
                   ) : (
                     detailedRecords.map((record: any) => {
-                      const uid = record.userId || record.paidBy || record.ownerUid || record.sourceOwnerUid;
-                      const userObj = uid ? users.find((u: any) => u.id === uid) : null;
+                      const isTransfer = record.recordType === 'transfer';
+                      const senderUid = record.senderUid || record.sourceOwnerUid || record.userId || record.ownerUid;
+                      const receiverUid = record.receiverUid || record.targetOwnerUid;
+                      const isReceiver = isTransfer && currentUserId && (receiverUid === currentUserId);
+                      const isSender = isTransfer && currentUserId && (senderUid === currentUserId);
+
+                      const senderObj = senderUid ? users.find((u: any) => u.id === senderUid) : null;
+                      const receiverObj = receiverUid ? users.find((u: any) => u.id === receiverUid) : null;
+                      const senderName = senderObj?.name || 'Origen';
+                      const receiverName = receiverObj?.name || 'Destino';
+
                       let userName = '-';
-                      if (record.recordType === 'transfer') {
-                        userName = userObj?.name || 'Sistema';
+                      if (isTransfer) {
+                        if (senderUid && receiverUid && senderUid !== receiverUid) {
+                          userName = `${senderName} → ${receiverName}`;
+                        } else {
+                          userName = senderObj?.name || receiverObj?.name || 'Sistema';
+                        }
                       } else {
+                        const uid = record.userId || record.paidBy || record.ownerUid || record.sourceOwnerUid;
+                        const userObj = uid ? users.find((u: any) => u.id === uid) : null;
                         userName = userObj?.name || 'Desconocido';
                       }
 
                       const isSelected = selectedRecords.has(record.id);
+
+                      let amountSign = '';
+                      let amountClass = 'text-slate-600';
+                      if (record.recordType === 'income') {
+                        amountSign = '+';
+                        amountClass = 'text-emerald-600';
+                      } else if (isTransfer) {
+                        if (appContext === 'personal') {
+                          if (isReceiver && !isSender) {
+                            amountSign = '+';
+                            amountClass = 'text-emerald-600 font-bold';
+                          } else if (isSender && !isReceiver) {
+                            amountSign = '-';
+                            amountClass = 'text-slate-600 font-bold';
+                          } else {
+                            amountSign = '';
+                            amountClass = 'text-indigo-600 font-bold';
+                          }
+                        } else {
+                          amountSign = '';
+                          amountClass = 'text-indigo-600 font-bold';
+                        }
+                      } else {
+                        amountSign = '-';
+                        amountClass = 'text-slate-600';
+                      }
+
+                      const typeBadgeClass = record.recordType === 'income' 
+                        ? 'bg-emerald-100 text-emerald-700 border-emerald-200/50' 
+                        : isTransfer
+                          ? record.type === 'CARD_PAYMENT'
+                            ? 'bg-purple-100 text-purple-700 border-purple-200/50'
+                            : (appContext === 'personal' && isReceiver && !isSender)
+                              ? 'bg-emerald-100 text-emerald-700 border-emerald-200/50'
+                              : 'bg-blue-100 text-blue-700 border-blue-200/50'
+                          : 'bg-rose-100 text-rose-700 border-rose-200/50';
+
+                      const typeBadgeLabel = record.recordType === 'income'
+                        ? 'Ingreso'
+                        : isTransfer
+                          ? (record.type === 'CARD_PAYMENT'
+                              ? 'Pago de Tarjeta'
+                              : (appContext === 'personal' && isReceiver && !isSender)
+                                ? 'Transferencia Recibida'
+                                : 'Transferencia')
+                          : 'Gasto';
 
                       return (
                         <tr key={record.id} className={`transition-colors ${isSelected ? 'bg-indigo-50/50' : 'hover:bg-slate-50'}`}>
@@ -766,18 +847,8 @@ export function HistoricalView({ data, methods }: any) {
                             {record.date ? record.date.substring(0, 10) : '-'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2.5 py-1 rounded-md text-xs font-bold border ${
-                              record.recordType === 'income' 
-                                ? 'bg-emerald-100 text-emerald-700 border-emerald-200/50' 
-                                : record.recordType === 'transfer'
-                                  ? record.type === 'CARD_PAYMENT'
-                                    ? 'bg-purple-100 text-purple-700 border-purple-200/50'
-                                    : 'bg-blue-100 text-blue-700 border-blue-200/50'
-                                  : 'bg-rose-100 text-rose-700 border-rose-200/50'
-                            }`}>
-                              {record.recordType === 'transfer'
-                                ? (record.type === 'CARD_PAYMENT' ? 'Pago de Tarjeta' : 'Transferencia')
-                                : (record.recordType === 'income' ? 'Ingreso' : 'Gasto')}
+                            <span className={`px-2.5 py-1 rounded-md text-xs font-bold border ${typeBadgeClass}`}>
+                              {typeBadgeLabel}
                             </span>
                           </td>
                           <td className="px-6 py-4">
@@ -796,19 +867,46 @@ export function HistoricalView({ data, methods }: any) {
                             {record.description || '-'}
                           </td>
                           <td className="px-6 py-4 text-right font-mono font-medium whitespace-nowrap">
-                            <span className={
-                              record.recordType === 'income' 
-                                ? 'text-emerald-600' 
-                                : record.recordType === 'transfer'
-                                  ? 'text-indigo-600 font-bold'
-                                  : 'text-slate-600'
-                            }>
-                              {record.recordType === 'income' ? '+' : record.recordType === 'transfer' ? '' : '-'}
+                            <span className={amountClass}>
+                              {amountSign}
                               {FormatCurrency(record.amount)}
                             </span>
                           </td>
                           <td className="px-6 py-4 text-slate-700 whitespace-nowrap">
                             {userName}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                data-testid={`edit-record-${record.id}`}
+                                onClick={() => {
+                                  if (record.recordType === 'expense' && typeof methods?.handleOpenExpenseModal === 'function') {
+                                    methods.handleOpenExpenseModal(record);
+                                  } else if (record.recordType === 'income' && typeof methods?.handleOpenIncomeModal === 'function') {
+                                    methods.handleOpenIncomeModal(record);
+                                  } else if (record.recordType === 'transfer' && typeof methods?.handleOpenTransferModal === 'function') {
+                                    methods.handleOpenTransferModal(record);
+                                  }
+                                }}
+                                className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                                title="Editar movimiento"
+                              >
+                                <Edit2 size={15} />
+                              </button>
+                              <button
+                                type="button"
+                                data-testid={`delete-record-${record.id}`}
+                                onClick={() => {
+                                  setSelectedRecords(new Set([record.id]));
+                                  setIsDeleteModalOpen(true);
+                                }}
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                title="Eliminar movimiento"
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );

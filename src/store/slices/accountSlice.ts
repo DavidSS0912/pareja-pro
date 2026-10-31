@@ -1,7 +1,7 @@
 import { StateCreator } from 'zustand';
 import { RecordItem } from '../types';
 import { AuthSlice } from './authSlice';
-import { createAccount, updateAccount, deleteAccount, archiveAccount, createJournalWithEntries, createInternalTransfer, updateInternalTransfer, seedDefaultAccounts, OwnerType } from '../../lib/dataconnect';
+import { createAccount, updateAccount, deleteAccount, archiveAccount, createJournalWithEntries, createInternalTransfer, updateInternalTransfer, seedDefaultAccounts, deleteJournal, OwnerType } from '../../lib/dataconnect';
 import { useToastStore } from '../useToastStore';
 
 export interface AccountSlice {
@@ -12,6 +12,7 @@ export interface AccountSlice {
   deleteAccount: (id: string) => Promise<void>;
   archiveAccount: (id: string, isArchived: boolean) => Promise<void>;
   payCreditCard: (sourceAccountId: string, targetAccountId: string, amount: number, date: string, ownerUid?: string, isShared?: boolean) => Promise<void>;
+  deleteTransfer: (id: string) => Promise<void>;
   createTransfer: (
     sourceAccountId: string,
     targetAccountId: string,
@@ -52,7 +53,7 @@ export const createAccountSlice: StateCreator<AccountSlice & AuthSlice, [], [], 
     } else if (explicitSlot === 'USER_A') {
       userSlot = OwnerType.USER_A;
     } else {
-      const currentMember = (state as any).users?.find((u: any) => u.id === state.user?.uid);
+      const currentMember = (state as any).users?.find((u: any) => (u.id || u.uid) === ((state.user as any)?.uid || (state.user as any)?.id));
       if (currentMember?.memberSlot === 'USER_B') {
         userSlot = OwnerType.USER_B;
       }
@@ -60,10 +61,12 @@ export const createAccountSlice: StateCreator<AccountSlice & AuthSlice, [], [], 
 
     const optimisticOwnerType = item.shared ? OwnerType.SHARED : (item.ownerType || userSlot);
     const initialBalanceNum = Math.round((Number(item.initialBalance) || 0) * 100) / 100;
+    const allowPartner = Boolean(item.allowPartnerTransfers);
     const optimisticAccount = {
       ...item,
       balance: initialBalanceNum,
       ownerType: optimisticOwnerType,
+      allowPartnerTransfers: allowPartner,
       id: `temp-${Date.now()}`
     };
     set({ accounts: [optimisticAccount, ...state.accounts] });
@@ -77,7 +80,8 @@ export const createAccountSlice: StateCreator<AccountSlice & AuthSlice, [], [], 
         cutDay: item.cutDay,
         paymentDay: item.paymentDay,
         creditLimit: item.creditLimit,
-        color: item.color || 'bg-slate-800'
+        color: item.color || 'bg-slate-800',
+        allowPartnerTransfers: allowPartner
       });
 
       const createdAccountId = (createRes as any)?.data?.account_insert?.id;
@@ -145,25 +149,28 @@ export const createAccountSlice: StateCreator<AccountSlice & AuthSlice, [], [], 
     }
     const state = get();
     const originalAccounts = state.accounts;
-    let userSlot: OwnerType = OwnerType.USER_A;
+    const originalAccount = originalAccounts.find(a => a.id === id);
+    let userSlot: OwnerType = (originalAccount?.ownerType as OwnerType) || OwnerType.USER_A;
     const explicitSlot = (state as any).memberSlot || state.user?.memberSlot;
     if (explicitSlot === 'USER_B') {
       userSlot = OwnerType.USER_B;
     } else if (explicitSlot === 'USER_A') {
       userSlot = OwnerType.USER_A;
     } else {
-      const currentMember = (state as any).users?.find((u: any) => u.id === state.user?.uid);
+      const currentMember = (state as any).users?.find((u: any) => (u.id || u.uid) === ((state.user as any)?.uid || (state.user as any)?.id));
       if (currentMember?.memberSlot === 'USER_B') {
         userSlot = OwnerType.USER_B;
       }
     }
 
-    const updatedOwnerType = item.shared ? OwnerType.SHARED : (item.ownerType || userSlot);
+    const updatedOwnerType = item.shared ? OwnerType.SHARED : (item.ownerType || originalAccount?.ownerType || userSlot);
+    const allowPartner = item.allowPartnerTransfers !== undefined ? Boolean(item.allowPartnerTransfers) : Boolean(originalAccount?.allowPartnerTransfers);
     
     const updatedAccounts = state.accounts.map(a => a.id === id ? { 
       ...a, 
       ...item,
-      ownerType: updatedOwnerType
+      ownerType: updatedOwnerType,
+      allowPartnerTransfers: allowPartner
     } : a);
     set({ accounts: updatedAccounts });
 
@@ -179,12 +186,37 @@ export const createAccountSlice: StateCreator<AccountSlice & AuthSlice, [], [], 
         cutDay: item.cutDay,
         paymentDay: item.paymentDay,
         creditLimit: item.creditLimit,
-        color: item.color || 'bg-slate-800'
+        color: item.color || 'bg-slate-800',
+        allowPartnerTransfers: allowPartner
       });
       await (get() as any).fetchDashboardData?.(houseId);
     } catch (e) {
       console.error(e);
       set({ accounts: originalAccounts });
+    }
+  },
+  deleteTransfer: async (id) => {
+    const state = get() as any;
+    const houseId = state.houseId;
+    if (!houseId) return;
+
+    const previousTransfers = state.transfers || [];
+    if (typeof state.setTransfers === 'function') {
+      state.setTransfers(previousTransfers.filter((t: any) => t.id !== id));
+    }
+
+    try {
+      useToastStore.getState().addToast("Eliminando transferencia...", "info");
+      await deleteJournal({ journalId: id, householdId: houseId });
+      useToastStore.getState().addToast("Transferencia eliminada correctamente", "success");
+      await (get() as any).fetchDashboardData?.(houseId);
+    } catch (e) {
+      console.error(e);
+      if (typeof state.setTransfers === 'function') {
+        state.setTransfers(previousTransfers);
+      }
+      useToastStore.getState().addToast("Error al eliminar la transferencia", "error");
+      throw e;
     }
   },
   archiveAccount: async (id, isArchived) => {

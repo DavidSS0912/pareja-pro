@@ -66,13 +66,32 @@ export function filterTransfersByMode(
   userUid: string
 ) {
   return (items || []).filter((t: any) => {
-    const ownerUid = t.ownerUid || t.userId || t.sourceOwnerUid;
+    const sourceUid = t.sourceOwnerUid || t.senderUid || t.ownerUid || t.userId;
+    const targetUid = t.targetOwnerUid || t.receiverUid;
     const isShared = t.isShared !== undefined ? Boolean(t.isShared) : (t.isPrivate !== undefined ? !t.isPrivate : true);
+    const isCrossUsers = t.transferKind === 'CROSS_USERS' || (Boolean(sourceUid) && Boolean(targetUid) && sourceUid !== targetUid);
+    const involvesShared = isShared || t.sourceOwnerType === 'SHARED' || t.targetOwnerType === 'SHARED';
+
     if (appContext === 'personal') {
-      return ownerUid === userUid && !isShared;
+      const isSender = sourceUid === userUid;
+      const isReceiver = targetUid === userUid;
+
+      // Transferencias inter-usuario (CROSS_USERS):
+      // Visibles en el modo personal de ambos participantes (salida para emisor, entrada para receptor)
+      if (isCrossUsers) {
+        return isSender || isReceiver;
+      }
+
+      // Traspaso entre cuentas propias: solo visible si el usuario autenticado es el titular y no es compartida
+      if (isSender || isReceiver) {
+        return !isShared;
+      }
+      return false;
     }
-    // appContext === 'household'
-    return isShared;
+
+    // appContext === 'household':
+    // Mantener visibles todas las transferencias del hogar (isShared o que involucren cuentas compartidas/del hogar)
+    return involvesShared;
   });
 }
 
@@ -148,6 +167,7 @@ export default function App() {
     payCreditCard: state.payCreditCard,
     createTransfer: state.createTransfer,
     updateTransfer: state.updateTransfer,
+    deleteTransfer: state.deleteTransfer,
     addAsset: state.addAsset,
     updateAsset: state.updateAsset,
     deleteAsset: state.deleteAsset,
@@ -335,6 +355,17 @@ export default function App() {
         }
       };
       loadData();
+
+      const handleFocus = () => {
+        fetchDashboardData(houseId).catch((err) => {
+          console.error("Error revalidating data on window focus:", err);
+        });
+      };
+
+      window.addEventListener('focus', handleFocus);
+      return () => {
+        window.removeEventListener('focus', handleFocus);
+      };
     }
   }, [houseId, fetchDashboardData, refreshSettings]);
 
@@ -351,8 +382,43 @@ export default function App() {
       try {
         const newHouseId = await acceptInvitation(joinHouseConfirm);
         if (newHouseId) {
+          const currentUser = user;
           resetAppStore();
+          if (currentUser) {
+            setUser({
+              ...currentUser,
+              memberSlot: 'USER_B'
+            });
+            setMemberSlot('USER_B');
+          }
           setHouseId(newHouseId);
+          try {
+            const members = await getHouseholdMembers(newHouseId);
+            if (members && members.length > 0) {
+              const currentMember = members.find(m => m.id === currentUser?.uid);
+              if (currentMember?.memberSlot) {
+                setMemberSlot(currentMember.memberSlot as any);
+              }
+              const sortedMembers = [...members].sort((a, b) => {
+                if (a.memberSlot === 'USER_A') return -1;
+                if (b.memberSlot === 'USER_A') return 1;
+                if (a.memberSlot === 'USER_B') return -1;
+                if (b.memberSlot === 'USER_B') return 1;
+                return 0;
+              });
+              const mappedUsers = sortedMembers.map(m => ({
+                id: m.id,
+                name: m.displayName || m.email?.split('@')[0] || 'Usuario',
+                displayName: m.displayName || m.email?.split('@')[0] || 'Usuario',
+                email: m.email,
+                photoURL: m.photoURL || m.photoUrl || null,
+                memberSlot: m.memberSlot
+              }));
+              data.setUsers(mappedUsers);
+            }
+          } catch (mErr) {
+            console.error("Error fetching new household members:", mErr);
+          }
         }
       } catch (err: any) {
         console.error("Error al unirse al hogar:", err);
@@ -506,7 +572,7 @@ export default function App() {
       case 'projects':
         return <PlanningView data={filteredData} calc={calc} methods={methods} appContext={appContext} defaultSubTab={activeTab === 'projects' ? 'projects' : 'budgets'} />;
       case 'settlement': return <SettlementView data={filteredData} calc={calc} methods={methods} />;
-      case 'historical': return <HistoricalView data={filteredData} methods={methods} />;
+      case 'historical': return <HistoricalView data={filteredData} methods={methods} appContext={appContext} />;
       case 'settings': return <SettingsView />;
       case 'profile': return <ProfileView data={filteredData} />;
       case 'household': return <ProfileView data={filteredData} />;
@@ -813,9 +879,17 @@ export default function App() {
             initialData={editingMovement}
             onSubmit={async (action) => {
               if (action.type === 'EXPENSE') {
-                await methods.addExpense(action.payload);
+                if (editingMovement && editingMovement.id) {
+                  await methods.updateExpense(editingMovement.id, action.payload);
+                } else {
+                  await methods.addExpense(action.payload);
+                }
               } else if (action.type === 'INCOME') {
-                await methods.addIncome(action.payload);
+                if (editingMovement && editingMovement.id) {
+                  await methods.updateIncome(editingMovement.id, action.payload);
+                } else {
+                  await methods.addIncome(action.payload);
+                }
               } else if (action.type === 'TRANSFER') {
                 const targetAccount = (data.accounts || []).find((a: any) => a.id === action.payload.targetAccountId);
                 const isLiability = targetAccount?.type === 'LIABILITY' || targetAccount?.type === 'CREDIT_CARD';

@@ -102,6 +102,7 @@ export interface CreateAccountVariables {
   paymentDay?: number | null;
   creditLimit?: number | null;
   color?: string | null;
+  allowPartnerTransfers?: boolean | null;
 }
 
 export interface CreateBudgetData {
@@ -511,6 +512,7 @@ export interface GetHouseholdAccountsData {
     creditLimit?: number | null;
     color?: string | null;
     isArchived: boolean;
+    allowPartnerTransfers: boolean;
   } & Account_Key)[];
   householdUsers: ({
     uid: string;
@@ -949,6 +951,7 @@ export interface UpdateAccountVariables {
   paymentDay?: number | null;
   creditLimit?: number | null;
   color?: string | null;
+  allowPartnerTransfers?: boolean | null;
 }
 
 export interface UpdateBudgetData {

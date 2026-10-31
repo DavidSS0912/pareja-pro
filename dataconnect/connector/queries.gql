@@ -17,6 +17,7 @@ query GetHouseholdAccounts($householdId: UUID!) @auth(level: USER) {
     creditLimit
     color
     isArchived
+    allowPartnerTransfers
   }
   householdUsers: users(where: { householdId: { eq: $householdId } }) {
     uid

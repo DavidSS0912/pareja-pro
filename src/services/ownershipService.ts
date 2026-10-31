@@ -67,13 +67,61 @@ export function filterSourceAccounts<T extends { ownerType?: string }>(
 
 /**
  * Filtra cuentas que pueden ser utilizadas como destino en transferencias:
- * Permite cuentas compartidas, cuentas propias y cuentas personales de la pareja
- * (estas últimas para operar en modo 'Destino Ciego').
+ * Permite cuentas compartidas y cuentas propias.
+ * Las cuentas personales de la pareja SOLO se permiten si tienen activo el opt-in
+ * `allowPartnerTransfers === true` (para operar en modo 'Destino Ciego').
+ * Si no tienen opt-in o está en false, quedan terminantemente excluidas.
  */
-export function filterTransferTargetAccounts<T extends { ownerType?: string }>(
-  accounts: T[]
+export function filterTransferTargetAccounts<T extends { ownerType?: string; allowPartnerTransfers?: boolean }>(
+  accounts: T[],
+  userSlot?: MemberSlotFilter
 ): T[] {
   if (!accounts || !Array.isArray(accounts)) return [];
-  return accounts;
+  if (!userSlot) return accounts;
+  return accounts.filter(acc => {
+    if (!acc) return false;
+    if (isPartnerAccount(acc, userSlot)) {
+      return Boolean(acc.allowPartnerTransfers);
+    }
+    return true;
+  });
 }
+
+/**
+ * Determina si un usuario es el emisor o el receptor de una transferencia.
+ */
+export function isTransferParticipant(
+  transfer: { sourceOwnerUid?: string; targetOwnerUid?: string; senderUid?: string; receiverUid?: string; ownerUid?: string; userId?: string } | null | undefined,
+  userUid: string
+): boolean {
+  if (!transfer || !userUid) return false;
+  const senderUid = transfer.sourceOwnerUid || transfer.senderUid || transfer.ownerUid || transfer.userId;
+  const receiverUid = transfer.targetOwnerUid || transfer.receiverUid;
+  return senderUid === userUid || receiverUid === userUid;
+}
+
+/**
+ * Determina si el usuario es específicamente el receptor de la transferencia.
+ */
+export function isTransferReceiver(
+  transfer: { targetOwnerUid?: string; receiverUid?: string } | null | undefined,
+  userUid: string
+): boolean {
+  if (!transfer || !userUid) return false;
+  const receiverUid = transfer.targetOwnerUid || transfer.receiverUid;
+  return receiverUid === userUid;
+}
+
+/**
+ * Determina si el usuario es específicamente el emisor de la transferencia.
+ */
+export function isTransferSender(
+  transfer: { sourceOwnerUid?: string; senderUid?: string; ownerUid?: string; userId?: string } | null | undefined,
+  userUid: string
+): boolean {
+  if (!transfer || !userUid) return false;
+  const senderUid = transfer.sourceOwnerUid || transfer.senderUid || transfer.ownerUid || transfer.userId;
+  return senderUid === userUid;
+}
+
 

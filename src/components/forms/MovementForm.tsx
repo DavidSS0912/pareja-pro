@@ -9,14 +9,16 @@ import {
   saveLastUsedAccountId,
 } from '../../services/movementService';
 import { calculateAccountAvailableBalance } from '../../utils/walletCalculations';
-import { isPartnerAccount, MemberSlotFilter } from '../../services/ownershipService';
+import { isPartnerAccount, filterTransferTargetAccounts, MemberSlotFilter } from '../../services/ownershipService';
 import { useAppStore } from '../../store/useAppStore';
 import { Button } from '../ui/Button';
 import {
   ArrowLeftRight,
+  ArrowRight,
   ArrowDownLeft,
   ArrowUpRight,
   AlertCircle,
+  ShieldCheck,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
@@ -261,8 +263,8 @@ export function MovementForm({
   // Prohibir y excluir terminantemente las cuentas personales de la pareja como origen de retiro.
   const transferSourceAccounts = assetOrBankAccounts.filter((a) => !isPartnerAccount(a, activeMemberSlot));
 
-  // Destino de transferencias: permitir cuentas propias, compartidas y cuentas personales de la pareja (estas en MODO DESTINO CIEGO)
-  const transferTargetAccounts = assetOrBankAccounts;
+  // Destino de transferencias: permitir cuentas propias, compartidas y cuentas personales de la pareja (solo con opt-in activo en MODO DESTINO CIEGO)
+  const transferTargetAccounts = filterTransferTargetAccounts(assetOrBankAccounts, activeMemberSlot);
 
   // Gastos: excluir cuentas de la pareja; solo permitir cuentas propias y compartidas
   const expenseAccounts = assetOrBankAccounts.filter((a) => !isPartnerAccount(a, activeMemberSlot));
@@ -722,107 +724,132 @@ export function MovementForm({
         </div>
       )}
 
-      {/* Campos para Transferencia */}
+      {/* Campos para Transferencia con Enrutamiento Claro y Destino Ciego */}
       {type === 'TRANSFER' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label htmlFor="mov-source-trans" className={LABEL_CLASS}>
-              De cuenta (Origen)
-            </label>
-            <select
-              id="mov-source-trans"
-              data-testid="mov-source-acc"
-              value={sourceAccountId}
-              onChange={(e) => {
-                setSourceAccountId(e.target.value);
-                setSourceTouched(true);
-                if (formError) setFormError(null);
-              }}
-              className={INPUT_CLASS}
-              required
-              disabled={isFormBlocked}
-            >
-              <option value="">Selecciona cuenta origen</option>
-              {transferSourceAccounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {formatAccountOption(a, true)}
-                </option>
-              ))}
-            </select>
-            {selectedSourceAcc &&
-              !isPartnerAccount(selectedSourceAcc, activeMemberSlot) &&
-              selectedSourceAcc.type !== 'LIABILITY' &&
-              selectedSourceAcc.type !== 'CREDIT_CARD' && (() => {
-              const metrics = calculateAccountAvailableBalance(selectedSourceAcc, projects);
-              const isInitialSource = Boolean(initialData && selectedSourceAcc.id === (initialData.sourceAccountId || initialData.sourceAccount));
-              const available = isInitialSource
-                ? metrics.availableBalance + Number(initialData.amount || 0)
-                : metrics.availableBalance;
-              const isOver = Boolean(amount && Number(amount) > available);
-              return (
-                <div className="mt-1 space-y-1">
-                  <p className="text-xs text-slate-500">
-                    Saldo contable:{' '}
-                    <span className="font-semibold text-slate-700">
-                      ${metrics.ledgerBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                    {' | '}
-                    En metas/apartados:{' '}
-                    <span className="font-semibold text-slate-700">
-                      ${metrics.allocatedBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                    {' | '}
-                    Disponible para transferir:{' '}
-                    <span className={`font-semibold ${isOver ? 'text-red-600' : 'text-slate-700'}`}>
-                      ${available.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </p>
-                  {isOver && (
-                    <p className="text-xs text-red-600 font-medium">
-                      El monto supera el disponible para transferir (${available.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
-                    </p>
-                  )}
-                </div>
-              );
-            })()}
-          </div>
-
-          <div>
-            <label htmlFor="mov-target-trans" className={LABEL_CLASS}>
-              A cuenta (Destino)
-            </label>
-            <select
-              id="mov-target-trans"
-              data-testid="mov-target-acc"
-              value={targetAccountId}
-              onChange={(e) => {
-                setTargetAccountId(e.target.value);
-                setTargetTouched(true);
-              }}
-              className={INPUT_CLASS}
-              required
-              disabled={isFormBlocked}
-            >
-              <option value="">Selecciona cuenta destino</option>
-              {transferTargetAccounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {formatAccountOption(a, false)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {transferOperationInfo && (
-            <div className="col-span-1 sm:col-span-2">
+        <div className="space-y-4">
+          {/* Header de Operación con Badge */}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+              Enrutamiento de Fondos
+            </span>
+            {transferOperationInfo ? (
               <div
                 data-testid="transfer-operation-indicator"
-                className={`p-2.5 rounded-lg border text-xs font-semibold flex items-center gap-2 ${transferOperationInfo.badgeClass}`}
+                className={`px-3 py-1.5 rounded-full border text-xs font-bold flex items-center gap-1.5 shadow-xs ${transferOperationInfo.badgeClass}`}
               >
-                <ArrowLeftRight size={14} className="shrink-0" />
+                <ArrowLeftRight size={13} className="shrink-0" />
                 <span>{transferOperationInfo.label}</span>
               </div>
+            ) : (
+              <span className="text-xs text-slate-400">Selecciona origen y destino</span>
+            )}
+          </div>
+
+          {/* Bloque visual: [Origen] → [Destino] */}
+          <div className="bg-slate-50/80 border border-slate-200 rounded-2xl p-4 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-[1fr,auto,1fr] gap-3 items-center">
+              {/* Origen */}
+              <div className="space-y-1.5">
+                <label htmlFor="mov-source-trans" className={LABEL_CLASS}>
+                  De cuenta (Origen)
+                </label>
+                <select
+                  id="mov-source-trans"
+                  data-testid="mov-source-acc"
+                  value={sourceAccountId}
+                  onChange={(e) => {
+                    setSourceAccountId(e.target.value);
+                    setSourceTouched(true);
+                    if (formError) setFormError(null);
+                  }}
+                  className={INPUT_CLASS}
+                  required
+                  disabled={isFormBlocked}
+                >
+                  <option value="">Selecciona cuenta origen</option>
+                  {transferSourceAccounts.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {formatAccountOption(a, true)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Indicador de Flujo / Flecha */}
+              <div className="hidden md:flex flex-col items-center justify-center pt-5 text-indigo-500">
+                <div className="w-8 h-8 rounded-full bg-indigo-50 border border-indigo-200 flex items-center justify-center shadow-xs">
+                  <ArrowRight size={16} />
+                </div>
+              </div>
+
+              {/* Destino */}
+              <div className="space-y-1.5">
+                <label htmlFor="mov-target-trans" className={LABEL_CLASS}>
+                  A cuenta (Destino)
+                </label>
+                <select
+                  id="mov-target-trans"
+                  data-testid="mov-target-acc"
+                  value={targetAccountId}
+                  onChange={(e) => {
+                    setTargetAccountId(e.target.value);
+                    setTargetTouched(true);
+                    if (formError) setFormError(null);
+                  }}
+                  className={INPUT_CLASS}
+                  required
+                  disabled={isFormBlocked}
+                >
+                  <option value="">Selecciona cuenta destino</option>
+                  {transferTargetAccounts.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {formatAccountOption(a, false)}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-          )}
+
+            {/* Panel informativo desacoplado debajo de los selectores */}
+            <div className="pt-3 border-t border-slate-200/70 flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center text-xs">
+              {/* Disponibilidad en Origen */}
+              {selectedSourceAcc &&
+                !isPartnerAccount(selectedSourceAcc, activeMemberSlot) &&
+                selectedSourceAcc.type !== 'LIABILITY' &&
+                selectedSourceAcc.type !== 'CREDIT_CARD' && (() => {
+                const metrics = calculateAccountAvailableBalance(selectedSourceAcc, projects);
+                const isInitialSource = Boolean(initialData && selectedSourceAcc.id === (initialData.sourceAccountId || initialData.sourceAccount));
+                const available = isInitialSource
+                  ? metrics.availableBalance + Number(initialData.amount || 0)
+                  : metrics.availableBalance;
+                const isOver = Boolean(amount && Number(amount) > available);
+                return (
+                  <div className="space-y-0.5">
+                    <span className="text-slate-600 font-medium">
+                      Disponible en origen:{' '}
+                      <strong className={`font-bold ${isOver ? 'text-red-600' : 'text-slate-800'}`}>
+                        ${available.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </strong>
+                      {' '}(Contable: ${metrics.ledgerBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                    </span>
+                    {isOver && (
+                      <p className="text-red-600 font-semibold">
+                        El monto supera el disponible para transferir.
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Modo Destino Ciego / Badge para Destino */}
+              {selectedTargetAcc && isPartnerAccount(selectedTargetAcc, activeMemberSlot) && (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 border border-purple-200/80 rounded-xl font-medium">
+                  <ShieldCheck size={15} className="shrink-0 text-purple-600" />
+                  <span>Modo Destino Ciego: Tu pareja recibirá los fondos; no se revelan saldos ni movimientos.</span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 

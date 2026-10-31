@@ -410,7 +410,8 @@ mutation CreateAccount(
   $cutDay: Int,
   $paymentDay: Int,
   $creditLimit: Float,
-  $color: String
+  $color: String,
+  $allowPartnerTransfers: Boolean = false
 ) @auth(level: USER) @transaction {
   query @redact {
     user(key: { uid_expr: "auth.uid" })
@@ -427,7 +428,8 @@ mutation CreateAccount(
     cutDay: $cutDay,
     paymentDay: $paymentDay,
     creditLimit: $creditLimit,
-    color: $color
+    color: $color,
+    allowPartnerTransfers: $allowPartnerTransfers
   })
 }
 
@@ -439,7 +441,8 @@ mutation UpdateAccount(
   $cutDay: Int,
   $paymentDay: Int,
   $creditLimit: Float,
-  $color: String
+  $color: String,
+  $allowPartnerTransfers: Boolean = false
 ) @auth(level: USER) @transaction {
   query @redact {
     user(key: { uid_expr: "auth.uid" })
@@ -459,7 +462,8 @@ mutation UpdateAccount(
     cutDay: $cutDay,
     paymentDay: $paymentDay,
     creditLimit: $creditLimit,
-    color: $color
+    color: $color,
+    allowPartnerTransfers: $allowPartnerTransfers
   })
 }
 
