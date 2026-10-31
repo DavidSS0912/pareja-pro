@@ -2575,6 +2575,11 @@ export interface GetInvitationData {
     household: {
       id: UUIDString;
       name: string;
+      users_on_household: ({
+        uid: string;
+        displayName?: string | null;
+        photoUrl?: string | null;
+      } & User_Key)[];
     } & Household_Key;
   } & Invitation_Key;
 }

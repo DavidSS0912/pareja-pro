@@ -19,6 +19,8 @@ export interface InvitationDetails {
   householdId: string;
   householdName: string;
   inviterName: string;
+  inviterPhotoUrl?: string | null;
+  inviterUid?: string;
   status: string;
   expiresAt: string;
 }
@@ -129,10 +131,15 @@ export const checkInvitation = async (invitationId: string): Promise<InvitationD
     if (!inv || !inv.household) {
       return null;
     }
+    const members = (inv.household as any).users_on_household || [];
+    const inviter = members.find((u: any) => u.uid === inv.createdByUid) || members[0] || null;
+
     return {
       householdId: inv.household.id,
       householdName: inv.household.name,
-      inviterName: inv.createdByUid || 'Pareja',
+      inviterName: inviter?.displayName || 'Tu pareja',
+      inviterPhotoUrl: inviter?.photoUrl || null,
+      inviterUid: inv.createdByUid,
       status: inv.status,
       expiresAt: inv.expiresAt
     };

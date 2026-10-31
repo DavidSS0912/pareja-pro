@@ -466,6 +466,11 @@ query GetInvitation($id: UUID!) @auth(level: USER) {
     household {
       id
       name
+      users_on_household {
+        uid
+        displayName
+        photoUrl
+      }
     }
   }
 }

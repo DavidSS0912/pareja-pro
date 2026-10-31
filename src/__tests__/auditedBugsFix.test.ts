@@ -8,9 +8,11 @@ import {
   createJournalWithEntries,
   seedDefaultAccounts,
   deleteJournal,
+  getInvitation,
 } from '../lib/dataconnect';
 import { validateMovement } from '../services/movementService';
 import { filterTransferTargetAccounts } from '../services/ownershipService';
+import { checkInvitation } from '../services/userService';
 
 vi.mock('../lib/dataconnect', async (importOriginal) => {
   const actual = await importOriginal<any>();
@@ -25,6 +27,7 @@ vi.mock('../lib/dataconnect', async (importOriginal) => {
     updateInternalTransfer: vi.fn(),
     deleteJournal: vi.fn(),
     seedDefaultAccounts: vi.fn(),
+    getInvitation: vi.fn(),
   };
 });
 
@@ -789,6 +792,102 @@ describe('Audited Bugs Fix - Pruebas Unitarias Exhaustivas', () => {
       };
       handleNewMovement();
       expect(editingMovement).toBeNull();
+    });
+  });
+
+  // =========================================================================
+  // 9. Resolución de Nombre y Foto del Emisor en checkInvitation
+  // =========================================================================
+  describe('9. Resolución de Nombre y Foto del Emisor en checkInvitation', () => {
+    it('resuelve correctamente displayName y photoUrl del emisor a partir de users_on_household', async () => {
+      const mockInvitationData = {
+        id: 'inv-123',
+        status: 'PENDING',
+        expiresAt: new Date(Date.now() + 86400000).toISOString(),
+        createdByUid: 'uid-david-partner',
+        household: {
+          id: 'house-456',
+          name: 'Hogar David y Sofía',
+          users_on_household: [
+            {
+              uid: 'uid-david-partner',
+              displayName: 'David Santillán',
+              photoUrl: 'https://lh3.googleusercontent.com/photo-david.jpg',
+            },
+          ],
+        },
+      };
+
+      (getInvitation as any).mockResolvedValueOnce({
+        data: { invitation: mockInvitationData },
+      });
+
+      const result = await checkInvitation('inv-123');
+      expect(result).not.toBeNull();
+      expect(typeof result).toBe('object');
+      if (typeof result === 'object' && result !== null) {
+        expect(result.householdId).toBe('house-456');
+        expect(result.householdName).toBe('Hogar David y Sofía');
+        expect(result.inviterName).toBe('David Santillán');
+        expect(result.inviterPhotoUrl).toBe('https://lh3.googleusercontent.com/photo-david.jpg');
+        expect(result.inviterUid).toBe('uid-david-partner');
+      }
+    });
+
+    it('usa fallback de nombre y maneja foto nula cuando users_on_household no tiene foto', async () => {
+      const mockInvitationWithoutPhoto = {
+        id: 'inv-456',
+        status: 'PENDING',
+        expiresAt: new Date(Date.now() + 86400000).toISOString(),
+        createdByUid: 'uid-partner-only',
+        household: {
+          id: 'house-789',
+          name: 'Nuestro Hogar',
+          users_on_household: [
+            {
+              uid: 'uid-partner-only',
+              displayName: 'Sofía',
+              photoUrl: null,
+            },
+          ],
+        },
+      };
+
+      (getInvitation as any).mockResolvedValueOnce({
+        data: { invitation: mockInvitationWithoutPhoto },
+      });
+
+      const result = await checkInvitation('inv-456');
+      expect(result).not.toBeNull();
+      if (typeof result === 'object' && result !== null) {
+        expect(result.inviterName).toBe('Sofía');
+        expect(result.inviterPhotoUrl).toBeNull();
+      }
+    });
+
+    it('usa "Tu pareja" como fallback por defecto si users_on_household viene vacío', async () => {
+      const mockInvitationEmptyUsers = {
+        id: 'inv-empty',
+        status: 'PENDING',
+        expiresAt: new Date(Date.now() + 86400000).toISOString(),
+        createdByUid: 'uid-unknown',
+        household: {
+          id: 'house-empty',
+          name: 'Hogar Vacío',
+          users_on_household: [],
+        },
+      };
+
+      (getInvitation as any).mockResolvedValueOnce({
+        data: { invitation: mockInvitationEmptyUsers },
+      });
+
+      const result = await checkInvitation('inv-empty');
+      expect(result).not.toBeNull();
+      if (typeof result === 'object' && result !== null) {
+        expect(result.inviterName).toBe('Tu pareja');
+        expect(result.inviterPhotoUrl).toBeNull();
+      }
     });
   });
 });

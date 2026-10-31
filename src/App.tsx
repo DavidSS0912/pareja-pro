@@ -13,7 +13,9 @@ import {
   LogOut,
   User,
   Plus,
-  Copy
+  Copy,
+  Sparkles,
+  ArrowRight
 } from 'lucide-react';
 import { Modal } from './components/ui/Modal';
 import { MovementForm } from './components/forms/MovementForm';
@@ -813,45 +815,100 @@ export default function App() {
 
       {/* Join House Modal */}
       {joinHouseConfirm && (
-        <div className="fixed inset-0 bg-slate-900/60 z-[100] flex items-center justify-center p-4">
-          <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm max-w-md w-full relative text-center">
-            <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-6">
-              <UserPlus size={32} />
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xl max-w-md w-full relative overflow-hidden text-center p-7 sm:p-8">
+            {/* Fondo sutil superior */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-gradient-to-b from-indigo-100/60 to-transparent rounded-full blur-2xl pointer-events-none" />
+
+            {/* Encabezado: Logo de Orbita2 + Insignia de Hogar */}
+            <div className="relative flex flex-col items-center mb-5">
+              <div className="relative mb-3">
+                <OrbitaLogo size={52} className="shadow-md rounded-2xl" />
+                <div className="absolute -bottom-1 -right-1 bg-indigo-600 text-white p-1 rounded-full shadow border-2 border-white">
+                  <Home size={12} />
+                </div>
+              </div>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100/80 text-indigo-700 text-xs font-extrabold uppercase tracking-wider">
+                <Sparkles size={12} className="text-indigo-500" />
+                Invitación a Hogar
+              </span>
             </div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-2 font-title">
-              ¡Te han invitado a un hogar!
+
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2 font-title">
+              ¡Te han invitado a formar un hogar en Orbita2!
             </h2>
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6 text-left">
-              <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Detalles de la invitación</p>
-              <p className="text-sm text-slate-800 font-bold">
-                Hogar: <span className="font-normal text-slate-600">{inviteModalData?.householdName || 'Hogar compartido'}</span>
-              </p>
-              <p className="text-sm text-slate-800 font-bold mt-1">
-                Invitado por: <span className="font-normal text-slate-600">{inviteModalData?.inviterName || 'Tu pareja'}</span>
-              </p>
-            </div>
-            <p className="text-slate-600 mb-6 text-sm">
-              ¿Deseas unirte a este hogar para compartir finanzas y presupuestos en común?
+            <p className="text-slate-500 text-xs sm:text-sm mb-6 leading-relaxed">
+              Comparte presupuestos, divide gastos y alcancen sus metas financieras juntos en un solo lugar.
             </p>
+
+            {/* Identidad del Emisor y Hogar */}
+            <div className="bg-gradient-to-br from-slate-50 to-indigo-50/40 border border-indigo-100/70 rounded-2xl p-4 mb-6 text-left shadow-sm">
+              <div className="flex items-center gap-3.5">
+                {inviteModalData?.inviterPhotoUrl ? (
+                  <img
+                    src={inviteModalData.inviterPhotoUrl}
+                    alt={inviteModalData?.inviterName || 'Pareja'}
+                    className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-md shrink-0"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-indigo-600 via-indigo-500 to-primary text-white flex items-center justify-center font-black text-base border-2 border-white shadow-md shrink-0 select-none">
+                    {(inviteModalData?.inviterName || 'P')
+                      .trim()
+                      .split(/\s+/)
+                      .slice(0, 2)
+                      .map((word: string) => word[0])
+                      .join('')
+                      .toUpperCase() || 'P'}
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <span className="block text-[11px] font-bold text-indigo-600 uppercase tracking-wider">
+                    Tu pareja te invita
+                  </span>
+                  <p className="text-base font-black text-slate-900 truncate">
+                    {inviteModalData?.inviterName || 'Tu pareja'}
+                  </p>
+                  <p className="text-xs text-slate-500 truncate mt-0.5 flex items-center gap-1">
+                    <Home size={12} className="text-slate-400 shrink-0" />
+                    <span>Hogar: <strong className="font-semibold text-slate-700">{inviteModalData?.householdName || 'Hogar compartido'}</strong></span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {joinError && (
-              <div className="bg-red-50 text-red-700 p-3 rounded-lg border border-red-200 text-xs mb-4">
+              <div className="bg-red-50 text-red-700 p-3 rounded-xl border border-red-200 text-xs font-medium mb-4 text-left">
                 {joinError}
               </div>
             )}
-            <div className="flex flex-col gap-3">
+
+            <div className="flex flex-col gap-2.5">
               <button
+                type="button"
                 disabled={joinLoading}
                 onClick={() => handleJoinHouse(true)}
-                className="w-full bg-primary hover:bg-primary/90 text-white p-3 rounded-lg font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white py-3.5 px-5 rounded-2xl font-bold text-sm transition-all shadow-md hover:shadow-lg shadow-indigo-600/20 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
               >
-                {joinLoading ? 'Uniéndote al hogar...' : 'Unirme al nuevo hogar'}
+                {joinLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Uniéndote al hogar...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Unirme al hogar</span>
+                    <ArrowRight size={16} />
+                  </>
+                )}
               </button>
               <button
+                type="button"
                 disabled={joinLoading}
                 onClick={() => handleJoinHouse(false)}
-                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 p-3 rounded-lg font-bold transition-colors disabled:opacity-50"
+                className="w-full bg-slate-100 hover:bg-slate-200 active:scale-[0.99] text-slate-600 hover:text-slate-800 py-3 px-5 rounded-2xl font-semibold text-xs sm:text-sm transition-all disabled:opacity-50 cursor-pointer"
               >
-                Mantenerme en mi hogar actual
+                Permanecer en mi hogar actual
               </button>
             </div>
           </div>
