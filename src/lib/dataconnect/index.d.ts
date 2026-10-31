@@ -986,6 +986,26 @@ export interface UpdateExternalAssetVariables {
   estimatedValue: number;
 }
 
+export interface UpdateInternalTransferData {
+  journal_update?: Journal_Key | null;
+  entry_deleteMany: number;
+  creditEntry: Entry_Key;
+  debitEntry: Entry_Key;
+}
+
+export interface UpdateInternalTransferVariables {
+  journalId: UUIDString;
+  householdId: UUIDString;
+  date: TimestampString;
+  description: string;
+  amount: number;
+  sourceAccountId: UUIDString;
+  targetAccountId: UUIDString;
+  sourceOwnerUid: string;
+  targetOwnerUid: string;
+  isShared: boolean;
+}
+
 export interface UpdateJournalWithEntriesData {
   journal_update?: Journal_Key | null;
   entry_deleteMany: number;
@@ -1122,6 +1142,18 @@ export const createInternalTransferRef: CreateInternalTransferRef;
 
 export function createInternalTransfer(vars: CreateInternalTransferVariables): MutationPromise<CreateInternalTransferData, CreateInternalTransferVariables>;
 export function createInternalTransfer(dc: DataConnect, vars: CreateInternalTransferVariables): MutationPromise<CreateInternalTransferData, CreateInternalTransferVariables>;
+
+interface UpdateInternalTransferRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateInternalTransferVariables): MutationRef<UpdateInternalTransferData, UpdateInternalTransferVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: UpdateInternalTransferVariables): MutationRef<UpdateInternalTransferData, UpdateInternalTransferVariables>;
+  operationName: string;
+}
+export const updateInternalTransferRef: UpdateInternalTransferRef;
+
+export function updateInternalTransfer(vars: UpdateInternalTransferVariables): MutationPromise<UpdateInternalTransferData, UpdateInternalTransferVariables>;
+export function updateInternalTransfer(dc: DataConnect, vars: UpdateInternalTransferVariables): MutationPromise<UpdateInternalTransferData, UpdateInternalTransferVariables>;
 
 interface CreateSharedExpenseWithProrationRef {
   /* Allow users to create refs without passing in DataConnect */

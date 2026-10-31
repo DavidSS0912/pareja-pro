@@ -44,6 +44,38 @@ import { PrivacyPolicyView } from './views/PrivacyPolicyView';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { ToastContainer } from './components/ui/Toast';
 
+export function filterContextByMode(
+  items: any[],
+  appContext: 'household' | 'personal',
+  userUid: string
+) {
+  return (items || []).filter((i: any) => {
+    const ownerUid = i.ownerUid || i.userId || i.paidBy;
+    const isShared = i.isShared !== undefined ? Boolean(i.isShared) : !i.isPrivate;
+    if (appContext === 'personal') {
+      return ownerUid === userUid && !isShared;
+    }
+    // appContext === 'household'
+    return isShared;
+  });
+}
+
+export function filterTransfersByMode(
+  items: any[],
+  appContext: 'household' | 'personal',
+  userUid: string
+) {
+  return (items || []).filter((t: any) => {
+    const ownerUid = t.ownerUid || t.userId || t.sourceOwnerUid;
+    const isShared = t.isShared !== undefined ? Boolean(t.isShared) : (t.isPrivate !== undefined ? !t.isPrivate : true);
+    if (appContext === 'personal') {
+      return ownerUid === userUid && !isShared;
+    }
+    // appContext === 'household'
+    return isShared;
+  });
+}
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -59,12 +91,18 @@ export default function App() {
 
   const [appContext, setAppContext] = useState<any>('household');
   const [isMovementModalOpen, setIsMovementModalOpen] = useState(false);
+  const [editingMovement, setEditingMovement] = useState<any>(null);
 
   const handleOpenMovementModal = () => {
+    setEditingMovement(null);
     setIsMovementModalOpen(true);
   };
   const handleOpenIncomeModal = handleOpenMovementModal;
   const handleOpenExpenseModal = handleOpenMovementModal;
+  const handleOpenTransferModal = (record: any) => {
+    setEditingMovement(record || null);
+    setIsMovementModalOpen(true);
+  };
 
 
   const data = useAppStore(useShallow(state => ({
@@ -109,6 +147,7 @@ export default function App() {
     deleteAccount: state.deleteAccount,
     payCreditCard: state.payCreditCard,
     createTransfer: state.createTransfer,
+    updateTransfer: state.updateTransfer,
     addAsset: state.addAsset,
     updateAsset: state.updateAsset,
     deleteAsset: state.deleteAsset,
@@ -125,7 +164,7 @@ export default function App() {
     setMemberSlot: state.setMemberSlot,
   })));
   
-  const methods = { ...data, handleOpenMovementModal, handleOpenIncomeModal, handleOpenExpenseModal };
+  const methods = { ...data, handleOpenMovementModal, handleOpenIncomeModal, handleOpenExpenseModal, handleOpenTransferModal };
   const { user, houseId, memberSlot, authLoading, setUser, setHouseId, setMemberSlot, setAuthLoading, fetchDashboardData, refreshSettings, dateRange, setDateRange } = data;
 
   const filteredData = useMemo(() => {
@@ -135,23 +174,9 @@ export default function App() {
     // We normalize to date-only ("2026-09-30") for correct string range comparison.
     const toDateStr = (d: string | undefined | null): string | null =>
       d ? d.slice(0, 10) : null;
-    const filterContext = (items: any[], isIncome = false) => {
-       const userUid = user?.uid || '';
-       return items.filter((i: any) => {
-         const ownerUid = i.ownerUid || i.userId || i.paidBy;
-         const isShared = !i.isPrivate;
-         if (appContext === 'personal') {
-           if (isIncome) {
-             return !userUid || ownerUid === userUid;
-           }
-           return ownerUid === userUid && !isShared;
-         }
-         // appContext === 'household'
-         if (isIncome) {
-           return isShared || !userUid || ownerUid === userUid;
-         }
-         return isShared;
-       });
+
+    const filterContext = (items: any[], _isIncome = false) => {
+      return filterContextByMode(items, appContext, user?.uid || '');
     };
     const inDateRange = (date: string | undefined | null) => {
       const d = toDateStr(date);
@@ -162,16 +187,7 @@ export default function App() {
     const contextMode = appContext === 'personal' ? 'personal' : 'shared';
 
     const filterTransfers = (items: any[]) => {
-      const userUid = user?.uid || '';
-      return items.filter((t: any) => {
-        const ownerUid = t.ownerUid || t.userId;
-        const isShared = t.isPrivate !== undefined ? !t.isPrivate : true;
-        if (appContext === 'personal') {
-          return ownerUid === userUid && !isShared;
-        }
-        // appContext === 'household'
-        return isShared;
-      });
+      return filterTransfersByMode(items, appContext, user?.uid || '');
     };
 
     return {
@@ -479,7 +495,7 @@ export default function App() {
 
   const renderTab = () => {
     switch (activeTab) {
-      case 'dashboard': return <DashboardView data={filteredData} calc={calc} methods={methods} />;
+      case 'dashboard': return <DashboardView data={filteredData} calc={calc} methods={methods} appContext={appContext} />;
       case 'wallet':
       case 'cards':
       case 'debts':
@@ -497,7 +513,7 @@ export default function App() {
 
       case 'terms': return <TermsView />;
       case 'privacy': return <PrivacyPolicyView />;
-      default: return <DashboardView data={filteredData} calc={calc} methods={methods} />;
+      default: return <DashboardView data={filteredData} calc={calc} methods={methods} appContext={appContext} />;
     }
   };
 
@@ -775,15 +791,26 @@ export default function App() {
       {/* Modal for Unified Movement (F3.1) */}
       <Modal
         isOpen={isMovementModalOpen}
-        onClose={() => setIsMovementModalOpen(false)}
-        title="Nuevo Movimiento"
+        onClose={() => {
+          setIsMovementModalOpen(false);
+          setEditingMovement(null);
+        }}
+        title={
+          editingMovement
+            ? (editingMovement.recordType === 'transfer' || editingMovement.type === 'TRANSFER' || editingMovement.type === 'CARD_PAYMENT'
+                ? 'Editar Transferencia'
+                : 'Editar Movimiento')
+            : 'Nuevo Movimiento'
+        }
       >
         {isMovementModalOpen && (
           <MovementForm
             categories={data.categories}
             accounts={data.accounts}
             currentUserId={user?.uid}
+            memberSlot={memberSlot}
             appContext={appContext}
+            initialData={editingMovement}
             onSubmit={async (action) => {
               if (action.type === 'EXPENSE') {
                 await methods.addExpense(action.payload);
@@ -792,7 +819,20 @@ export default function App() {
               } else if (action.type === 'TRANSFER') {
                 const targetAccount = (data.accounts || []).find((a: any) => a.id === action.payload.targetAccountId);
                 const isLiability = targetAccount?.type === 'LIABILITY' || targetAccount?.type === 'CREDIT_CARD';
-                if (isLiability) {
+                if (editingMovement && editingMovement.id) {
+                  await methods.updateTransfer(
+                    editingMovement.id,
+                    action.payload.sourceAccountId,
+                    action.payload.targetAccountId,
+                    action.payload.amount,
+                    action.payload.date,
+                    action.payload.ownerUid,
+                    action.payload.isShared,
+                    (action.payload as any).description || (action.payload as any).note,
+                    (action.payload as any).sourceOwnerUid,
+                    (action.payload as any).targetOwnerUid
+                  );
+                } else if (isLiability) {
                   await methods.payCreditCard(
                     action.payload.sourceAccountId,
                     action.payload.targetAccountId,
@@ -809,13 +849,19 @@ export default function App() {
                     action.payload.date,
                     action.payload.ownerUid,
                     action.payload.isShared,
-                    (action.payload as any).description || (action.payload as any).note
+                    (action.payload as any).description || (action.payload as any).note,
+                    (action.payload as any).sourceOwnerUid,
+                    (action.payload as any).targetOwnerUid
                   );
                 }
               }
               setIsMovementModalOpen(false);
+              setEditingMovement(null);
             }}
-            onCancel={() => setIsMovementModalOpen(false)}
+            onCancel={() => {
+              setIsMovementModalOpen(false);
+              setEditingMovement(null);
+            }}
           />
         )}
       </Modal>

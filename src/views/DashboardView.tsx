@@ -9,7 +9,14 @@ import { FormatCurrency } from '../utils';
 import { PaymentCalendar } from '../components/PaymentCalendar';
 import { useAppStore } from '../store/useAppStore';
 
-export function DashboardView({ data, calc, methods }) {
+export interface DashboardViewProps {
+  data: any;
+  calc: any;
+  methods: any;
+  appContext?: 'household' | 'personal';
+}
+
+export function DashboardView({ data, calc, methods, appContext = 'household' }: DashboardViewProps) {
   const [deleteConfirm, setDeleteConfirm] = useState<{id: string, type: 'income'|'expense'} | null>(null);
   const [movementFilter, setMovementFilter] = useState<'all' | 'income' | 'expense' | 'transfer'>('all');
 
@@ -20,11 +27,11 @@ export function DashboardView({ data, calc, methods }) {
 
   // Cálculos de Privacidad y Totales
   const { totalIncome, totalExpense, currentBalance, relevantIncomes, relevantExpenses, chartData, usersWithProportion } = useMemo(() => {
-    const rIncomes = data.incomes.filter(i => !i.isPrivate || i.userId === currentUserId);
-    const tIncome = rIncomes.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+    const rIncomes = data.incomes;
+    const tIncome = rIncomes.reduce((acc: number, curr: any) => acc + Number(curr.amount || 0), 0);
 
-    const rExpenses = data.expenses.filter(e => !e.isPrivate || e.userId === currentUserId);
-    const tExpense = rExpenses.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+    const rExpenses = data.expenses;
+    const tExpense = rExpenses.reduce((acc: number, curr: any) => acc + Number(curr.amount || 0), 0);
 
     const balance = tIncome - tExpense;
 
@@ -120,16 +127,35 @@ export function DashboardView({ data, calc, methods }) {
     const prevMonthStart = new Date(startObj.getFullYear(), startObj.getMonth() - 1, 1);
     const prevMonthEnd = new Date(startObj.getFullYear(), startObj.getMonth(), 0);
     
-    return allExpenses.filter((e: any) => {
+    const contextFilteredExpenses = (allExpenses || []).filter((e: any) => {
+      const ownerUid = e.ownerUid || e.userId || e.paidBy;
+      const isShared = e.isShared !== undefined ? Boolean(e.isShared) : !e.isPrivate;
+      if (appContext === 'personal') {
+        return ownerUid === currentUserId && !isShared;
+      }
+      return isShared;
+    });
+
+    return contextFilteredExpenses.filter((e: any) => {
         if (!e.date) return false;
         const d = new Date(e.date);
         return d >= prevMonthStart && d <= prevMonthEnd;
     }).reduce((acc: number, curr: any) => acc + Number(curr.amount || 0), 0);
-  }, [allExpenses, dateRange]);
+  }, [allExpenses, dateRange, appContext, currentUserId]);
 
   const expenseTrend = prevMonthExpense > 0 
     ? ((totalExpense - prevMonthExpense) / prevMonthExpense) * 100 
     : 0;
+
+  const calendarAccounts = useMemo(() => {
+    const rawAccounts: any[] = data.accounts || [];
+    const currentSlot = data.user?.memberSlot || (data.memberSlot as any);
+    if (appContext === 'personal') {
+      if (!currentSlot) return [];
+      return rawAccounts.filter((a: any) => a?.ownerType === currentSlot);
+    }
+    return rawAccounts.filter((a: any) => a?.ownerType === 'SHARED');
+  }, [data.accounts, data.user?.memberSlot, data.memberSlot, appContext]);
 
   return (
     <div className="space-y-6 animate-in">
@@ -426,7 +452,15 @@ export function DashboardView({ data, calc, methods }) {
                             <p className="text-[10px] text-slate-400 font-medium">{mov.currency}</p>
                           )}
                         </div>
-                        {!isTransfer && (
+                        {isTransfer ? (
+                          methods.handleOpenTransferModal && (
+                            <div className="flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button onClick={() => methods.handleOpenTransferModal(mov)} className="text-slate-400 hover:text-indigo-600 transition-colors p-1 bg-slate-100 rounded-md">
+                                <Edit2 size={12} />
+                              </button>
+                            </div>
+                          )
+                        ) : (
                           <div className="flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button onClick={() => {
                               if (isIncome && methods.handleOpenIncomeModal) methods.handleOpenIncomeModal(mov);
@@ -450,7 +484,7 @@ export function DashboardView({ data, calc, methods }) {
       </div>
 
       <div className="mt-6">
-        <PaymentCalendar expenses={relevantExpenses} accounts={data.accounts || []} />
+        <PaymentCalendar expenses={relevantExpenses} accounts={calendarAccounts} />
       </div>
 
       <Modal 

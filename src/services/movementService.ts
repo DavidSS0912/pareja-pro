@@ -184,6 +184,8 @@ export interface MovementValidationInput {
   sourceOwnerType?: 'USER_A' | 'USER_B' | 'SHARED';
   targetOwnerType?: 'USER_A' | 'USER_B' | 'SHARED';
   transferKind?: 'SAME_USER' | 'CROSS_USERS' | 'CARD_PAYMENT';
+  sourceAccountAvailableBalance?: number;
+  sourceAccountName?: string;
 }
 
 export interface MovementValidationResult {
@@ -270,6 +272,15 @@ export function validateMovement(input: MovementValidationInput): MovementValida
     }
     if (input.sourceAccountId === input.targetAccountId) {
       return { valid: false, error: 'La cuenta de origen y destino deben ser diferentes' };
+    }
+    if (input.sourceAccountAvailableBalance !== undefined && amountRes.amount !== undefined) {
+      if (amountRes.amount > input.sourceAccountAvailableBalance) {
+        const accLabel = input.sourceAccountName ? ` "${input.sourceAccountName}"` : '';
+        return {
+          valid: false,
+          error: `Fondos insuficientes en la cuenta de origen${accLabel}. Saldo disponible: $${input.sourceAccountAvailableBalance.toFixed(2)}`,
+        };
+      }
     }
   } else {
     return { valid: false, error: 'Modalidad de movimiento desconocida' };

@@ -70,6 +70,20 @@ exports.createInternalTransfer = function createInternalTransfer(dcOrVars, vars)
 }
 ;
 
+const updateInternalTransferRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpdateInternalTransfer', inputVars);
+}
+updateInternalTransferRef.operationName = 'UpdateInternalTransfer';
+exports.updateInternalTransferRef = updateInternalTransferRef;
+
+exports.updateInternalTransfer = function updateInternalTransfer(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(updateInternalTransferRef(dcInstance, inputVars));
+}
+;
+
 const createSharedExpenseWithProrationRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();

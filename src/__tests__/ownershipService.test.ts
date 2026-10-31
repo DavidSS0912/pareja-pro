@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { filterByContext } from '../services/ownershipService';
+import {
+  filterByContext,
+  getPartnerSlot,
+  isPartnerAccount,
+  filterSourceAccounts,
+  filterTransferTargetAccounts,
+} from '../services/ownershipService';
 
 describe('ownershipService - filterByContext', () => {
   const sampleItems = [
@@ -71,6 +77,44 @@ describe('ownershipService - filterByContext', () => {
       expect(filterByContext([], 'personal', 'USER_A')).toEqual([]);
       expect(filterByContext(null as any, 'shared', 'USER_A')).toEqual([]);
       expect(filterByContext(undefined as any, 'all', 'USER_B')).toEqual([]);
+    });
+  });
+
+  describe('getPartnerSlot y isPartnerAccount', () => {
+    it('obtiene el slot opuesto o null', () => {
+      expect(getPartnerSlot('USER_A')).toBe('USER_B');
+      expect(getPartnerSlot('USER_B')).toBe('USER_A');
+      expect(getPartnerSlot(null)).toBeNull();
+    });
+
+    it('identifica correctamente cuentas personales de la pareja', () => {
+      expect(isPartnerAccount({ ownerType: 'USER_B' }, 'USER_A')).toBe(true);
+      expect(isPartnerAccount({ ownerType: 'USER_A' }, 'USER_B')).toBe(true);
+      expect(isPartnerAccount({ ownerType: 'USER_A' }, 'USER_A')).toBe(false);
+      expect(isPartnerAccount({ ownerType: 'SHARED' }, 'USER_A')).toBe(false);
+      expect(isPartnerAccount(null, 'USER_A')).toBe(false);
+    });
+  });
+
+  describe('filterSourceAccounts y filterTransferTargetAccounts', () => {
+    it('filtra cuentas de origen excluyendo las de la pareja', () => {
+      const accounts = [
+        { id: '1', ownerType: 'SHARED' },
+        { id: '2', ownerType: 'USER_A' },
+        { id: '3', ownerType: 'USER_B' },
+      ];
+      const sourceA = filterSourceAccounts(accounts, 'USER_A');
+      expect(sourceA.map(a => a.id)).toEqual(['1', '2']);
+
+      const sourceB = filterSourceAccounts(accounts, 'USER_B');
+      expect(sourceB.map(a => a.id)).toEqual(['1', '3']);
+    });
+
+    it('retorna arreglo seguro ante entradas vacías o nulas', () => {
+      expect(filterSourceAccounts([], 'USER_A')).toEqual([]);
+      expect(filterSourceAccounts(null as any, 'USER_A')).toEqual([]);
+      expect(filterTransferTargetAccounts([])).toEqual([]);
+      expect(filterTransferTargetAccounts(null as any)).toEqual([]);
     });
   });
 });

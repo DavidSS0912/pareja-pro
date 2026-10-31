@@ -139,6 +139,71 @@ mutation CreateInternalTransfer(
   })
 }
 
+mutation UpdateInternalTransfer(
+  $journalId: UUID!,
+  $householdId: UUID!,
+  $date: Timestamp!,
+  $description: String!,
+  $amount: Float!,
+  $sourceAccountId: UUID!,
+  $targetAccountId: UUID!,
+  $sourceOwnerUid: String!,
+  $targetOwnerUid: String!,
+  $isShared: Boolean!
+) @auth(level: USER) @transaction {
+
+  query @redact {
+    user(key: { uid_expr: "auth.uid" })
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El usuario no pertenece a este hogar") {
+      household { id }
+    }
+    journal(id: $journalId)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "El journal no pertenece a este hogar") {
+      household { id }
+    }
+    sourceAccount: account(id: $sourceAccountId)
+      @check(expr: "this != null && this.household.id == vars.householdId && vars.amount > 0 && vars.sourceAccountId != vars.targetAccountId",
+             message: "Cuenta de origen inválida, monto no positivo o cuentas iguales") {
+      household { id }
+    }
+    targetAccount: account(id: $targetAccountId)
+      @check(expr: "this != null && this.household.id == vars.householdId",
+             message: "Cuenta de destino inválida") {
+      household { id }
+    }
+  }
+
+  journal_update(id: $journalId, data: {
+    date: $date,
+    description: $description,
+    isInternalTransfer: true
+  })
+
+  entry_deleteMany(where: { journalId: { eq: $journalId } })
+
+  creditEntry: entry_insert(data: {
+    journalId: $journalId,
+    accountId: $sourceAccountId,
+    amount: $amount,
+    prorataFactor: 1.0,
+    ownerUid: $sourceOwnerUid,
+    isShared: $isShared,
+    entryType: CREDIT
+  })
+
+  debitEntry: entry_insert(data: {
+    journalId: $journalId,
+    accountId: $targetAccountId,
+    amount: $amount,
+    prorataFactor: 1.0,
+    ownerUid: $targetOwnerUid,
+    isShared: $isShared,
+    entryType: DEBIT
+  })
+}
+
 mutation CreateSharedExpenseWithProration(
   $householdId: UUID!,
   $date: Timestamp!,

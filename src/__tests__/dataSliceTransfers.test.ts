@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useAppStore } from '../store/useAppStore';
+import { validateMovement } from '../services/movementService';
 import {
   getHouseholdAccounts,
   getInternalTransfersByHousehold,
@@ -10,6 +11,7 @@ import {
   getExpensesByHousehold,
   getIncomesByHousehold,
   createInternalTransfer,
+  updateInternalTransfer,
 } from '../lib/dataconnect';
 
 vi.mock('../lib/dataconnect', () => ({
@@ -22,6 +24,7 @@ vi.mock('../lib/dataconnect', () => ({
   getExpensesByHousehold: vi.fn(),
   getIncomesByHousehold: vi.fn(),
   createInternalTransfer: vi.fn(),
+  updateInternalTransfer: vi.fn(),
 }));
 
 describe('dataSlice - Tarea 1.2: householdUsers y transferencias internas en dataSlice', () => {
@@ -36,6 +39,7 @@ describe('dataSlice - Tarea 1.2: householdUsers y transferencias internas en dat
     (getExpensesByHousehold as any).mockResolvedValue({ data: { entries: [] } });
     (getIncomesByHousehold as any).mockResolvedValue({ data: { entries: [] } });
     (createInternalTransfer as any).mockResolvedValue({ data: {} });
+    (updateInternalTransfer as any).mockResolvedValue({ data: {} });
 
     // Reset store state
     useAppStore.setState({
@@ -291,5 +295,194 @@ describe('dataSlice - Tarea 1.2: householdUsers y transferencias internas en dat
       targetOwnerUid: 'usr-zoe',
       isShared: true,
     });
+  });
+
+  it('updateTransfer invoca updateInternalTransfer con los campos actualizados y realiza actualización optimista', async () => {
+    useAppStore.setState({
+      houseId: 'house-test-123',
+      users: [
+        { id: 'usr-david', memberSlot: 'USER_A' },
+        { id: 'usr-zoe', memberSlot: 'USER_B' },
+      ],
+      accounts: [
+        { id: 'acc-david', name: 'BBVA David', ownerType: 'USER_A', type: 'ASSET' },
+        { id: 'acc-zoe', name: 'Hey Zoe', ownerType: 'USER_B', type: 'ASSET' },
+      ],
+      transfers: [
+        {
+          id: 'journal-123',
+          date: '2026-10-20',
+          amount: 1000,
+          description: 'Aporte inicial',
+          sourceAccountId: 'acc-david',
+          targetAccountId: 'acc-zoe',
+          type: 'TRANSFER',
+        },
+      ],
+    } as any);
+
+    (getInternalTransfersByHousehold as any).mockResolvedValueOnce({
+      data: {
+        journals: [
+          {
+            id: 'journal-123',
+            date: '2026-10-28T00:00:00.000Z',
+            description: 'Aporte actualizado',
+            isInternalTransfer: true,
+            entries_on_journal: [
+              {
+                id: 'e1',
+                amount: 2500,
+                entryType: 'CREDIT',
+                ownerUid: 'usr-david',
+                account: { id: 'acc-david', name: 'BBVA David', type: 'ASSET', ownerType: 'USER_A' },
+              },
+              {
+                id: 'e2',
+                amount: 2500,
+                entryType: 'DEBIT',
+                ownerUid: 'usr-zoe',
+                account: { id: 'acc-zoe', name: 'Hey Zoe', type: 'ASSET', ownerType: 'USER_B' },
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    await useAppStore.getState().updateTransfer(
+      'journal-123',
+      'acc-david',
+      'acc-zoe',
+      2500,
+      '2026-10-28',
+      'usr-david',
+      true,
+      'Aporte actualizado',
+      'usr-david',
+      'usr-zoe'
+    );
+
+    expect(updateInternalTransfer).toHaveBeenCalledWith({
+      journalId: 'journal-123',
+      householdId: 'house-test-123',
+      date: new Date('2026-10-28').toISOString(),
+      description: 'Aporte actualizado',
+      amount: 2500,
+      sourceAccountId: 'acc-david',
+      targetAccountId: 'acc-zoe',
+      sourceOwnerUid: 'usr-david',
+      targetOwnerUid: 'usr-zoe',
+      isShared: true,
+    });
+
+    const updatedTransfers = useAppStore.getState().transfers;
+    expect(updatedTransfers[0].amount).toBe(2500);
+    expect(updatedTransfers[0].description).toBe('Aporte actualizado');
+    expect(updatedTransfers[0].transferKind).toBe('CROSS_USERS');
+  });
+
+  it('updateTransfer revierte el estado optimista si falla updateInternalTransfer', async () => {
+    const initialTransfers = [
+      {
+        id: 'journal-error-1',
+        date: '2026-10-20',
+        amount: 500,
+        description: 'Original',
+        sourceAccountId: 'acc-david',
+        targetAccountId: 'acc-zoe',
+      },
+    ];
+
+    useAppStore.setState({
+      houseId: 'house-test-123',
+      transfers: initialTransfers,
+      accounts: [],
+      users: [],
+    } as any);
+
+    (updateInternalTransfer as any).mockRejectedValueOnce(new Error('Network error'));
+
+    await expect(
+      useAppStore.getState().updateTransfer(
+        'journal-error-1',
+        'acc-david',
+        'acc-zoe',
+        9999,
+        '2026-10-28',
+        'usr-david',
+        true,
+        'Falla',
+        'usr-david',
+        'usr-zoe'
+      )
+    ).rejects.toThrow('Network error');
+
+    expect(useAppStore.getState().transfers).toEqual(initialTransfers);
+  });
+
+  it('validación de fondos suficientes en transferencias rechaza si el monto excede el saldo disponible', () => {
+    // Caso 1: Fondos insuficientes
+    const resOverdraft = validateMovement({
+      type: 'TRANSFER',
+      amount: 1500,
+      date: '2026-10-28',
+      currentUserId: 'usr-david',
+      sourceAccountId: 'acc-david',
+      targetAccountId: 'acc-zoe',
+      sourceAccountAvailableBalance: 1000,
+      sourceAccountName: 'Nómina BBVA',
+    });
+
+    expect(resOverdraft.valid).toBe(false);
+    expect(resOverdraft.error).toBe(
+      'Fondos insuficientes en la cuenta de origen "Nómina BBVA". Saldo disponible: $1000.00'
+    );
+
+    // Caso 2: Fondos suficientes
+    const resSufficient = validateMovement({
+      type: 'TRANSFER',
+      amount: 1000,
+      date: '2026-10-28',
+      currentUserId: 'usr-david',
+      sourceAccountId: 'acc-david',
+      targetAccountId: 'acc-zoe',
+      sourceAccountAvailableBalance: 1000,
+      sourceAccountName: 'Nómina BBVA',
+    });
+
+    expect(resSufficient.valid).toBe(true);
+
+    // Caso 3: Restitución en edición (saldo disponible base 200 + monto previo de transferencia 800 = 1000 efectivos)
+    const previousTransferAmount = 800;
+    const baseAvailableBalance = 200;
+    const effectiveAvailableBalanceInEdit = baseAvailableBalance + previousTransferAmount;
+
+    const resEditValid = validateMovement({
+      type: 'TRANSFER',
+      amount: 950,
+      date: '2026-10-28',
+      currentUserId: 'usr-david',
+      sourceAccountId: 'acc-david',
+      targetAccountId: 'acc-zoe',
+      sourceAccountAvailableBalance: effectiveAvailableBalanceInEdit,
+      sourceAccountName: 'Nómina BBVA',
+    });
+
+    expect(resEditValid.valid).toBe(true);
+
+    const resEditOverdraft = validateMovement({
+      type: 'TRANSFER',
+      amount: 1050,
+      date: '2026-10-28',
+      currentUserId: 'usr-david',
+      sourceAccountId: 'acc-david',
+      targetAccountId: 'acc-zoe',
+      sourceAccountAvailableBalance: effectiveAvailableBalanceInEdit,
+      sourceAccountName: 'Nómina BBVA',
+    });
+
+    expect(resEditOverdraft.valid).toBe(false);
+    expect(resEditOverdraft.error).toContain('Fondos insuficientes');
   });
 });

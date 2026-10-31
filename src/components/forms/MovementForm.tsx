@@ -8,6 +8,8 @@ import {
   getLastUsedAccountId,
   saveLastUsedAccountId,
 } from '../../services/movementService';
+import { calculateAccountAvailableBalance } from '../../utils/walletCalculations';
+import { isPartnerAccount, MemberSlotFilter } from '../../services/ownershipService';
 import { useAppStore } from '../../store/useAppStore';
 import { Button } from '../ui/Button';
 import {
@@ -21,13 +23,15 @@ import {
 
 export interface MovementFormProps {
   categories?: Array<{ id: string; name: string; type?: string }>;
-  accounts?: Array<{ id: string; name: string; type?: string; ownerType?: string }>;
+  accounts?: Array<{ id: string; name: string; type?: string; ownerType?: string; balance?: number }>;
   currentUserId?: string | null;
+  memberSlot?: MemberSlotFilter;
   appContext?: string;
   initialMode?: 'expense' | 'income' | 'transfer' | 'EXPENSE' | 'INCOME' | 'TRANSFER';
   initialType?: 'EXPENSE' | 'INCOME' | 'TRANSFER';
   initialSourceAccountId?: string;
   initialTargetAccountId?: string;
+  initialData?: any;
   onSubmit: (action: MovementAction) => void | Promise<void>;
   onCancel: () => void;
 }
@@ -52,15 +56,23 @@ export function MovementForm({
   categories = [],
   accounts = [],
   currentUserId,
+  memberSlot: propMemberSlot,
   appContext = 'household',
   initialMode,
   initialType,
   initialSourceAccountId,
   initialTargetAccountId,
+  initialData,
   onSubmit,
   onCancel,
 }: MovementFormProps) {
   const resolvedInitialType: 'EXPENSE' | 'INCOME' | 'TRANSFER' = (() => {
+    if (initialData) {
+      const recType = (initialData.recordType || initialData.type || '').toUpperCase();
+      if (recType === 'TRANSFER' || recType === 'CARD_PAYMENT') return 'TRANSFER';
+      if (recType === 'INCOME') return 'INCOME';
+      if (recType === 'EXPENSE') return 'EXPENSE';
+    }
     const raw = (initialMode || initialType || '').toUpperCase();
     if (raw === 'INCOME') return 'INCOME';
     if (raw === 'TRANSFER') return 'TRANSFER';
@@ -68,12 +80,26 @@ export function MovementForm({
   })();
 
   const [type, setType] = useState<'EXPENSE' | 'INCOME' | 'TRANSFER'>(resolvedInitialType);
-  const [amount, setAmount] = useState<string>('');
-  const [date, setDate] = useState<string>(() => getTodayLocalISO());
-  const [categoryId, setCategoryId] = useState<string>('');
-  const [sourceAccountId, setSourceAccountId] = useState<string>(initialSourceAccountId || '');
-  const [targetAccountId, setTargetAccountId] = useState<string>(initialTargetAccountId || '');
-  const [note, setNote] = useState<string>('');
+  const [amount, setAmount] = useState<string>(() => {
+    if (initialData?.amount !== undefined && initialData?.amount !== null) {
+      return String(initialData.amount);
+    }
+    return '';
+  });
+  const [date, setDate] = useState<string>(() => {
+    if (initialData?.date) {
+      return String(initialData.date).slice(0, 10);
+    }
+    return getTodayLocalISO();
+  });
+  const [categoryId, setCategoryId] = useState<string>(() => initialData?.categoryId || '');
+  const [sourceAccountId, setSourceAccountId] = useState<string>(
+    () => initialData?.sourceAccountId || initialSourceAccountId || ''
+  );
+  const [targetAccountId, setTargetAccountId] = useState<string>(
+    () => initialData?.targetAccountId || initialTargetAccountId || ''
+  );
+  const [note, setNote] = useState<string>(() => initialData?.description || initialData?.note || '');
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
@@ -85,16 +111,65 @@ export function MovementForm({
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   // F3.2: Registro de interacción manual en cuentas
-  const [sourceTouched, setSourceTouched] = useState<boolean>(!!initialSourceAccountId);
-  const [targetTouched, setTargetTouched] = useState<boolean>(!!initialTargetAccountId);
+  const [sourceTouched, setSourceTouched] = useState<boolean>(
+    !!(initialData?.sourceAccountId || initialSourceAccountId)
+  );
+  const [targetTouched, setTargetTouched] = useState<boolean>(
+    !!(initialData?.targetAccountId || initialTargetAccountId)
+  );
 
   // F3.2: Etiquetas del store
   const tags = useAppStore((state) => state.tags);
 
+  // Proyectos para cálculo de saldo disponible
+  const projects = useAppStore((state) => (state as any).projects || []);
+
   // Usuarios del hogar del store para resolver titulares
   const users = useAppStore((state) => (state as any).users || []);
+  const storeMemberSlot = useAppStore((state) => (state as any).memberSlot);
   const userA = users.find((u: any) => u.memberSlot === 'USER_A');
   const userB = users.find((u: any) => u.memberSlot === 'USER_B');
+
+  // Identificar el memberSlot del usuario activo (USER_A o USER_B)
+  const activeMemberSlot: MemberSlotFilter =
+    propMemberSlot ||
+    storeMemberSlot ||
+    users.find((u: any) => u.id === currentUserId)?.memberSlot ||
+    (currentUserId === userA?.id ? 'USER_A' : currentUserId === userB?.id ? 'USER_B' : null);
+
+  // Sincronizar datos si cambia initialData mientras el componente sigue montado
+  useEffect(() => {
+    if (initialData) {
+      const recType = (initialData.recordType || initialData.type || '').toUpperCase();
+      if (recType === 'TRANSFER' || recType === 'CARD_PAYMENT') {
+        setType('TRANSFER');
+      } else if (recType === 'INCOME') {
+        setType('INCOME');
+      } else if (recType === 'EXPENSE') {
+        setType('EXPENSE');
+      }
+      if (initialData.amount !== undefined && initialData.amount !== null) {
+        setAmount(String(initialData.amount));
+      }
+      if (initialData.date) {
+        setDate(String(initialData.date).slice(0, 10));
+      }
+      if (initialData.categoryId) {
+        setCategoryId(initialData.categoryId);
+      }
+      if (initialData.sourceAccountId) {
+        setSourceAccountId(initialData.sourceAccountId);
+        setSourceTouched(true);
+      }
+      if (initialData.targetAccountId) {
+        setTargetAccountId(initialData.targetAccountId);
+        setTargetTouched(true);
+      }
+      if (initialData.description !== undefined || initialData.note !== undefined) {
+        setNote(initialData.description || initialData.note || '');
+      }
+    }
+  }, [initialData]);
 
   const getAccountOwnerLabel = (acc: any): string | null => {
     if (!acc) return null;
@@ -110,9 +185,26 @@ export function MovementForm({
     return null;
   };
 
-  const formatAccountOption = (acc: any): string => {
+  const formatAccountOption = (acc: any, isSource: boolean = false): string => {
     const label = getAccountOwnerLabel(acc);
-    return label ? `[${label}] ${acc.name}` : acc.name;
+    const baseName = label ? `[${label}] ${acc.name}` : acc.name;
+
+    // MODO DESTINO CIEGO para cuentas de la pareja:
+    // NUNCA mostrar "(Disp: $...)" ni saldo alguno
+    if (isPartnerAccount(acc, activeMemberSlot)) {
+      return baseName;
+    }
+
+    if (isSource && acc.type !== 'LIABILITY' && acc.type !== 'CREDIT_CARD') {
+      const baseMetrics = calculateAccountAvailableBalance(acc, projects);
+      const isInitialSource = initialData && acc.id === (initialData.sourceAccountId || initialData.sourceAccount);
+      const effectiveBal = isInitialSource
+        ? baseMetrics.availableBalance + Number(initialData.amount || 0)
+        : baseMetrics.availableBalance;
+      const formattedBal = effectiveBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return `${baseName} (Disp: $${formattedBal})`;
+    }
+    return baseName;
   };
 
   // Filtrado de catálogos según la modalidad
@@ -165,6 +257,19 @@ export function MovementForm({
     (a) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT'
   );
 
+  // Origen de transferencias: ÚNICAMENTE cuentas propias (ownerType === memberSlot) y de Hogar (ownerType === 'SHARED')
+  // Prohibir y excluir terminantemente las cuentas personales de la pareja como origen de retiro.
+  const transferSourceAccounts = assetOrBankAccounts.filter((a) => !isPartnerAccount(a, activeMemberSlot));
+
+  // Destino de transferencias: permitir cuentas propias, compartidas y cuentas personales de la pareja (estas en MODO DESTINO CIEGO)
+  const transferTargetAccounts = assetOrBankAccounts;
+
+  // Gastos: excluir cuentas de la pareja; solo permitir cuentas propias y compartidas
+  const expenseAccounts = assetOrBankAccounts.filter((a) => !isPartnerAccount(a, activeMemberSlot));
+
+  // Ingresos: excluir cuentas de la pareja; solo permitir cuentas propias y compartidas
+  const incomeDepositAccounts = depositAccounts.filter((a) => !isPartnerAccount(a, activeMemberSlot));
+
   const selectedSourceAcc = assetOrBankAccounts.find((a) => a.id === sourceAccountId);
   const selectedTargetAcc = assetOrBankAccounts.find((a) => a.id === targetAccountId);
 
@@ -202,31 +307,37 @@ export function MovementForm({
   useEffect(() => {
     const storage = getSafeStorage();
     if (type === 'EXPENSE') {
-      if (!sourceTouched || !sourceAccountId) {
-        const validIds = assetOrBankAccounts.map((a) => a.id);
+      if (!sourceTouched || !sourceAccountId || isPartnerAccount(selectedSourceAcc, activeMemberSlot)) {
+        const validIds = expenseAccounts.map((a) => a.id);
         const last = getLastUsedAccountId(storage, currentUserId, 'expense', validIds);
         if (last) {
           setSourceAccountId(last);
+        } else if (isPartnerAccount(selectedSourceAcc, activeMemberSlot)) {
+          setSourceAccountId(expenseAccounts[0]?.id || '');
         }
       }
     } else if (type === 'INCOME') {
-      if (!targetTouched || !targetAccountId) {
-        const validIds = depositAccounts.map((a) => a.id);
+      if (!targetTouched || !targetAccountId || isPartnerAccount(selectedTargetAcc, activeMemberSlot)) {
+        const validIds = incomeDepositAccounts.map((a) => a.id);
         const last = getLastUsedAccountId(storage, currentUserId, 'income', validIds);
         if (last) {
           setTargetAccountId(last);
+        } else if (isPartnerAccount(selectedTargetAcc, activeMemberSlot)) {
+          setTargetAccountId(incomeDepositAccounts[0]?.id || '');
         }
       }
     } else if (type === 'TRANSFER') {
-      if (!sourceTouched || !sourceAccountId) {
-        const validIds = assetOrBankAccounts.map((a) => a.id);
+      if (!sourceTouched || !sourceAccountId || isPartnerAccount(selectedSourceAcc, activeMemberSlot)) {
+        const validIds = transferSourceAccounts.map((a) => a.id);
         const last = getLastUsedAccountId(storage, currentUserId, 'transfer', validIds);
         if (last) {
           setSourceAccountId(last);
+        } else if (isPartnerAccount(selectedSourceAcc, activeMemberSlot)) {
+          setSourceAccountId(transferSourceAccounts[0]?.id || '');
         }
       }
     }
-  }, [type, currentUserId, accounts]);
+  }, [type, currentUserId, accounts, sourceTouched, targetTouched, sourceAccountId, targetAccountId, expenseAccounts, incomeDepositAccounts, transferSourceAccounts, selectedSourceAcc, selectedTargetAcc, activeMemberSlot]);
 
   const handleTypeChange = (newType: 'EXPENSE' | 'INCOME' | 'TRANSFER') => {
     setType(newType);
@@ -252,17 +363,30 @@ export function MovementForm({
   // Detección de estados vacíos
   const isAuthMissing = !currentUserId || currentUserId.trim() === '';
   const isExpenseBlocked =
-    type === 'EXPENSE' && (expenseCategories.length === 0 || assetOrBankAccounts.length === 0);
+    type === 'EXPENSE' && (expenseCategories.length === 0 || expenseAccounts.length === 0);
   const isIncomeBlocked =
-    type === 'INCOME' && (incomeCategories.length === 0 || depositAccounts.length === 0);
+    type === 'INCOME' && (incomeCategories.length === 0 || incomeDepositAccounts.length === 0);
   const isTransferBlocked =
-    type === 'TRANSFER' && assetOrBankAccounts.length < 2;
+    type === 'TRANSFER' && (transferSourceAccounts.length === 0 || transferTargetAccounts.length < 2);
 
   const isFormBlocked = isAuthMissing || isExpenseBlocked || isIncomeBlocked || isTransferBlocked;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
+
+    if (type === 'TRANSFER' && isPartnerAccount(selectedSourceAcc, activeMemberSlot)) {
+      setFormError('No puedes transferir fondos desde una cuenta de tu pareja');
+      return;
+    }
+    if (type === 'EXPENSE' && isPartnerAccount(selectedSourceAcc, activeMemberSlot)) {
+      setFormError('No puedes pagar un gasto con una cuenta de tu pareja');
+      return;
+    }
+    if (type === 'INCOME' && isPartnerAccount(selectedTargetAcc, activeMemberSlot)) {
+      setFormError('No puedes depositar un ingreso en una cuenta de tu pareja');
+      return;
+    }
 
     const activeCatList = type === 'EXPENSE' ? expenseCategories : incomeCategories;
     const selectedCategory = activeCatList.find((c) => c.id === categoryId);
@@ -272,6 +396,7 @@ export function MovementForm({
     let sourceOwnerType: 'USER_A' | 'USER_B' | 'SHARED' | undefined;
     let targetOwnerType: 'USER_A' | 'USER_B' | 'SHARED' | undefined;
     let transferKind: 'SAME_USER' | 'CROSS_USERS' | 'CARD_PAYMENT' | undefined;
+    let sourceAvailableBal: number | undefined = undefined;
 
     if (type === 'TRANSFER' && selectedSourceAcc && selectedTargetAcc) {
       sourceOwnerType = selectedSourceAcc.ownerType as any;
@@ -287,6 +412,14 @@ export function MovementForm({
 
       sourceOwnerUid = resolveUid(selectedSourceAcc);
       targetOwnerUid = resolveUid(selectedTargetAcc);
+
+      if (selectedSourceAcc.type !== 'LIABILITY' && selectedSourceAcc.type !== 'CREDIT_CARD') {
+        const baseMetrics = calculateAccountAvailableBalance(selectedSourceAcc, projects);
+        const isInitialSource = initialData && selectedSourceAcc.id === (initialData.sourceAccountId || initialData.sourceAccount);
+        sourceAvailableBal = isInitialSource
+          ? baseMetrics.availableBalance + Number(initialData.amount || 0)
+          : baseMetrics.availableBalance;
+      }
     }
 
     const validationInput: MovementValidationInput = {
@@ -305,6 +438,8 @@ export function MovementForm({
       sourceOwnerType,
       targetOwnerType,
       transferKind,
+      sourceAccountAvailableBalance: sourceAvailableBal,
+      sourceAccountName: selectedSourceAcc?.name,
       ...(type === 'EXPENSE'
         ? {
             options: {
@@ -458,7 +593,10 @@ export function MovementForm({
             step="0.01"
             min="0.01"
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={(e) => {
+              setAmount(e.target.value);
+              if (formError) setFormError(null);
+            }}
             placeholder="0.00"
             className={INPUT_CLASS}
             required
@@ -512,6 +650,7 @@ export function MovementForm({
             </label>
             <select
               id="mov-source-exp"
+              data-testid="mov-source-exp"
               value={sourceAccountId}
               onChange={(e) => {
                 setSourceAccountId(e.target.value);
@@ -522,7 +661,7 @@ export function MovementForm({
               disabled={isFormBlocked}
             >
               <option value="">Selecciona cuenta</option>
-              {assetOrBankAccounts.map((a) => (
+              {expenseAccounts.map((a) => (
                 <option key={a.id} value={a.id}>
                   {a.name}
                 </option>
@@ -557,11 +696,12 @@ export function MovementForm({
           </div>
 
           <div>
-            <label htmlFor="mov-target-inc" className={LABEL_CLASS}>
+            <label htmlFor="mov-dest-inc" className={LABEL_CLASS}>
               Entra a
             </label>
             <select
-              id="mov-target-inc"
+              id="mov-dest-inc"
+              data-testid="mov-dest-inc"
               value={targetAccountId}
               onChange={(e) => {
                 setTargetAccountId(e.target.value);
@@ -572,7 +712,7 @@ export function MovementForm({
               disabled={isFormBlocked}
             >
               <option value="">Selecciona cuenta destino</option>
-              {depositAccounts.map((a) => (
+              {incomeDepositAccounts.map((a) => (
                 <option key={a.id} value={a.id}>
                   {a.name}
                 </option>
@@ -591,22 +731,60 @@ export function MovementForm({
             </label>
             <select
               id="mov-source-trans"
+              data-testid="mov-source-acc"
               value={sourceAccountId}
               onChange={(e) => {
                 setSourceAccountId(e.target.value);
                 setSourceTouched(true);
+                if (formError) setFormError(null);
               }}
               className={INPUT_CLASS}
               required
               disabled={isFormBlocked}
             >
               <option value="">Selecciona cuenta origen</option>
-              {assetOrBankAccounts.map((a) => (
+              {transferSourceAccounts.map((a) => (
                 <option key={a.id} value={a.id}>
-                  {formatAccountOption(a)}
+                  {formatAccountOption(a, true)}
                 </option>
               ))}
             </select>
+            {selectedSourceAcc &&
+              !isPartnerAccount(selectedSourceAcc, activeMemberSlot) &&
+              selectedSourceAcc.type !== 'LIABILITY' &&
+              selectedSourceAcc.type !== 'CREDIT_CARD' && (() => {
+              const metrics = calculateAccountAvailableBalance(selectedSourceAcc, projects);
+              const isInitialSource = Boolean(initialData && selectedSourceAcc.id === (initialData.sourceAccountId || initialData.sourceAccount));
+              const available = isInitialSource
+                ? metrics.availableBalance + Number(initialData.amount || 0)
+                : metrics.availableBalance;
+              const isOver = Boolean(amount && Number(amount) > available);
+              return (
+                <div className="mt-1 space-y-1">
+                  <p className="text-xs text-slate-500">
+                    Saldo contable:{' '}
+                    <span className="font-semibold text-slate-700">
+                      ${metrics.ledgerBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                    {' | '}
+                    En metas/apartados:{' '}
+                    <span className="font-semibold text-slate-700">
+                      ${metrics.allocatedBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                    {' | '}
+                    Disponible para transferir:{' '}
+                    <span className={`font-semibold ${isOver ? 'text-red-600' : 'text-slate-700'}`}>
+                      ${available.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </p>
+                  {isOver && (
+                    <p className="text-xs text-red-600 font-medium">
+                      El monto supera el disponible para transferir (${available.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           <div>
@@ -615,6 +793,7 @@ export function MovementForm({
             </label>
             <select
               id="mov-target-trans"
+              data-testid="mov-target-acc"
               value={targetAccountId}
               onChange={(e) => {
                 setTargetAccountId(e.target.value);
@@ -625,9 +804,9 @@ export function MovementForm({
               disabled={isFormBlocked}
             >
               <option value="">Selecciona cuenta destino</option>
-              {assetOrBankAccounts.map((a) => (
+              {transferTargetAccounts.map((a) => (
                 <option key={a.id} value={a.id}>
-                  {formatAccountOption(a)}
+                  {formatAccountOption(a, false)}
                 </option>
               ))}
             </select>
@@ -801,7 +980,11 @@ export function MovementForm({
           type="submit"
           disabled={isFormBlocked || isSubmitting}
         >
-          {isSubmitting ? 'Guardando...' : 'Guardar Movimiento'}
+          {isSubmitting
+            ? 'Guardando...'
+            : initialData
+            ? (type === 'TRANSFER' ? 'Actualizar Transferencia' : 'Actualizar Movimiento')
+            : 'Guardar Movimiento'}
         </Button>
       </div>
     </form>

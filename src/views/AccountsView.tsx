@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Plus,
   Edit2,
@@ -50,10 +50,25 @@ export function AccountsView({ data = {}, methods = {}, appContext = 'household'
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
   const [editingAsset, setEditingAsset] = useState<any>(null);
 
-  const accounts: any[] = data?.accounts || [];
+  const rawAccounts: any[] = data?.accounts || [];
   const projects: any[] = data?.projects || [];
   const assets: any[] = data?.assets || [];
   const users: any[] = data?.users || [];
+
+  const currentSlot = data?.memberSlot || data?.user?.memberSlot;
+
+  // Filtrado estricto por contexto:
+  // - En modo 'Hogar': Listar y sumar al patrimonio exclusivamente cuentas compartidas (ownerType === 'SHARED').
+  //   Las cuentas personales NO deben sumarse al balance general de Hogar ni mostrarse en esta vista.
+  // - En modo 'Personal': Listar y sumar exclusivamente las cuentas del usuario activo (ownerType === memberSlot).
+  //   Las cuentas de la pareja deben ser estrictamente invisibles (sin montos, fechas de corte ni límites).
+  const accounts = useMemo(() => {
+    if (appContext === 'personal') {
+      if (!currentSlot) return [];
+      return rawAccounts.filter((a: any) => a?.ownerType === currentSlot);
+    }
+    return rawAccounts.filter((a: any) => a?.ownerType === 'SHARED');
+  }, [rawAccounts, appContext, currentSlot]);
 
   // Cálculos consolidados para el Hero de Patrimonio Líquido
   const liquidWealthMetrics = calculateLiquidWealth(accounts, projects);

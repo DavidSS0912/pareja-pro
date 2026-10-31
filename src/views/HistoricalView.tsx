@@ -32,12 +32,34 @@ export function HistoricalView({ data, methods }: any) {
   }, [expenses, incomes, transfers]);
 
   const categoryColorMap = useMemo(() => {
-    const map: Record<string, string> = {};
+    const map: Record<string, string> = {
+      'Transferencia': 'bg-indigo-500',
+      'Pago de Tarjeta': 'bg-purple-500',
+    };
     categories.forEach((cat, idx) => {
-      map[cat] = CATEGORY_COLORS[idx % CATEGORY_COLORS.length];
+      if (!map[cat]) {
+        map[cat] = CATEGORY_COLORS[idx % CATEGORY_COLORS.length];
+      }
     });
     return map;
   }, [categories]);
+
+  const displayedCategories = useMemo(() => {
+    if (movementFilter === 'transfers') {
+      return ['Transferencia', 'Pago de Tarjeta'];
+    }
+    if (movementFilter === 'incomes') {
+      const cats = new Set<string>();
+      incomes.forEach((i: any) => cats.add(i.category || i.source || 'Otros'));
+      return Array.from(cats).sort();
+    }
+    if (movementFilter === 'expenses') {
+      const cats = new Set<string>();
+      expenses.forEach((e: any) => cats.add(e.category || 'Otros'));
+      return Array.from(cats).sort();
+    }
+    return categories;
+  }, [movementFilter, categories, expenses, incomes]);
 
   const toggleCategory = (cat: string) => {
     setDeselectedCategories(prev => {
@@ -102,19 +124,14 @@ export function HistoricalView({ data, methods }: any) {
   }, [incomes, deselectedUsers, deselectedCategories]);
 
   const filteredTransfers = useMemo(() => {
-    const start = methods?.dateRange?.start;
-    const end = methods?.dateRange?.end;
     return (transfers || []).filter((t: any) => {
-      const uid = t.userId || t.ownerUid;
+      const uid = t.userId || t.ownerUid || t.sourceOwnerUid;
       if (uid && deselectedUsers.has(uid)) return false;
       const cat = t.type === 'CARD_PAYMENT' ? 'Pago de Tarjeta' : 'Transferencia';
       if (deselectedCategories.has(cat)) return false;
-      const dateStr = t.date ? t.date.slice(0, 10) : null;
-      if (start && dateStr && dateStr < start) return false;
-      if (end && dateStr && dateStr > end) return false;
       return true;
     });
-  }, [transfers, deselectedUsers, deselectedCategories, methods?.dateRange]);
+  }, [transfers, deselectedUsers, deselectedCategories]);
 
   const detailedRecords = useMemo(() => {
     const expRecords = filteredExpenses.map((e: any) => ({
@@ -152,13 +169,13 @@ export function HistoricalView({ data, methods }: any) {
       recordType: 'transfer',
       type: t.type,
       typeLabel: t.type === 'CARD_PAYMENT' ? 'Pago de Tarjeta' : 'Transferencia',
-      category: `${t.sourceAccountName || 'Origen'} → ${t.targetAccountName || 'Destino'}`,
+      category: t.type === 'CARD_PAYMENT' ? 'Pago de Tarjeta' : 'Transferencia',
       description: t.description || '',
       amount: Math.abs(Number(t.amount) || 0),
       sourceAccountName: t.sourceAccountName || '',
       targetAccountName: t.targetAccountName || '',
-      userId: t.ownerUid || t.userId || '',
-      ownerUid: t.ownerUid || t.userId || '',
+      userId: t.ownerUid || t.userId || t.sourceOwnerUid || '',
+      ownerUid: t.ownerUid || t.userId || t.sourceOwnerUid || '',
       isPrivate: t.isPrivate
     }));
 
@@ -436,7 +453,7 @@ export function HistoricalView({ data, methods }: any) {
         </div>
 
         {/* Coexistencia armónica de Filtro por Usuarios y Filtro por Categorías arriba de la gráfica y tabla */}
-        {(users.length > 0 || categories.length > 0) && (
+        {(users.length > 0 || displayedCategories.length > 0) && (
           <div className="pt-3 border-t border-slate-100 space-y-3">
             {users.length > 0 && (
               <div className="flex flex-wrap items-center gap-3">
@@ -459,11 +476,11 @@ export function HistoricalView({ data, methods }: any) {
               </div>
             )}
 
-            {categories.length > 0 && (
+            {displayedCategories.length > 0 && (
               <div className={`flex flex-wrap items-center gap-3 ${users.length > 0 ? 'pt-3 border-t border-slate-50' : ''}`}>
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Filtrar por Categoría:</span>
                 <div className="flex flex-wrap items-center gap-2">
-                  {categories.map((cat: string) => {
+                  {displayedCategories.map((cat: string) => {
                     const isSelected = !deselectedCategories.has(cat);
                     const colorClass = categoryColorMap[cat] || 'bg-slate-500';
                     return (
@@ -608,6 +625,20 @@ export function HistoricalView({ data, methods }: any) {
                                   })}
                                 </div>
                               )}
+                              {movementFilter === 'all' && (
+                                <div className="w-4 md:w-8 h-full flex flex-col-reverse justify-start gap-[1px]">
+                                  {Object.entries(snap.transferByCategory).map(([cat, amt]) => {
+                                    const h = (amt / maxVal) * 100;
+                                    return (
+                                      <div
+                                        key={cat}
+                                        className={`${categoryColorMap[cat] || 'bg-indigo-500'} w-full transition-all duration-700 hover:brightness-110 shadow-sm first:rounded-b-md last:rounded-t-md`}
+                                        style={{ height: `${h}%` }}
+                                      ></div>
+                                    );
+                                  })}
+                                </div>
+                              )}
                             </>
                           )}
                         </div>
@@ -705,7 +736,7 @@ export function HistoricalView({ data, methods }: any) {
                     </tr>
                   ) : (
                     detailedRecords.map((record: any) => {
-                      const uid = record.userId || record.paidBy || record.ownerUid;
+                      const uid = record.userId || record.paidBy || record.ownerUid || record.sourceOwnerUid;
                       const userObj = uid ? users.find((u: any) => u.id === uid) : null;
                       let userName = '-';
                       if (record.recordType === 'transfer') {
