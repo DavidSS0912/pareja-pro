@@ -372,22 +372,28 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
     const targetProj = currentProject || activeProject;
     if (!targetProj || !newMilestone.title.trim()) return;
 
-    if (addMilestoneAction) {
-      await addMilestoneAction(targetProj.id, newMilestone);
-    } else if (methods?.updateProject) {
-      let updatedMilestones;
-      if (editingMilestoneId) {
-        updatedMilestones = (targetProj.milestones || []).map((m: any) =>
-          m.id === editingMilestoneId
-            ? {
-                ...m,
-                title: newMilestone.title.trim(),
-                amountThreshold: newMilestone.amountThreshold ? Number(newMilestone.amountThreshold) : null,
-                dateThreshold: newMilestone.dateThreshold || null
-              }
-            : m
-        );
-      } else {
+    if (editingMilestoneId) {
+      try {
+        const { updateProjectMilestone } = await import('../lib/dataconnect');
+        const houseId = (useAppStore.getState() as any).houseId;
+        if (houseId) {
+          await updateProjectMilestone({
+            milestoneId: editingMilestoneId,
+            householdId: houseId,
+            title: newMilestone.title.trim(),
+            amountThreshold: newMilestone.amountThreshold ? Number(newMilestone.amountThreshold) : null,
+            dateThreshold: newMilestone.dateThreshold || null
+          });
+          const fetchDashboardData = (useAppStore.getState() as any).fetchDashboardData;
+          if (fetchDashboardData) await fetchDashboardData(houseId);
+        }
+      } catch (err) {
+        console.error("Error al actualizar hito:", err);
+      }
+    } else {
+      if (addMilestoneAction) {
+        await addMilestoneAction(targetProj.id, newMilestone);
+      } else if (methods?.updateProject) {
         const milestone = {
           id: Date.now().toString(),
           title: newMilestone.title.trim(),
@@ -395,9 +401,9 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
           dateThreshold: newMilestone.dateThreshold || null,
           isCompleted: false
         };
-        updatedMilestones = [...(targetProj.milestones || []), milestone];
+        const updatedMilestones = [...(targetProj.milestones || []), milestone];
+        await methods.updateProject(targetProj.id, { milestones: updatedMilestones });
       }
-      await methods.updateProject(targetProj.id, { milestones: updatedMilestones });
     }
 
     setShowMilestoneModal(false);
@@ -702,6 +708,22 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
                       )}
                       <button
                         type="button"
+                        onClick={() => {
+                          setEditingMilestoneId(m.id);
+                          setNewMilestone({
+                            title: m.title || '',
+                            amountThreshold: m.amountThreshold ? String(m.amountThreshold) : '',
+                            dateThreshold: m.dateThreshold ? String(m.dateThreshold).split('T')[0] : ''
+                          });
+                          setShowMilestoneModal(true);
+                        }}
+                        title="Editar hito"
+                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => handleDeleteMilestone(m.id)}
                         title="Eliminar hito"
                         className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
@@ -805,6 +827,7 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
           title={editingProject ? 'Editar Proyecto' : 'Nuevo Proyecto'}
         >
           <ProjectForm
+            key={editingProject?.id || 'new'}
             initialData={editingProject}
             accounts={accounts}
             onSubmit={handleSaveProject}
@@ -831,7 +854,7 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
             setEditingMilestoneId(null);
             setNewMilestone({ title: '', amountThreshold: '', dateThreshold: '' });
           }}
-          title="Añadir Hito o Tarea"
+          title={editingMilestoneId ? 'Editar Hito' : 'Añadir Hito o Tarea'}
         >
           <form onSubmit={handleSaveMilestone} className="space-y-4">
             <div>
@@ -885,7 +908,7 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
               >
                 Cancelar
               </Button>
-              <Button type="submit">Guardar Hito</Button>
+              <Button type="submit">{editingMilestoneId ? 'Guardar Cambios' : 'Guardar Hito'}</Button>
             </div>
           </form>
         </Modal>
@@ -1053,6 +1076,15 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
               <Button
                 variant="secondary"
                 size="sm"
+                onClick={() => handleOpenEditProject(activeProject)}
+                className="flex items-center justify-center p-2 text-indigo-200 hover:text-white bg-white/10 hover:bg-white/20 border-white/10"
+                title="Editar Proyecto"
+              >
+                <Edit2 size={15} />
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => setSelectedProjectId(activeProject.id)}
                 className="flex-1 sm:flex-none flex items-center justify-center gap-1.5"
               >
@@ -1165,6 +1197,15 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
 
                     <button
                       type="button"
+                      onClick={() => handleOpenEditProject(p)}
+                      className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
+                      title="Editar Proyecto"
+                    >
+                      <Edit2 size={15} />
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={() => activateProject(p)}
                       className="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold rounded-xl transition-colors cursor-pointer"
                     >
@@ -1224,6 +1265,7 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
         title={editingProject ? 'Editar Proyecto' : 'Nuevo Proyecto'}
       >
         <ProjectForm
+          key={editingProject?.id || 'new'}
           initialData={editingProject}
           accounts={accounts}
           onSubmit={handleSaveProject}

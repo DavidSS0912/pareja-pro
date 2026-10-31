@@ -35,11 +35,19 @@ export function ProjectForm({
     });
   }, [accounts]);
 
-  const [name, setName] = useState('');
-  const [targetAmount, setTargetAmount] = useState<number | ''>('');
-  const [monthlyQuota, setMonthlyQuota] = useState<number | ''>('');
-  const [targetAccountId, setTargetAccountId] = useState('');
-  const [priority, setPriority] = useState<number>(1);
+  const [name, setName] = useState(() => initialData?.name || '');
+  const [targetAmount, setTargetAmount] = useState<number | ''>(() => (initialData?.targetAmount ?? ''));
+  const [monthlyQuota, setMonthlyQuota] = useState<number | ''>(() => (initialData?.monthlyQuota ?? ''));
+  const [targetAccountId, setTargetAccountId] = useState(() => {
+    if (initialData) {
+      const matched = validAssetAccounts.find(
+        (a) => a.id === initialData.targetAccountId || a.name === initialData.targetAccount || a.id === initialData.targetAccount
+      );
+      if (matched) return matched.id;
+    }
+    return validAssetAccounts[0]?.id || '';
+  });
+  const [priority, setPriority] = useState<number>(() => (initialData?.priority ?? 1));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 

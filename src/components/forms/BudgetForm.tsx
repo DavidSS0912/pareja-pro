@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '../ui/Button';
 import { useAppStore } from '../../store/useAppStore';
+import { inferBudgetCategoryIcon, resolveBudgetIcon, POPULAR_BUDGET_ICONS } from '../../store/slices/dataSlice';
 
 const budgetSchema = z.object({
   categoryId: z.string().min(1, 'La categoría es obligatoria'),
@@ -114,9 +115,17 @@ export function BudgetForm({
     const splitType: 'PROPORTIONAL' | 'CUSTOM' = rawSplit === 'CUSTOM' ? 'CUSTOM' : 'PROPORTIONAL';
     const baseValue = Number(initialData?.base ?? initialData?.fixedAmount ?? initialData?.assignedAmount ?? 0);
 
+    const resolvedCatId = initialData?.categoryId || (
+      initialData?.category 
+        ? categories.find(c => c.name?.toLowerCase() === initialData.category?.toLowerCase())?.id 
+        : ''
+    ) || '';
+    const resolvedCat = categories.find(c => c.id === resolvedCatId);
+    const initialIcon = resolveBudgetIcon(initialData?.icon, resolvedCat?.name || initialData?.category);
+
     return {
-      categoryId: initialData?.categoryId || '',
-      icon: initialData?.icon || '🛒',
+      categoryId: resolvedCatId,
+      icon: initialIcon,
       mode: 'FIXED',
       percentage: 0,
       base: baseValue,
@@ -128,7 +137,7 @@ export function BudgetForm({
         : 0,
       shared: initialData?.shared ?? (appContext === 'household'),
     };
-  }, [initialData, appContext, userOptions]);
+  }, [initialData, appContext, userOptions, categories]);
 
   const {
     register,
@@ -144,10 +153,11 @@ export function BudgetForm({
   });
 
   const currentSplitType = watch('splitType');
+  const currentIcon = watch('icon');
 
   useEffect(() => {
     reset(defaultValues);
-  }, [initialData, reset]);
+  }, [defaultValues, reset]);
 
   const showCoupleConfig = appContext === 'household';
 
@@ -224,7 +234,16 @@ export function BudgetForm({
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
             aria-invalid={!!errors.categoryId}
             aria-describedby={errors.categoryId ? "budget-categoryId-error" : undefined}
-            {...register('categoryId')}
+            {...register('categoryId', {
+              onChange: (e) => {
+                const catId = e.target.value;
+                const found = categories.find(c => c.id === catId);
+                if (found) {
+                  const inferred = inferBudgetCategoryIcon(found.name);
+                  setValue('icon', inferred, { shouldValidate: true, shouldDirty: true });
+                }
+              }
+            })}
           >
             <option value="">Seleccione una categoría...</option>
             {expenseCategories.map(cat => (
@@ -236,6 +255,28 @@ export function BudgetForm({
               {errors.categoryId.message}
             </p>
           )}
+        </div>
+      </div>
+
+      {/* Selector visual rápido de emojis comunes */}
+      <div>
+        <span className="block text-xs font-semibold text-slate-500 mb-1.5">
+          Sugerencias rápidas de ícono:
+        </span>
+        <div className="flex flex-wrap gap-1 p-2 bg-slate-50 border border-slate-200 rounded-xl max-h-24 overflow-y-auto">
+          {POPULAR_BUDGET_ICONS.map((emoji) => (
+            <button
+              key={emoji}
+              type="button"
+              onClick={() => setValue('icon', emoji, { shouldValidate: true, shouldDirty: true })}
+              className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg hover:bg-white hover:shadow-xs transition-all active:scale-95 ${
+                currentIcon === emoji ? 'bg-indigo-100 ring-2 ring-indigo-500 scale-105' : 'bg-transparent'
+              }`}
+              title={`Seleccionar ${emoji}`}
+            >
+              {emoji}
+            </button>
+          ))}
         </div>
       </div>
 

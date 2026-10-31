@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -14,7 +14,7 @@ const assetSchema = z.object({
 type AssetFormData = z.infer<typeof assetSchema>;
 
 export function AssetForm({ initialData, users, onSubmit, onCancel }) {
-  const { register, handleSubmit, formState: { errors } } = useForm<AssetFormData>({
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<AssetFormData>({
     resolver: zodResolver(assetSchema),
     defaultValues: initialData || {
       name: '',
@@ -23,6 +23,19 @@ export function AssetForm({ initialData, users, onSubmit, onCancel }) {
       type: 'Liquidez'
     }
   });
+
+  useEffect(() => {
+    if (initialData) {
+      reset(initialData);
+    } else {
+      reset({
+        name: '',
+        owner: 'Ambos',
+        value: 0,
+        type: 'Liquidez'
+      });
+    }
+  }, [initialData, reset]);
 
   const onFormSubmit = (data: AssetFormData) => {
     onSubmit(data);

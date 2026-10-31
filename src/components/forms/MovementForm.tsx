@@ -70,10 +70,10 @@ export function MovementForm({
 }: MovementFormProps) {
   const resolvedInitialType: 'EXPENSE' | 'INCOME' | 'TRANSFER' = (() => {
     if (initialData) {
-      const recType = (initialData.recordType || initialData.type || '').toUpperCase();
-      if (recType === 'TRANSFER' || recType === 'CARD_PAYMENT') return 'TRANSFER';
-      if (recType === 'INCOME') return 'INCOME';
-      if (recType === 'EXPENSE') return 'EXPENSE';
+      const recType = (initialData.recordType || initialData.movementType || initialData.type || '').toUpperCase();
+      if (recType === 'TRANSFER' || recType === 'CARD_PAYMENT' || recType.includes('TRANSFER')) return 'TRANSFER';
+      if (recType === 'INCOME' || recType.includes('INGRESO')) return 'INCOME';
+      if (recType === 'EXPENSE' || recType.includes('GASTO') || recType === 'DEBIT') return 'EXPENSE';
     }
     const raw = (initialMode || initialType || '').toUpperCase();
     if (raw === 'INCOME') return 'INCOME';
@@ -94,30 +94,63 @@ export function MovementForm({
     }
     return getTodayLocalISO();
   });
-  const [categoryId, setCategoryId] = useState<string>(() => initialData?.categoryId || '');
-  const [sourceAccountId, setSourceAccountId] = useState<string>(
-    () => initialData?.sourceAccountId || initialSourceAccountId || ''
-  );
-  const [targetAccountId, setTargetAccountId] = useState<string>(
-    () => initialData?.targetAccountId || initialTargetAccountId || ''
-  );
-  const [note, setNote] = useState<string>(() => initialData?.description || initialData?.note || '');
+  const [categoryId, setCategoryId] = useState<string>(() => {
+    if (initialData?.categoryId) return initialData.categoryId;
+    if (initialData?.category) {
+      const catName = typeof initialData.category === 'string' ? initialData.category : initialData.category?.name;
+      if (catName) {
+        const found = categories.find((c) => c.name.toLowerCase() === catName.toLowerCase());
+        if (found) return found.id;
+      }
+    }
+    return '';
+  });
+  const [sourceAccountId, setSourceAccountId] = useState<string>(() => {
+    return (
+      initialData?.sourceAccountId ||
+      initialData?.sourceAccount ||
+      initialData?.payerAccountId ||
+      (resolvedInitialType === 'EXPENSE' ? initialData?.accountId : '') ||
+      initialSourceAccountId ||
+      ''
+    );
+  });
+  const [targetAccountId, setTargetAccountId] = useState<string>(() => {
+    return (
+      initialData?.targetAccountId ||
+      initialData?.targetAccount ||
+      (resolvedInitialType === 'INCOME' ? initialData?.accountId : '') ||
+      initialTargetAccountId ||
+      ''
+    );
+  });
+  const [note, setNote] = useState<string>(() => {
+    const rawNote = initialData?.description || initialData?.note || initialData?.desc || '';
+    return rawNote.replace(/^Ingreso\s*-\s*/i, '');
+  });
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // F3.2: Opciones avanzadas de gasto
-  const [isOptionsOpen, setIsOptionsOpen] = useState<boolean>(false);
-  const [splitType, setSplitType] = useState<'50/50' | 'proporcional' | 'individual'>('50/50');
-  const [isMsi, setIsMsi] = useState<boolean>(false);
-  const [msiCount, setMsiCount] = useState<number | string>(3);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  // F3.2: Opciones avanzadas de gasto (Expandidas por defecto y división proporcional)
+  const [isOptionsOpen, setIsOptionsOpen] = useState<boolean>(true);
+  const [splitType, setSplitType] = useState<'50/50' | 'proporcional' | 'individual'>(() => {
+    if (initialData?.splitType) {
+      const s = String(initialData.splitType).toLowerCase();
+      if (s === '50/50') return '50/50';
+      if (s === 'individual') return 'individual';
+    }
+    return 'proporcional';
+  });
+  const [isMsi, setIsMsi] = useState<boolean>(() => Boolean(initialData?.isMsi));
+  const [msiCount, setMsiCount] = useState<number | string>(() => (initialData?.msiCount ? Number(initialData.msiCount) : 3));
+  const [selectedTags, setSelectedTags] = useState<string[]>(() => (Array.isArray(initialData?.tags) ? initialData.tags : []));
 
   // F3.2: Registro de interacción manual en cuentas
   const [sourceTouched, setSourceTouched] = useState<boolean>(
-    !!(initialData?.sourceAccountId || initialSourceAccountId)
+    !!(initialData?.sourceAccountId || initialData?.sourceAccount || initialSourceAccountId)
   );
   const [targetTouched, setTargetTouched] = useState<boolean>(
-    !!(initialData?.targetAccountId || initialTargetAccountId)
+    !!(initialData?.targetAccountId || initialData?.targetAccount || initialTargetAccountId)
   );
 
   // F3.2: Etiquetas del store
@@ -142,36 +175,72 @@ export function MovementForm({
   // Sincronizar datos si cambia initialData mientras el componente sigue montado
   useEffect(() => {
     if (initialData) {
-      const recType = (initialData.recordType || initialData.type || '').toUpperCase();
-      if (recType === 'TRANSFER' || recType === 'CARD_PAYMENT') {
+      const recType = (initialData.recordType || initialData.movementType || initialData.type || '').toUpperCase();
+      let resolvedType: 'EXPENSE' | 'INCOME' | 'TRANSFER' = 'EXPENSE';
+      if (recType === 'TRANSFER' || recType === 'CARD_PAYMENT' || recType.includes('TRANSFER')) {
+        resolvedType = 'TRANSFER';
         setType('TRANSFER');
-      } else if (recType === 'INCOME') {
+      } else if (recType === 'INCOME' || recType.includes('INGRESO')) {
+        resolvedType = 'INCOME';
         setType('INCOME');
-      } else if (recType === 'EXPENSE') {
+      } else {
         setType('EXPENSE');
       }
+
       if (initialData.amount !== undefined && initialData.amount !== null) {
         setAmount(String(initialData.amount));
       }
       if (initialData.date) {
         setDate(String(initialData.date).slice(0, 10));
       }
+
       if (initialData.categoryId) {
         setCategoryId(initialData.categoryId);
+      } else if (initialData.category) {
+        const catName = typeof initialData.category === 'string' ? initialData.category : initialData.category?.name;
+        if (catName) {
+          const found = categories.find((c) => c.name.toLowerCase() === catName.toLowerCase());
+          if (found) setCategoryId(found.id);
+        }
       }
-      if (initialData.sourceAccountId) {
-        setSourceAccountId(initialData.sourceAccountId);
+
+      const srcId =
+        initialData.sourceAccountId ||
+        initialData.sourceAccount ||
+        initialData.payerAccountId ||
+        (resolvedType === 'EXPENSE' ? initialData.accountId : '');
+      if (srcId) {
+        setSourceAccountId(srcId);
         setSourceTouched(true);
       }
-      if (initialData.targetAccountId) {
-        setTargetAccountId(initialData.targetAccountId);
+
+      const tgtId =
+        initialData.targetAccountId ||
+        initialData.targetAccount ||
+        (resolvedType === 'INCOME' ? initialData.accountId : '');
+      if (tgtId) {
+        setTargetAccountId(tgtId);
         setTargetTouched(true);
       }
-      if (initialData.description !== undefined || initialData.note !== undefined) {
-        setNote(initialData.description || initialData.note || '');
+
+      const rawNote = initialData.description || initialData.note || initialData.desc || '';
+      setNote(rawNote.replace(/^Ingreso\s*-\s*/i, ''));
+
+      if (initialData.splitType) {
+        const s = String(initialData.splitType).toLowerCase();
+        if (s === '50/50') setSplitType('50/50');
+        else if (s === 'individual') setSplitType('individual');
+        else setSplitType('proporcional');
+      } else {
+        setSplitType('proporcional');
       }
+
+      setIsMsi(Boolean(initialData.isMsi));
+      setMsiCount(initialData.msiCount ? Number(initialData.msiCount) : 3);
+      setSelectedTags(Array.isArray(initialData.tags) ? initialData.tags : []);
+      setIsOptionsOpen(true);
     }
-  }, [initialData]);
+  }, [initialData, categories]);
 
   const getAccountOwnerLabel = (acc: any): string | null => {
     if (!acc) return null;
@@ -349,11 +418,11 @@ export function MovementForm({
     setTargetAccountId('');
     setSourceTouched(false);
     setTargetTouched(false);
-    setSplitType('50/50');
+    setSplitType('proporcional');
     setIsMsi(false);
     setMsiCount(3);
     setSelectedTags([]);
-    setIsOptionsOpen(false);
+    setIsOptionsOpen(true);
   };
 
   const handleTagToggle = (tagId: string) => {

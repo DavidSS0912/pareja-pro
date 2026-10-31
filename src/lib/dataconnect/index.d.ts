@@ -475,6 +475,17 @@ export interface GetExpensesByHouseholdData {
         name: string;
         color?: string | null;
       };
+      entries_on_journal: ({
+        id: UUIDString;
+        amount: number;
+        entryType: EntryType;
+        account: {
+          id: UUIDString;
+          name: string;
+          type: AccountType;
+          ownerType: OwnerType;
+        } & Account_Key;
+      } & Entry_Key)[];
     } & Journal_Key;
     account: {
       name: string;
@@ -578,6 +589,17 @@ export interface GetIncomesByHouseholdData {
         name: string;
         color?: string | null;
       };
+      entries_on_journal: ({
+        id: UUIDString;
+        amount: number;
+        entryType: EntryType;
+        account: {
+          id: UUIDString;
+          name: string;
+          type: AccountType;
+          ownerType: OwnerType;
+        } & Account_Key;
+      } & Entry_Key)[];
     } & Journal_Key;
     account: {
       name: string;

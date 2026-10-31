@@ -23,6 +23,7 @@ import {
   calculateBudgetAssignedAmount, 
   calculateBudgetSplit 
 } from '../utils/budgetCalculations';
+import { resolveBudgetIcon } from '../store/slices/dataSlice';
 
 const normalize = (amount?: number | null, currency?: string) => {
   if (!amount) return 0;
@@ -46,9 +47,19 @@ interface BudgetsViewProps {
     [key: string]: any;
   };
   appContext?: string;
+  hideHeader?: boolean;
+  selectedMonth?: string;
+  onMonthChange?: (month: string) => void;
 }
 
-export function BudgetsView({ data, methods, appContext }: BudgetsViewProps) {
+export function BudgetsView({ 
+  data, 
+  methods, 
+  appContext, 
+  hideHeader = false,
+  selectedMonth: propSelectedMonth,
+  onMonthChange
+}: BudgetsViewProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState<any | null>(null);
   const [isCategoriesModalOpen, setIsCategoriesModalOpen] = useState(false);
@@ -60,10 +71,16 @@ export function BudgetsView({ data, methods, appContext }: BudgetsViewProps) {
   const [newCategoryColor, setNewCategoryColor] = useState('#6366f1');
   const [newTagName, setNewTagName] = useState('');
 
-  const [selectedMonth, setSelectedMonth] = useState(() => {
+  const [localSelectedMonth, setLocalSelectedMonth] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
   });
+
+  const selectedMonth = propSelectedMonth || localSelectedMonth;
+  const setSelectedMonth = (newMonth: string) => {
+    setLocalSelectedMonth(newMonth);
+    onMonthChange?.(newMonth);
+  };
 
   // Store access for Categories and Tags
   const { 
@@ -168,28 +185,112 @@ export function BudgetsView({ data, methods, appContext }: BudgetsViewProps) {
 
   return (
     <div className="space-y-6 animate-in">
-      {/* 2. Cabecera y Resumen Ejecutivo Superior */}
-      <div className="flex flex-col gap-4 mb-2">
-        {/* Fila superior: Título y subtítulo a la izquierda, selector de mes a la derecha */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h2 className="text-3xl font-black tracking-tight text-slate-800">Presupuestos</h2>
-            <p className="text-slate-600 mt-1 font-medium">Guía y plantillas de asignación de fondos.</p>
-          </div>
-          <input 
-            type="month" 
-            className="px-4 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-700 w-full sm:w-auto focus:ring-2 focus:ring-primary focus:border-primary shadow-xs"
-            value={selectedMonth.substring(0, 7)}
-            onChange={(e) => {
-              if (e.target.value) {
-                setSelectedMonth(`${e.target.value}-01`);
-              }
-            }}
-          />
-        </div>
+      {!hideHeader ? (
+        <>
+          {/* 2. Cabecera y Resumen Ejecutivo Superior */}
+          <div className="flex flex-col gap-4 mb-2">
+            {/* Fila superior: Título y subtítulo a la izquierda, selector de mes a la derecha */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <h2 className="text-3xl font-black tracking-tight text-slate-800">Presupuestos</h2>
+                <p className="text-slate-600 mt-1 font-medium">Guía y plantillas de asignación de fondos.</p>
+              </div>
+              <input 
+                type="month" 
+                className="px-4 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-700 w-full sm:w-auto focus:ring-2 focus:ring-primary focus:border-primary shadow-xs"
+                value={selectedMonth.substring(0, 7)}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setSelectedMonth(`${e.target.value}-01`);
+                  }
+                }}
+              />
+            </div>
 
-        {/* Fila inferior: Botones de acción */}
-        <div className="flex flex-wrap gap-2 w-full justify-start sm:justify-end">
+            {/* Fila inferior: Botones de acción */}
+            <div className="flex flex-wrap gap-2 w-full justify-start sm:justify-end">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsCategoriesModalOpen(true)}
+                className="flex-1 sm:flex-none whitespace-nowrap flex items-center gap-2 border-slate-200 hover:bg-slate-50 text-slate-700"
+                title="Gestionar Categorías y Etiquetas"
+              >
+                <FolderPlus size={18} className="text-indigo-600" />
+                <span>Categorías / Tags</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={handleCopyPrevious} 
+                className="flex-1 sm:flex-none whitespace-nowrap"
+              >
+                Copiar anterior
+              </Button>
+              <Button 
+                onClick={() => handleOpenModal()} 
+                className="flex-1 sm:flex-none whitespace-nowrap"
+              >
+                <Plus size={18} className="mr-1.5" /> Nuevo
+              </Button>
+            </div>
+          </div>
+
+          {/* Panel / Tarjeta de Resumen Ejecutivo de Ingresos del Periodo */}
+          <Card className="bg-gradient-to-br from-slate-900 via-slate-850 to-indigo-950 text-white p-6 rounded-3xl border border-slate-800/80 shadow-lg relative overflow-hidden">
+            <div className="absolute top-0 right-0 -mt-8 -mr-8 w-44 h-44 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
+            
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-indigo-300 text-xs font-bold uppercase tracking-wider">
+                  <TrendingUp size={15} className="text-indigo-400" />
+                  <span>Resumen Ejecutivo de Ingresos ({selectedMonth.substring(0, 7)})</span>
+                </div>
+                <div className="flex items-baseline gap-2 pt-1">
+                  <span className="text-3xl md:text-4xl font-black tracking-tight text-white">
+                    {FormatCurrency(incomeShares.totalIncome)}
+                  </span>
+                  <span className="text-xs text-indigo-300 font-medium">ingresos totales</span>
+                </div>
+              </div>
+
+              <div className="flex-1 lg:max-w-xl">
+                <div className="text-xs font-bold text-indigo-200 uppercase tracking-wider mb-2 flex items-center justify-between">
+                  <span>Desglose por Integrante</span>
+                </div>
+                
+                {incomeShares.userShares.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {incomeShares.userShares.map((user) => (
+                      <div 
+                        key={user.userId}
+                        className="bg-white/10 backdrop-blur-sm rounded-2xl p-3 border border-white/10 flex items-center justify-between shadow-xs"
+                      >
+                        <div className="truncate mr-2">
+                          <p className="text-xs font-medium text-indigo-200 truncate">{user.userName}</p>
+                          <p className="text-sm font-bold text-white">{FormatCurrency(user.income)}</p>
+                        </div>
+                        <span className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-black bg-indigo-500/30 text-indigo-100 border border-indigo-400/25 shrink-0">
+                          {user.percentage.toFixed(1)}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-indigo-200">No hay integrantes registrados en el hogar.</p>
+                )}
+              </div>
+            </div>
+
+            {incomeShares.totalIncome === 0 && (
+              <div className="mt-4 pt-4 border-t border-white/10 flex items-center gap-2.5 text-xs text-amber-200 bg-amber-500/10 px-3.5 py-2.5 rounded-xl border border-amber-500/20">
+                <Info size={16} className="shrink-0 text-amber-400" />
+                <span>Aún no hay ingresos registrados este mes. El cálculo opera con aportación equitativa (50/50).</span>
+              </div>
+            )}
+          </Card>
+        </>
+      ) : (
+        /* Barra de acciones cuando la cabecera reside en PlanningView */
+        <div className="flex flex-wrap gap-2 w-full justify-start sm:justify-end mb-2">
           <Button 
             variant="outline" 
             onClick={() => setIsCategoriesModalOpen(true)}
@@ -213,61 +314,7 @@ export function BudgetsView({ data, methods, appContext }: BudgetsViewProps) {
             <Plus size={18} className="mr-1.5" /> Nuevo
           </Button>
         </div>
-      </div>
-
-      {/* Panel / Tarjeta de Resumen Ejecutivo de Ingresos del Periodo */}
-      <Card className="bg-gradient-to-br from-slate-900 via-slate-850 to-indigo-950 text-white p-6 rounded-3xl border border-slate-800/80 shadow-lg relative overflow-hidden">
-        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-44 h-44 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
-        
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-indigo-300 text-xs font-bold uppercase tracking-wider">
-              <TrendingUp size={15} className="text-indigo-400" />
-              <span>Resumen Ejecutivo de Ingresos ({selectedMonth.substring(0, 7)})</span>
-            </div>
-            <div className="flex items-baseline gap-2 pt-1">
-              <span className="text-3xl md:text-4xl font-black tracking-tight text-white">
-                {FormatCurrency(incomeShares.totalIncome)}
-              </span>
-              <span className="text-xs text-indigo-300 font-medium">ingresos totales</span>
-            </div>
-          </div>
-
-          <div className="flex-1 lg:max-w-xl">
-            <div className="text-xs font-bold text-indigo-200 uppercase tracking-wider mb-2 flex items-center justify-between">
-              <span>Desglose por Integrante</span>
-            </div>
-            
-            {incomeShares.userShares.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {incomeShares.userShares.map((user) => (
-                  <div 
-                    key={user.userId}
-                    className="bg-white/10 backdrop-blur-sm rounded-2xl p-3 border border-white/10 flex items-center justify-between shadow-xs"
-                  >
-                    <div className="truncate mr-2">
-                      <p className="text-xs font-medium text-indigo-200 truncate">{user.userName}</p>
-                      <p className="text-sm font-bold text-white">{FormatCurrency(user.income)}</p>
-                    </div>
-                    <span className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-black bg-indigo-500/30 text-indigo-100 border border-indigo-400/25 shrink-0">
-                      {user.percentage.toFixed(1)}%
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-indigo-200">No hay integrantes registrados en el hogar.</p>
-            )}
-          </div>
-        </div>
-
-        {incomeShares.totalIncome === 0 && (
-          <div className="mt-4 pt-4 border-t border-white/10 flex items-center gap-2.5 text-xs text-amber-200 bg-amber-500/10 px-3.5 py-2.5 rounded-xl border border-amber-500/20">
-            <Info size={16} className="shrink-0 text-amber-400" />
-            <span>Aún no hay ingresos registrados este mes. El cálculo opera con aportación equitativa (50/50).</span>
-          </div>
-        )}
-      </Card>
+      )}
 
       {/* 3. Tarjetas de Presupuesto Rediseñadas */}
       {(data?.budgets || []).length === 0 ? (
@@ -368,7 +415,7 @@ export function BudgetsView({ data, methods, appContext }: BudgetsViewProps) {
                 {/* Encabezado de la tarjeta con Icono, Nombre y Badges Híbridos */}
                 <div className="flex items-start gap-4 mb-5">
                   <div className="text-3xl bg-slate-100 p-3.5 rounded-2xl group-hover:scale-105 group-hover:bg-indigo-50 transition-all duration-300 shrink-0">
-                    {budget.icon || '🛒'}
+                    {resolveBudgetIcon(budget.icon, budget.category)}
                   </div>
                   <div className="flex-1 pr-16">
                     <h3 className="font-bold text-slate-800 text-lg tracking-tight line-clamp-1">

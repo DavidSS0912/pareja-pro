@@ -739,6 +739,7 @@ export function AccountsView({ data = {}, methods = {}, appContext = 'household'
       >
         {isAssetModalOpen && (
           <AssetForm
+            key={editingAsset?.id || 'new'}
             initialData={editingAsset}
             users={users}
             onSubmit={handleAssetSubmit}

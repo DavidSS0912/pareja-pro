@@ -53,13 +53,26 @@ export function AccountForm({
     formState: { errors }
   } = useForm<AccountFormData>({
     resolver: zodResolver(accountSchema),
-    defaultValues: initialData ? { ...initialData, allowPartnerTransfers: Boolean(initialData.allowPartnerTransfers) } : defaultValues
+    defaultValues: initialData
+      ? {
+          ...initialData,
+          creditLimit: initialData.creditLimit ?? 0,
+          cutDay: initialData.cutDay ?? 1,
+          paymentDay: initialData.paymentDay ?? 1,
+          color: initialData.color || defaultValues.color,
+          allowPartnerTransfers: Boolean(initialData.allowPartnerTransfers)
+        }
+      : defaultValues
   });
 
   useEffect(() => {
     if (initialData) {
       reset({
         ...initialData,
+        creditLimit: initialData.creditLimit ?? 0,
+        cutDay: initialData.cutDay ?? 1,
+        paymentDay: initialData.paymentDay ?? 1,
+        color: initialData.color || defaultValues.color,
         allowPartnerTransfers: Boolean(initialData.allowPartnerTransfers)
       });
     } else {
@@ -186,28 +199,6 @@ export function AccountForm({
         </div>
       </div>
 
-      {isPersonalAccount && (
-        <div className="p-3.5 bg-indigo-50/70 border border-indigo-100 rounded-2xl">
-          <label className="flex items-start gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              id="account-allowPartnerTransfers"
-              data-testid="account-allowPartnerTransfers"
-              className="mt-1 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-              {...register('allowPartnerTransfers')}
-            />
-            <div className="select-none">
-              <span className="block text-sm font-bold text-slate-800">
-                Permitir que mi pareja me transfiera a esta cuenta
-              </span>
-              <span className="block text-xs text-slate-500 mt-0.5 leading-relaxed">
-                Destino Ciego: solo verá nombre y titular para enviarte fondos, sin revelar jamás tu saldo disponible ni movimientos.
-              </span>
-            </div>
-          </label>
-        </div>
-      )}
-
       {selectedType === 'LIABILITY' && (
         <div className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-4 mt-2">
           <div>
@@ -246,6 +237,28 @@ export function AccountForm({
             />
             {errors.paymentDay && <p id="account-paymentDay-error" className="text-red-500 text-xs mt-1">{errors.paymentDay.message}</p>}
           </div>
+        </div>
+      )}
+
+      {isPersonalAccount && (
+        <div className="p-3.5 bg-indigo-50/70 border border-indigo-100 rounded-2xl">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              id="account-allowPartnerTransfers"
+              data-testid="account-allowPartnerTransfers"
+              className="mt-1 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+              {...register('allowPartnerTransfers')}
+            />
+            <div className="select-none">
+              <span className="block text-sm font-bold text-slate-800">
+                Permitir que mi pareja me transfiera a esta cuenta
+              </span>
+              <span className="block text-xs text-slate-500 mt-0.5 leading-relaxed">
+                Destino Ciego: solo verá nombre y titular para enviarte fondos, sin revelar jamás tu saldo disponible ni movimientos.
+              </span>
+            </div>
+          </label>
         </div>
       )}
 

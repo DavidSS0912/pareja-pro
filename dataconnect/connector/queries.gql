@@ -268,6 +268,17 @@ query GetExpensesByHousehold($householdId: UUID!) @auth(level: USER) {
         name
         color
       }
+      entries_on_journal {
+        id
+        amount
+        entryType
+        account {
+          id
+          name
+          type
+          ownerType
+        }
+      }
       # Dataconnect no expande M2M fácilmente sin una subquery, pero podemos recuperar las JournalTag
     }
     account {
@@ -309,6 +320,17 @@ query GetIncomesByHousehold($householdId: UUID!) @auth(level: USER) {
       category {
         name
         color
+      }
+      entries_on_journal {
+        id
+        amount
+        entryType
+        account {
+          id
+          name
+          type
+          ownerType
+        }
       }
     }
     account {

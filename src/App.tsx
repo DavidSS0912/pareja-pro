@@ -112,13 +112,19 @@ export default function App() {
   const [isMovementModalOpen, setIsMovementModalOpen] = useState(false);
   const [editingMovement, setEditingMovement] = useState<any>(null);
 
-  const handleOpenMovementModal = () => {
-    setEditingMovement(null);
+  const handleOpenMovementModal = (record?: any) => {
+    setEditingMovement(record || null);
     setIsMovementModalOpen(true);
   };
-  const handleOpenIncomeModal = handleOpenMovementModal;
-  const handleOpenExpenseModal = handleOpenMovementModal;
-  const handleOpenTransferModal = (record: any) => {
+  const handleOpenIncomeModal = (record?: any) => {
+    setEditingMovement(record || null);
+    setIsMovementModalOpen(true);
+  };
+  const handleOpenExpenseModal = (record?: any) => {
+    setEditingMovement(record || null);
+    setIsMovementModalOpen(true);
+  };
+  const handleOpenTransferModal = (record?: any) => {
     setEditingMovement(record || null);
     setIsMovementModalOpen(true);
   };
@@ -742,7 +748,7 @@ export default function App() {
             </div>
             
             <div className="flex gap-2 w-full md:w-1/2 justify-end">
-              <button onClick={() => setIsMovementModalOpen(true)} className="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm px-4 py-2.5 rounded-full text-sm font-bold flex items-center justify-center gap-2 transition-colors">
+              <button onClick={() => { setEditingMovement(null); setIsMovementModalOpen(true); }} className="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm px-4 py-2.5 rounded-full text-sm font-bold flex items-center justify-center gap-2 transition-colors">
                 <Plus size={16} /> Nuevo Movimiento
               </button>
             </div>
@@ -871,6 +877,7 @@ export default function App() {
       >
         {isMovementModalOpen && (
           <MovementForm
+            key={editingMovement?.id || 'new'}
             categories={data.categories}
             accounts={data.accounts}
             currentUserId={user?.uid}

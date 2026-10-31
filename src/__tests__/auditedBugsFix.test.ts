@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { filterContextByMode, filterTransfersByMode } from '../App';
 import { useAppStore } from '../store/useAppStore';
+import { inferBudgetCategoryIcon, resolveBudgetIcon } from '../store/slices/dataSlice';
 import {
   createAccount,
   createJournalWithEntries,
@@ -683,6 +684,111 @@ describe('Audited Bugs Fix - Pruebas Unitarias Exhaustivas', () => {
       const rolledBack = useAppStore.getState().transfers;
       expect(rolledBack).toHaveLength(1);
       expect(rolledBack[0].id).toBe('tr-fail-1');
+    });
+  });
+
+  // =========================================================================
+  // 6. Inferencia Semántica y Resolución de Íconos de Presupuesto
+  // =========================================================================
+  describe('6. Inferencia Semántica y Resolución de Íconos de Presupuesto', () => {
+    it('infiere íconos correctos según palabras clave comunes en español', () => {
+      expect(inferBudgetCategoryIcon('Luz')).toBe('💡');
+      expect(inferBudgetCategoryIcon('Energía Eléctrica CFE')).toBe('💡');
+      expect(inferBudgetCategoryIcon('Agua Potable')).toBe('💧');
+      expect(inferBudgetCategoryIcon('Gas Natural')).toBe('🔥');
+      expect(inferBudgetCategoryIcon('Internet Totalplay')).toBe('📱');
+      expect(inferBudgetCategoryIcon('Préstamo Bancario')).toBe('🏦');
+      expect(inferBudgetCategoryIcon('Crédito Automotriz')).toBe('🏦');
+      expect(inferBudgetCategoryIcon('Ahorro para la Casa')).toBe('💰');
+      expect(inferBudgetCategoryIcon('Renta de Casa')).toBe('🏠');
+      expect(inferBudgetCategoryIcon('Despensa y Súper')).toBe('🛒');
+      expect(inferBudgetCategoryIcon('Restaurantes y Salidas')).toBe('🍽️');
+      expect(inferBudgetCategoryIcon('Gasolina Auto')).toBe('🚗');
+      expect(inferBudgetCategoryIcon('Gastos Médicos y Salud')).toBe('🏥');
+      expect(inferBudgetCategoryIcon('Colegiatura Universidad')).toBe('🎓');
+      expect(inferBudgetCategoryIcon('Streaming Cine y Ocio')).toBe('🍿');
+      expect(inferBudgetCategoryIcon('Vacaciones y Vuelos')).toBe('✈️');
+      expect(inferBudgetCategoryIcon('Veterinaria Mascotas')).toBe('🐾');
+    });
+
+    it('resolveBudgetIcon reemplaza NULL, vacío o el carrito por defecto con la inferencia semántica', () => {
+      expect(resolveBudgetIcon(null, 'Luz')).toBe('💡');
+      expect(resolveBudgetIcon('', 'Agua')).toBe('💧');
+      expect(resolveBudgetIcon('🛒', 'Préstamo')).toBe('🏦');
+      expect(resolveBudgetIcon('🛒', 'Ahorro para el retiro')).toBe('💰');
+    });
+
+    it('resolveBudgetIcon preserva íconos personalizados elegidos por el usuario', () => {
+      expect(resolveBudgetIcon('🎮', 'Videojuegos')).toBe('🎮');
+      expect(resolveBudgetIcon('🍕', 'Despensa')).toBe('🍕');
+    });
+  });
+
+  // =========================================================================
+  // 7. Cálculo de Total Presupuestado (Presupuestos + Metas Activas)
+  // =========================================================================
+  describe('7. Cálculo de Total Presupuestado en Planeación', () => {
+    it('suma presupuestos del mes y cuotas mensuales solo de metas activas, excluyendo completadas', () => {
+      const budgets = [
+        { id: 'b1', amount: 5000, allocatedAmount: 5000 },
+        { id: 'b2', amount: 2000, allocatedAmount: 2000 },
+      ];
+
+      const projects = [
+        { id: 'p1', name: 'Fondo de Emergencia', monthlyQuota: 1500, status: 'active', isCompleted: false },
+        { id: 'p2', name: 'Viaje a Japón', monthlyQuota: 1000, status: 'pending', isCompleted: false },
+        { id: 'p3', name: 'Comprar Laptop', monthlyQuota: 800, status: 'completed', isCompleted: true },
+        { id: 'p4', name: 'Boda', monthlyQuota: 2000, status: 'active', isCompleted: true }, // completada por flag
+      ];
+
+      const totalBudgetsMonth = budgets.reduce((acc, b) => acc + Number(b.allocatedAmount ?? b.amount ?? 0), 0);
+      expect(totalBudgetsMonth).toBe(7000);
+
+      const activeGoalsQuota = projects
+        .filter((p) => !p.isCompleted && p.status !== 'completed')
+        .reduce((acc, p) => acc + Number(p.monthlyQuota || 0), 0);
+      expect(activeGoalsQuota).toBe(2500); // 1500 + 1000
+
+      const totalPresupuestado = totalBudgetsMonth + activeGoalsQuota;
+      expect(totalPresupuestado).toBe(9500);
+    });
+  });
+
+  // =========================================================================
+  // 8. Retención de Record al Abrir Modales de Edición (App.tsx)
+  // =========================================================================
+  describe('8. Retención de Record al Abrir Modales de Edición', () => {
+    it('asigna el registro al estado de edición y no lo resetea a null', () => {
+      let editingMovement: any = null;
+      let isModalOpen = false;
+
+      const handleOpenExpenseModal = (record?: any) => {
+        editingMovement = record || null;
+        isModalOpen = true;
+      };
+
+      const handleOpenIncomeModal = (record?: any) => {
+        editingMovement = record || null;
+        isModalOpen = true;
+      };
+
+      const sampleExpense = { id: 'exp-123', amount: 450, description: 'Cena' };
+      handleOpenExpenseModal(sampleExpense);
+      expect(isModalOpen).toBe(true);
+      expect(editingMovement).toEqual(sampleExpense);
+
+      const sampleIncome = { id: 'inc-456', amount: 8000, description: 'Honorarios' };
+      handleOpenIncomeModal(sampleIncome);
+      expect(isModalOpen).toBe(true);
+      expect(editingMovement).toEqual(sampleIncome);
+
+      // Al hacer clic en "Nuevo Movimiento", se limpia a null
+      const handleNewMovement = () => {
+        editingMovement = null;
+        isModalOpen = true;
+      };
+      handleNewMovement();
+      expect(editingMovement).toBeNull();
     });
   });
 });

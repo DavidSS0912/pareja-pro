@@ -26,6 +26,71 @@ export type { Transfer };
 
 const SERVER_ONLY = { fetchPolicy: QueryFetchPolicy.SERVER_ONLY };
 
+export const POPULAR_BUDGET_ICONS = [
+  '🛒', '💡', '💧', '🏠', '🏦', '🚗', '🏥', '🎓', '✈️', '🍿', '🍽️', '📱', '🏋️', '👶', '🐾', '🛡️', '🎁', '💼', '💰', '🔥'
+];
+
+export function inferBudgetCategoryIcon(categoryName?: string | null): string {
+  if (!categoryName || typeof categoryName !== 'string') return '🛒';
+  const clean = categoryName
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+
+  // Servicios básicos
+  if (/\b(luz|electricidad|energia|cfe)\b/.test(clean)) return '💡';
+  if (/\b(agua|potable|drenaje)\b/.test(clean)) return '💧';
+  if (/\b(gas|gas natural|lp|calefaccion)\b/.test(clean)) return '🔥';
+  if (/\b(internet|wifi|fibra|telmex|izzi|totalplay|red|telefono|telefonia|celular|plan celular|movil)\b/.test(clean)) return '📱';
+
+  // Finanzas, deudas, préstamos
+  if (/\b(prestamo|credito|hipoteca|tarjeta|deuda|interes|intereses|amortizacion|banco|bancario)\b/.test(clean)) return '🏦';
+  if (/\b(ahorro|inversion|cetes|fondo|patrimonio|retiro|afore|bolsa)\b/.test(clean)) return '💰';
+
+  // Vivienda
+  if (/\b(casa|hogar|vivienda|renta|alquiler|departamento|depa|mantenimiento|predial|infonavit)\b/.test(clean)) return '🏠';
+
+  // Alimentación y despensa
+  if (/\b(despensa|super|supermercado|comida|viveres|abarrotes|alimentos|mandado)\b/.test(clean)) return '🛒';
+  if (/\b(restaurante|salidas|cena|almuerzo|cafe|comida fuera|bar|bares|taqueria)\b/.test(clean)) return '🍽️';
+
+  // Movilidad
+  if (/\b(transporte|gasolina|auto|coche|vehiculo|uber|didi|taxi|pasajes|metro|casetas|peaje|estacionamiento|tenencia)\b/.test(clean)) return '🚗';
+
+  // Salud
+  if (/\b(salud|medico|farmacia|medicinas|doctor|dentista|dental|hospital|clinica|psicolog|terapia|optica)\b/.test(clean)) return '🏥';
+
+  // Educación
+  if (/\b(educacion|escuela|colegiatura|universidad|cursos|clases|libros|capacitacion|maestria)\b/.test(clean)) return '🎓';
+
+  // Entretenimiento
+  if (/\b(entretenimiento|ocio|cine|streaming|netflix|spotify|disney|juegos|videojuegos|diversion|hobbies|suscripciones)\b/.test(clean)) return '🍿';
+
+  // Viajes
+  if (/\b(viaje|viajes|vacaciones|vuelos|boletos|hotel|hospedaje|airbnb|turismo)\b/.test(clean)) return '✈️';
+
+  // Personales y ropa
+  if (/\b(ropa|calzado|zapatos|vestimenta|shopping|compras|accesorios|estetica|peluqueria|barberia|cuidado personal)\b/.test(clean)) return '👕';
+
+  // Familia / Mascotas / Otros
+  if (/\b(mascota|mascotas|perro|gato|veterinario|veterinaria|croquetas)\b/.test(clean)) return '🐾';
+  if (/\b(bebe|nino|hijo|hijos|guarderia|panales|maternidad)\b/.test(clean)) return '👶';
+  if (/\b(seguro|seguros|poliza|seguro de auto|seguro de vida)\b/.test(clean)) return '🛡️';
+  if (/\b(regalo|regalos|cumpleanos|donacion|caridad)\b/.test(clean)) return '🎁';
+  if (/\b(trabajo|empleo|oficina|negocio)\b/.test(clean)) return '💼';
+
+  return '🛒';
+}
+
+export function resolveBudgetIcon(icon?: string | null, categoryName?: string | null): string {
+  const inferred = inferBudgetCategoryIcon(categoryName);
+  if (!icon || icon.trim() === '' || icon === '🛒') {
+    return inferred || '🛒';
+  }
+  return icon;
+}
+
 const resolveSplitType = (factor: any): '50/50' | 'proporcional' | 'individual' => {
   if (factor === undefined || factor === null) return '50/50';
   const num = Number(factor);
@@ -194,12 +259,13 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
         const currentBudgets = get().budgets || [];
         const mappedBudgets = budgets.data.budgets.map((b: any) => {
           const existing = currentBudgets.find((eb: any) => eb.id === b.id);
+          const categoryName = b.category?.name || existing?.category;
           return {
             ...b,
             categoryId: b.category?.id || b.categoryId,
-            category: b.category?.name,
+            category: categoryName,
             base: b.assignedAmount,
-            icon: b.icon || existing?.icon || '🛒',
+            icon: resolveBudgetIcon(b.icon || existing?.icon, categoryName),
             splitType: b.splitType || existing?.splitType || 'PROPORTIONAL',
             customUserId: b.customUserId || existing?.customUserId || null,
             customUserAmount: b.customUserAmount ?? existing?.customUserAmount ?? null
@@ -321,6 +387,15 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
           if (map.has(e.journal.id)) {
             map.get(e.journal.id).amount += signed(e);
           } else {
+            const payerEntry = (e.journal as any)?.entries_on_journal?.find((entry: any) =>
+              entry.entryType === 'CREDIT' ||
+              entry.account?.type === 'ASSET' ||
+              entry.account?.type === 'LIABILITY' ||
+              entry.account?.type === 'BANK_ACCOUNT'
+            );
+            const sourceAccountId = payerEntry?.account?.id || '';
+            const sourceAccountName = payerEntry?.account?.name || '';
+
             map.set(e.journal.id, {
               id: e.journal.id, // Use journal ID for deletion
               amount: signed(e),
@@ -330,6 +405,8 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
               desc: e.journal.description,
               categoryId: e.journal.categoryId,
               category: e.journal.category?.name || e.account.name,
+              sourceAccountId,
+              sourceAccountName,
               userId: e.ownerUid,
               ownerUid: e.ownerUid,
               paidBy: e.ownerUid,
@@ -357,6 +434,14 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
           if (map.has(e.journal.id)) {
             map.get(e.journal.id).amount += signed(e, 'INCOME');
           } else {
+            const depositEntry = (e.journal as any)?.entries_on_journal?.find((entry: any) =>
+              entry.entryType === 'DEBIT' ||
+              entry.account?.type === 'ASSET' ||
+              entry.account?.type === 'BANK_ACCOUNT'
+            );
+            const targetAccountId = depositEntry?.account?.id || '';
+            const targetAccountName = depositEntry?.account?.name || '';
+
             map.set(e.journal.id, {
               id: e.journal.id, // Use journal ID for deletion
               amount: signed(e, 'INCOME'),
@@ -368,7 +453,11 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
               date: e.journal.date,
               userId: e.ownerUid,
               ownerUid: e.ownerUid,
-              isPrivate: !e.isShared
+              isPrivate: !e.isShared,
+              targetAccountId,
+              accountId: targetAccountId,
+              sourceAccountName: '',
+              targetAccountName
             });
           }
           return map;
@@ -447,12 +536,13 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
         const currentBudgets = get().budgets || [];
         const mappedBudgets = budgets.data.budgets.map((b: any) => {
           const existing = currentBudgets.find((eb: any) => eb.id === b.id);
+          const categoryName = b.category?.name || existing?.category;
           return {
             ...b,
             categoryId: b.category?.id || b.categoryId,
-            category: b.category?.name,
+            category: categoryName,
             base: b.assignedAmount,
-            icon: b.icon || existing?.icon || '🛒',
+            icon: resolveBudgetIcon(b.icon || existing?.icon, categoryName),
             splitType: b.splitType || existing?.splitType || 'PROPORTIONAL',
             customUserId: b.customUserId || existing?.customUserId || null,
             customUserAmount: b.customUserAmount ?? existing?.customUserAmount ?? null
@@ -478,6 +568,15 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
           if (map.has(e.journal.id)) {
             map.get(e.journal.id).amount += signed(e);
           } else {
+            const payerEntry = (e.journal as any)?.entries_on_journal?.find((entry: any) =>
+              entry.entryType === 'CREDIT' ||
+              entry.account?.type === 'ASSET' ||
+              entry.account?.type === 'LIABILITY' ||
+              entry.account?.type === 'BANK_ACCOUNT'
+            );
+            const sourceAccountId = payerEntry?.account?.id || '';
+            const sourceAccountName = payerEntry?.account?.name || '';
+
             map.set(e.journal.id, {
               id: e.journal.id,
               amount: signed(e),
@@ -487,6 +586,8 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
               desc: e.journal.description,
               categoryId: e.journal.categoryId,
               category: e.journal.category?.name || e.account.name,
+              sourceAccountId,
+              sourceAccountName,
               userId: e.ownerUid,
               ownerUid: e.ownerUid,
               paidBy: e.ownerUid,
@@ -527,6 +628,14 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
           if (map.has(e.journal.id)) {
             map.get(e.journal.id).amount += signed(e);
           } else {
+            const depositEntry = (e.journal as any)?.entries_on_journal?.find((entry: any) =>
+              entry.entryType === 'DEBIT' ||
+              entry.account?.type === 'ASSET' ||
+              entry.account?.type === 'BANK_ACCOUNT'
+            );
+            const targetAccountId = depositEntry?.account?.id || '';
+            const targetAccountName = depositEntry?.account?.name || '';
+
             map.set(e.journal.id, {
               id: e.journal.id,
               amount: signed(e),
@@ -539,6 +648,10 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
               userId: e.ownerUid,
               ownerUid: e.ownerUid,
               isPrivate: !e.isShared,
+              targetAccountId,
+              accountId: targetAccountId,
+              sourceAccountName: '',
+              targetAccountName
             });
           }
           return map;
