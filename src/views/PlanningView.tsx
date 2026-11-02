@@ -10,7 +10,8 @@ import {
 } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { FormatCurrency } from '../utils';
-import { calculateHouseholdIncomeShares } from '../utils/budgetCalculations';
+import { calculateHouseholdIncomeShares, resolveBudgetPeriodFromDateRange } from '../utils/budgetCalculations';
+import { useAppStore } from '../store/useAppStore';
 import { BudgetsView } from './BudgetsView';
 import { ProjectsView } from './ProjectsView';
 
@@ -20,6 +21,8 @@ export interface PlanningViewProps {
   methods?: any;
   appContext?: any;
   defaultSubTab?: 'budgets' | 'projects';
+  selectedMonth?: string;
+  onMonthChange?: (month: string) => void;
 }
 
 export function PlanningView({
@@ -27,26 +30,29 @@ export function PlanningView({
   calc = {},
   methods = {},
   appContext = 'household',
-  defaultSubTab = 'budgets'
+  defaultSubTab = 'budgets',
+  selectedMonth: propSelectedMonth,
+  onMonthChange
 }: PlanningViewProps) {
   const [activeSubTab, setActiveSubTab] = useState<'budgets' | 'projects'>(defaultSubTab);
 
-  const [selectedMonth, setSelectedMonth] = useState(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
-  });
+  const storeDateRange = useAppStore(state => state.dateRange);
+  const activeDateRange = data?.dateRange || storeDateRange;
+
+  const derivedPeriod = useMemo(() => {
+    return resolveBudgetPeriodFromDateRange(activeDateRange);
+  }, [activeDateRange]);
+
+  const selectedMonth = propSelectedMonth || derivedPeriod;
 
   useEffect(() => {
     methods?.fetchBudgetsForMonth?.(selectedMonth);
   }, [selectedMonth, methods?.fetchBudgetsForMonth]);
 
-  // Ingresos del periodo para el resumen ejecutivo
+  // Ingresos del periodo para el resumen ejecutivo (usa directamente data?.incomes del rango)
   const periodIncomes = useMemo(() => {
-    const sourceIncomes = data?.allIncomes || data?.rawIncomes || data?.incomes || [];
-    return sourceIncomes.filter(
-      (inc: any) => !selectedMonth || String(inc.date || '').substring(0, 7) === selectedMonth.substring(0, 7)
-    );
-  }, [data?.allIncomes, data?.rawIncomes, data?.incomes, selectedMonth]);
+    return data?.incomes || [];
+  }, [data?.incomes]);
 
   const incomeShares = useMemo(() => {
     return calculateHouseholdIncomeShares(periodIncomes, data?.users);
@@ -75,7 +81,7 @@ export function PlanningView({
 
   return (
     <div className="space-y-6 animate-in">
-      {/* 1) TÍTULO SUPERIOR Y SELECTOR DE MES */}
+      {/* 1) TÍTULO SUPERIOR */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-3xl font-black tracking-tight text-slate-800">Presupuestos</h2>
@@ -83,17 +89,11 @@ export function PlanningView({
             Guía y plantillas de asignación de fondos.
           </p>
         </div>
-        <input 
-          type="month" 
-          aria-label="Seleccionar mes de planeación"
-          className="px-4 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-700 w-full sm:w-auto focus:ring-2 focus:ring-primary focus:border-primary shadow-xs"
-          value={selectedMonth.substring(0, 7)}
-          onChange={(e) => {
-            if (e.target.value) {
-              setSelectedMonth(`${e.target.value}-01`);
-            }
-          }}
-        />
+        {activeDateRange?.start && activeDateRange?.end && (
+          <div className="px-4 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-700 w-full sm:w-auto shadow-xs text-sm">
+            Periodo: {activeDateRange.start.split('-').reverse().join('/')} - {activeDateRange.end.split('-').reverse().join('/')}
+          </div>
+        )}
       </div>
 
       {/* 2) RESUMEN EJECUTIVO DE INGRESOS Y TOTAL PRESUPUESTADO */}
@@ -241,7 +241,7 @@ export function PlanningView({
           methods={methods} 
           appContext={appContext} 
           selectedMonth={selectedMonth}
-          onMonthChange={setSelectedMonth}
+          onMonthChange={onMonthChange}
           hideHeader={true}
         />
       ) : (

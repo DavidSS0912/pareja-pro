@@ -331,3 +331,23 @@ export function calculateBudgetSplit(
     hasManualContribution: hasManual
   };
 }
+
+/**
+ * 4. resolveBudgetPeriodFromDateRange(dateRange)
+ * Deriva deterministamente el mes de plantilla (formato 'YYYY-MM-01') a partir del filtro global dateRange.
+ * Prioridad: dateRange.end -> dateRange.start -> fecha actual.
+ */
+export function resolveBudgetPeriodFromDateRange(
+  dateRange?: { start?: string; end?: string } | null
+): string {
+  const targetDateStr = dateRange?.end || dateRange?.start;
+  if (targetDateStr && typeof targetDateStr === 'string' && /^\d{4}-\d{2}/.test(targetDateStr)) {
+    const yearMonth = targetDateStr.slice(0, 7);
+    return `${yearMonth}-01`;
+  }
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  return `${year}-${month}-01`;
+}
+

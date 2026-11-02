@@ -21,7 +21,8 @@ import { FormatCurrency } from '../utils';
 import { 
   calculateHouseholdIncomeShares, 
   calculateBudgetAssignedAmount, 
-  calculateBudgetSplit 
+  calculateBudgetSplit,
+  resolveBudgetPeriodFromDateRange
 } from '../utils/budgetCalculations';
 import { resolveBudgetIcon } from '../store/slices/dataSlice';
 
@@ -71,14 +72,15 @@ export function BudgetsView({
   const [newCategoryColor, setNewCategoryColor] = useState('#6366f1');
   const [newTagName, setNewTagName] = useState('');
 
-  const [localSelectedMonth, setLocalSelectedMonth] = useState(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
-  });
+  const storeDateRange = useAppStore(state => state.dateRange);
+  const activeDateRange = data?.dateRange || storeDateRange;
 
-  const selectedMonth = propSelectedMonth || localSelectedMonth;
+  const derivedPeriod = useMemo(() => {
+    return resolveBudgetPeriodFromDateRange(activeDateRange);
+  }, [activeDateRange]);
+
+  const selectedMonth = propSelectedMonth || derivedPeriod;
   const setSelectedMonth = (newMonth: string) => {
-    setLocalSelectedMonth(newMonth);
     onMonthChange?.(newMonth);
   };
 
@@ -167,11 +169,8 @@ export function BudgetsView({
 
   // Requisitos 1 y 2: Cálculos de ingresos y proporciones del hogar
   const periodIncomes = useMemo(() => {
-    const sourceIncomes = data?.allIncomes || data?.rawIncomes || data?.incomes || [];
-    return sourceIncomes.filter(
-      inc => !selectedMonth || String(inc.date || '').substring(0, 7) === selectedMonth.substring(0, 7)
-    );
-  }, [data?.allIncomes, data?.rawIncomes, data?.incomes, selectedMonth]);
+    return data?.incomes || [];
+  }, [data?.incomes]);
 
   const incomeShares = useMemo(() => {
     return calculateHouseholdIncomeShares(periodIncomes, data?.users);
@@ -189,22 +188,17 @@ export function BudgetsView({
         <>
           {/* 2. Cabecera y Resumen Ejecutivo Superior */}
           <div className="flex flex-col gap-4 mb-2">
-            {/* Fila superior: Título y subtítulo a la izquierda, selector de mes a la derecha */}
+            {/* Fila superior: Título y subtítulo a la izquierda */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
                 <h2 className="text-3xl font-black tracking-tight text-slate-800">Presupuestos</h2>
                 <p className="text-slate-600 mt-1 font-medium">Guía y plantillas de asignación de fondos.</p>
               </div>
-              <input 
-                type="month" 
-                className="px-4 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-700 w-full sm:w-auto focus:ring-2 focus:ring-primary focus:border-primary shadow-xs"
-                value={selectedMonth.substring(0, 7)}
-                onChange={(e) => {
-                  if (e.target.value) {
-                    setSelectedMonth(`${e.target.value}-01`);
-                  }
-                }}
-              />
+              {activeDateRange?.start && activeDateRange?.end && (
+                <div className="px-4 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-700 w-full sm:w-auto shadow-xs text-sm">
+                  Periodo: {activeDateRange.start.split('-').reverse().join('/')} - {activeDateRange.end.split('-').reverse().join('/')}
+                </div>
+              )}
             </div>
 
             {/* Fila inferior: Botones de acción */}
@@ -365,9 +359,8 @@ export function BudgetsView({
             const computedSpent = (data?.expenses || [])
               .filter(e => {
                 const matchesCategory = Boolean(budget.categoryId && e.categoryId === budget.categoryId);
-                const matchesPeriod = String(e.date || '').substring(0, 7) === String(budget.period || selectedMonth).substring(0, 7);
                 const matchesOwner = (!budget.ownerType || budget.ownerType === 'SHARED') ? !e.isPrivate : Boolean(e.isPrivate);
-                return matchesCategory && matchesPeriod && matchesOwner;
+                return matchesCategory && matchesOwner;
               })
               .reduce((acc, curr) => acc + normalize(curr.amount, curr.currency), 0);
             

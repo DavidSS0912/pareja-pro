@@ -1,6 +1,7 @@
 import { filterByContext } from './services/ownershipService';
-import { calcularProrrateo, simplificarDeudas } from './services/liquidadorService';
+import { calcularProrrateo, simplificarDeudas, calcularLiquidacionHogar } from './services/liquidadorService';
 import { calcularPatrimonio } from './services/simuladorService';
+import { resolveBudgetPeriodFromDateRange } from './utils/budgetCalculations';
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   Home,
@@ -95,6 +96,39 @@ export function filterTransfersByMode(
     // Mantener visibles todas las transferencias del hogar (isShared o que involucren cuentas compartidas/del hogar)
     return involvesShared;
   });
+}
+
+export function calculateUnallocatedBaseCero(
+  totalIncome: number,
+  budgets: any[] = [],
+  projects: any[] = [],
+  _accounts?: any[]
+): {
+  totalBudgeted: number;
+  totalProjectsMonthlyQuota: number;
+  totalPresupuestado: number;
+  unallocated: number;
+} {
+  const totalBudgeted = (budgets || []).reduce((sum: number, b: any) => {
+    const amount = Number(b.base ?? b.assignedAmount ?? b.fixedAmount ?? 0);
+    return sum + (isNaN(amount) ? 0 : amount);
+  }, 0);
+
+  const activeProjects = (projects || []).filter((p: any) => !p.isCompleted && p.status !== 'completed');
+  const totalProjectsMonthlyQuota = activeProjects.reduce(
+    (sum: number, p: any) => sum + (Number(p.monthlyQuota) || 0),
+    0
+  );
+
+  const totalPresupuestado = totalBudgeted + totalProjectsMonthlyQuota;
+  const unallocated = totalIncome - totalPresupuestado;
+
+  return {
+    totalBudgeted,
+    totalProjectsMonthlyQuota,
+    totalPresupuestado,
+    unallocated
+  };
 }
 
 export default function App() {
@@ -349,6 +383,16 @@ export default function App() {
 
   const [globalError, setGlobalError] = useState<Error | null>(null);
 
+  const derivedBudgetPeriod = useMemo(() => {
+    return resolveBudgetPeriodFromDateRange(dateRange);
+  }, [dateRange]);
+
+  useEffect(() => {
+    if (houseId && derivedBudgetPeriod) {
+      data.fetchBudgetsForMonth(derivedBudgetPeriod);
+    }
+  }, [houseId, derivedBudgetPeriod, data.fetchBudgetsForMonth]);
+
   useEffect(() => {
     if (houseId) {
       const loadData = async () => {
@@ -483,62 +527,33 @@ export default function App() {
     // Solo ingresos públicos se cuentan para el presupuesto de la casa
     const totalIncome = filteredData.incomes.filter(i => !i.isPrivate).reduce((acc, curr) => acc + normalize(curr.amount, curr.currency), 0);
 
-    const incomesByUser = {};
-    filteredData.users.forEach(u => incomesByUser[u.id] = 0);
-    filteredData.incomes.forEach(inc => {
-      if (inc.userId) incomesByUser[inc.userId] = (incomesByUser[inc.userId] || 0) + normalize(inc.amount, inc.currency);
+    const {
+      netSettlement,
+      settlementAmount,
+      simplifiedDebt
+    } = calcularLiquidacionHogar({
+      users: filteredData.users,
+      expenses: filteredData.expenses,
+      incomes: filteredData.incomes,
+      normalize
     });
 
-
-
     const isSingleUser = (filteredData.users?.length || 0) < 2;
-    const userA = filteredData.users.find((u: any) => u.memberSlot === 'USER_A') || filteredData.users[0];
-    const userB = filteredData.users.find((u: any) => u.memberSlot === 'USER_B') || filteredData.users[1];
-    const userAId = userA?.id || 'u1';
-    const userBId = userB?.id || 'u2';
 
-    let bOwesA = 0;
-    let aOwesB = 0;
-    let netSettlement = 0;
-    let settlementAmount = 0;
-    let simplifiedDebt: { deudor: 'A' | 'B' | null; monto: number } = { deudor: null, monto: 0 };
+    const { totalBudgeted, unallocated } = calculateUnallocatedBaseCero(
+      totalIncome,
+      filteredData.budgets,
+      filteredData.projects
+    );
 
-    if (!isSingleUser) {
-      filteredData.expenses.forEach(exp => {
-        if (exp.isPrivate) return;
+    const getBudgetAmount = (b: any) => {
+      const val = Number(b.base ?? b.assignedAmount ?? b.fixedAmount ?? 0);
+      return isNaN(val) ? 0 : val;
+    };
 
-        const normalizedAmount = normalize(exp.amount, exp.currency);
-
-        let ratioA = 0.5;
-        let ratioB = 0.5;
-
-        if (exp.splitType === 'proporcional') {
-          const incA = incomesByUser[userAId] || 0;
-          const incB = incomesByUser[userBId] || 0;
-          ratioA = calcularProrrateo(incA, incB);
-          ratioB = 1 - ratioA;
-        }
-
-        if (exp.paidBy === userAId || exp.paidBy === 'u1') {
-          bOwesA += normalizedAmount * ratioB;
-        } else if (exp.paidBy === userBId || exp.paidBy === 'u2') {
-          aOwesB += normalizedAmount * ratioA;
-        }
-      });
-
-      netSettlement = bOwesA - aOwesB;
-      simplifiedDebt = simplificarDeudas(aOwesB, bOwesA);
-      settlementAmount = simplifiedDebt.monto;
-    }
-
-    const totalBudgeted = (filteredData.budgets || []).reduce((acc, curr) => acc + (Number(curr.base) || 0), 0);
-    const totalDebtAllocated = (filteredData.accounts || []).filter((a: any) => a.type === 'CREDIT_CARD' || a.type === 'LIABILITY').reduce((acc: any, curr: any) => acc + (Number(curr.balance) || 0), 0);
-    const totalSavingsProjects = (filteredData.projects || []).reduce((acc, curr) => acc + (Number(curr.currentAmount) || 0), 0);
-    const unallocated = totalIncome - (totalBudgeted + totalDebtAllocated + totalSavingsProjects);
-
-    const needs = (filteredData.budgets || []).filter(b => b.type === 'Necesidad').reduce((acc, curr) => acc + (Number(curr.base) || 0), 0);
-    const wants = (filteredData.budgets || []).filter(b => b.type === 'Deseo').reduce((acc, curr) => acc + (Number(curr.base) || 0), 0);
-    const savings = (filteredData.budgets || []).filter(b => b.type === 'Ahorro').reduce((acc, curr) => acc + (Number(curr.base) || 0), 0);
+    const needs = (filteredData.budgets || []).filter(b => b.type === 'Necesidad').reduce((acc, curr) => acc + getBudgetAmount(curr), 0);
+    const wants = (filteredData.budgets || []).filter(b => b.type === 'Deseo').reduce((acc, curr) => acc + getBudgetAmount(curr), 0);
+    const savings = (filteredData.budgets || []).filter(b => b.type === 'Ahorro').reduce((acc, curr) => acc + getBudgetAmount(curr), 0);
 
 
     const totalAssets = filteredData.assets.reduce((acc, curr) => acc + curr.value, 0);
