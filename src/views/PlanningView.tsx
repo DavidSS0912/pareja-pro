@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { FormatCurrency } from '../utils';
-import { calculateHouseholdIncomeShares, resolveBudgetPeriodFromDateRange } from '../utils/budgetCalculations';
+import { calculateHouseholdIncomeShares, resolveBudgetPeriodFromDateRange, resolveContextUsers } from '../utils/budgetCalculations';
 import { useAppStore } from '../store/useAppStore';
 import { BudgetsView } from './BudgetsView';
 import { ProjectsView } from './ProjectsView';
@@ -54,14 +54,33 @@ export function PlanningView({
     return data?.incomes || [];
   }, [data?.incomes]);
 
-  const incomeShares = useMemo(() => {
-    return calculateHouseholdIncomeShares(periodIncomes, data?.users);
-  }, [periodIncomes, data?.users]);
+  const contextUsers = useMemo(() => {
+    return resolveContextUsers(data?.users, data?.user, data?.memberSlot, appContext);
+  }, [data?.users, data?.user, data?.memberSlot, appContext]);
 
-  // Proyectos / metas activos (excluyendo los completados)
+  const incomeShares = useMemo(() => {
+    return calculateHouseholdIncomeShares(periodIncomes, contextUsers);
+  }, [periodIncomes, contextUsers]);
+
+  // Proyectos / metas activos (excluyendo los completados y acotando a modo personal si aplica)
   const activeProjects = useMemo(() => {
-    return (data?.projects || []).filter((p: any) => !p.isCompleted && p.status !== 'completed');
-  }, [data?.projects]);
+    const all = (data?.projects || []).filter((p: any) => !p.isCompleted && p.status !== 'completed');
+    if (appContext === 'personal') {
+      const currentSlot = data?.memberSlot || data?.user?.memberSlot;
+      const currentUid = data?.user?.uid;
+      const accounts = data?.accounts || [];
+      return all.filter((p: any) => {
+        if (p.ownerType) return p.ownerType === currentSlot;
+        if (p.ownerUid) return p.ownerUid === currentUid;
+        const targetAcc = accounts.find((a: any) => a.id === p.targetAccountId || a.name === p.targetAccount || a.id === p.targetAccount);
+        if (targetAcc) {
+          return targetAcc.ownerType === currentSlot;
+        }
+        return false;
+      });
+    }
+    return all;
+  }, [data?.projects, appContext, data?.memberSlot, data?.user, data?.accounts]);
 
   const totalProjectsMonthlyQuota = useMemo(() => {
     return activeProjects.reduce((sum: number, p: any) => sum + (Number(p.monthlyQuota) || 0), 0);
@@ -89,11 +108,6 @@ export function PlanningView({
             Guía y plantillas de asignación de fondos.
           </p>
         </div>
-        {activeDateRange?.start && activeDateRange?.end && (
-          <div className="px-4 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-700 w-full sm:w-auto shadow-xs text-sm">
-            Periodo: {activeDateRange.start.split('-').reverse().join('/')} - {activeDateRange.end.split('-').reverse().join('/')}
-          </div>
-        )}
       </div>
 
       {/* 2) RESUMEN EJECUTIVO DE INGRESOS Y TOTAL PRESUPUESTADO */}
@@ -199,7 +213,11 @@ export function PlanningView({
         {incomeShares.totalIncome === 0 && (
           <div className="mt-4 pt-3 border-t border-white/10 flex items-center gap-2 text-xs text-amber-200 bg-amber-500/10 px-3 py-2 rounded-xl border border-amber-500/20">
             <Info size={15} className="shrink-0 text-amber-400" />
-            <span>Aún no hay ingresos registrados este mes. El cálculo opera con aportación equitativa (50/50).</span>
+            <span>
+              {appContext === 'personal'
+                ? 'Aún no hay ingresos personales registrados en este periodo.'
+                : 'Aún no hay ingresos registrados este mes. El cálculo opera con aportación equitativa (50/50).'}
+            </span>
           </div>
         )}
       </Card>

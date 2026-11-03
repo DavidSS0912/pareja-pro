@@ -351,3 +351,50 @@ export function resolveBudgetPeriodFromDateRange(
   return `${year}-${month}-01`;
 }
 
+/**
+ * 5. resolveContextUsers(users, currentUser, memberSlot, appContext)
+ * Retorna los integrantes relevantes según el contexto de visualización:
+ * - En 'personal': retorna exclusivamente al usuario activo (longitud 1).
+ * - En 'household' (o cualquier otro): retorna la lista de integrantes del hogar.
+ */
+export function resolveContextUsers(
+  users: any[] | null | undefined,
+  currentUser: any | null | undefined,
+  memberSlot?: string | null,
+  appContext?: string | null
+): any[] {
+  const safeUsers = Array.isArray(users) ? users : [];
+  if (appContext === 'personal') {
+    const activeUid = currentUser?.uid || currentUser?.id;
+    const activeSlot = memberSlot || currentUser?.memberSlot;
+
+    const matched = safeUsers.find(
+      (u) =>
+        (activeUid && (u.id === activeUid || u.uid === activeUid)) ||
+        (activeSlot && u.memberSlot === activeSlot)
+    );
+
+    if (matched) {
+      return [matched];
+    }
+
+    if (currentUser) {
+      return [
+        {
+          id: activeUid || 'me',
+          name: currentUser.displayName || currentUser.name || currentUser.email?.split('@')[0] || 'Usuario',
+          displayName: currentUser.displayName || currentUser.name || currentUser.email?.split('@')[0] || 'Usuario',
+          email: currentUser.email,
+          photoURL: currentUser.photoURL || currentUser.photoUrl || null,
+          memberSlot: activeSlot
+        }
+      ];
+    }
+
+    return safeUsers.slice(0, 1);
+  }
+
+  return safeUsers;
+}
+
+

@@ -22,7 +22,8 @@ import {
   calculateHouseholdIncomeShares, 
   calculateBudgetAssignedAmount, 
   calculateBudgetSplit,
-  resolveBudgetPeriodFromDateRange
+  resolveBudgetPeriodFromDateRange,
+  resolveContextUsers
 } from '../utils/budgetCalculations';
 import { resolveBudgetIcon } from '../store/slices/dataSlice';
 
@@ -172,9 +173,13 @@ export function BudgetsView({
     return data?.incomes || [];
   }, [data?.incomes]);
 
+  const contextUsers = useMemo(() => {
+    return resolveContextUsers(data?.users, data?.user, data?.memberSlot, appContext);
+  }, [data?.users, data?.user, data?.memberSlot, appContext]);
+
   const incomeShares = useMemo(() => {
-    return calculateHouseholdIncomeShares(periodIncomes, data?.users);
-  }, [periodIncomes, data?.users]);
+    return calculateHouseholdIncomeShares(periodIncomes, contextUsers);
+  }, [periodIncomes, contextUsers]);
 
   const totalFixedBudgets = useMemo(() => {
     return (data?.budgets || [])
@@ -194,11 +199,6 @@ export function BudgetsView({
                 <h2 className="text-3xl font-black tracking-tight text-slate-800">Presupuestos</h2>
                 <p className="text-slate-600 mt-1 font-medium">Guía y plantillas de asignación de fondos.</p>
               </div>
-              {activeDateRange?.start && activeDateRange?.end && (
-                <div className="px-4 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-700 w-full sm:w-auto shadow-xs text-sm">
-                  Periodo: {activeDateRange.start.split('-').reverse().join('/')} - {activeDateRange.end.split('-').reverse().join('/')}
-                </div>
-              )}
             </div>
 
             {/* Fila inferior: Botones de acción */}
@@ -277,7 +277,11 @@ export function BudgetsView({
             {incomeShares.totalIncome === 0 && (
               <div className="mt-4 pt-4 border-t border-white/10 flex items-center gap-2.5 text-xs text-amber-200 bg-amber-500/10 px-3.5 py-2.5 rounded-xl border border-amber-500/20">
                 <Info size={16} className="shrink-0 text-amber-400" />
-                <span>Aún no hay ingresos registrados este mes. El cálculo opera con aportación equitativa (50/50).</span>
+                <span>
+                  {appContext === 'personal'
+                    ? 'Aún no hay ingresos personales registrados en este periodo.'
+                    : 'Aún no hay ingresos registrados este mes. El cálculo opera con aportación equitativa (50/50).'}
+                </span>
               </div>
             )}
           </Card>
@@ -336,26 +340,6 @@ export function BudgetsView({
             const assignedCalc = calculateBudgetAssignedAmount(budget, incomeShares.totalIncome, totalFixedBudgets);
             const assignedAmount = assignedCalc.assignedAmount;
 
-            const manualContrib = budget.splitType === 'CUSTOM' && budget.customUserId 
-              ? { userId: budget.customUserId, amount: Number(budget.customUserAmount) || 0 } 
-              : null;
-            const splitCalc = calculateBudgetSplit(assignedAmount, incomeShares.userShares, manualContrib);
-
-            let budgetSplits = splitCalc.splits;
-            if (budget.ownerType && budget.ownerType !== 'SHARED') {
-              const ownerUser = (data?.users || []).find((u: any) => u.memberSlot === budget.ownerType || u.id === budget.ownerType) || (data?.users || [])[0];
-              if (ownerUser) {
-                budgetSplits = [{
-                  userId: ownerUser.id,
-                  userName: ownerUser.name || ownerUser.displayName || ownerUser.email,
-                  contribution: assignedAmount,
-                  ratio: 1,
-                  percentage: 100,
-                  isManual: true
-                }];
-              }
-            }
-
             const computedSpent = (data?.expenses || [])
               .filter(e => {
                 const matchesCategory = Boolean(budget.categoryId && e.categoryId === budget.categoryId);
@@ -365,6 +349,27 @@ export function BudgetsView({
               .reduce((acc, curr) => acc + normalize(curr.amount, curr.currency), 0);
             
             const actualSpent = computedSpent > 0 ? computedSpent : 0;
+
+            const manualContrib = budget.splitType === 'CUSTOM' && budget.customUserId 
+              ? { userId: budget.customUserId, amount: Number(budget.customUserAmount) || 0 } 
+              : null;
+            const splitCalc = calculateBudgetSplit(actualSpent, incomeShares.userShares, manualContrib);
+
+            let budgetSplits = splitCalc.splits;
+            if (budget.ownerType && budget.ownerType !== 'SHARED') {
+              const ownerUser = (contextUsers || data?.users || []).find((u: any) => u.memberSlot === budget.ownerType || u.id === budget.ownerType) || (contextUsers || data?.users || [])[0];
+              if (ownerUser) {
+                budgetSplits = [{
+                  userId: ownerUser.id,
+                  userName: ownerUser.name || ownerUser.displayName || ownerUser.email,
+                  contribution: actualSpent,
+                  ratio: 1,
+                  percentage: 100,
+                  isManual: true
+                }];
+              }
+            }
+
             const restante = assignedAmount - actualSpent;
             const rawPorcentaje = assignedAmount > 0 
               ? (actualSpent / assignedAmount) * 100 

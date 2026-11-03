@@ -252,6 +252,20 @@ export default function App() {
       return filterTransfersByMode(items, appContext, user?.uid || '');
     };
 
+    const filterProjects = (projectsList: any[]) => {
+      if (appContext !== 'personal') return projectsList || [];
+      const currentSlot = memberSlot || user?.memberSlot;
+      const currentUid = user?.uid;
+      const accountsList = data.accounts || [];
+      return (projectsList || []).filter((p: any) => {
+        if (p.ownerType) return p.ownerType === currentSlot;
+        if (p.ownerUid) return p.ownerUid === currentUid;
+        const targetAcc = accountsList.find((a: any) => a.id === p.targetAccountId || a.name === p.targetAccount || a.id === p.targetAccount);
+        if (targetAcc) return targetAcc.ownerType === currentSlot;
+        return false;
+      });
+    };
+
     return {
       ...data,
       allIncomes: filterContext(data.incomes, true),
@@ -260,7 +274,8 @@ export default function App() {
       expenses: filterContext(data.expenses.filter(e => inDateRange(e.date)), false),
       transfers: filterTransfers((data.transfers || []).filter((t: any) => inDateRange(t.date))),
       budgets: filterByContext<any>(data.budgets, contextMode, memberSlot),
-      accounts: filterByContext(data.accounts || [], contextMode, memberSlot)
+      accounts: filterByContext(data.accounts || [], contextMode, memberSlot),
+      projects: filterProjects(data.projects)
     };
   }, [data, dateRange, appContext, user, memberSlot]);
 
@@ -524,8 +539,11 @@ export default function App() {
       return currency === 'USD' ? amount * EXCHANGE_RATE_USD_MXN : amount;
     };
 
-    // Solo ingresos públicos se cuentan para el presupuesto de la casa
-    const totalIncome = filteredData.incomes.filter(i => !i.isPrivate).reduce((acc, curr) => acc + normalize(curr.amount, curr.currency), 0);
+    // Solo ingresos públicos se cuentan para el presupuesto de la casa cuando appContext === 'household'
+    // En modo personal, filteredData.incomes ya viene filtrado con los ingresos personales del usuario activo
+    const totalIncome = filteredData.incomes
+      .filter(i => (appContext === 'personal' ? true : !i.isPrivate))
+      .reduce((acc, curr) => acc + normalize(curr.amount, curr.currency), 0);
 
     const {
       netSettlement,
@@ -572,7 +590,7 @@ export default function App() {
       savingsPct: totalIncome ? (savings / totalIncome) * 100 : 0,
       totalAssets, totalLiabilities, netWorth
     };
-  }, [filteredData]);
+  }, [filteredData, appContext]);
 
   if (authLoading) {
     return <div className="min-h-[100dvh] flex items-center justify-center bg-slate-50"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;

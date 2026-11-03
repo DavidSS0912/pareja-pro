@@ -107,4 +107,75 @@ describe('Unificación de Filtro Periodo (dateRange) con Presupuestos', () => {
       expect(result.unallocated).toBe(18000);
     });
   });
+
+  describe('e) Bug 2: Aportación por integrante sobre Total Gastado real', () => {
+    it('calculateBudgetSplit ejecutado sobre gasto real ($200 en vez de $130) reparte proporcionalmente los $200', async () => {
+      const userShares = [
+        { userId: 'user-david', userName: 'David', income: 29905, ratio: 0.6115, percentage: 61.15 },
+        { userId: 'user-zoe', userName: 'Zoé', income: 19000, ratio: 0.3885, percentage: 38.85 }
+      ];
+
+      const assignedAmount = 130;
+      const actualSpent = 200; // Gasto real
+
+      // Asignado Mes reparte 130 (comportamiento previo erróneo)
+      // Con el cambio, se debe ejecutar calculateBudgetSplit sobre actualSpent ($200)
+      const { calculateBudgetSplit } = await import('../utils/budgetCalculations');
+      const splitReal = calculateBudgetSplit(actualSpent, userShares);
+
+      expect(splitReal.assignedAmount).toBe(200);
+      expect(splitReal.totalSplit).toBe(200);
+      const splitDavid = splitReal.splits.find(s => s.userId === 'user-david')!;
+      const splitZoe = splitReal.splits.find(s => s.userId === 'user-zoe')!;
+
+      expect(splitDavid.contribution).toBe(122.3);
+      expect(splitZoe.contribution).toBe(77.7);
+    });
+  });
+
+  describe('f) Bug 3: resolveContextUsers en Personal vs Hogar', () => {
+    const users = [
+      { id: 'user-david', name: 'David SZ', memberSlot: 'USER_A' },
+      { id: 'user-zoe', name: 'Zoé', memberSlot: 'USER_B' }
+    ];
+    const currentUser = { uid: 'user-david', displayName: 'David SZ', memberSlot: 'USER_A' };
+
+    it('en appContext personal retorna exclusivamente al usuario activo (longitud 1)', async () => {
+      const { resolveContextUsers } = await import('../utils/budgetCalculations') as any;
+      const contextUsers = resolveContextUsers(users, currentUser, 'USER_A', 'personal');
+
+      expect(contextUsers).toHaveLength(1);
+      expect(contextUsers[0].id).toBe('user-david');
+    });
+
+    it('en appContext household retorna a ambos integrantes', async () => {
+      const { resolveContextUsers } = await import('../utils/budgetCalculations') as any;
+      const contextUsers = resolveContextUsers(users, currentUser, 'USER_A', 'household');
+
+      expect(contextUsers).toHaveLength(2);
+    });
+  });
+
+  describe('g) Bug 3: calculateHouseholdIncomeShares en modo Personal', () => {
+    it('genera un único aporte al 100% para el usuario activo sin listar al segundo integrante', async () => {
+      const { calculateHouseholdIncomeShares, resolveContextUsers } = await import('../utils/budgetCalculations') as any;
+      const users = [
+        { id: 'user-david', name: 'David SZ', memberSlot: 'USER_A' },
+        { id: 'user-zoe', name: 'Zoé', memberSlot: 'USER_B' }
+      ];
+      const currentUser = { uid: 'user-david', displayName: 'David SZ', memberSlot: 'USER_A' };
+      const personalIncomes = [
+        { id: 'inc-p1', userId: 'user-david', amount: 35000, isPrivate: true }
+      ];
+
+      const contextUsers = resolveContextUsers(users, currentUser, 'USER_A', 'personal');
+      const shares = calculateHouseholdIncomeShares(personalIncomes, contextUsers);
+
+      expect(shares.userShares).toHaveLength(1);
+      expect(shares.userShares[0].userId).toBe('user-david');
+      expect(shares.userShares[0].income).toBe(35000);
+      expect(shares.userShares[0].percentage).toBe(100);
+      expect(shares.totalIncome).toBe(35000);
+    });
+  });
 });
