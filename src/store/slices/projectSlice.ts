@@ -20,6 +20,7 @@ export interface ProjectSlice {
   addProject: (item: any) => Promise<void>;
   updateProject: (id: string, item: any) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
+  togglePauseProject: (project: any) => Promise<void>;
   reorderProjects: (updates: Array<{ id: string; priority: number }>) => Promise<void>;
   contributions: ProjectContribution[];
   setContributions: (items: ProjectContribution[]) => void;
@@ -98,7 +99,72 @@ export const createProjectSlice: StateCreator<ProjectSlice & AuthSlice & DataSli
       useToastStore.getState().addToast("Error al actualizar proyecto", "error");
     }
   },
-  deleteProject: async (_id) => { useToastStore.getState().addToast("Operación no disponible", "error"); },
+  deleteProject: async (id: string) => {
+    const state = get();
+    const houseId = state.houseId;
+    if (!houseId) return;
+
+    const previousProjects = [...(state.projects || [])];
+    set({ projects: (state.projects || []).filter((p: any) => p.id !== id) });
+
+    try {
+      await updateSavingsProject({
+        projectId: id,
+        householdId: houseId,
+        priority: -1
+      });
+      useToastStore.getState().addToast("Meta eliminada exitosamente", "success");
+      await get().fetchDashboardData(houseId);
+    } catch (error) {
+      console.error("Error al eliminar meta:", error);
+      useToastStore.getState().addToast("Error al eliminar la meta", "error");
+      set({ projects: previousProjects });
+    }
+  },
+  togglePauseProject: async (project: any) => {
+    const state = get();
+    const houseId = state.houseId;
+    if (!houseId || !project) return;
+
+    const isPaused = project.status === 'paused' || project.priority === 0 || project.isPaused;
+    const maxPriority = (state.projects || []).reduce(
+      (max: number, p: any) => Math.max(max, Number(p.priority) || 0),
+      0
+    );
+    const targetPriority = isPaused ? (maxPriority > 0 ? maxPriority + 1 : 1) : 0;
+    const previousProjects = [...(state.projects || [])];
+
+    const updatedProjects = (state.projects || []).map((p: any) => {
+      if (p.id === project.id) {
+        return {
+          ...p,
+          priority: targetPriority,
+          isPaused: !isPaused,
+          status: isPaused ? 'pending' : 'paused'
+        };
+      }
+      return p;
+    });
+
+    set({ projects: updatedProjects });
+
+    try {
+      await updateSavingsProject({
+        projectId: project.id,
+        householdId: houseId,
+        priority: targetPriority
+      });
+      useToastStore.getState().addToast(
+        isPaused ? "Meta reanudada exitosamente" : "Meta pausada exitosamente",
+        "success"
+      );
+      await get().fetchDashboardData(houseId);
+    } catch (error) {
+      console.error("Error al alternar pausa de meta:", error);
+      useToastStore.getState().addToast("Error al actualizar estado de la meta", "error");
+      set({ projects: previousProjects });
+    }
+  },
   reorderProjects: async (updates: Array<{ id: string; priority: number }>) => {
     const state = get();
     const houseId = state.houseId;

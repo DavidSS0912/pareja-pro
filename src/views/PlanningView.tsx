@@ -62,9 +62,17 @@ export function PlanningView({
     return calculateHouseholdIncomeShares(periodIncomes, contextUsers);
   }, [periodIncomes, contextUsers]);
 
-  // Proyectos / metas activos (excluyendo los completados y acotando a modo personal si aplica)
+  // Proyectos / metas activos (excluyendo los completados, pausados o archivados y acotando a modo personal si aplica)
   const activeProjects = useMemo(() => {
-    const all = (data?.projects || []).filter((p: any) => !p.isCompleted && p.status !== 'completed');
+    const all = (data?.projects || []).filter(
+      (p: any) =>
+        !p.isCompleted &&
+        p.status !== 'completed' &&
+        p.status !== 'paused' &&
+        !p.isPaused &&
+        !p.isArchived &&
+        (p.priority === undefined || p.priority === null || p.priority > 0)
+    );
     if (appContext === 'personal') {
       const currentSlot = data?.memberSlot || data?.user?.memberSlot;
       const currentUid = data?.user?.uid;

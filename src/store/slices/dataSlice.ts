@@ -331,37 +331,45 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
 
         const currentProjects = get().projects || [];
 
-        const mappedProjects = projects.data.savingsProjects.map((p: any) => {
-          const existingProject = currentProjects.find((ep: any) => ep.id === p.id);
-          const serverMilestones = mappedMilestones.filter((m: any) => m.projectId === p.id);
-          const tempMilestones = (existingProject?.milestones || []).filter(
-            (m: any) => typeof m.id === 'string' && m.id.startsWith('temp-')
-          );
-          const mergedMilestones = [
-            ...serverMilestones,
-            ...tempMilestones.filter((tm: any) => !serverMilestones.some((sm: any) => sm.title === tm.title))
-          ];
+        const mappedProjects = projects.data.savingsProjects
+          .filter((p: any) => p.priority === undefined || p.priority === null || p.priority >= 0)
+          .map((p: any) => {
+            const existingProject = currentProjects.find((ep: any) => ep.id === p.id);
+            const serverMilestones = mappedMilestones.filter((m: any) => m.projectId === p.id);
+            const tempMilestones = (existingProject?.milestones || []).filter(
+              (m: any) => typeof m.id === 'string' && m.id.startsWith('temp-')
+            );
+            const mergedMilestones = [
+              ...serverMilestones,
+              ...tempMilestones.filter((tm: any) => !serverMilestones.some((sm: any) => sm.title === tm.title))
+            ];
 
-          const contributionsSum = mappedContributions
-            .filter((c: any) => c.projectId === p.id || c.savingsProjectId === p.id)
-            .reduce((sum: number, c: any) => sum + Number(c.amount || 0), 0);
-          const effectiveSavedAmount = contributionsSum > 0 ? contributionsSum : (p.currentAmount || 0);
+            const contributionsSum = mappedContributions
+              .filter((c: any) => c.projectId === p.id || c.savingsProjectId === p.id)
+              .reduce((sum: number, c: any) => sum + Number(c.amount || 0), 0);
+            const effectiveSavedAmount = contributionsSum > 0 ? contributionsSum : (p.currentAmount || 0);
+            const isPaused = p.priority === 0;
 
-          return {
-            ...p,
-            savedAmount: effectiveSavedAmount,
-            currentAmount: effectiveSavedAmount,
-            status: p.isCompleted ? 'completed' : 'pending',
-            monthlyQuota: p.monthlyQuota || 0,
-            targetAccount: p.targetAccount || '',
-            milestones: mergedMilestones
-          };
-        }).sort((a: any, b: any) => {
-          if ((a.priority || 0) !== (b.priority || 0)) {
-            return (a.priority || 0) - (b.priority || 0);
-          }
-          return (a.createdAt || '').localeCompare(b.createdAt || '');
-        });
+            return {
+              ...p,
+              savedAmount: effectiveSavedAmount,
+              currentAmount: effectiveSavedAmount,
+              isPaused,
+              status: p.isCompleted ? 'completed' : isPaused ? 'paused' : 'pending',
+              monthlyQuota: p.monthlyQuota || 0,
+              targetAccount: p.targetAccount || '',
+              milestones: mergedMilestones
+            };
+          }).sort((a: any, b: any) => {
+            const aPaused = a.priority === 0 || a.status === 'paused';
+            const bPaused = b.priority === 0 || b.status === 'paused';
+            if (aPaused && !bPaused) return 1;
+            if (!aPaused && bPaused) return -1;
+            if ((a.priority || 0) !== (b.priority || 0)) {
+              return (a.priority || 0) - (b.priority || 0);
+            }
+            return (a.createdAt || '').localeCompare(b.createdAt || '');
+          });
         
         let hasActive = false;
         mappedProjects.forEach((p: any) => {

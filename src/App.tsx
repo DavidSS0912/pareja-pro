@@ -114,7 +114,15 @@ export function calculateUnallocatedBaseCero(
     return sum + (isNaN(amount) ? 0 : amount);
   }, 0);
 
-  const activeProjects = (projects || []).filter((p: any) => !p.isCompleted && p.status !== 'completed');
+  const activeProjects = (projects || []).filter(
+    (p: any) =>
+      !p.isCompleted &&
+      p.status !== 'completed' &&
+      p.status !== 'paused' &&
+      !p.isPaused &&
+      !p.isArchived &&
+      (p.priority === undefined || p.priority === null || p.priority > 0)
+  );
   const totalProjectsMonthlyQuota = activeProjects.reduce(
     (sum: number, p: any) => sum + (Number(p.monthlyQuota) || 0),
     0

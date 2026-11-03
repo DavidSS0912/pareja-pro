@@ -20,7 +20,9 @@ import {
   ArrowDownUp,
   CheckCircle,
   X,
-  Trash2
+  Trash2,
+  Pause,
+  Play
 } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -64,14 +66,18 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
   const [editingMilestoneId, setEditingMilestoneId] = useState<string | null>(null);
   const [newMilestone, setNewMilestone] = useState({ title: '', amountThreshold: '', dateThreshold: '' });
 
-  // Acciones de hitos desde store o props
+  // Acciones de hitos y proyectos desde store o props
   const storeAddMilestone = useAppStore((state) => state.addMilestone);
   const storeToggleMilestone = useAppStore((state) => state.toggleMilestone);
   const storeDeleteMilestone = useAppStore((state) => state.deleteMilestone);
+  const storeDeleteProject = useAppStore((state) => state.deleteProject);
+  const storeTogglePauseProject = useAppStore((state) => state.togglePauseProject);
 
   const addMilestoneAction = methods?.addMilestone || storeAddMilestone;
   const toggleMilestoneAction = methods?.toggleMilestone || storeToggleMilestone;
   const deleteMilestoneAction = methods?.deleteMilestone || storeDeleteMilestone;
+  const deleteProjectAction = methods?.deleteProject || storeDeleteProject;
+  const togglePauseProjectAction = methods?.togglePauseProject || storeTogglePauseProject;
 
   // Cálculo de ingresos mensuales por integrante del hogar
   const incomePerUser = useMemo(() => {
@@ -95,23 +101,43 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
   // Clasificación y orden de proyectos
   const sortedProjects = useMemo(() => {
     return [...projects].sort((a, b) => {
+      const aPaused = a.priority === 0 || a.status === 'paused' || a.isPaused;
+      const bPaused = b.priority === 0 || b.status === 'paused' || b.isPaused;
+      if (aPaused && !bPaused) return 1;
+      if (!aPaused && bPaused) return -1;
       if ((a.priority || 0) !== (b.priority || 0)) return (a.priority || 0) - (b.priority || 0);
       return (a.createdAt || '').localeCompare(b.createdAt || '');
     });
   }, [projects]);
 
   const activeProject = useMemo(() => {
-    return sortedProjects.find((p) => p.status === 'active') || sortedProjects[0] || null;
+    const explicitActive = sortedProjects.find((p) => p.status === 'active' && !p.isPaused && p.priority !== 0);
+    if (explicitActive) return explicitActive;
+    return sortedProjects.find(
+      (p) => !p.isCompleted && p.status !== 'completed' && p.status !== 'paused' && !p.isPaused && (p.priority === undefined || p.priority > 0)
+    ) || null;
+  }, [sortedProjects]);
+
+  const pausedProjects = useMemo(() => {
+    return sortedProjects.filter(
+      (p) => !p.isCompleted && p.status !== 'completed' && (p.status === 'paused' || p.isPaused || p.priority === 0)
+    );
   }, [sortedProjects]);
 
   const pendingProjects = useMemo(() => {
     return sortedProjects.filter(
-      (p) => p.status === 'pending' || (p.status === 'active' && p.id !== activeProject?.id)
+      (p) =>
+        !p.isCompleted &&
+        p.status !== 'completed' &&
+        p.status !== 'paused' &&
+        !p.isPaused &&
+        p.priority !== 0 &&
+        p.id !== activeProject?.id
     );
   }, [sortedProjects, activeProject]);
 
   const completedProjects = useMemo(() => {
-    return sortedProjects.filter((p) => p.status === 'completed');
+    return sortedProjects.filter((p) => p.status === 'completed' || p.isCompleted);
   }, [sortedProjects]);
 
   // Métricas globales para el Nivel 1
@@ -360,6 +386,30 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
     }
   };
 
+  const handleDeleteProject = async (project: any) => {
+    if (!project) return;
+    const confirmed = window.confirm(
+      `¿Estás seguro de que deseas eliminar la meta "${project.name}"?\nEl historial contable de aportaciones y movimientos bancarios se conservará íntegramente.`
+    );
+    if (!confirmed) return;
+
+    if (deleteProjectAction) {
+      await deleteProjectAction(project.id);
+    }
+    setSelectedProjectId(null);
+  };
+
+  const handleTogglePause = async (project: any) => {
+    if (!project) return;
+    if (togglePauseProjectAction) {
+      await togglePauseProjectAction(project);
+    } else if (methods?.updateProject) {
+      const isPaused = project.status === 'paused' || project.priority === 0 || project.isPaused;
+      const maxP = projects.reduce((max: number, p: any) => Math.max(max, Number(p.priority) || 0), 0);
+      await methods.updateProject(project.id, { priority: isPaused ? (maxP > 0 ? maxP + 1 : 1) : 0 });
+    }
+  };
+
   // Manejo de Hitos
   const handleOpenAddMilestone = () => {
     setEditingMilestoneId(null);
@@ -488,6 +538,15 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
             <Button
               variant="outline"
               size="sm"
+              onClick={() => handleDeleteProject(currentProject)}
+              className="flex items-center gap-1.5 text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200"
+            >
+              <Trash2 size={15} />
+              <span>Eliminar Meta</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => handleOpenEditProject(currentProject)}
               className="flex items-center gap-1.5"
             >
@@ -506,98 +565,121 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
         </div>
 
         {/* Tarjeta Principal de Detalle */}
-        <div className="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-indigo-900/40 relative overflow-hidden">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span
-                  className={`text-xs uppercase font-extrabold px-3 py-1 rounded-full tracking-wider border ${
-                    currentProject.status === 'active'
-                      ? 'bg-primary/20 text-indigo-300 border-primary/40'
-                      : currentProject.status === 'completed'
-                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
-                      : 'bg-white/10 text-slate-300 border-white/10'
-                  }`}
-                >
-                  {currentProject.status === 'active'
-                    ? 'Meta Activa'
-                    : currentProject.status === 'completed'
-                    ? 'Completado 🎉'
-                    : 'En Cola / Prioridad #' + (currentProject.priority || 1)}
-                </span>
-                <span className="inline-flex items-center gap-1.5 bg-white/10 text-slate-200 text-xs px-3 py-1 rounded-full border border-white/10">
-                  <Wallet size={12} className="text-indigo-300" />
-                  <span>Apartado en {getAccountDisplayName(currentProject.targetAccountId || currentProject.targetAccount)}</span>
-                </span>
+        {(() => {
+          const isCurrentPaused = currentProject.status === 'paused' || currentProject.priority === 0 || currentProject.isPaused;
+          return (
+            <div className="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-indigo-900/40 relative overflow-hidden">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span
+                      className={`text-xs uppercase font-extrabold px-3 py-1 rounded-full tracking-wider border ${
+                        isCurrentPaused
+                          ? 'bg-amber-500/20 text-amber-300 border-amber-400/30'
+                          : currentProject.status === 'active'
+                          ? 'bg-primary/20 text-indigo-300 border-primary/40'
+                          : currentProject.status === 'completed'
+                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
+                          : 'bg-white/10 text-slate-300 border-white/10'
+                      }`}
+                    >
+                      {isCurrentPaused
+                        ? 'Pausada ⏸️'
+                        : currentProject.status === 'active'
+                        ? 'Meta Activa'
+                        : currentProject.status === 'completed'
+                        ? 'Completado 🎉'
+                        : 'En Cola / Prioridad #' + (currentProject.priority || 1)}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 bg-white/10 text-slate-200 text-xs px-3 py-1 rounded-full border border-white/10">
+                      <Wallet size={12} className="text-indigo-300" />
+                      <span>Apartado en {getAccountDisplayName(currentProject.targetAccountId || currentProject.targetAccount)}</span>
+                    </span>
+                  </div>
+                  <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                    {currentProject.name}
+                  </h2>
+                  <p className="text-indigo-200 text-sm mt-1.5 flex items-center gap-1.5 font-medium">
+                    <Calendar size={15} />
+                    Meta estimada: <strong className="text-white">{getEstimatedDate(currentProject)}</strong>
+                  </p>
+                </div>
+
+                <div className="text-left md:text-right bg-white/5 border border-white/10 rounded-2xl p-4 sm:px-6">
+                  <span className="text-xs uppercase tracking-wider font-bold text-indigo-300 block mb-1">
+                    Progreso Acumulado
+                  </span>
+                  <p className="text-3xl sm:text-4xl font-black text-white tabular-nums tracking-tight">
+                    {FormatCurrency(saved)}
+                  </p>
+                  <p className="text-xs text-indigo-200 mt-0.5">
+                    de una meta de <strong className="text-white">{FormatCurrency(target)}</strong>
+                  </p>
+                </div>
               </div>
-              <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                {currentProject.name}
-              </h2>
-              <p className="text-indigo-200 text-sm mt-1.5 flex items-center gap-1.5 font-medium">
-                <Calendar size={15} />
-                Meta estimada: <strong className="text-white">{getEstimatedDate(currentProject)}</strong>
-              </p>
-            </div>
 
-            <div className="text-left md:text-right bg-white/5 border border-white/10 rounded-2xl p-4 sm:px-6">
-              <span className="text-xs uppercase tracking-wider font-bold text-indigo-300 block mb-1">
-                Progreso Acumulado
-              </span>
-              <p className="text-3xl sm:text-4xl font-black text-white tabular-nums tracking-tight">
-                {FormatCurrency(saved)}
-              </p>
-              <p className="text-xs text-indigo-200 mt-0.5">
-                de una meta de <strong className="text-white">{FormatCurrency(target)}</strong>
-              </p>
-            </div>
-          </div>
+              {/* Barra de Progreso Grande */}
+              <div className="space-y-2 mb-6">
+                <div className="flex justify-between items-center text-sm font-bold">
+                  <span className="text-emerald-400 text-base font-black">{pct}% Alcanzado</span>
+                  <span className="text-indigo-200 text-xs">
+                    {remaining > 0 ? `Faltan ${FormatCurrency(remaining)}` : '¡Meta 100% alcanzada!'}
+                  </span>
+                </div>
+                <div className="w-full bg-white/10 rounded-full h-4 overflow-hidden border border-white/10 relative">
+                  <div
+                    className="h-full bg-gradient-to-r from-indigo-500 via-primary to-emerald-400 rounded-full transition-all duration-1000 ease-out"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </div>
 
-          {/* Barra de Progreso Grande */}
-          <div className="space-y-2 mb-6">
-            <div className="flex justify-between items-center text-sm font-bold">
-              <span className="text-emerald-400 text-base font-black">{pct}% Alcanzado</span>
-              <span className="text-indigo-200 text-xs">
-                {remaining > 0 ? `Faltan ${FormatCurrency(remaining)}` : '¡Meta 100% alcanzada!'}
-              </span>
+              {/* Botones de Cambio de Estado Rápido */}
+              <div className="flex flex-wrap gap-2.5 pt-4 border-t border-white/10 text-xs">
+                {currentProject.status !== 'active' && currentProject.status !== 'completed' && !isCurrentPaused && (
+                  <button
+                    type="button"
+                    onClick={() => activateProject(currentProject)}
+                    className="px-4 py-2 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl transition-colors cursor-pointer"
+                  >
+                    Hacer esta mi Meta Activa
+                  </button>
+                )}
+                {currentProject.status !== 'completed' && (
+                  <button
+                    type="button"
+                    onClick={() => handleTogglePause(currentProject)}
+                    className={`px-4 py-2 font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 ${
+                      isCurrentPaused
+                        ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                        : 'bg-white/15 hover:bg-white/25 text-white border border-white/20'
+                    }`}
+                  >
+                    {isCurrentPaused ? <Play size={14} /> : <Pause size={14} />}
+                    <span>{isCurrentPaused ? 'Reanudar Meta' : 'Pausar Meta'}</span>
+                  </button>
+                )}
+                {currentProject.status !== 'completed' ? (
+                  <button
+                    type="button"
+                    onClick={() => completeProject(currentProject)}
+                    className="px-4 py-2 bg-emerald-600/80 hover:bg-emerald-600 text-white font-bold rounded-xl transition-colors cursor-pointer"
+                  >
+                    Marcar como Completada
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => reactivateProject(currentProject)}
+                    className="px-4 py-2 bg-amber-600/80 hover:bg-amber-600 text-white font-bold rounded-xl transition-colors cursor-pointer"
+                  >
+                    Reactivar Meta / Proyecto
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="w-full bg-white/10 rounded-full h-4 overflow-hidden border border-white/10 relative">
-              <div
-                className="h-full bg-gradient-to-r from-indigo-500 via-primary to-emerald-400 rounded-full transition-all duration-1000 ease-out"
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Botones de Cambio de Estado Rápido */}
-          <div className="flex flex-wrap gap-2.5 pt-4 border-t border-white/10 text-xs">
-            {currentProject.status !== 'active' && currentProject.status !== 'completed' && (
-              <button
-                type="button"
-                onClick={() => activateProject(currentProject)}
-                className="px-4 py-2 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl transition-colors cursor-pointer"
-              >
-                Hacer esta mi Meta Activa
-              </button>
-            )}
-            {currentProject.status !== 'completed' ? (
-              <button
-                type="button"
-                onClick={() => completeProject(currentProject)}
-                className="px-4 py-2 bg-emerald-600/80 hover:bg-emerald-600 text-white font-bold rounded-xl transition-colors cursor-pointer"
-              >
-                Marcar como Completada
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => reactivateProject(currentProject)}
-                className="px-4 py-2 bg-amber-600/80 hover:bg-amber-600 text-white font-bold rounded-xl transition-colors cursor-pointer"
-              >
-                Reactivar Meta / Proyecto
-              </button>
-            )}
-          </div>
-        </div>
+          );
+        })()}
 
         {/* Cuota Mensual y Aportación Sugerida en Pareja */}
         <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
@@ -958,7 +1040,7 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
       </div>
 
       {/* Resumen Ejecutivo Superior (KPIs) */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
         <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm">
           <span className="text-xs uppercase font-extrabold text-slate-400 tracking-wider block mb-1">
             Total en Proyectos
@@ -987,13 +1069,23 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
           <span className="text-xs uppercase font-extrabold text-slate-400 tracking-wider block mb-1">
             En Cola (Cascada)
           </span>
-          <p className="text-2xl font-black text-amber-600 tabular-nums">
+          <p className="text-2xl font-black text-indigo-600 tabular-nums">
             {pendingProjects.length}
           </p>
           <span className="text-xs text-slate-500 mt-1 block">Metas pendientes</span>
         </div>
 
         <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm">
+          <span className="text-xs uppercase font-extrabold text-slate-400 tracking-wider block mb-1">
+            Pausadas
+          </span>
+          <p className="text-2xl font-black text-amber-600 tabular-nums">
+            {pausedProjects.length}
+          </p>
+          <span className="text-xs text-slate-500 mt-1 block">Sin cuota mensual</span>
+        </div>
+
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm col-span-2 sm:col-span-1">
           <span className="text-xs uppercase font-extrabold text-slate-400 tracking-wider block mb-1">
             Completadas
           </span>
@@ -1197,6 +1289,15 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
 
                     <button
                       type="button"
+                      onClick={() => handleTogglePause(p)}
+                      className="p-1.5 text-slate-400 hover:text-amber-600 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
+                      title="Pausar meta"
+                    >
+                      <Pause size={15} />
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={() => handleOpenEditProject(p)}
                       className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
                       title="Editar Proyecto"
@@ -1227,6 +1328,84 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
           </div>
         )}
       </div>
+
+      {/* Metas Pausadas */}
+      {pausedProjects.length > 0 && (
+        <div className="space-y-3 pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-between px-1">
+            <div>
+              <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                <Pause size={16} className="text-amber-500" />
+                <span>Metas Pausadas ({pausedProjects.length})</span>
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Sus cuotas mensuales están excluidas del presupuesto base cero. Puedes reanudarlas cuando decidas.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {pausedProjects.map((p) => {
+              const saved = Number(p.savedAmount ?? p.currentAmount ?? 0);
+              const target = Number(p.targetAmount || 0);
+              const pct = target > 0 ? Math.min(100, Math.round((saved / target) * 100)) : 0;
+
+              return (
+                <div
+                  key={p.id}
+                  className="bg-amber-50/40 rounded-2xl p-4 sm:p-5 border border-amber-200/70 shadow-sm transition-all flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 group"
+                >
+                  <div
+                    className="flex-1 cursor-pointer w-full"
+                    onClick={() => setSelectedProjectId(p.id)}
+                  >
+                    <div className="flex items-center gap-2.5 mb-1.5">
+                      <span className="text-xs font-black text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-md uppercase tracking-wider">
+                        Pausada
+                      </span>
+                      <h4 className="font-bold text-slate-900 text-base group-hover:text-primary transition-colors">
+                        {p.name}
+                      </h4>
+                      <span className="text-xs text-slate-400 bg-white border border-slate-200 px-2 py-0.5 rounded-full hidden sm:inline-block">
+                        {getAccountDisplayName(p.targetAccountId || p.targetAccount)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-4 text-xs text-slate-500">
+                      <span>Meta: <strong className="text-slate-800">{FormatCurrency(target)}</strong></span>
+                      <span>Acumulado: <strong className="text-slate-800">{FormatCurrency(saved)}</strong> ({pct}%)</span>
+                      <span className="text-amber-700 font-semibold">Cuota pausada ({FormatCurrency(p.monthlyQuota || 0)}/mes)</span>
+                    </div>
+
+                    <div className="w-full bg-slate-200/80 rounded-full h-2 mt-2.5 overflow-hidden">
+                      <div className="bg-amber-500 h-full rounded-full" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end border-t sm:border-t-0 pt-2 sm:pt-0 border-amber-100">
+                    <button
+                      type="button"
+                      onClick={() => handleTogglePause(p)}
+                      className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm"
+                    >
+                      <Play size={13} />
+                      <span>Reanudar</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedProjectId(p.id)}
+                      className="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-white/80 transition-colors"
+                      title="Ver detalle"
+                    >
+                      <ArrowRight size={16} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Proyectos Completados */}
       {completedProjects.length > 0 && (
