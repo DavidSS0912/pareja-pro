@@ -1,7 +1,7 @@
-import { filterByContext } from './services/ownershipService';
+import { filterByContext, filterCategoriesByContext } from './services/ownershipService';
 import { calcularProrrateo, simplificarDeudas, calcularLiquidacionHogar } from './services/liquidadorService';
 import { calcularPatrimonio } from './services/simuladorService';
-import { resolveBudgetPeriodFromDateRange } from './utils/budgetCalculations';
+import { resolveBudgetPeriodFromDateRange, calculateCutoffDateRange } from './utils/budgetCalculations';
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   Home,
@@ -232,10 +232,20 @@ export default function App() {
     refreshSettings: state.refreshSettings,
     memberSlot: state.memberSlot,
     setMemberSlot: state.setMemberSlot,
+    cutoffDayHousehold: state.cutoffDayHousehold,
+    cutoffDayPersonal: state.cutoffDayPersonal,
   })));
   
   const methods = { ...data, handleOpenMovementModal, handleOpenIncomeModal, handleOpenExpenseModal, handleOpenTransferModal };
   const { user, houseId, memberSlot, authLoading, setUser, setHouseId, setMemberSlot, setAuthLoading, fetchDashboardData, refreshSettings, dateRange, setDateRange } = data;
+
+  // Sincronización reactiva del periodo dateRange según contexto activo y día de corte configurado
+  useEffect(() => {
+    const isPersonal = appContext === 'personal';
+    const cutoff = isPersonal ? (data.cutoffDayPersonal || 1) : (data.cutoffDayHousehold || 1);
+    const newRange = calculateCutoffDateRange(cutoff);
+    setDateRange(newRange.start, newRange.end);
+  }, [appContext, data.cutoffDayHousehold, data.cutoffDayPersonal, setDateRange]);
 
   const filteredData = useMemo(() => {
     const start = dateRange?.start || '2000-01-01';
@@ -283,7 +293,8 @@ export default function App() {
       transfers: filterTransfers((data.transfers || []).filter((t: any) => inDateRange(t.date))),
       budgets: filterByContext<any>(data.budgets, contextMode, memberSlot),
       accounts: filterByContext(data.accounts || [], contextMode, memberSlot),
-      projects: filterProjects(data.projects)
+      projects: filterProjects(data.projects),
+      categories: filterCategoriesByContext(data.categories || [], appContext, memberSlot || user?.memberSlot)
     };
   }, [data, dateRange, appContext, user, memberSlot]);
 
@@ -540,10 +551,18 @@ export default function App() {
   };
 
   const calc = useMemo(() => {
-    // Tasa de cambio fija temporal para normalizar
+    // Tasa de cambio para normalizar divisas extranjeras sin doble conversión
     const EXCHANGE_RATE_USD_MXN = parseFloat(localStorage.getItem("exchangeRate") || "20");
-    const normalize = (amount, currency) => {
+    const normalize = (amount: number, currency?: string, item?: any) => {
       if (!amount) return 0;
+      // Prevenir doble multiplicación: si el movimiento ya fue convertido a Moneda Base en el ledger
+      if (item?.originalAmount !== undefined || item?.exchangeRate !== undefined) {
+        return amount;
+      }
+      const desc = item?.description || item?.desc || item?.source || '';
+      if (/\[USD\s*\$[\d.,]+\s*@\s*\$[\d.,]+\]/i.test(desc)) {
+        return amount;
+      }
       return currency === 'USD' ? amount * EXCHANGE_RATE_USD_MXN : amount;
     };
 
@@ -551,7 +570,7 @@ export default function App() {
     // En modo personal, filteredData.incomes ya viene filtrado con los ingresos personales del usuario activo
     const totalIncome = filteredData.incomes
       .filter(i => (appContext === 'personal' ? true : !i.isPrivate))
-      .reduce((acc, curr) => acc + normalize(curr.amount, curr.currency), 0);
+      .reduce((acc, curr) => acc + normalize(curr.amount, curr.currency, curr), 0);
 
     const {
       netSettlement,

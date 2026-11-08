@@ -397,4 +397,308 @@ export function resolveContextUsers(
   return safeUsers;
 }
 
+/**
+ * 6. calculateCutoffDateRange(cutoffDay, referenceDate)
+ * Calcula el rango de fechas [start, end] en formato ISO 'YYYY-MM-DD' según el día de corte:
+ * - Si cutoffDay <= 1: mes natural (día 1 al último día del mes).
+ * - Si cutoffDay > 1:
+ *   * Si el día de referenceDate <= cutoffDay: del (corte + 1) del mes anterior al corte del mes actual.
+ *   * Si el día de referenceDate > cutoffDay: del (corte + 1) del mes actual al corte del mes siguiente.
+ * Aplica clamp seguro para meses cortos (febrero, meses de 30 días) sin saltar al mes siguiente.
+ */
+export function calculateCutoffDateRange(
+  cutoffDay: number,
+  referenceDate?: Date | string
+): { start: string; end: string } {
+  let year: number;
+  let month: number;
+  let day: number;
+
+  if (typeof referenceDate === 'string') {
+    const match = referenceDate.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+      year = parseInt(match[1], 10);
+      month = parseInt(match[2], 10);
+      day = parseInt(match[3], 10);
+    } else {
+      const d = new Date(referenceDate);
+      year = d.getFullYear();
+      month = d.getMonth() + 1;
+      day = d.getDate();
+    }
+  } else if (referenceDate instanceof Date) {
+    year = referenceDate.getFullYear();
+    month = referenceDate.getMonth() + 1;
+    day = referenceDate.getDate();
+  } else {
+    const now = new Date();
+    year = now.getFullYear();
+    month = now.getMonth() + 1;
+    day = now.getDate();
+  }
+
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const getDaysInMonth = (y: number, m: number) => new Date(Date.UTC(y, m, 0)).getUTCDate();
+
+  // Caso 1: Periodo natural de mes calendario
+  if (!cutoffDay || cutoffDay <= 1) {
+    const daysInCurrentMonth = getDaysInMonth(year, month);
+    return {
+      start: `${year}-${pad(month)}-01`,
+      end: `${year}-${pad(month)}-${pad(daysInCurrentMonth)}`
+    };
+  }
+
+  // Caso 2: cutoffDay > 1
+  let endYear = year;
+  let endMonth = month;
+  let startYear = year;
+  let startMonth = month;
+
+  if (day <= cutoffDay) {
+    // Ciclo termina en el mes actual
+    endYear = year;
+    endMonth = month;
+    if (month === 1) {
+      startYear = year - 1;
+      startMonth = 12;
+    } else {
+      startYear = year;
+      startMonth = month - 1;
+    }
+  } else {
+    // Ciclo termina en el mes siguiente
+    startYear = year;
+    startMonth = month;
+    if (month === 12) {
+      endYear = year + 1;
+      endMonth = 1;
+    } else {
+      endYear = year;
+      endMonth = month + 1;
+    }
+  }
+
+  const daysInEndMonth = getDaysInMonth(endYear, endMonth);
+  const endDay = Math.min(cutoffDay, daysInEndMonth);
+
+  const daysInStartMonth = getDaysInMonth(startYear, startMonth);
+  const prevCutoff = Math.min(cutoffDay, daysInStartMonth);
+
+  let startDayFormatted: string;
+  if (prevCutoff >= daysInStartMonth) {
+    startDayFormatted = `${endYear}-${pad(endMonth)}-01`;
+  } else {
+    startDayFormatted = `${startYear}-${pad(startMonth)}-${pad(prevCutoff + 1)}`;
+  }
+
+  return {
+    start: startDayFormatted,
+    end: `${endYear}-${pad(endMonth)}-${pad(endDay)}`
+  };
+}
+
+/**
+ * Helpers para almacenamiento local de la configuración acumulativa (Sinking Funds) de presupuestos.
+ */
+export const getBudgetCumulativeStorageKey = (householdId?: string, categoryId?: string, ownerType?: string): string => {
+  return `orbita_budget_cumulative_${householdId || 'default'}_${categoryId || 'unknown'}_${ownerType || 'SHARED'}`;
+};
+
+export const getBudgetCumulativeLegacyKey = (householdId?: string, categoryId?: string): string => {
+  return `orbita_budget_cumulative_${householdId || 'default'}_${categoryId || 'unknown'}`;
+};
+
+export const isBudgetCumulativeStored = (householdId?: string, categoryId?: string, ownerType?: string): boolean => {
+  if (typeof window === 'undefined') return false;
+  try {
+    const specific = localStorage.getItem(getBudgetCumulativeStorageKey(householdId, categoryId, ownerType));
+    if (specific !== null) return specific === 'true';
+    const legacy = localStorage.getItem(getBudgetCumulativeLegacyKey(householdId, categoryId));
+    if (legacy !== null) return legacy === 'true';
+    return false;
+  } catch {
+    return false;
+  }
+};
+
+export const saveBudgetCumulativeStored = (
+  householdId: string,
+  categoryId: string,
+  ownerType: string,
+  isCumulative: boolean
+): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    const val = String(Boolean(isCumulative));
+    localStorage.setItem(getBudgetCumulativeStorageKey(householdId, categoryId, ownerType), val);
+    localStorage.setItem(getBudgetCumulativeLegacyKey(householdId, categoryId), val);
+  } catch (e) {
+    console.warn('Error guardando indicador acumulativo de presupuesto', e);
+  }
+};
+
+export interface CumulativeBudgetInput {
+  budget: {
+    id?: string;
+    categoryId?: string;
+    category?: string;
+    period?: string;
+    ownerType?: string;
+    isCumulative?: boolean;
+    initialPeriod?: string;
+    assignedAmount?: number;
+    base?: number;
+    fixedAmount?: number;
+    [key: string]: any;
+  };
+  allExpenses: Array<{
+    id?: string;
+    categoryId?: string;
+    amount?: number;
+    currency?: string;
+    date?: string;
+    isPrivate?: boolean;
+    isShared?: boolean;
+    ownerUid?: string;
+    userId?: string;
+    paidBy?: string;
+    [key: string]: any;
+  }>;
+  currentPeriodStart?: string;
+  currentPeriodEnd?: string;
+  monthlyAllocation?: number;
+  initialPeriod?: string;
+  appContext?: 'household' | 'personal' | string;
+  activeUserId?: string;
+}
+
+export interface CumulativeBudgetResult {
+  currentSpent: number;
+  totalAccumulatedAssigned: number;
+  totalHistoricalSpent: number;
+  accumulatedBalance: number;
+  elapsedMonths: number;
+}
+
+/**
+ * 7. calculateCumulativeBudget(params)
+ * Calcula las métricas acumulativas de un presupuesto (Sinking Fund):
+ * - currentSpent: gastos del periodo activo [start, end].
+ * - isCumulative === true:
+ *   * Determina meses transcurridos desde initialPeriod hasta el periodo activo.
+ *   * totalAccumulatedAssigned = monthlyAllocation * elapsedMonths.
+ *   * totalHistoricalSpent = suma de gastos de esa categoría hasta fin del periodo activo.
+ *   * accumulatedBalance = max(0, totalAccumulatedAssigned - totalHistoricalSpent).
+ * - isCumulative === false:
+ *   * accumulatedBalance = monthlyAllocation - currentSpent.
+ *   * elapsedMonths = 1.
+ * - Respeta aislamiento estricto de contexto (household vs personal).
+ */
+export function calculateCumulativeBudget(
+  params: CumulativeBudgetInput
+): CumulativeBudgetResult {
+  const allocation = Math.max(
+    0,
+    Number(params.monthlyAllocation ?? params.budget?.assignedAmount ?? params.budget?.base ?? params.budget?.fixedAmount ?? 0)
+  );
+
+  const isCumulative = Boolean(params.budget?.isCumulative);
+  const toDateStr = (d?: string | null) => (d ? d.slice(0, 10) : '');
+
+  const start = params.currentPeriodStart || '';
+  const end = params.currentPeriodEnd || '9999-12-31';
+
+  const isPersonal = params.appContext === 'personal';
+  const targetCatId = params.budget?.categoryId;
+  const targetCatName = params.budget?.category ? String(params.budget.category).toLowerCase() : '';
+
+  const matchingExpenses = (params.allExpenses || []).filter((e) => {
+    if (!e) return false;
+    const matchesCat =
+      (targetCatId && e.categoryId === targetCatId) ||
+      (targetCatName && typeof e.category === 'string' && e.category.toLowerCase() === targetCatName);
+    if (!matchesCat) return false;
+
+    const isShared = e.isShared !== undefined ? Boolean(e.isShared) : !e.isPrivate;
+    const owner = e.ownerUid || e.userId || e.paidBy;
+
+    if (isPersonal) {
+      if (isShared) return false;
+      if (params.activeUserId && owner && owner !== params.activeUserId) return false;
+      return true;
+    }
+
+    // Household
+    if (!isShared) return false;
+    return true;
+  });
+
+  let currentSpent = 0;
+  let totalHistoricalSpent = 0;
+
+  for (const exp of matchingExpenses) {
+    const amt = Math.max(0, Number(exp.amount) || 0);
+    const expDate = toDateStr(exp.date);
+
+    if (!expDate || expDate <= end) {
+      totalHistoricalSpent += amt;
+    }
+
+    if (expDate && expDate >= start && expDate <= end) {
+      currentSpent += amt;
+    } else if (!start && (!expDate || expDate <= end)) {
+      currentSpent += amt;
+    }
+  }
+
+  currentSpent = Math.round(currentSpent * 100) / 100;
+  totalHistoricalSpent = Math.round(totalHistoricalSpent * 100) / 100;
+
+  let elapsedMonths = 1;
+  if (isCumulative) {
+    const initPeriodStr =
+      params.initialPeriod ||
+      params.budget?.initialPeriod ||
+      params.budget?.period ||
+      (start ? start.slice(0, 7) : '2026-01-01');
+    const targetPeriodStr = params.currentPeriodEnd
+      ? params.currentPeriodEnd.slice(0, 7)
+      : (params.budget?.period?.slice(0, 7) || '2026-11-01');
+
+    const [yA, mA] = initPeriodStr.slice(0, 7).split('-').map(Number);
+    const [yB, mB] = targetPeriodStr.slice(0, 7).split('-').map(Number);
+
+    if (!isNaN(yA) && !isNaN(mA) && !isNaN(yB) && !isNaN(mB)) {
+      const diff = (yB - yA) * 12 + (mB - mA) + 1;
+      elapsedMonths = Math.max(1, diff);
+    }
+  }
+
+  let totalAccumulatedAssigned = allocation;
+  let accumulatedBalance = 0;
+
+  if (isCumulative) {
+    totalAccumulatedAssigned = Math.round(allocation * elapsedMonths * 100) / 100;
+    accumulatedBalance = Math.max(
+      0,
+      Math.round((totalAccumulatedAssigned - totalHistoricalSpent) * 100) / 100
+    );
+  } else {
+    totalAccumulatedAssigned = allocation;
+    accumulatedBalance = Math.round((allocation - currentSpent) * 100) / 100;
+    elapsedMonths = 1;
+  }
+
+  return {
+    currentSpent,
+    totalAccumulatedAssigned,
+    totalHistoricalSpent,
+    accumulatedBalance,
+    elapsedMonths
+  };
+}
+
+
+
 

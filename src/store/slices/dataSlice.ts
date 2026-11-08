@@ -21,6 +21,7 @@ import {
 } from '../../lib/dataconnect';
 import { mergeAccountsWithBalances } from '../../services/accountService';
 import { Transfer, RecordItem, ProjectContribution, ProjectMilestone } from '../types';
+import { isBudgetCumulativeStored } from '../../utils/budgetCalculations';
 
 export type { Transfer };
 
@@ -268,7 +269,12 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
             icon: resolveBudgetIcon(b.icon || existing?.icon, categoryName),
             splitType: b.splitType || existing?.splitType || 'PROPORTIONAL',
             customUserId: b.customUserId || existing?.customUserId || null,
-            customUserAmount: b.customUserAmount ?? existing?.customUserAmount ?? null
+            customUserAmount: b.customUserAmount ?? existing?.customUserAmount ?? null,
+            isCumulative: b.isCumulative !== undefined
+              ? Boolean(b.isCumulative)
+              : (existing?.isCumulative !== undefined
+                  ? Boolean(existing.isCumulative)
+                  : isBudgetCumulativeStored(houseId, b.category?.id || b.categoryId, b.ownerType))
           };
         });
         const tempBudgets = currentBudgets.filter(b => b.id && typeof b.id === 'string' && b.id.startsWith('temp-'));
@@ -553,7 +559,12 @@ export const createDataSlice: StateCreator<DataSlice & CombinedSlices, [], [], D
             icon: resolveBudgetIcon(b.icon || existing?.icon, categoryName),
             splitType: b.splitType || existing?.splitType || 'PROPORTIONAL',
             customUserId: b.customUserId || existing?.customUserId || null,
-            customUserAmount: b.customUserAmount ?? existing?.customUserAmount ?? null
+            customUserAmount: b.customUserAmount ?? existing?.customUserAmount ?? null,
+            isCumulative: b.isCumulative !== undefined
+              ? Boolean(b.isCumulative)
+              : (existing?.isCumulative !== undefined
+                  ? Boolean(existing.isCumulative)
+                  : isBudgetCumulativeStored(houseId, b.category?.id || b.categoryId, b.ownerType))
           };
         });
         get().setBudgets(mappedBudgets as any);

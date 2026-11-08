@@ -19,6 +19,7 @@ export interface DashboardViewProps {
 export function DashboardView({ data, calc, methods, appContext = 'household' }: DashboardViewProps) {
   const [deleteConfirm, setDeleteConfirm] = useState<{id: string, type: 'income'|'expense'} | null>(null);
   const [movementFilter, setMovementFilter] = useState<'all' | 'income' | 'expense' | 'transfer'>('all');
+  const [distributionMode, setDistributionMode] = useState<'expenses' | 'incomes'>('expenses');
 
   const allExpenses = useAppStore(state => state.expenses);
   const dateRange = useAppStore(state => state.dateRange);
@@ -27,37 +28,72 @@ export function DashboardView({ data, calc, methods, appContext = 'household' }:
 
   // Cálculos de Privacidad y Totales
   const { totalIncome, totalExpense, currentBalance, relevantIncomes, relevantExpenses, chartData, usersWithProportion } = useMemo(() => {
-    const rIncomes = data.incomes;
+    const rIncomes = data.incomes || [];
     const tIncome = rIncomes.reduce((acc: number, curr: any) => acc + Number(curr.amount || 0), 0);
 
-    const rExpenses = data.expenses;
+    const rExpenses = data.expenses || [];
     const tExpense = rExpenses.reduce((acc: number, curr: any) => acc + Number(curr.amount || 0), 0);
 
     const balance = tIncome - tExpense;
 
-    // Data for Chart
-    const expenseByUser = rExpenses.reduce((acc, curr) => {
-      if (!acc[curr.userId]) {
-        const u = data.users.find(user => user.id === curr.userId);
-        acc[curr.userId] = {
-          name: u?.name || 'Desconocido',
-          gasto: 0,
-          fill: u?.id === currentUserId ? '#4f46e5' : '#0ea5e9' // Indigo for me, Sky for others
-        };
-      }
-      acc[curr.userId].gasto += Number(curr.amount || 0);
-      return acc;
-    }, {});
-    const cData = Object.values(expenseByUser);
+    // Data for Chart según distributionMode y appContext
+    const targetItems = distributionMode === 'expenses' ? rExpenses : rIncomes;
+    let cData: any[] = [];
+
+    if (appContext === 'personal') {
+      const PALETTE = ['#4f46e5', '#0ea5e9', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e', '#64748b'];
+      const byCategory = targetItems.reduce((acc: Record<string, any>, curr: any) => {
+        const cat = curr.category || curr.categoryName || 'General';
+        if (!acc[cat]) {
+          acc[cat] = {
+            name: cat,
+            value: 0,
+            gasto: 0,
+            ingreso: 0,
+            fill: PALETTE[Object.keys(acc).length % PALETTE.length]
+          };
+        }
+        const amt = Number(curr.amount || 0);
+        acc[cat].value += amt;
+        acc[cat].gasto += amt;
+        acc[cat].ingreso += amt;
+        return acc;
+      }, {});
+      cData = Object.values(byCategory);
+    } else {
+      const byUser = targetItems.reduce((acc: Record<string, any>, curr: any) => {
+        const uid = curr.userId || curr.ownerUid || curr.paidBy;
+        if (!uid) return acc;
+        if (!acc[uid]) {
+          const u = (data.users || []).find((user: any) => user.id === uid || user.uid === uid);
+          acc[uid] = {
+            name: u?.name || u?.displayName || 'Desconocido',
+            value: 0,
+            gasto: 0,
+            ingreso: 0,
+            fill: uid === currentUserId ? '#4f46e5' : '#0ea5e9' // Indigo para mí, Sky para el partner
+          };
+        }
+        const amt = Number(curr.amount || 0);
+        acc[uid].value += amt;
+        acc[uid].gasto += amt;
+        acc[uid].ingreso += amt;
+        return acc;
+      }, {});
+      cData = Object.values(byUser);
+    }
 
     // Proportions for "Mi Casa"
-    const incomeByUser = rIncomes.reduce((acc, curr) => {
-      acc[curr.userId] = (acc[curr.userId] || 0) + Number(curr.amount || 0);
+    const incomeByUser = rIncomes.reduce((acc: Record<string, number>, curr: any) => {
+      const uid = curr.userId || curr.ownerUid;
+      if (uid) {
+        acc[uid] = (acc[uid] || 0) + Number(curr.amount || 0);
+      }
       return acc;
     }, {});
 
-    const uProportion = data.users.map(u => {
-      const userIncome = incomeByUser[u.id] || 0;
+    const uProportion = (data.users || []).map((u: any) => {
+      const userIncome = incomeByUser[u.id] || incomeByUser[u.uid] || 0;
       const proportion = tIncome > 0 ? (userIncome / tIncome) * 100 : 0;
       return { ...u, proportion };
     });
@@ -71,7 +107,7 @@ export function DashboardView({ data, calc, methods, appContext = 'household' }:
       chartData: cData,
       usersWithProportion: uProportion
     };
-  }, [data.incomes, data.expenses, data.users, currentUserId]);
+  }, [data.incomes, data.expenses, data.users, currentUserId, distributionMode, appContext]);
 
 
   const handleDelete = (id, type) => {
@@ -294,7 +330,36 @@ export function DashboardView({ data, calc, methods, appContext = 'household' }:
           </Card>
 
           <Card>
-            <h2 className="text-lg font-title font-bold text-slate-900 mb-4">Distribución del Gasto</h2>
+            <div className="flex items-center justify-between gap-2 mb-4">
+              <h2 className="text-lg font-title font-bold text-slate-900">
+                {distributionMode === 'expenses' ? 'Distribución del Gasto' : 'Distribución del Ingreso'}
+              </h2>
+              <div className="flex bg-slate-100 p-0.5 rounded-lg shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setDistributionMode('expenses')}
+                  className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${
+                    distributionMode === 'expenses'
+                      ? 'bg-white text-rose-600 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  Gastos
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDistributionMode('incomes')}
+                  className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${
+                    distributionMode === 'incomes'
+                      ? 'bg-white text-emerald-600 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  Ingresos
+                </button>
+              </div>
+            </div>
+
             <div className="h-48 w-full">
               {chartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
@@ -306,21 +371,21 @@ export function DashboardView({ data, calc, methods, appContext = 'household' }:
                       innerRadius={50}
                       outerRadius={70}
                       paddingAngle={5}
-                      dataKey="gasto"
+                      dataKey="value"
                     >
                       {chartData.map((entry: any, index: number) => (
                         <Cell key={`cell-${index}`} fill={entry.fill} />
                       ))}
                     </Pie>
                     <Tooltip 
-                      formatter={(value) => FormatCurrency(value)}
+                      formatter={(value) => FormatCurrency(Number(value) || 0)}
                       contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                     />
                   </PieChartRecharts>
                 </ResponsiveContainer>
               ) : (
                 <div className="flex items-center justify-center h-full text-slate-400 text-sm">
-                  No hay gastos en este periodo
+                  {distributionMode === 'expenses' ? 'No hay gastos en este periodo' : 'No hay ingresos en este periodo'}
                 </div>
               )}
             </div>
@@ -353,8 +418,8 @@ export function DashboardView({ data, calc, methods, appContext = 'household' }:
         </div>
 
         {/* DESGLOSE DE MOVIMIENTOS */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card className="h-full">
+        <div className="lg:col-span-2 space-y-6 flex flex-col">
+          <Card className="h-full flex flex-col flex-1">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
               <h2 className="text-lg font-title font-bold text-slate-900">Desglose de Movimientos</h2>
               
@@ -387,11 +452,11 @@ export function DashboardView({ data, calc, methods, appContext = 'household' }:
             </div>
             
             {allMovements.length === 0 ? (
-              <div className="text-center py-12 text-slate-400">
+              <div className="text-center py-12 text-slate-400 flex-1 flex items-center justify-center">
                 No hay movimientos registrados en este periodo con el filtro actual.
               </div>
             ) : (
-              <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 pb-2">
+              <div className="space-y-3 flex-1 min-h-0 max-h-[720px] overflow-y-auto pr-2 pb-2">
                 {allMovements.map(mov => {
                   const user = data.users.find(u => u.id === (mov.userId || mov.ownerUid));
                   const isIncome = mov.movementType === 'income';

@@ -5,6 +5,7 @@ import { QueryFetchPolicy } from 'firebase/data-connect';
 import { createBudget, updateBudget, deleteBudget as deleteBudgetMutation, OwnerType } from '../../lib/dataconnect';
 import { DataSlice } from './dataSlice';
 import { useToastStore } from '../useToastStore';
+import { saveBudgetCumulativeStored } from '../../utils/budgetCalculations';
 
 export interface BudgetSlice {
   budgets: RecordItem[];
@@ -46,9 +47,14 @@ export const createBudgetSlice: StateCreator<BudgetSlice & AuthSlice & DataSlice
       splitType: item.splitType || 'PROPORTIONAL',
       customUserId: item.customUserId || null,
       customUserAmount: item.customUserAmount || null,
+      isCumulative: Boolean(item.isCumulative),
       id: `temp-${Date.now()}` 
     };
     set({ budgets: [optimisticBudget, ...state.budgets] });
+
+    if (item.isCumulative !== undefined && houseId && item.categoryId) {
+      saveBudgetCumulativeStored(houseId, item.categoryId, optimisticOwnerType, Boolean(item.isCumulative));
+    }
     
     try {
       await createBudget({
@@ -107,9 +113,17 @@ export const createBudgetSlice: StateCreator<BudgetSlice & AuthSlice & DataSlice
       icon: item.icon || b.icon || '🛒',
       splitType: item.splitType !== undefined ? item.splitType : b.splitType,
       customUserId: item.customUserId !== undefined ? item.customUserId : b.customUserId,
-      customUserAmount: item.customUserAmount !== undefined ? item.customUserAmount : b.customUserAmount
+      customUserAmount: item.customUserAmount !== undefined ? item.customUserAmount : b.customUserAmount,
+      isCumulative: item.isCumulative !== undefined ? Boolean(item.isCumulative) : b.isCumulative
     } : b);
     set({ budgets: updatedBudgets });
+
+    if (item.isCumulative !== undefined && houseId) {
+      const catId = item.categoryId || updatedBudgets.find(b => b.id === id)?.categoryId;
+      if (catId) {
+        saveBudgetCumulativeStored(houseId, catId, updatedOwnerType, Boolean(item.isCumulative));
+      }
+    }
 
     try {
       await updateBudget({

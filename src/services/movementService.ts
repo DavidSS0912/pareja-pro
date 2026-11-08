@@ -178,6 +178,8 @@ export interface MovementValidationInput {
   sourceAccountId?: string;
   targetAccountId?: string;
   note?: string;
+  currency?: 'MXN' | 'USD' | string;
+  exchangeRate?: number | string;
   options?: ExpenseAdvancedOptions;
   sourceOwnerUid?: string;
   targetOwnerUid?: string;
@@ -203,6 +205,19 @@ export function validateMovement(input: MovementValidationInput): MovementValida
   const amountRes = validateAmount(input.amount);
   if (!amountRes.valid) {
     return { valid: false, error: amountRes.error };
+  }
+
+  // 2.1 Validación de moneda y tipo de cambio (USD)
+  const isUsd = String(input.currency || '').toUpperCase() === 'USD';
+  let parsedExchangeRate = 1;
+  if (isUsd) {
+    if (input.exchangeRate === undefined || input.exchangeRate === null || input.exchangeRate === '') {
+      return { valid: false, error: 'El tipo de cambio es obligatorio para transacciones en USD' };
+    }
+    parsedExchangeRate = Number(input.exchangeRate);
+    if (Number.isNaN(parsedExchangeRate) || parsedExchangeRate <= 0) {
+      return { valid: false, error: 'El tipo de cambio debe ser un número mayor a cero' };
+    }
   }
 
   // 3. Validación de fecha y existencia en el calendario
@@ -274,7 +289,10 @@ export function validateMovement(input: MovementValidationInput): MovementValida
       return { valid: false, error: 'La cuenta de origen y destino deben ser diferentes' };
     }
     if (input.sourceAccountAvailableBalance !== undefined && amountRes.amount !== undefined) {
-      if (amountRes.amount > input.sourceAccountAvailableBalance) {
+      const effectiveTransferAmount = isUsd
+        ? Math.round(amountRes.amount * parsedExchangeRate * 100) / 100
+        : amountRes.amount;
+      if (effectiveTransferAmount > input.sourceAccountAvailableBalance) {
         const accLabel = input.sourceAccountName ? ` "${input.sourceAccountName}"` : '';
         return {
           valid: false,
@@ -349,9 +367,26 @@ export function buildMovementAction(input: MovementValidationInput): MovementAct
   }
 
   const amountRes = validateAmount(input.amount);
-  const amount = amountRes.amount!;
+  const rawAmount = amountRes.amount!;
   const flags = resolveMovementContext(input.appContext);
-  const note = (input.note || '').trim();
+
+  const isUsd = String(input.currency || '').toUpperCase() === 'USD';
+  let finalAmount = rawAmount;
+  let auditMetadata = '';
+
+  if (isUsd) {
+    const rateNum = Number(input.exchangeRate);
+    finalAmount = Math.round(rawAmount * rateNum * 100) / 100;
+    auditMetadata = `[USD $${rawAmount.toFixed(2)} @ $${rateNum.toFixed(2)}]`;
+  }
+
+  const rawNote = (input.note || '').trim();
+  const buildDescriptionWithAudit = (fallbackName: string) => {
+    if (auditMetadata) {
+      return rawNote ? `${rawNote} ${auditMetadata}` : `${fallbackName} ${auditMetadata}`.trim();
+    }
+    return rawNote || fallbackName;
+  };
 
   if (input.type === 'EXPENSE') {
     const categoryName = input.categoryName || 'Gasto';
@@ -360,6 +395,7 @@ export function buildMovementAction(input: MovementValidationInput): MovementAct
     const isMsi = isPersonal ? false : !!input.options?.isMsi;
     const msiCount = isMsi ? input.options?.msiCount : undefined;
     const normalizedTags = normalizeTags(input.options?.tags);
+    const desc = buildDescriptionWithAudit(categoryName);
 
     const payload: {
       amount: number;
@@ -375,17 +411,27 @@ export function buildMovementAction(input: MovementValidationInput): MovementAct
       isMsi?: boolean;
       msiCount?: number;
       tags?: string[];
+      currency?: string;
+      originalAmount?: number;
+      exchangeRate?: number;
     } = {
-      amount,
+      amount: finalAmount,
       categoryId: input.categoryId!,
       category: categoryName,
       sourceAccountId: input.sourceAccountId!,
       date: input.date,
-      desc: note || categoryName,
+      desc,
       paidBy: input.currentUserId!,
       isPrivate: flags.isPrivate,
       isShared: flags.isShared,
       splitType,
+      ...(isUsd
+        ? {
+            currency: 'USD',
+            originalAmount: rawAmount,
+            exchangeRate: Number(input.exchangeRate),
+          }
+        : {}),
     };
 
     if (isMsi) {
@@ -405,11 +451,11 @@ export function buildMovementAction(input: MovementValidationInput): MovementAct
 
   if (input.type === 'INCOME') {
     const categoryName = input.categoryName || 'Ingreso';
-    const source = note || categoryName;
+    const source = buildDescriptionWithAudit(categoryName);
     return {
       type: 'INCOME',
       payload: {
-        amount,
+        amount: finalAmount,
         categoryId: input.categoryId!,
         accountId: input.targetAccountId!,
         date: input.date,
@@ -419,23 +465,41 @@ export function buildMovementAction(input: MovementValidationInput): MovementAct
         isPrivate: flags.isPrivate,
         isShared: flags.isShared,
         incomeCategoryType: 'Ordinario',
+        ...(isUsd
+          ? {
+              currency: 'USD',
+              originalAmount: rawAmount,
+              exchangeRate: Number(input.exchangeRate),
+            }
+          : {}),
       },
     };
   }
 
   // TRANSFER
+  const transferDesc = auditMetadata
+    ? (rawNote ? `${rawNote} ${auditMetadata}` : auditMetadata)
+    : rawNote;
+
   const transferPayload: any = {
     sourceAccountId: input.sourceAccountId!,
     targetAccountId: input.targetAccountId!,
-    amount,
+    amount: finalAmount,
     date: input.date,
     ownerUid: input.currentUserId!,
     isShared: flags.isShared,
+    ...(isUsd
+      ? {
+          currency: 'USD',
+          originalAmount: rawAmount,
+          exchangeRate: Number(input.exchangeRate),
+        }
+      : {}),
   };
 
-  if (note) {
-    transferPayload.description = note;
-    transferPayload.note = note;
+  if (transferDesc) {
+    transferPayload.description = transferDesc;
+    transferPayload.note = transferDesc;
   }
   if (input.sourceOwnerUid) transferPayload.sourceOwnerUid = input.sourceOwnerUid;
   if (input.targetOwnerUid) transferPayload.targetOwnerUid = input.targetOwnerUid;

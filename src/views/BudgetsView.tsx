@@ -9,7 +9,10 @@ import {
   TrendingUp, 
   Info, 
   Percent, 
-  DollarSign 
+  DollarSign,
+  ChevronDown,
+  ChevronUp,
+  PiggyBank
 } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../store/useAppStore';
@@ -23,9 +26,12 @@ import {
   calculateBudgetAssignedAmount, 
   calculateBudgetSplit,
   resolveBudgetPeriodFromDateRange,
-  resolveContextUsers
+  resolveContextUsers,
+  calculateCumulativeBudget
 } from '../utils/budgetCalculations';
 import { resolveBudgetIcon } from '../store/slices/dataSlice';
+import { filterCategoriesByContext, MemberSlotFilter } from '../services/ownershipService';
+import { Category } from '../store/slices/settingsSlice';
 
 const normalize = (amount?: number | null, currency?: string) => {
   if (!amount) return 0;
@@ -66,6 +72,16 @@ export function BudgetsView({
   const [editingBudget, setEditingBudget] = useState<any | null>(null);
   const [isCategoriesModalOpen, setIsCategoriesModalOpen] = useState(false);
   const [activeModalTab, setActiveModalTab] = useState<'categories' | 'tags'>('categories');
+  const [expandedBudgetIds, setExpandedBudgetIds] = useState<Set<string>>(new Set());
+
+  const toggleBudgetAccordion = (id: string) => {
+    setExpandedBudgetIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   // Form states for in-situ categories & tags management
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -87,7 +103,7 @@ export function BudgetsView({
 
   // Store access for Categories and Tags
   const { 
-    categories, 
+    categories: storeCategories, 
     tags, 
     addCategory, 
     deleteCategoryItem, 
@@ -105,6 +121,12 @@ export function BudgetsView({
       refreshSettings: state.refreshSettings
     }))
   );
+
+  const activeUserSlot = (data?.memberSlot || data?.user?.memberSlot || useAppStore.getState().memberSlot || 'USER_A') as MemberSlotFilter;
+  const categories = useMemo<Category[]>(() => {
+    const sourceCats = data?.categories && data.categories.length > 0 ? data.categories : storeCategories;
+    return filterCategoriesByContext<Category>(sourceCats || [], appContext, activeUserSlot);
+  }, [data?.categories, storeCategories, appContext, activeUserSlot]);
 
   useEffect(() => {
     methods?.fetchBudgetsForMonth?.(selectedMonth);
@@ -152,11 +174,12 @@ export function BudgetsView({
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCategoryName.trim()) return;
+    const catOwnerType = appContext === 'personal' ? (activeUserSlot || 'USER_A') : 'SHARED';
     await addCategory({
       name: newCategoryName.trim(),
       type: newCategoryType,
       color: newCategoryColor,
-      ownerType: 'SHARED'
+      ownerType: catOwnerType
     });
     setNewCategoryName('');
   };
@@ -350,6 +373,33 @@ export function BudgetsView({
             
             const actualSpent = computedSpent > 0 ? computedSpent : 0;
 
+            const currentUid = data?.user?.id || data?.user?.uid;
+            const cumulativeCalc = calculateCumulativeBudget({
+              budget,
+              allExpenses: data?.expenses || [],
+              currentPeriodStart: activeDateRange?.start,
+              currentPeriodEnd: activeDateRange?.end,
+              monthlyAllocation: assignedAmount,
+              initialPeriod: budget.initialPeriod || budget.period,
+              appContext,
+              activeUserId: currentUid,
+            });
+
+            const periodExpenses = (data?.expenses || []).filter(e => {
+              const matchesCategory = (Boolean(budget.categoryId) && e.categoryId === budget.categoryId) ||
+                (Boolean(budget.category) && Boolean(e.category) && budget.category.toLowerCase() === e.category.toLowerCase());
+              const isShared = e.isShared !== undefined ? Boolean(e.isShared) : !e.isPrivate;
+              const owner = e.ownerUid || e.userId || e.paidBy;
+              const matchesContext = appContext === 'personal'
+                ? (!isShared && (!currentUid || owner === currentUid))
+                : isShared;
+              const d = e.date ? e.date.slice(0, 10) : '';
+              const start = activeDateRange?.start || '';
+              const end = activeDateRange?.end || '9999-12-31';
+              const inRange = !d || (d >= start && d <= end);
+              return matchesCategory && matchesContext && inRange;
+            });
+
             const manualContrib = budget.splitType === 'CUSTOM' && budget.customUserId 
               ? { userId: budget.customUserId, amount: Number(budget.customUserAmount) || 0 } 
               : null;
@@ -432,6 +482,12 @@ export function BudgetsView({
                           $ Meta Fija
                         </span>
                       )}
+                      {budget.isCumulative && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200/60">
+                          <PiggyBank size={11} className="stroke-[2.5]" />
+                          Acumulativo
+                        </span>
+                      )}
                       {budget.ownerType && budget.ownerType !== 'SHARED' && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600">
                           Privado
@@ -471,6 +527,31 @@ export function BudgetsView({
                     )}
                   </div>
                 </div>
+
+                {/* Saldo Acumulado a Favor (Sinking Fund) */}
+                {budget.isCumulative && (
+                  <div className="p-3.5 bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-indigo-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 bg-emerald-500/20 text-emerald-700 rounded-xl shrink-0">
+                        <PiggyBank size={18} />
+                      </div>
+                      <div>
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 block">
+                          Saldo Acumulado a Favor (Sinking Fund)
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {cumulativeCalc.elapsedMonths} {cumulativeCalc.elapsedMonths === 1 ? 'mes acumulado' : 'meses acumulados'} · Total: {FormatCurrency(cumulativeCalc.totalAccumulatedAssigned)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-base font-black text-emerald-600 block">
+                        {FormatCurrency(cumulativeCalc.accumulatedBalance)}
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-400">Disponible Sinking Fund</span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Desglose de aportación por integrante */}
                 {budgetSplits.length > 0 && (
@@ -520,6 +601,58 @@ export function BudgetsView({
                     </div>
                   </div>
                 )}
+
+                {/* Mini-historial de movimientos de la categoría en el periodo */}
+                <div className="pt-3 border-t border-slate-100 mt-3">
+                  <button
+                    type="button"
+                    onClick={() => toggleBudgetAccordion(budget.id)}
+                    className="w-full flex items-center justify-between text-xs font-semibold text-slate-600 hover:text-indigo-600 transition-colors py-1"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <span>Movimientos del periodo</span>
+                      <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">
+                        {periodExpenses.length}
+                      </span>
+                    </span>
+                    {expandedBudgetIds.has(budget.id) ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                  </button>
+
+                  {expandedBudgetIds.has(budget.id) && (
+                    <div className="mt-2 space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                      {periodExpenses.length === 0 ? (
+                        <p className="text-xs text-slate-400 text-center py-2 italic">
+                          Sin movimientos en este periodo
+                        </p>
+                      ) : (
+                        periodExpenses.map((exp: any) => {
+                          const payerUser = (data?.users || []).find((u: any) => u.id === (exp.ownerUid || exp.userId || exp.paidBy));
+                          const payerName = payerUser?.displayName || payerUser?.name || 'Pagado';
+                          const formattedDate = exp.date ? exp.date.slice(0, 10) : '';
+
+                          return (
+                            <div
+                              key={exp.id}
+                              className="flex items-center justify-between px-2.5 py-1.5 bg-slate-50 rounded-xl text-xs border border-slate-100"
+                            >
+                              <div className="flex flex-col truncate mr-2">
+                                <span className="font-medium text-slate-700 truncate">
+                                  {exp.description || exp.category || 'Gasto'}
+                                </span>
+                                <span className="text-[10px] text-slate-400">
+                                  {formattedDate} {payerName ? `· ${payerName}` : ''}
+                                </span>
+                              </div>
+                              <span className="font-bold text-slate-800 shrink-0">
+                                {FormatCurrency(normalize(exp.amount, exp.currency))}
+                              </span>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
+                </div>
               </Card>
             );
           })}

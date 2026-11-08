@@ -37,6 +37,8 @@ export interface Budget extends RecordItem {
   splitType?: string;
   customUserId?: string | null;
   customUserAmount?: number | null;
+  isCumulative?: boolean;
+  initialPeriod?: string;
 }
 
 export interface ProjectContribution extends RecordItem {

@@ -20,9 +20,64 @@ export interface Tag {
   name: string;
 }
 
+const getHouseholdCutoffFromStorage = (): number => {
+  if (typeof window === 'undefined') return 1;
+  try {
+    const raw = localStorage.getItem('orbita_cutoff_day_household');
+    const parsed = parseInt(raw || '1', 10);
+    return isNaN(parsed) || parsed < 1 || parsed > 31 ? 1 : parsed;
+  } catch {
+    return 1;
+  }
+};
+
+const getPersonalCutoffKey = (uid?: string | null): string => {
+  return uid ? `orbita_cutoff_day_personal_${uid}` : 'orbita_cutoff_day_personal';
+};
+
+const getPersonalCutoffFromStorage = (uid?: string | null): number => {
+  if (typeof window === 'undefined') return 1;
+  try {
+    const key = getPersonalCutoffKey(uid);
+    const raw = localStorage.getItem(key);
+    const parsed = parseInt(raw || '1', 10);
+    return isNaN(parsed) || parsed < 1 || parsed > 31 ? 1 : parsed;
+  } catch {
+    return 1;
+  }
+};
+
+const getDefaultCurrencyFromStorage = (): string => {
+  if (typeof window === 'undefined') return 'MXN';
+  try {
+    return localStorage.getItem('defaultCurrency') || 'MXN';
+  } catch {
+    return 'MXN';
+  }
+};
+
+const getExchangeRateFromStorage = (): number => {
+  if (typeof window === 'undefined') return 20.0;
+  try {
+    const raw = localStorage.getItem('exchangeRate');
+    const parsed = parseFloat(raw || '20.0');
+    return isNaN(parsed) || parsed <= 0 ? 20.0 : parsed;
+  } catch {
+    return 20.0;
+  }
+};
+
 export interface SettingsSlice {
   categories: Category[];
   tags: Tag[];
+  cutoffDayHousehold: number;
+  cutoffDayPersonal: number;
+  defaultCurrency: string;
+  exchangeRate: number;
+  setCutoffDayHousehold: (day: number) => void;
+  setCutoffDayPersonal: (day: number) => void;
+  setDefaultCurrency: (curr: string) => void;
+  setExchangeRate: (rate: number) => void;
   refreshSettings: () => Promise<void>;
   addCategory: (item: Omit<Category, 'id'>) => Promise<void>;
   updateCategoryItem: (id: string, name: string, color?: string) => Promise<void>;
@@ -34,10 +89,73 @@ export interface SettingsSlice {
 export const createSettingsSlice: StateCreator<SettingsSlice & AuthSlice & DataSlice, [], [], SettingsSlice> = (set, get) => ({
   categories: [],
   tags: [],
+  cutoffDayHousehold: getHouseholdCutoffFromStorage(),
+  cutoffDayPersonal: getPersonalCutoffFromStorage(),
+  defaultCurrency: getDefaultCurrencyFromStorage(),
+  exchangeRate: getExchangeRateFromStorage(),
+
+  setCutoffDayHousehold: (day: number) => {
+    const clamped = Math.max(1, Math.min(31, Math.round(day || 1)));
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('orbita_cutoff_day_household', String(clamped));
+      } catch (err) {
+        console.warn('Error guardando cutoffDayHousehold en localStorage', err);
+      }
+    }
+    set({ cutoffDayHousehold: clamped });
+  },
+
+  setCutoffDayPersonal: (day: number) => {
+    const clamped = Math.max(1, Math.min(31, Math.round(day || 1)));
+    const uid = get().user?.uid;
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(getPersonalCutoffKey(uid), String(clamped));
+      } catch (err) {
+        console.warn('Error guardando cutoffDayPersonal en localStorage', err);
+      }
+    }
+    set({ cutoffDayPersonal: clamped });
+  },
+
+  setDefaultCurrency: (curr: string) => {
+    const safeCurr = curr ? curr.toUpperCase() : 'MXN';
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('defaultCurrency', safeCurr);
+      } catch (err) {
+        console.warn('Error guardando defaultCurrency en localStorage', err);
+      }
+    }
+    set({ defaultCurrency: safeCurr });
+  },
+
+  setExchangeRate: (rate: number) => {
+    const safeRate = Number(rate) > 0 ? Number(rate) : 20.0;
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('exchangeRate', String(safeRate));
+      } catch (err) {
+        console.warn('Error guardando exchangeRate en localStorage', err);
+      }
+    }
+    set({ exchangeRate: safeRate });
+  },
   
   refreshSettings: async () => {
     const state = get();
     const houseId = state.houseId;
+
+    // Sincronizar configuraciones locales reactivamente
+    const currentUid = state.user?.uid;
+    set({
+      cutoffDayHousehold: getHouseholdCutoffFromStorage(),
+      cutoffDayPersonal: getPersonalCutoffFromStorage(currentUid),
+      defaultCurrency: getDefaultCurrencyFromStorage(),
+      exchangeRate: getExchangeRateFromStorage()
+    });
+
     if (!houseId) return;
     
     try {
@@ -65,7 +183,7 @@ export const createSettingsSlice: StateCreator<SettingsSlice & AuthSlice & DataS
         name: item.name,
         type: item.type as any,
         color: item.color || null,
-        ownerType: item.ownerType as any
+        ownerType: (item.ownerType || (state.memberSlot || state.user?.memberSlot || 'SHARED')) as any
       });
       await get().refreshSettings();
       useToastStore.getState().addToast("Categoría agregada", "success");

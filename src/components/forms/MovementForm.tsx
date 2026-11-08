@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   MovementAction,
   MovementValidationInput,
@@ -9,7 +9,13 @@ import {
   saveLastUsedAccountId,
 } from '../../services/movementService';
 import { calculateAccountAvailableBalance } from '../../utils/walletCalculations';
-import { isPartnerAccount, filterTransferTargetAccounts, MemberSlotFilter } from '../../services/ownershipService';
+import {
+  isPartnerAccount,
+  filterSourceAccounts,
+  filterTransferTargetAccounts,
+  filterCategoriesByContext,
+  MemberSlotFilter,
+} from '../../services/ownershipService';
 import { useAppStore } from '../../store/useAppStore';
 import { Button } from '../ui/Button';
 import {
@@ -24,7 +30,7 @@ import {
 } from 'lucide-react';
 
 export interface MovementFormProps {
-  categories?: Array<{ id: string; name: string; type?: string }>;
+  categories?: Array<{ id: string; name: string; type?: string; ownerType?: string; isPrivate?: boolean }>;
   accounts?: Array<{ id: string; name: string; type?: string; ownerType?: string; balance?: number }>;
   currentUserId?: string | null;
   memberSlot?: MemberSlotFilter;
@@ -155,6 +161,23 @@ export function MovementForm({
 
   // F3.2: Etiquetas del store
   const tags = useAppStore((state) => state.tags);
+  const defaultCurrency = useAppStore((state) => state.defaultCurrency || 'MXN');
+  const storeExchangeRate = useAppStore((state) => state.exchangeRate || 20.0);
+
+  const [currency, setCurrency] = useState<'BASE' | 'USD'>(() => {
+    if (initialData?.currency === 'USD') return 'USD';
+    const rawDesc = initialData?.description || initialData?.note || initialData?.desc || '';
+    if (/\[USD\s*\$[\d.]+\s*@\s*[\d.]+\]/i.test(rawDesc)) return 'USD';
+    return 'BASE';
+  });
+
+  const [exchangeRateInput, setExchangeRateInput] = useState<string>(() => {
+    if (initialData?.exchangeRate) return String(initialData.exchangeRate);
+    const rawDesc = initialData?.description || initialData?.note || initialData?.desc || '';
+    const match = rawDesc.match(/\[USD\s*\$[\d.]+\s*@\s*\$([\d.]+)\]/i);
+    if (match) return match[1];
+    return String(storeExchangeRate);
+  });
 
   // Proyectos para cálculo de saldo disponible
   const projects = useAppStore((state) => (state as any).projects || []);
@@ -238,9 +261,30 @@ export function MovementForm({
       setIsMsi(Boolean(initialData.isMsi));
       setMsiCount(initialData.msiCount ? Number(initialData.msiCount) : 3);
       setSelectedTags(Array.isArray(initialData.tags) ? initialData.tags : []);
+
+      if (initialData.currency === 'USD') {
+        setCurrency('USD');
+      } else {
+        const rawD = initialData?.description || initialData?.note || initialData?.desc || '';
+        if (/\[USD\s*\$[\d.]+\s*@\s*[\d.]+\]/i.test(rawD)) {
+          setCurrency('USD');
+        } else {
+          setCurrency('BASE');
+        }
+      }
+
+      if (initialData.exchangeRate) {
+        setExchangeRateInput(String(initialData.exchangeRate));
+      } else {
+        const rawD = initialData?.description || initialData?.note || initialData?.desc || '';
+        const match = rawD.match(/\[USD\s*\$[\d.]+\s*@\s*\$([\d.]+)\]/i);
+        if (match) setExchangeRateInput(match[1]);
+        else setExchangeRateInput(String(storeExchangeRate));
+      }
+
       setIsOptionsOpen(true);
     }
-  }, [initialData, categories]);
+  }, [initialData, categories, storeExchangeRate]);
 
   const getAccountOwnerLabel = (acc: any): string | null => {
     if (!acc) return null;
@@ -278,9 +322,14 @@ export function MovementForm({
     return baseName;
   };
 
-  // Filtrado de catálogos según la modalidad
-  const expenseCategories = categories.filter((c) => c.type === 'EXPENSE' || !c.type);
-  const serverIncomeCats = categories.filter((c) => c.type === 'INCOME');
+  // Filtrado de catálogos según la modalidad y el contexto
+  const contextCategories = useMemo(() => {
+    const slot = activeMemberSlot || (useAppStore.getState() as any).memberSlot || 'USER_A';
+    return filterCategoriesByContext(categories, appContext, slot);
+  }, [categories, appContext, activeMemberSlot]);
+
+  const expenseCategories = contextCategories.filter((c) => c.type === 'EXPENSE' || !c.type);
+  const serverIncomeCats = contextCategories.filter((c) => c.type === 'INCOME');
   const DEFAULT_INCOME_CATS = [
     { id: 'default-inc-1', name: 'Sueldo / Salario', type: 'INCOME' },
     { id: 'default-inc-2', name: 'Honorarios / Ventas', type: 'INCOME' },
@@ -321,6 +370,8 @@ export function MovementForm({
     }
   }, [type, serverIncomeCats.length]);
 
+  const normalizedAppContext: 'household' | 'personal' = appContext === 'personal' ? 'personal' : 'household';
+
   const assetOrBankAccounts = accounts.filter(
     (a) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT' || a.type === 'LIABILITY'
   );
@@ -328,18 +379,25 @@ export function MovementForm({
     (a) => a.type === 'ASSET' || a.type === 'BANK_ACCOUNT'
   );
 
-  // Origen de transferencias: ÚNICAMENTE cuentas propias (ownerType === memberSlot) y de Hogar (ownerType === 'SHARED')
-  // Prohibir y excluir terminantemente las cuentas personales de la pareja como origen de retiro.
-  const transferSourceAccounts = assetOrBankAccounts.filter((a) => !isPartnerAccount(a, activeMemberSlot));
+  // Origen de transferencias según contexto:
+  // En household: cuentas propias y compartidas (excluye pareja)
+  // En personal: exclusivamente cuentas propias (excluye compartidas y pareja)
+  const transferSourceAccounts = filterSourceAccounts(assetOrBankAccounts, activeMemberSlot, normalizedAppContext);
 
-  // Destino de transferencias: permitir cuentas propias, compartidas y cuentas personales de la pareja (solo con opt-in activo en MODO DESTINO CIEGO)
-  const transferTargetAccounts = filterTransferTargetAccounts(assetOrBankAccounts, activeMemberSlot);
+  // Destino de transferencias según contexto:
+  // En household: compartidas, propias y de pareja solo con opt-in activo (Modo Destino Ciego)
+  // En personal: exclusivamente propias y de pareja solo con opt-in activo (excluye compartidas)
+  const transferTargetAccounts = filterTransferTargetAccounts(assetOrBankAccounts, activeMemberSlot, normalizedAppContext);
 
-  // Gastos: excluir cuentas de la pareja; solo permitir cuentas propias y compartidas
-  const expenseAccounts = assetOrBankAccounts.filter((a) => !isPartnerAccount(a, activeMemberSlot));
+  // Gastos según contexto:
+  // En household: cuentas propias y compartidas
+  // En personal: exclusivamente cuentas propias
+  const expenseAccounts = filterSourceAccounts(assetOrBankAccounts, activeMemberSlot, normalizedAppContext);
 
-  // Ingresos: excluir cuentas de la pareja; solo permitir cuentas propias y compartidas
-  const incomeDepositAccounts = depositAccounts.filter((a) => !isPartnerAccount(a, activeMemberSlot));
+  // Ingresos según contexto:
+  // En household: cuentas propias y compartidas
+  // En personal: exclusivamente cuentas propias
+  const incomeDepositAccounts = filterSourceAccounts(depositAccounts, activeMemberSlot, normalizedAppContext);
 
   const selectedSourceAcc = assetOrBankAccounts.find((a) => a.id === sourceAccountId);
   const selectedTargetAcc = assetOrBankAccounts.find((a) => a.id === targetAccountId);
@@ -410,6 +468,26 @@ export function MovementForm({
     }
   }, [type, currentUserId, accounts, sourceTouched, targetTouched, sourceAccountId, targetAccountId, expenseAccounts, incomeDepositAccounts, transferSourceAccounts, selectedSourceAcc, selectedTargetAcc, activeMemberSlot]);
 
+  // Limpieza reactiva si la cuenta seleccionada deja de ser válida por cambio de contexto o cuentas
+  useEffect(() => {
+    if (type === 'EXPENSE') {
+      if (sourceAccountId && !expenseAccounts.some((a) => a.id === sourceAccountId)) {
+        setSourceAccountId(expenseAccounts[0]?.id || '');
+      }
+    } else if (type === 'INCOME') {
+      if (targetAccountId && !incomeDepositAccounts.some((a) => a.id === targetAccountId)) {
+        setTargetAccountId(incomeDepositAccounts[0]?.id || '');
+      }
+    } else if (type === 'TRANSFER') {
+      if (sourceAccountId && !transferSourceAccounts.some((a) => a.id === sourceAccountId)) {
+        setSourceAccountId(transferSourceAccounts[0]?.id || '');
+      }
+      if (targetAccountId && !transferTargetAccounts.some((a) => a.id === targetAccountId)) {
+        setTargetAccountId(transferTargetAccounts.find((a) => a.id !== sourceAccountId)?.id || '');
+      }
+    }
+  }, [type, normalizedAppContext, sourceAccountId, targetAccountId, expenseAccounts, incomeDepositAccounts, transferSourceAccounts, transferTargetAccounts]);
+
   const handleTypeChange = (newType: 'EXPENSE' | 'INCOME' | 'TRANSFER') => {
     setType(newType);
     setFormError(null);
@@ -459,6 +537,23 @@ export function MovementForm({
       return;
     }
 
+    if (normalizedAppContext === 'personal') {
+      if (type === 'EXPENSE' && selectedSourceAcc?.ownerType === 'SHARED') {
+        setFormError('En contexto personal solo puedes usar cuentas propias');
+        return;
+      }
+      if (type === 'INCOME' && selectedTargetAcc?.ownerType === 'SHARED') {
+        setFormError('En contexto personal solo puedes usar cuentas propias');
+        return;
+      }
+      if (type === 'TRANSFER') {
+        if (selectedSourceAcc?.ownerType === 'SHARED' || selectedTargetAcc?.ownerType === 'SHARED') {
+          setFormError('En contexto personal no se permiten transferencias con cuentas compartidas');
+          return;
+        }
+      }
+    }
+
     const activeCatList = type === 'EXPENSE' ? expenseCategories : incomeCategories;
     const selectedCategory = activeCatList.find((c) => c.id === categoryId);
 
@@ -493,6 +588,16 @@ export function MovementForm({
       }
     }
 
+    const isUsd = currency === 'USD';
+    let parsedTc: number | undefined = undefined;
+    if (isUsd) {
+      parsedTc = parseFloat(exchangeRateInput);
+      if (isNaN(parsedTc) || parsedTc <= 0) {
+        setFormError('El tipo de cambio debe ser un número mayor a cero');
+        return;
+      }
+    }
+
     const validationInput: MovementValidationInput = {
       type,
       amount,
@@ -504,6 +609,8 @@ export function MovementForm({
       sourceAccountId: type === 'EXPENSE' || type === 'TRANSFER' ? sourceAccountId : undefined,
       targetAccountId: type === 'INCOME' || type === 'TRANSFER' ? targetAccountId : undefined,
       note: note,
+      currency: isUsd ? 'USD' : defaultCurrency,
+      exchangeRate: isUsd ? parsedTc : undefined,
       sourceOwnerUid,
       targetOwnerUid,
       sourceOwnerType,
@@ -537,12 +644,14 @@ export function MovementForm({
           try {
             const { createCategory, getCategories } = await import('../../lib/dataconnect');
             const catName = selectedCategory?.name || 'Sueldo / Salario';
+            const isPersonal = appContext === 'personal';
+            const catOwnerType = isPersonal ? (activeMemberSlot || 'USER_A') : 'SHARED';
             const createRes = await createCategory({
               householdId: houseId,
               name: catName,
               type: 'INCOME' as any,
               color: '#10b981',
-              ownerType: 'SHARED' as any
+              ownerType: catOwnerType as any
             });
             const realCatId = createRes.data?.category_insert?.id;
             if (realCatId) {
@@ -652,43 +761,109 @@ export function MovementForm({
         </div>
       )}
 
-      {/* Monto y Fecha */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label htmlFor="mov-amount" className={LABEL_CLASS}>
-            Monto ($)
-          </label>
-          <input
-            id="mov-amount"
-            type="number"
-            step="0.01"
-            min="0.01"
-            value={amount}
-            onChange={(e) => {
-              setAmount(e.target.value);
-              if (formError) setFormError(null);
-            }}
-            placeholder="0.00"
-            className={INPUT_CLASS}
-            required
-            disabled={isFormBlocked}
-          />
+      {/* Monto, Moneda y Fecha */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <span className={LABEL_CLASS}>Moneda</span>
+          <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg text-xs font-bold">
+            <button
+              type="button"
+              onClick={() => setCurrency('BASE')}
+              className={`px-3 py-1 rounded-md transition-all ${
+                currency === 'BASE'
+                  ? 'bg-white text-primary shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Moneda Base ({defaultCurrency})
+            </button>
+            <button
+              type="button"
+              onClick={() => setCurrency('USD')}
+              className={`px-3 py-1 rounded-md transition-all ${
+                currency === 'USD'
+                  ? 'bg-white text-emerald-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              USD ($)
+            </button>
+          </div>
         </div>
 
-        <div>
-          <label htmlFor="mov-date" className={LABEL_CLASS}>
-            Fecha
-          </label>
-          <input
-            id="mov-date"
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className={INPUT_CLASS}
-            required
-            disabled={isFormBlocked}
-          />
+        <div className={`grid grid-cols-1 ${currency === 'USD' ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-3`}>
+          <div>
+            <label htmlFor="mov-amount" className={LABEL_CLASS}>
+              {currency === 'USD' ? 'Monto (USD $)' : `Monto (${defaultCurrency} $)`}
+            </label>
+            <input
+              id="mov-amount"
+              type="number"
+              step="0.01"
+              min="0.01"
+              value={amount}
+              onChange={(e) => {
+                setAmount(e.target.value);
+                if (formError) setFormError(null);
+              }}
+              placeholder="0.00"
+              className={INPUT_CLASS}
+              required
+              disabled={isFormBlocked}
+            />
+          </div>
+
+          {currency === 'USD' && (
+            <div>
+              <label htmlFor="mov-tc" className={LABEL_CLASS}>
+                Tipo de Cambio ($ / USD)
+              </label>
+              <input
+                id="mov-tc"
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={exchangeRateInput}
+                onChange={(e) => {
+                  setExchangeRateInput(e.target.value);
+                  if (formError) setFormError(null);
+                }}
+                placeholder="20.00"
+                className={INPUT_CLASS}
+                required
+                disabled={isFormBlocked}
+              />
+            </div>
+          )}
+
+          <div>
+            <label htmlFor="mov-date" className={LABEL_CLASS}>
+              Fecha
+            </label>
+            <input
+              id="mov-date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className={INPUT_CLASS}
+              required
+              disabled={isFormBlocked}
+            />
+          </div>
         </div>
+
+        {currency === 'USD' && (
+          <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs text-emerald-900">
+            <span className="font-medium text-emerald-700">Equivalente contable en {defaultCurrency}:</span>
+            <span className="font-mono font-bold text-sm text-emerald-800">
+              ${((parseFloat(amount) || 0) * (parseFloat(exchangeRateInput) || 0)).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}{' '}
+              {defaultCurrency}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Campos para Gasto */}

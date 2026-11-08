@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { Button } from '../ui/Button';
 import { useAppStore } from '../../store/useAppStore';
 import { inferBudgetCategoryIcon, resolveBudgetIcon, POPULAR_BUDGET_ICONS } from '../../store/slices/dataSlice';
+import { filterCategoriesByContext, MemberSlotFilter } from '../../services/ownershipService';
 
 const budgetSchema = z.object({
   categoryId: z.string().min(1, 'La categoría es obligatoria'),
@@ -17,6 +18,7 @@ const budgetSchema = z.object({
   customUserId: z.string().optional().nullable(),
   customUserAmount: z.number().optional().nullable(),
   shared: z.boolean().optional(),
+  isCumulative: z.boolean().optional(),
 }).superRefine((data, ctx) => {
   if (data.base === undefined || data.base === null || isNaN(data.base)) {
     ctx.addIssue({
@@ -73,7 +75,11 @@ export function BudgetForm({
   onCancel,
   appContext = 'household'
 }: BudgetFormProps) {
-  const categories = useAppStore(state => state.categories);
+  const storeCategories = useAppStore(state => state.categories);
+  const activeUserSlot = (useAppStore.getState().memberSlot || useAppStore.getState().user?.memberSlot || 'USER_A') as MemberSlotFilter;
+  const categories = useMemo(() => {
+    return filterCategoriesByContext(storeCategories || [], appContext, activeUserSlot);
+  }, [storeCategories, appContext, activeUserSlot]);
   const expenseCategories = categories.filter(c => c.type === 'EXPENSE');
   const storeUsers = useAppStore(state => (state as any).users) || [];
   const resolvedUsers = (users && users.length > 0) ? users : storeUsers;
@@ -136,6 +142,7 @@ export function BudgetForm({
         ? Number(initialData.customUserAmount) 
         : 0,
       shared: initialData?.shared ?? (appContext === 'household'),
+      isCumulative: Boolean(initialData?.isCumulative),
     };
   }, [initialData, appContext, userOptions, categories]);
 
@@ -187,6 +194,7 @@ export function BudgetForm({
       customUserId: isHousehold ? customUserIdVal : null,
       customUserAmount: isHousehold ? customUserAmountVal : 0,
       shared: isHousehold,
+      isCumulative: Boolean(data.isCumulative),
       ownerType: isHousehold ? 'SHARED' : activeUserSlot,
     };
 
@@ -309,6 +317,25 @@ export function BudgetForm({
             {errors.base.message}
           </p>
         )}
+      </div>
+
+      {/* Opción Presupuesto Acumulativo / Sinking Fund */}
+      <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl">
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            className="w-4 h-4 mt-0.5 text-indigo-600 bg-white border-slate-300 rounded focus:ring-indigo-500"
+            {...register('isCumulative')}
+          />
+          <div>
+            <span className="block text-sm font-bold text-slate-800">
+              Presupuesto Acumulativo (Sinking Fund)
+            </span>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Acumula el saldo no gastado mes a mes a favor de este fondo (ideal para viajes, seguros, regalos o gastos no mensuales).
+            </p>
+          </div>
+        </label>
       </div>
 
       {/* Configuración de Aportación de Pareja */}

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { User, Users, Coins, Palette, LogOut, Copy, Check, Share2, Building2 } from 'lucide-react';
+import { User, Users, Coins, Palette, LogOut, Copy, Check, Share2, Building2, Calendar } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
 import { Button } from '../components/ui/Button';
 import { authService } from '../services/authService';
 import { createInvitation } from '../services/userService';
+import { calculateCutoffDateRange } from '../utils/budgetCalculations';
 import { ProfileView } from './ProfileView';
 
 export interface SettingsViewProps {
@@ -12,14 +13,35 @@ export interface SettingsViewProps {
 }
 
 export function SettingsView({ onLogout }: SettingsViewProps) {
-  const [activeTab, setActiveTab] = useState<'profile' | 'household' | 'currency' | 'appearance'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'household' | 'period' | 'currency' | 'appearance'>('profile');
   const [, setForceRender] = useState(0);
 
-  const { user, houseId, users, refreshSettings } = useAppStore(useShallow(state => ({
+  const {
+    user,
+    houseId,
+    users,
+    refreshSettings,
+    cutoffDayHousehold,
+    cutoffDayPersonal,
+    storeDefaultCurrency,
+    storeExchangeRate,
+    setCutoffDayHousehold,
+    setCutoffDayPersonal,
+    setDefaultCurrency: setStoreCurrency,
+    setExchangeRate: setStoreExchangeRate
+  } = useAppStore(useShallow(state => ({
     user: state.user,
     houseId: state.houseId,
     users: state.users,
-    refreshSettings: state.refreshSettings
+    refreshSettings: state.refreshSettings,
+    cutoffDayHousehold: state.cutoffDayHousehold,
+    cutoffDayPersonal: state.cutoffDayPersonal,
+    storeDefaultCurrency: state.defaultCurrency,
+    storeExchangeRate: state.exchangeRate,
+    setCutoffDayHousehold: state.setCutoffDayHousehold,
+    setCutoffDayPersonal: state.setCutoffDayPersonal,
+    setDefaultCurrency: state.setDefaultCurrency,
+    setExchangeRate: state.setExchangeRate
   })));
 
   useEffect(() => {
@@ -59,15 +81,47 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
     }
   };
 
+  // Días de Corte
+  const [householdCutoffInput, setHouseholdCutoffInput] = useState<number>(cutoffDayHousehold || 1);
+  const [personalCutoffInput, setPersonalCutoffInput] = useState<number>(cutoffDayPersonal || 1);
+  const [periodSaved, setPeriodSaved] = useState(false);
+
+  useEffect(() => {
+    if (cutoffDayHousehold) setHouseholdCutoffInput(cutoffDayHousehold);
+  }, [cutoffDayHousehold]);
+
+  useEffect(() => {
+    if (cutoffDayPersonal) setPersonalCutoffInput(cutoffDayPersonal);
+  }, [cutoffDayPersonal]);
+
+  const handleSaveCutoffs = (e: React.FormEvent) => {
+    e.preventDefault();
+    setCutoffDayHousehold(householdCutoffInput);
+    setCutoffDayPersonal(personalCutoffInput);
+    setPeriodSaved(true);
+    setTimeout(() => setPeriodSaved(false), 2500);
+  };
+
   // Moneda y Tipo de Cambio
-  const [defaultCurrency, setDefaultCurrency] = useState(() => localStorage.getItem('defaultCurrency') || 'MXN');
-  const [exchangeRate, setExchangeRate] = useState(() => localStorage.getItem('exchangeRate') || '20');
+  const [defaultCurrency, setDefaultCurrency] = useState(() => storeDefaultCurrency || localStorage.getItem('defaultCurrency') || 'MXN');
+  const [exchangeRate, setExchangeRate] = useState(() => String(storeExchangeRate || localStorage.getItem('exchangeRate') || '20'));
   const [exchangeSaved, setExchangeSaved] = useState(false);
+
+  useEffect(() => {
+    if (storeDefaultCurrency) setDefaultCurrency(storeDefaultCurrency);
+  }, [storeDefaultCurrency]);
+
+  useEffect(() => {
+    if (storeExchangeRate) setExchangeRate(String(storeExchangeRate));
+  }, [storeExchangeRate]);
 
   const handleSaveCurrency = (e: React.FormEvent) => {
     e.preventDefault();
+    const rateNum = parseFloat(exchangeRate) || 20;
+    setStoreCurrency(defaultCurrency);
+    setStoreExchangeRate(rateNum);
     localStorage.setItem('defaultCurrency', defaultCurrency);
-    localStorage.setItem('exchangeRate', exchangeRate);
+    localStorage.setItem('exchangeRate', String(rateNum));
     setExchangeSaved(true);
     setTimeout(() => setExchangeSaved(false), 2500);
   };
@@ -112,6 +166,17 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
           >
             <Users size={18} />
             <span>Integrantes del Hogar</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('period')}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-150 font-medium text-sm ${
+              activeTab === 'period' ? 'bg-primary/10 text-primary font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <Calendar size={18} />
+            <span>Periodo y Días de Corte</span>
           </button>
 
           <button
@@ -253,6 +318,93 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
 
             {/* Integrantes, abandono de hogar y gestión de invitaciones */}
             <ProfileView />
+          </div>
+        )}
+
+        {/* 2.5 PERIODO Y DÍAS DE CORTE */}
+        {activeTab === 'period' && (
+          <div className="space-y-6 max-w-xl">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 font-title">Periodo y Días de Corte</h3>
+              <p className="text-sm text-slate-500 mt-1">Configura el día de corte mensual independiente para finanzas del Hogar y finanzas Personales.</p>
+            </div>
+
+            <form onSubmit={handleSaveCutoffs} className="space-y-6">
+              {/* Corte Hogar */}
+              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label htmlFor="cutoff-household" className="block text-sm font-bold text-slate-800">Día de Corte del Hogar</label>
+                    <p className="text-xs text-slate-500 mt-0.5">Aplica para gastos, presupuestos y balance compartido del hogar.</p>
+                  </div>
+                  <div className="w-24">
+                    <input
+                      id="cutoff-household"
+                      type="number"
+                      min={1}
+                      max={31}
+                      value={householdCutoffInput}
+                      onChange={e => setHouseholdCutoffInput(Math.max(1, Math.min(31, parseInt(e.target.value, 10) || 1)))}
+                      className="w-full px-3 py-2 text-center font-bold text-slate-900 bg-white border border-slate-200 rounded-xl text-base focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-3 bg-white rounded-xl border border-slate-200/70 text-xs text-slate-600 flex items-center justify-between">
+                  <span className="font-medium text-slate-500">Ciclo activo calculado:</span>
+                  <span className="font-mono font-bold text-indigo-600">
+                    {calculateCutoffDateRange(householdCutoffInput).start} al {calculateCutoffDateRange(householdCutoffInput).end}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  {householdCutoffInput <= 1
+                    ? 'Día 1: Periodo natural de mes calendario completo (del 1 al último día del mes).'
+                    : `Día ${householdCutoffInput}: Periodo desde el día ${householdCutoffInput + 1} del mes anterior hasta el día ${householdCutoffInput} del mes actual.`}
+                </p>
+              </div>
+
+              {/* Corte Personal */}
+              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label htmlFor="cutoff-personal" className="block text-sm font-bold text-slate-800">Día de Corte Personal</label>
+                    <p className="text-xs text-slate-500 mt-0.5">Aplica exclusivamente para tus movimientos y presupuestos personales.</p>
+                  </div>
+                  <div className="w-24">
+                    <input
+                      id="cutoff-personal"
+                      type="number"
+                      min={1}
+                      max={31}
+                      value={personalCutoffInput}
+                      onChange={e => setPersonalCutoffInput(Math.max(1, Math.min(31, parseInt(e.target.value, 10) || 1)))}
+                      className="w-full px-3 py-2 text-center font-bold text-slate-900 bg-white border border-slate-200 rounded-xl text-base focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-3 bg-white rounded-xl border border-slate-200/70 text-xs text-slate-600 flex items-center justify-between">
+                  <span className="font-medium text-slate-500">Ciclo activo calculado:</span>
+                  <span className="font-mono font-bold text-emerald-600">
+                    {calculateCutoffDateRange(personalCutoffInput).start} al {calculateCutoffDateRange(personalCutoffInput).end}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  {personalCutoffInput <= 1
+                    ? 'Día 1: Periodo natural de mes calendario completo.'
+                    : `Día ${personalCutoffInput}: Periodo desde el día ${personalCutoffInput + 1} del mes anterior hasta el día ${personalCutoffInput} del mes actual.`}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <Button type="submit">Guardar Días de Corte</Button>
+                {periodSaved && (
+                  <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
+                    <Check size={15} /> Guardado exitosamente
+                  </span>
+                )}
+              </div>
+            </form>
           </div>
         )}
 
