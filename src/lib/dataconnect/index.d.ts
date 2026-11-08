@@ -1149,6 +1149,306 @@ export interface User_Key {
   __typename?: 'User_Key';
 }
 
+interface GetHouseholdAccountsRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetHouseholdAccountsVariables): QueryRef<GetHouseholdAccountsData, GetHouseholdAccountsVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetHouseholdAccountsVariables): QueryRef<GetHouseholdAccountsData, GetHouseholdAccountsVariables>;
+  operationName: string;
+}
+export const getHouseholdAccountsRef: GetHouseholdAccountsRef;
+
+export function getHouseholdAccounts(vars: GetHouseholdAccountsVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdAccountsData, GetHouseholdAccountsVariables>;
+export function getHouseholdAccounts(dc: DataConnect, vars: GetHouseholdAccountsVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdAccountsData, GetHouseholdAccountsVariables>;
+
+interface GetHouseholdNetBalancesRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetHouseholdNetBalancesVariables): QueryRef<GetHouseholdNetBalancesData, GetHouseholdNetBalancesVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetHouseholdNetBalancesVariables): QueryRef<GetHouseholdNetBalancesData, GetHouseholdNetBalancesVariables>;
+  operationName: string;
+}
+export const getHouseholdNetBalancesRef: GetHouseholdNetBalancesRef;
+
+export function getHouseholdNetBalances(vars: GetHouseholdNetBalancesVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdNetBalancesData, GetHouseholdNetBalancesVariables>;
+export function getHouseholdNetBalances(dc: DataConnect, vars: GetHouseholdNetBalancesVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdNetBalancesData, GetHouseholdNetBalancesVariables>;
+
+interface GetBudgetsRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetBudgetsVariables): QueryRef<GetBudgetsData, GetBudgetsVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetBudgetsVariables): QueryRef<GetBudgetsData, GetBudgetsVariables>;
+  operationName: string;
+}
+export const getBudgetsRef: GetBudgetsRef;
+
+export function getBudgets(vars: GetBudgetsVariables, options?: ExecuteQueryOptions): QueryPromise<GetBudgetsData, GetBudgetsVariables>;
+export function getBudgets(dc: DataConnect, vars: GetBudgetsVariables, options?: ExecuteQueryOptions): QueryPromise<GetBudgetsData, GetBudgetsVariables>;
+
+interface GetBudgetsByMonthRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetBudgetsByMonthVariables): QueryRef<GetBudgetsByMonthData, GetBudgetsByMonthVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetBudgetsByMonthVariables): QueryRef<GetBudgetsByMonthData, GetBudgetsByMonthVariables>;
+  operationName: string;
+}
+export const getBudgetsByMonthRef: GetBudgetsByMonthRef;
+
+export function getBudgetsByMonth(vars: GetBudgetsByMonthVariables, options?: ExecuteQueryOptions): QueryPromise<GetBudgetsByMonthData, GetBudgetsByMonthVariables>;
+export function getBudgetsByMonth(dc: DataConnect, vars: GetBudgetsByMonthVariables, options?: ExecuteQueryOptions): QueryPromise<GetBudgetsByMonthData, GetBudgetsByMonthVariables>;
+
+interface GetUnassignedCashRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetUnassignedCashVariables): QueryRef<GetUnassignedCashData, GetUnassignedCashVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetUnassignedCashVariables): QueryRef<GetUnassignedCashData, GetUnassignedCashVariables>;
+  operationName: string;
+}
+export const getUnassignedCashRef: GetUnassignedCashRef;
+
+export function getUnassignedCash(vars: GetUnassignedCashVariables, options?: ExecuteQueryOptions): QueryPromise<GetUnassignedCashData, GetUnassignedCashVariables>;
+export function getUnassignedCash(dc: DataConnect, vars: GetUnassignedCashVariables, options?: ExecuteQueryOptions): QueryPromise<GetUnassignedCashData, GetUnassignedCashVariables>;
+
+interface GetSavingsProjectsRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetSavingsProjectsVariables): QueryRef<GetSavingsProjectsData, GetSavingsProjectsVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetSavingsProjectsVariables): QueryRef<GetSavingsProjectsData, GetSavingsProjectsVariables>;
+  operationName: string;
+}
+export const getSavingsProjectsRef: GetSavingsProjectsRef;
+
+export function getSavingsProjects(vars: GetSavingsProjectsVariables, options?: ExecuteQueryOptions): QueryPromise<GetSavingsProjectsData, GetSavingsProjectsVariables>;
+export function getSavingsProjects(dc: DataConnect, vars: GetSavingsProjectsVariables, options?: ExecuteQueryOptions): QueryPromise<GetSavingsProjectsData, GetSavingsProjectsVariables>;
+
+interface GetProjectContributionsByHouseholdRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetProjectContributionsByHouseholdVariables): QueryRef<GetProjectContributionsByHouseholdData, GetProjectContributionsByHouseholdVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetProjectContributionsByHouseholdVariables): QueryRef<GetProjectContributionsByHouseholdData, GetProjectContributionsByHouseholdVariables>;
+  operationName: string;
+}
+export const getProjectContributionsByHouseholdRef: GetProjectContributionsByHouseholdRef;
+
+export function getProjectContributionsByHousehold(vars: GetProjectContributionsByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetProjectContributionsByHouseholdData, GetProjectContributionsByHouseholdVariables>;
+export function getProjectContributionsByHousehold(dc: DataConnect, vars: GetProjectContributionsByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetProjectContributionsByHouseholdData, GetProjectContributionsByHouseholdVariables>;
+
+interface GetProjectMilestonesByHouseholdRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetProjectMilestonesByHouseholdVariables): QueryRef<GetProjectMilestonesByHouseholdData, GetProjectMilestonesByHouseholdVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetProjectMilestonesByHouseholdVariables): QueryRef<GetProjectMilestonesByHouseholdData, GetProjectMilestonesByHouseholdVariables>;
+  operationName: string;
+}
+export const getProjectMilestonesByHouseholdRef: GetProjectMilestonesByHouseholdRef;
+
+export function getProjectMilestonesByHousehold(vars: GetProjectMilestonesByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetProjectMilestonesByHouseholdData, GetProjectMilestonesByHouseholdVariables>;
+export function getProjectMilestonesByHousehold(dc: DataConnect, vars: GetProjectMilestonesByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetProjectMilestonesByHouseholdData, GetProjectMilestonesByHouseholdVariables>;
+
+interface GetExternalAssetsRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetExternalAssetsVariables): QueryRef<GetExternalAssetsData, GetExternalAssetsVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetExternalAssetsVariables): QueryRef<GetExternalAssetsData, GetExternalAssetsVariables>;
+  operationName: string;
+}
+export const getExternalAssetsRef: GetExternalAssetsRef;
+
+export function getExternalAssets(vars: GetExternalAssetsVariables, options?: ExecuteQueryOptions): QueryPromise<GetExternalAssetsData, GetExternalAssetsVariables>;
+export function getExternalAssets(dc: DataConnect, vars: GetExternalAssetsVariables, options?: ExecuteQueryOptions): QueryPromise<GetExternalAssetsData, GetExternalAssetsVariables>;
+
+interface GetNetWorthRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetNetWorthVariables): QueryRef<GetNetWorthData, GetNetWorthVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetNetWorthVariables): QueryRef<GetNetWorthData, GetNetWorthVariables>;
+  operationName: string;
+}
+export const getNetWorthRef: GetNetWorthRef;
+
+export function getNetWorth(vars: GetNetWorthVariables, options?: ExecuteQueryOptions): QueryPromise<GetNetWorthData, GetNetWorthVariables>;
+export function getNetWorth(dc: DataConnect, vars: GetNetWorthVariables, options?: ExecuteQueryOptions): QueryPromise<GetNetWorthData, GetNetWorthVariables>;
+
+interface GetLatestRateRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetLatestRateVariables): QueryRef<GetLatestRateData, GetLatestRateVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetLatestRateVariables): QueryRef<GetLatestRateData, GetLatestRateVariables>;
+  operationName: string;
+}
+export const getLatestRateRef: GetLatestRateRef;
+
+export function getLatestRate(vars: GetLatestRateVariables, options?: ExecuteQueryOptions): QueryPromise<GetLatestRateData, GetLatestRateVariables>;
+export function getLatestRate(dc: DataConnect, vars: GetLatestRateVariables, options?: ExecuteQueryOptions): QueryPromise<GetLatestRateData, GetLatestRateVariables>;
+
+interface GetExpensesByHouseholdRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetExpensesByHouseholdVariables): QueryRef<GetExpensesByHouseholdData, GetExpensesByHouseholdVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetExpensesByHouseholdVariables): QueryRef<GetExpensesByHouseholdData, GetExpensesByHouseholdVariables>;
+  operationName: string;
+}
+export const getExpensesByHouseholdRef: GetExpensesByHouseholdRef;
+
+export function getExpensesByHousehold(vars: GetExpensesByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetExpensesByHouseholdData, GetExpensesByHouseholdVariables>;
+export function getExpensesByHousehold(dc: DataConnect, vars: GetExpensesByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetExpensesByHouseholdData, GetExpensesByHouseholdVariables>;
+
+interface GetIncomesByHouseholdRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetIncomesByHouseholdVariables): QueryRef<GetIncomesByHouseholdData, GetIncomesByHouseholdVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetIncomesByHouseholdVariables): QueryRef<GetIncomesByHouseholdData, GetIncomesByHouseholdVariables>;
+  operationName: string;
+}
+export const getIncomesByHouseholdRef: GetIncomesByHouseholdRef;
+
+export function getIncomesByHousehold(vars: GetIncomesByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetIncomesByHouseholdData, GetIncomesByHouseholdVariables>;
+export function getIncomesByHousehold(dc: DataConnect, vars: GetIncomesByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetIncomesByHouseholdData, GetIncomesByHouseholdVariables>;
+
+interface GetInternalTransfersByHouseholdRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetInternalTransfersByHouseholdVariables): QueryRef<GetInternalTransfersByHouseholdData, GetInternalTransfersByHouseholdVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetInternalTransfersByHouseholdVariables): QueryRef<GetInternalTransfersByHouseholdData, GetInternalTransfersByHouseholdVariables>;
+  operationName: string;
+}
+export const getInternalTransfersByHouseholdRef: GetInternalTransfersByHouseholdRef;
+
+export function getInternalTransfersByHousehold(vars: GetInternalTransfersByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetInternalTransfersByHouseholdData, GetInternalTransfersByHouseholdVariables>;
+export function getInternalTransfersByHousehold(dc: DataConnect, vars: GetInternalTransfersByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetInternalTransfersByHouseholdData, GetInternalTransfersByHouseholdVariables>;
+
+interface GetCurrentUserRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): QueryRef<GetCurrentUserData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): QueryRef<GetCurrentUserData, undefined>;
+  operationName: string;
+}
+export const getCurrentUserRef: GetCurrentUserRef;
+
+export function getCurrentUser(options?: ExecuteQueryOptions): QueryPromise<GetCurrentUserData, undefined>;
+export function getCurrentUser(dc: DataConnect, options?: ExecuteQueryOptions): QueryPromise<GetCurrentUserData, undefined>;
+
+interface GetCategoriesRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetCategoriesVariables): QueryRef<GetCategoriesData, GetCategoriesVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetCategoriesVariables): QueryRef<GetCategoriesData, GetCategoriesVariables>;
+  operationName: string;
+}
+export const getCategoriesRef: GetCategoriesRef;
+
+export function getCategories(vars: GetCategoriesVariables, options?: ExecuteQueryOptions): QueryPromise<GetCategoriesData, GetCategoriesVariables>;
+export function getCategories(dc: DataConnect, vars: GetCategoriesVariables, options?: ExecuteQueryOptions): QueryPromise<GetCategoriesData, GetCategoriesVariables>;
+
+interface GetTagsRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetTagsVariables): QueryRef<GetTagsData, GetTagsVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetTagsVariables): QueryRef<GetTagsData, GetTagsVariables>;
+  operationName: string;
+}
+export const getTagsRef: GetTagsRef;
+
+export function getTags(vars: GetTagsVariables, options?: ExecuteQueryOptions): QueryPromise<GetTagsData, GetTagsVariables>;
+export function getTags(dc: DataConnect, vars: GetTagsVariables, options?: ExecuteQueryOptions): QueryPromise<GetTagsData, GetTagsVariables>;
+
+interface GetJournalTagsRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetJournalTagsVariables): QueryRef<GetJournalTagsData, GetJournalTagsVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetJournalTagsVariables): QueryRef<GetJournalTagsData, GetJournalTagsVariables>;
+  operationName: string;
+}
+export const getJournalTagsRef: GetJournalTagsRef;
+
+export function getJournalTags(vars: GetJournalTagsVariables, options?: ExecuteQueryOptions): QueryPromise<GetJournalTagsData, GetJournalTagsVariables>;
+export function getJournalTags(dc: DataConnect, vars: GetJournalTagsVariables, options?: ExecuteQueryOptions): QueryPromise<GetJournalTagsData, GetJournalTagsVariables>;
+
+interface GetSettlementsRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetSettlementsVariables): QueryRef<GetSettlementsData, GetSettlementsVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetSettlementsVariables): QueryRef<GetSettlementsData, GetSettlementsVariables>;
+  operationName: string;
+}
+export const getSettlementsRef: GetSettlementsRef;
+
+export function getSettlements(vars: GetSettlementsVariables, options?: ExecuteQueryOptions): QueryPromise<GetSettlementsData, GetSettlementsVariables>;
+export function getSettlements(dc: DataConnect, vars: GetSettlementsVariables, options?: ExecuteQueryOptions): QueryPromise<GetSettlementsData, GetSettlementsVariables>;
+
+interface GetJournalBalanceV2Ref {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetJournalBalanceV2Variables): QueryRef<GetJournalBalanceV2Data, GetJournalBalanceV2Variables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetJournalBalanceV2Variables): QueryRef<GetJournalBalanceV2Data, GetJournalBalanceV2Variables>;
+  operationName: string;
+}
+export const getJournalBalanceV2Ref: GetJournalBalanceV2Ref;
+
+export function getJournalBalanceV2(vars: GetJournalBalanceV2Variables, options?: ExecuteQueryOptions): QueryPromise<GetJournalBalanceV2Data, GetJournalBalanceV2Variables>;
+export function getJournalBalanceV2(dc: DataConnect, vars: GetJournalBalanceV2Variables, options?: ExecuteQueryOptions): QueryPromise<GetJournalBalanceV2Data, GetJournalBalanceV2Variables>;
+
+interface GetInvitationRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetInvitationVariables): QueryRef<GetInvitationData, GetInvitationVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetInvitationVariables): QueryRef<GetInvitationData, GetInvitationVariables>;
+  operationName: string;
+}
+export const getInvitationRef: GetInvitationRef;
+
+export function getInvitation(vars: GetInvitationVariables, options?: ExecuteQueryOptions): QueryPromise<GetInvitationData, GetInvitationVariables>;
+export function getInvitation(dc: DataConnect, vars: GetInvitationVariables, options?: ExecuteQueryOptions): QueryPromise<GetInvitationData, GetInvitationVariables>;
+
+interface GetHouseholdMembersRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetHouseholdMembersVariables): QueryRef<GetHouseholdMembersData, GetHouseholdMembersVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetHouseholdMembersVariables): QueryRef<GetHouseholdMembersData, GetHouseholdMembersVariables>;
+  operationName: string;
+}
+export const getHouseholdMembersRef: GetHouseholdMembersRef;
+
+export function getHouseholdMembers(vars: GetHouseholdMembersVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdMembersData, GetHouseholdMembersVariables>;
+export function getHouseholdMembers(dc: DataConnect, vars: GetHouseholdMembersVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdMembersData, GetHouseholdMembersVariables>;
+
+interface GetPendingInvitationsRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetPendingInvitationsVariables): QueryRef<GetPendingInvitationsData, GetPendingInvitationsVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetPendingInvitationsVariables): QueryRef<GetPendingInvitationsData, GetPendingInvitationsVariables>;
+  operationName: string;
+}
+export const getPendingInvitationsRef: GetPendingInvitationsRef;
+
+export function getPendingInvitations(vars: GetPendingInvitationsVariables, options?: ExecuteQueryOptions): QueryPromise<GetPendingInvitationsData, GetPendingInvitationsVariables>;
+export function getPendingInvitations(dc: DataConnect, vars: GetPendingInvitationsVariables, options?: ExecuteQueryOptions): QueryPromise<GetPendingInvitationsData, GetPendingInvitationsVariables>;
+
+interface NegativeEntriesRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): QueryRef<NegativeEntriesData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): QueryRef<NegativeEntriesData, undefined>;
+  operationName: string;
+}
+export const negativeEntriesRef: NegativeEntriesRef;
+
+export function negativeEntries(options?: ExecuteQueryOptions): QueryPromise<NegativeEntriesData, undefined>;
+export function negativeEntries(dc: DataConnect, options?: ExecuteQueryOptions): QueryPromise<NegativeEntriesData, undefined>;
+
+interface UnbalancedJournalsRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): QueryRef<UnbalancedJournalsData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): QueryRef<UnbalancedJournalsData, undefined>;
+  operationName: string;
+}
+export const unbalancedJournalsRef: UnbalancedJournalsRef;
+
+export function unbalancedJournals(options?: ExecuteQueryOptions): QueryPromise<UnbalancedJournalsData, undefined>;
+export function unbalancedJournals(dc: DataConnect, options?: ExecuteQueryOptions): QueryPromise<UnbalancedJournalsData, undefined>;
+
 interface CreateJournalWithEntriesRef {
   /* Allow users to create refs without passing in DataConnect */
   (vars: CreateJournalWithEntriesVariables): MutationRef<CreateJournalWithEntriesData, CreateJournalWithEntriesVariables>;
@@ -1676,304 +1976,4 @@ export const updateUserProfileRef: UpdateUserProfileRef;
 
 export function updateUserProfile(vars?: UpdateUserProfileVariables): MutationPromise<UpdateUserProfileData, UpdateUserProfileVariables>;
 export function updateUserProfile(dc: DataConnect, vars?: UpdateUserProfileVariables): MutationPromise<UpdateUserProfileData, UpdateUserProfileVariables>;
-
-interface GetHouseholdAccountsRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetHouseholdAccountsVariables): QueryRef<GetHouseholdAccountsData, GetHouseholdAccountsVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetHouseholdAccountsVariables): QueryRef<GetHouseholdAccountsData, GetHouseholdAccountsVariables>;
-  operationName: string;
-}
-export const getHouseholdAccountsRef: GetHouseholdAccountsRef;
-
-export function getHouseholdAccounts(vars: GetHouseholdAccountsVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdAccountsData, GetHouseholdAccountsVariables>;
-export function getHouseholdAccounts(dc: DataConnect, vars: GetHouseholdAccountsVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdAccountsData, GetHouseholdAccountsVariables>;
-
-interface GetHouseholdNetBalancesRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetHouseholdNetBalancesVariables): QueryRef<GetHouseholdNetBalancesData, GetHouseholdNetBalancesVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetHouseholdNetBalancesVariables): QueryRef<GetHouseholdNetBalancesData, GetHouseholdNetBalancesVariables>;
-  operationName: string;
-}
-export const getHouseholdNetBalancesRef: GetHouseholdNetBalancesRef;
-
-export function getHouseholdNetBalances(vars: GetHouseholdNetBalancesVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdNetBalancesData, GetHouseholdNetBalancesVariables>;
-export function getHouseholdNetBalances(dc: DataConnect, vars: GetHouseholdNetBalancesVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdNetBalancesData, GetHouseholdNetBalancesVariables>;
-
-interface GetBudgetsRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetBudgetsVariables): QueryRef<GetBudgetsData, GetBudgetsVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetBudgetsVariables): QueryRef<GetBudgetsData, GetBudgetsVariables>;
-  operationName: string;
-}
-export const getBudgetsRef: GetBudgetsRef;
-
-export function getBudgets(vars: GetBudgetsVariables, options?: ExecuteQueryOptions): QueryPromise<GetBudgetsData, GetBudgetsVariables>;
-export function getBudgets(dc: DataConnect, vars: GetBudgetsVariables, options?: ExecuteQueryOptions): QueryPromise<GetBudgetsData, GetBudgetsVariables>;
-
-interface GetBudgetsByMonthRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetBudgetsByMonthVariables): QueryRef<GetBudgetsByMonthData, GetBudgetsByMonthVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetBudgetsByMonthVariables): QueryRef<GetBudgetsByMonthData, GetBudgetsByMonthVariables>;
-  operationName: string;
-}
-export const getBudgetsByMonthRef: GetBudgetsByMonthRef;
-
-export function getBudgetsByMonth(vars: GetBudgetsByMonthVariables, options?: ExecuteQueryOptions): QueryPromise<GetBudgetsByMonthData, GetBudgetsByMonthVariables>;
-export function getBudgetsByMonth(dc: DataConnect, vars: GetBudgetsByMonthVariables, options?: ExecuteQueryOptions): QueryPromise<GetBudgetsByMonthData, GetBudgetsByMonthVariables>;
-
-interface GetUnassignedCashRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetUnassignedCashVariables): QueryRef<GetUnassignedCashData, GetUnassignedCashVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetUnassignedCashVariables): QueryRef<GetUnassignedCashData, GetUnassignedCashVariables>;
-  operationName: string;
-}
-export const getUnassignedCashRef: GetUnassignedCashRef;
-
-export function getUnassignedCash(vars: GetUnassignedCashVariables, options?: ExecuteQueryOptions): QueryPromise<GetUnassignedCashData, GetUnassignedCashVariables>;
-export function getUnassignedCash(dc: DataConnect, vars: GetUnassignedCashVariables, options?: ExecuteQueryOptions): QueryPromise<GetUnassignedCashData, GetUnassignedCashVariables>;
-
-interface GetSavingsProjectsRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetSavingsProjectsVariables): QueryRef<GetSavingsProjectsData, GetSavingsProjectsVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetSavingsProjectsVariables): QueryRef<GetSavingsProjectsData, GetSavingsProjectsVariables>;
-  operationName: string;
-}
-export const getSavingsProjectsRef: GetSavingsProjectsRef;
-
-export function getSavingsProjects(vars: GetSavingsProjectsVariables, options?: ExecuteQueryOptions): QueryPromise<GetSavingsProjectsData, GetSavingsProjectsVariables>;
-export function getSavingsProjects(dc: DataConnect, vars: GetSavingsProjectsVariables, options?: ExecuteQueryOptions): QueryPromise<GetSavingsProjectsData, GetSavingsProjectsVariables>;
-
-interface GetProjectContributionsByHouseholdRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetProjectContributionsByHouseholdVariables): QueryRef<GetProjectContributionsByHouseholdData, GetProjectContributionsByHouseholdVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetProjectContributionsByHouseholdVariables): QueryRef<GetProjectContributionsByHouseholdData, GetProjectContributionsByHouseholdVariables>;
-  operationName: string;
-}
-export const getProjectContributionsByHouseholdRef: GetProjectContributionsByHouseholdRef;
-
-export function getProjectContributionsByHousehold(vars: GetProjectContributionsByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetProjectContributionsByHouseholdData, GetProjectContributionsByHouseholdVariables>;
-export function getProjectContributionsByHousehold(dc: DataConnect, vars: GetProjectContributionsByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetProjectContributionsByHouseholdData, GetProjectContributionsByHouseholdVariables>;
-
-interface GetProjectMilestonesByHouseholdRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetProjectMilestonesByHouseholdVariables): QueryRef<GetProjectMilestonesByHouseholdData, GetProjectMilestonesByHouseholdVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetProjectMilestonesByHouseholdVariables): QueryRef<GetProjectMilestonesByHouseholdData, GetProjectMilestonesByHouseholdVariables>;
-  operationName: string;
-}
-export const getProjectMilestonesByHouseholdRef: GetProjectMilestonesByHouseholdRef;
-
-export function getProjectMilestonesByHousehold(vars: GetProjectMilestonesByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetProjectMilestonesByHouseholdData, GetProjectMilestonesByHouseholdVariables>;
-export function getProjectMilestonesByHousehold(dc: DataConnect, vars: GetProjectMilestonesByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetProjectMilestonesByHouseholdData, GetProjectMilestonesByHouseholdVariables>;
-
-interface GetExternalAssetsRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetExternalAssetsVariables): QueryRef<GetExternalAssetsData, GetExternalAssetsVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetExternalAssetsVariables): QueryRef<GetExternalAssetsData, GetExternalAssetsVariables>;
-  operationName: string;
-}
-export const getExternalAssetsRef: GetExternalAssetsRef;
-
-export function getExternalAssets(vars: GetExternalAssetsVariables, options?: ExecuteQueryOptions): QueryPromise<GetExternalAssetsData, GetExternalAssetsVariables>;
-export function getExternalAssets(dc: DataConnect, vars: GetExternalAssetsVariables, options?: ExecuteQueryOptions): QueryPromise<GetExternalAssetsData, GetExternalAssetsVariables>;
-
-interface GetNetWorthRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetNetWorthVariables): QueryRef<GetNetWorthData, GetNetWorthVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetNetWorthVariables): QueryRef<GetNetWorthData, GetNetWorthVariables>;
-  operationName: string;
-}
-export const getNetWorthRef: GetNetWorthRef;
-
-export function getNetWorth(vars: GetNetWorthVariables, options?: ExecuteQueryOptions): QueryPromise<GetNetWorthData, GetNetWorthVariables>;
-export function getNetWorth(dc: DataConnect, vars: GetNetWorthVariables, options?: ExecuteQueryOptions): QueryPromise<GetNetWorthData, GetNetWorthVariables>;
-
-interface GetLatestRateRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetLatestRateVariables): QueryRef<GetLatestRateData, GetLatestRateVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetLatestRateVariables): QueryRef<GetLatestRateData, GetLatestRateVariables>;
-  operationName: string;
-}
-export const getLatestRateRef: GetLatestRateRef;
-
-export function getLatestRate(vars: GetLatestRateVariables, options?: ExecuteQueryOptions): QueryPromise<GetLatestRateData, GetLatestRateVariables>;
-export function getLatestRate(dc: DataConnect, vars: GetLatestRateVariables, options?: ExecuteQueryOptions): QueryPromise<GetLatestRateData, GetLatestRateVariables>;
-
-interface GetExpensesByHouseholdRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetExpensesByHouseholdVariables): QueryRef<GetExpensesByHouseholdData, GetExpensesByHouseholdVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetExpensesByHouseholdVariables): QueryRef<GetExpensesByHouseholdData, GetExpensesByHouseholdVariables>;
-  operationName: string;
-}
-export const getExpensesByHouseholdRef: GetExpensesByHouseholdRef;
-
-export function getExpensesByHousehold(vars: GetExpensesByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetExpensesByHouseholdData, GetExpensesByHouseholdVariables>;
-export function getExpensesByHousehold(dc: DataConnect, vars: GetExpensesByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetExpensesByHouseholdData, GetExpensesByHouseholdVariables>;
-
-interface GetIncomesByHouseholdRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetIncomesByHouseholdVariables): QueryRef<GetIncomesByHouseholdData, GetIncomesByHouseholdVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetIncomesByHouseholdVariables): QueryRef<GetIncomesByHouseholdData, GetIncomesByHouseholdVariables>;
-  operationName: string;
-}
-export const getIncomesByHouseholdRef: GetIncomesByHouseholdRef;
-
-export function getIncomesByHousehold(vars: GetIncomesByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetIncomesByHouseholdData, GetIncomesByHouseholdVariables>;
-export function getIncomesByHousehold(dc: DataConnect, vars: GetIncomesByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetIncomesByHouseholdData, GetIncomesByHouseholdVariables>;
-
-interface GetInternalTransfersByHouseholdRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetInternalTransfersByHouseholdVariables): QueryRef<GetInternalTransfersByHouseholdData, GetInternalTransfersByHouseholdVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetInternalTransfersByHouseholdVariables): QueryRef<GetInternalTransfersByHouseholdData, GetInternalTransfersByHouseholdVariables>;
-  operationName: string;
-}
-export const getInternalTransfersByHouseholdRef: GetInternalTransfersByHouseholdRef;
-
-export function getInternalTransfersByHousehold(vars: GetInternalTransfersByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetInternalTransfersByHouseholdData, GetInternalTransfersByHouseholdVariables>;
-export function getInternalTransfersByHousehold(dc: DataConnect, vars: GetInternalTransfersByHouseholdVariables, options?: ExecuteQueryOptions): QueryPromise<GetInternalTransfersByHouseholdData, GetInternalTransfersByHouseholdVariables>;
-
-interface GetCurrentUserRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): QueryRef<GetCurrentUserData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): QueryRef<GetCurrentUserData, undefined>;
-  operationName: string;
-}
-export const getCurrentUserRef: GetCurrentUserRef;
-
-export function getCurrentUser(options?: ExecuteQueryOptions): QueryPromise<GetCurrentUserData, undefined>;
-export function getCurrentUser(dc: DataConnect, options?: ExecuteQueryOptions): QueryPromise<GetCurrentUserData, undefined>;
-
-interface GetCategoriesRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetCategoriesVariables): QueryRef<GetCategoriesData, GetCategoriesVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetCategoriesVariables): QueryRef<GetCategoriesData, GetCategoriesVariables>;
-  operationName: string;
-}
-export const getCategoriesRef: GetCategoriesRef;
-
-export function getCategories(vars: GetCategoriesVariables, options?: ExecuteQueryOptions): QueryPromise<GetCategoriesData, GetCategoriesVariables>;
-export function getCategories(dc: DataConnect, vars: GetCategoriesVariables, options?: ExecuteQueryOptions): QueryPromise<GetCategoriesData, GetCategoriesVariables>;
-
-interface GetTagsRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetTagsVariables): QueryRef<GetTagsData, GetTagsVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetTagsVariables): QueryRef<GetTagsData, GetTagsVariables>;
-  operationName: string;
-}
-export const getTagsRef: GetTagsRef;
-
-export function getTags(vars: GetTagsVariables, options?: ExecuteQueryOptions): QueryPromise<GetTagsData, GetTagsVariables>;
-export function getTags(dc: DataConnect, vars: GetTagsVariables, options?: ExecuteQueryOptions): QueryPromise<GetTagsData, GetTagsVariables>;
-
-interface GetJournalTagsRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetJournalTagsVariables): QueryRef<GetJournalTagsData, GetJournalTagsVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetJournalTagsVariables): QueryRef<GetJournalTagsData, GetJournalTagsVariables>;
-  operationName: string;
-}
-export const getJournalTagsRef: GetJournalTagsRef;
-
-export function getJournalTags(vars: GetJournalTagsVariables, options?: ExecuteQueryOptions): QueryPromise<GetJournalTagsData, GetJournalTagsVariables>;
-export function getJournalTags(dc: DataConnect, vars: GetJournalTagsVariables, options?: ExecuteQueryOptions): QueryPromise<GetJournalTagsData, GetJournalTagsVariables>;
-
-interface GetSettlementsRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetSettlementsVariables): QueryRef<GetSettlementsData, GetSettlementsVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetSettlementsVariables): QueryRef<GetSettlementsData, GetSettlementsVariables>;
-  operationName: string;
-}
-export const getSettlementsRef: GetSettlementsRef;
-
-export function getSettlements(vars: GetSettlementsVariables, options?: ExecuteQueryOptions): QueryPromise<GetSettlementsData, GetSettlementsVariables>;
-export function getSettlements(dc: DataConnect, vars: GetSettlementsVariables, options?: ExecuteQueryOptions): QueryPromise<GetSettlementsData, GetSettlementsVariables>;
-
-interface GetJournalBalanceV2Ref {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetJournalBalanceV2Variables): QueryRef<GetJournalBalanceV2Data, GetJournalBalanceV2Variables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetJournalBalanceV2Variables): QueryRef<GetJournalBalanceV2Data, GetJournalBalanceV2Variables>;
-  operationName: string;
-}
-export const getJournalBalanceV2Ref: GetJournalBalanceV2Ref;
-
-export function getJournalBalanceV2(vars: GetJournalBalanceV2Variables, options?: ExecuteQueryOptions): QueryPromise<GetJournalBalanceV2Data, GetJournalBalanceV2Variables>;
-export function getJournalBalanceV2(dc: DataConnect, vars: GetJournalBalanceV2Variables, options?: ExecuteQueryOptions): QueryPromise<GetJournalBalanceV2Data, GetJournalBalanceV2Variables>;
-
-interface GetInvitationRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetInvitationVariables): QueryRef<GetInvitationData, GetInvitationVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetInvitationVariables): QueryRef<GetInvitationData, GetInvitationVariables>;
-  operationName: string;
-}
-export const getInvitationRef: GetInvitationRef;
-
-export function getInvitation(vars: GetInvitationVariables, options?: ExecuteQueryOptions): QueryPromise<GetInvitationData, GetInvitationVariables>;
-export function getInvitation(dc: DataConnect, vars: GetInvitationVariables, options?: ExecuteQueryOptions): QueryPromise<GetInvitationData, GetInvitationVariables>;
-
-interface GetHouseholdMembersRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetHouseholdMembersVariables): QueryRef<GetHouseholdMembersData, GetHouseholdMembersVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetHouseholdMembersVariables): QueryRef<GetHouseholdMembersData, GetHouseholdMembersVariables>;
-  operationName: string;
-}
-export const getHouseholdMembersRef: GetHouseholdMembersRef;
-
-export function getHouseholdMembers(vars: GetHouseholdMembersVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdMembersData, GetHouseholdMembersVariables>;
-export function getHouseholdMembers(dc: DataConnect, vars: GetHouseholdMembersVariables, options?: ExecuteQueryOptions): QueryPromise<GetHouseholdMembersData, GetHouseholdMembersVariables>;
-
-interface GetPendingInvitationsRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetPendingInvitationsVariables): QueryRef<GetPendingInvitationsData, GetPendingInvitationsVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetPendingInvitationsVariables): QueryRef<GetPendingInvitationsData, GetPendingInvitationsVariables>;
-  operationName: string;
-}
-export const getPendingInvitationsRef: GetPendingInvitationsRef;
-
-export function getPendingInvitations(vars: GetPendingInvitationsVariables, options?: ExecuteQueryOptions): QueryPromise<GetPendingInvitationsData, GetPendingInvitationsVariables>;
-export function getPendingInvitations(dc: DataConnect, vars: GetPendingInvitationsVariables, options?: ExecuteQueryOptions): QueryPromise<GetPendingInvitationsData, GetPendingInvitationsVariables>;
-
-interface NegativeEntriesRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): QueryRef<NegativeEntriesData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): QueryRef<NegativeEntriesData, undefined>;
-  operationName: string;
-}
-export const negativeEntriesRef: NegativeEntriesRef;
-
-export function negativeEntries(options?: ExecuteQueryOptions): QueryPromise<NegativeEntriesData, undefined>;
-export function negativeEntries(dc: DataConnect, options?: ExecuteQueryOptions): QueryPromise<NegativeEntriesData, undefined>;
-
-interface UnbalancedJournalsRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): QueryRef<UnbalancedJournalsData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): QueryRef<UnbalancedJournalsData, undefined>;
-  operationName: string;
-}
-export const unbalancedJournalsRef: UnbalancedJournalsRef;
-
-export function unbalancedJournals(options?: ExecuteQueryOptions): QueryPromise<UnbalancedJournalsData, undefined>;
-export function unbalancedJournals(dc: DataConnect, options?: ExecuteQueryOptions): QueryPromise<UnbalancedJournalsData, undefined>;
 

@@ -14,38 +14,38 @@ If a user is not using a supported framework, they can use the generated SDK dir
 Here's an example of how to use it with the first 5 operations:
 
 ```js
-import { createJournalWithEntries, createInternalTransfer, updateInternalTransfer, createSharedExpenseWithProration, createBudget, updateBudget, deleteBudget, createAccount, updateAccount, archiveAccount } from '@pareja-pro/dataconnect';
+import { getHouseholdAccounts, getHouseholdNetBalances, getBudgets, getBudgetsByMonth, getUnassignedCash, getSavingsProjects, getProjectContributionsByHousehold, getProjectMilestonesByHousehold, getExternalAssets, getNetWorth } from '@pareja-pro/dataconnect';
 
 
-// Operation CreateJournalWithEntries:  For variables, look at type CreateJournalWithEntriesVars in ../index.d.ts
-const { data } = await CreateJournalWithEntries(dataConnect, createJournalWithEntriesVars);
+// Operation GetHouseholdAccounts:  For variables, look at type GetHouseholdAccountsVars in ../index.d.ts
+const { data } = await GetHouseholdAccounts(dataConnect, getHouseholdAccountsVars);
 
-// Operation CreateInternalTransfer:  For variables, look at type CreateInternalTransferVars in ../index.d.ts
-const { data } = await CreateInternalTransfer(dataConnect, createInternalTransferVars);
+// Operation GetHouseholdNetBalances:  For variables, look at type GetHouseholdNetBalancesVars in ../index.d.ts
+const { data } = await GetHouseholdNetBalances(dataConnect, getHouseholdNetBalancesVars);
 
-// Operation UpdateInternalTransfer:  For variables, look at type UpdateInternalTransferVars in ../index.d.ts
-const { data } = await UpdateInternalTransfer(dataConnect, updateInternalTransferVars);
+// Operation GetBudgets:  For variables, look at type GetBudgetsVars in ../index.d.ts
+const { data } = await GetBudgets(dataConnect, getBudgetsVars);
 
-// Operation CreateSharedExpenseWithProration:  For variables, look at type CreateSharedExpenseWithProrationVars in ../index.d.ts
-const { data } = await CreateSharedExpenseWithProration(dataConnect, createSharedExpenseWithProrationVars);
+// Operation GetBudgetsByMonth:  For variables, look at type GetBudgetsByMonthVars in ../index.d.ts
+const { data } = await GetBudgetsByMonth(dataConnect, getBudgetsByMonthVars);
 
-// Operation CreateBudget:  For variables, look at type CreateBudgetVars in ../index.d.ts
-const { data } = await CreateBudget(dataConnect, createBudgetVars);
+// Operation GetUnassignedCash:  For variables, look at type GetUnassignedCashVars in ../index.d.ts
+const { data } = await GetUnassignedCash(dataConnect, getUnassignedCashVars);
 
-// Operation UpdateBudget:  For variables, look at type UpdateBudgetVars in ../index.d.ts
-const { data } = await UpdateBudget(dataConnect, updateBudgetVars);
+// Operation GetSavingsProjects:  For variables, look at type GetSavingsProjectsVars in ../index.d.ts
+const { data } = await GetSavingsProjects(dataConnect, getSavingsProjectsVars);
 
-// Operation DeleteBudget:  For variables, look at type DeleteBudgetVars in ../index.d.ts
-const { data } = await DeleteBudget(dataConnect, deleteBudgetVars);
+// Operation GetProjectContributionsByHousehold:  For variables, look at type GetProjectContributionsByHouseholdVars in ../index.d.ts
+const { data } = await GetProjectContributionsByHousehold(dataConnect, getProjectContributionsByHouseholdVars);
 
-// Operation CreateAccount:  For variables, look at type CreateAccountVars in ../index.d.ts
-const { data } = await CreateAccount(dataConnect, createAccountVars);
+// Operation GetProjectMilestonesByHousehold:  For variables, look at type GetProjectMilestonesByHouseholdVars in ../index.d.ts
+const { data } = await GetProjectMilestonesByHousehold(dataConnect, getProjectMilestonesByHouseholdVars);
 
-// Operation UpdateAccount:  For variables, look at type UpdateAccountVars in ../index.d.ts
-const { data } = await UpdateAccount(dataConnect, updateAccountVars);
+// Operation GetExternalAssets:  For variables, look at type GetExternalAssetsVars in ../index.d.ts
+const { data } = await GetExternalAssets(dataConnect, getExternalAssetsVars);
 
-// Operation ArchiveAccount:  For variables, look at type ArchiveAccountVars in ../index.d.ts
-const { data } = await ArchiveAccount(dataConnect, archiveAccountVars);
+// Operation GetNetWorth:  For variables, look at type GetNetWorthVars in ../index.d.ts
+const { data } = await GetNetWorth(dataConnect, getNetWorthVars);
 
 
 ```

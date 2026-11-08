@@ -538,6 +538,40 @@ export const saveBudgetCumulativeStored = (
   }
 };
 
+/**
+ * Helpers para almacenamiento local del fondeo/aporte real mensual a presupuestos.
+ */
+export const getBudgetMonthlyFundingStorageKey = (budgetId?: string, period?: string): string => {
+  return `orbita_budget_funding_${budgetId || 'default'}_${period ? period.slice(0, 7) : 'current'}`;
+};
+
+export const getBudgetMonthlyFundingStored = (budgetId?: string, period?: string): number | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(getBudgetMonthlyFundingStorageKey(budgetId, period));
+    if (raw !== null && raw !== '') {
+      const val = parseFloat(raw);
+      return isNaN(val) ? null : val;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+export const saveBudgetMonthlyFundingStored = (
+  budgetId: string,
+  period: string,
+  amount: number
+): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(getBudgetMonthlyFundingStorageKey(budgetId, period), String(amount));
+  } catch (e) {
+    console.warn('Error guardando fondeo mensual de presupuesto', e);
+  }
+};
+
 export interface CumulativeBudgetInput {
   budget: {
     id?: string;
@@ -571,6 +605,7 @@ export interface CumulativeBudgetInput {
   initialPeriod?: string;
   appContext?: 'household' | 'personal' | string;
   activeUserId?: string;
+  monthlyFundings?: Record<string, number> | Array<{ period: string; amount: number }>;
 }
 
 export interface CumulativeBudgetResult {
@@ -579,6 +614,7 @@ export interface CumulativeBudgetResult {
   totalHistoricalSpent: number;
   accumulatedBalance: number;
   elapsedMonths: number;
+  currentPeriodFunding: number;
 }
 
 /**
@@ -587,7 +623,7 @@ export interface CumulativeBudgetResult {
  * - currentSpent: gastos del periodo activo [start, end].
  * - isCumulative === true:
  *   * Determina meses transcurridos desde initialPeriod hasta el periodo activo.
- *   * totalAccumulatedAssigned = monthlyAllocation * elapsedMonths.
+ *   * Suma los aportes reales mensuales registrados para cada periodo (o el allocation nominal por defecto).
  *   * totalHistoricalSpent = suma de gastos de esa categoría hasta fin del periodo activo.
  *   * accumulatedBalance = max(0, totalAccumulatedAssigned - totalHistoricalSpent).
  * - isCumulative === false:
@@ -655,31 +691,71 @@ export function calculateCumulativeBudget(
   currentSpent = Math.round(currentSpent * 100) / 100;
   totalHistoricalSpent = Math.round(totalHistoricalSpent * 100) / 100;
 
-  let elapsedMonths = 1;
-  if (isCumulative) {
-    const initPeriodStr =
-      params.initialPeriod ||
-      params.budget?.initialPeriod ||
-      params.budget?.period ||
-      (start ? start.slice(0, 7) : '2026-01-01');
-    const targetPeriodStr = params.currentPeriodEnd
-      ? params.currentPeriodEnd.slice(0, 7)
-      : (params.budget?.period?.slice(0, 7) || '2026-11-01');
+  const initPeriodStr =
+    params.initialPeriod ||
+    params.budget?.initialPeriod ||
+    params.budget?.period ||
+    (start ? start.slice(0, 7) : '2026-01-01');
+  const targetPeriodStr = params.currentPeriodEnd
+    ? params.currentPeriodEnd.slice(0, 7)
+    : (params.budget?.period?.slice(0, 7) || '2026-11-01');
 
+  // Función auxiliar para obtener fondeo de un mes específico
+  const getFundingForMonth = (pStr: string): number => {
+    let monthAmount: number | null = null;
+    if (params.monthlyFundings) {
+      if (Array.isArray(params.monthlyFundings)) {
+        const found = params.monthlyFundings.find(f => f && f.period && f.period.slice(0, 7) === pStr);
+        if (found && typeof found.amount === 'number') {
+          monthAmount = found.amount;
+        }
+      } else if (typeof params.monthlyFundings === 'object' && params.monthlyFundings[pStr] !== undefined) {
+        monthAmount = Number(params.monthlyFundings[pStr]);
+      }
+    }
+    if (monthAmount === null && params.budget?.id) {
+      monthAmount = getBudgetMonthlyFundingStored(params.budget.id, pStr);
+    }
+    return monthAmount !== null && !isNaN(monthAmount) ? monthAmount : allocation;
+  };
+
+  let elapsedMonths = 1;
+  let totalAccumulatedAssigned = allocation;
+  let accumulatedBalance = 0;
+  let currentPeriodFunding = getFundingForMonth(targetPeriodStr);
+
+  if (isCumulative) {
     const [yA, mA] = initPeriodStr.slice(0, 7).split('-').map(Number);
     const [yB, mB] = targetPeriodStr.slice(0, 7).split('-').map(Number);
 
     if (!isNaN(yA) && !isNaN(mA) && !isNaN(yB) && !isNaN(mB)) {
-      const diff = (yB - yA) * 12 + (mB - mA) + 1;
-      elapsedMonths = Math.max(1, diff);
+      let curY = yA;
+      let curM = mA;
+      let count = 0;
+      let sumFunded = 0;
+
+      while (curY < yB || (curY === yB && curM <= mB)) {
+        count++;
+        const pStr = `${curY}-${String(curM).padStart(2, '0')}`;
+        const fundedAmount = getFundingForMonth(pStr);
+        sumFunded += fundedAmount;
+
+        if (pStr === targetPeriodStr) {
+          currentPeriodFunding = fundedAmount;
+        }
+
+        curM++;
+        if (curM > 12) {
+          curM = 1;
+          curY++;
+        }
+      }
+      elapsedMonths = Math.max(1, count);
+      totalAccumulatedAssigned = Math.round(sumFunded * 100) / 100;
+    } else {
+      totalAccumulatedAssigned = allocation;
     }
-  }
 
-  let totalAccumulatedAssigned = allocation;
-  let accumulatedBalance = 0;
-
-  if (isCumulative) {
-    totalAccumulatedAssigned = Math.round(allocation * elapsedMonths * 100) / 100;
     accumulatedBalance = Math.max(
       0,
       Math.round((totalAccumulatedAssigned - totalHistoricalSpent) * 100) / 100
@@ -688,6 +764,7 @@ export function calculateCumulativeBudget(
     totalAccumulatedAssigned = allocation;
     accumulatedBalance = Math.round((allocation - currentSpent) * 100) / 100;
     elapsedMonths = 1;
+    currentPeriodFunding = allocation;
   }
 
   return {
@@ -695,9 +772,124 @@ export function calculateCumulativeBudget(
     totalAccumulatedAssigned,
     totalHistoricalSpent,
     accumulatedBalance,
-    elapsedMonths
+    elapsedMonths,
+    currentPeriodFunding
   };
 }
+
+export interface MemberPendingContribution {
+  userId: string;
+  userName: string;
+  photoURL?: string;
+  targetQuota: number;
+  paidAmount: number;
+  pendingAmount: number;
+  isFullyCovered: boolean;
+}
+
+export interface CalculateMemberPendingContributionsParams {
+  assignedAmount: number;
+  userShares?: UserIncomeShare[] | null;
+  manualContribution?: ManualContributionInput | null;
+  periodExpenses?: Array<{
+    amount: number;
+    paidBy?: string;
+    userId?: string;
+    ownerUid?: string;
+  }>;
+  users?: Array<{
+    id: string;
+    name?: string;
+    displayName?: string;
+    photoURL?: string;
+    photoUrl?: string;
+    memberSlot?: string;
+  }>;
+  ownerType?: string;
+  appContext?: 'household' | 'personal' | string;
+  activeUserId?: string;
+}
+
+/**
+ * Calcula la cuota y el monto dinámico pendiente por aportar para cada integrante en un presupuesto.
+ * cuotaDelIntegrante = calculada según proporciones o asignación manual
+ * montoPendiente = Math.max(0, cuotaDelIntegrante - gastosPagadosPorElIntegranteEnEstaCategoria)
+ */
+export function calculateMemberPendingContributions(
+  params: CalculateMemberPendingContributionsParams
+): MemberPendingContribution[] {
+  const {
+    assignedAmount,
+    userShares,
+    manualContribution,
+    periodExpenses = [],
+    users = [],
+    ownerType,
+    appContext,
+    activeUserId
+  } = params;
+
+  let splits: UserBudgetSplit[] = [];
+
+  if (ownerType && ownerType !== 'SHARED') {
+    const ownerUser = users.find(u => u.memberSlot === ownerType || u.id === ownerType) || users[0];
+    if (ownerUser) {
+      splits = [{
+        userId: ownerUser.id,
+        userName: ownerUser.displayName || ownerUser.name || 'Usuario',
+        contribution: assignedAmount,
+        ratio: 1,
+        percentage: 100,
+        isManual: true
+      }];
+    }
+  } else if (appContext === 'personal' && activeUserId) {
+    const activeUser = users.find(u => u.id === activeUserId) || users[0];
+    if (activeUser) {
+      splits = [{
+        userId: activeUser.id,
+        userName: activeUser.displayName || activeUser.name || 'Usuario',
+        contribution: assignedAmount,
+        ratio: 1,
+        percentage: 100,
+        isManual: true
+      }];
+    }
+  } else {
+    const splitCalc = calculateBudgetSplit(assignedAmount, userShares, manualContribution);
+    splits = splitCalc.splits;
+  }
+
+  return splits.map(split => {
+    const userObj = users.find(u => u.id === split.userId);
+    const photoURL = userObj?.photoURL || userObj?.photoUrl;
+    const userName = userObj?.displayName || userObj?.name || split.userName || 'Usuario';
+
+    const paidAmount = periodExpenses.reduce((acc, exp) => {
+      const payerId = exp.ownerUid || exp.userId || exp.paidBy;
+      const isMatch = payerId === split.userId || (userObj?.memberSlot && payerId === userObj.memberSlot);
+      if (isMatch) {
+        return acc + (Number(exp.amount) || 0);
+      }
+      return acc;
+    }, 0);
+
+    const safePaid = Math.round(paidAmount * 100) / 100;
+    const targetQuota = Math.round((Number(split.contribution) || 0) * 100) / 100;
+    const pendingAmount = Math.max(0, Math.round((targetQuota - safePaid) * 100) / 100);
+
+    return {
+      userId: split.userId,
+      userName,
+      photoURL,
+      targetQuota,
+      paidAmount: safePaid,
+      pendingAmount,
+      isFullyCovered: pendingAmount === 0
+    };
+  });
+}
+
 
 
 
