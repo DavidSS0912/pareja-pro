@@ -140,7 +140,7 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
   const secondaryColors = ['#f43f5e', '#f59e0b', '#10b981', '#0ea5e9', '#8b5cf6', '#ec4899'];
 
   return (
-    <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col md:flex-row min-h-[600px] gap-8">
+    <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-bento border border-[#EEF0F4] flex flex-col md:flex-row min-h-[600px] gap-8 animate-in">
       {/* Sidebar de Ajustes */}
       <div className="w-full md:w-64 flex flex-col justify-between">
         <div className="flex flex-col gap-1.5">
@@ -149,8 +149,10 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
           <button
             type="button"
             onClick={() => setActiveTab('profile')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-150 font-medium text-sm ${
-              activeTab === 'profile' ? 'bg-primary/10 text-primary font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-50'
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-150 font-medium text-sm cursor-pointer ${
+              activeTab === 'profile' 
+                ? 'bg-[#111319] text-white font-semibold shadow-sm' 
+                : 'text-slate-600 hover:text-slate-900 hover:bg-[#F8FAFC]'
             }`}
           >
             <User size={18} />
@@ -160,8 +162,10 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
           <button
             type="button"
             onClick={() => setActiveTab('household')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-150 font-medium text-sm ${
-              activeTab === 'household' ? 'bg-primary/10 text-primary font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-50'
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-150 font-medium text-sm cursor-pointer ${
+              activeTab === 'household' 
+                ? 'bg-[#111319] text-white font-semibold shadow-sm' 
+                : 'text-slate-600 hover:text-slate-900 hover:bg-[#F8FAFC]'
             }`}
           >
             <Users size={18} />
@@ -171,8 +175,10 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
           <button
             type="button"
             onClick={() => setActiveTab('period')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-150 font-medium text-sm ${
-              activeTab === 'period' ? 'bg-primary/10 text-primary font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-50'
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-150 font-medium text-sm cursor-pointer ${
+              activeTab === 'period' 
+                ? 'bg-[#111319] text-white font-semibold shadow-sm' 
+                : 'text-slate-600 hover:text-slate-900 hover:bg-[#F8FAFC]'
             }`}
           >
             <Calendar size={18} />
@@ -182,8 +188,10 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
           <button
             type="button"
             onClick={() => setActiveTab('currency')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-150 font-medium text-sm ${
-              activeTab === 'currency' ? 'bg-primary/10 text-primary font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-50'
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-150 font-medium text-sm cursor-pointer ${
+              activeTab === 'currency' 
+                ? 'bg-[#111319] text-white font-semibold shadow-sm' 
+                : 'text-slate-600 hover:text-slate-900 hover:bg-[#F8FAFC]'
             }`}
           >
             <Coins size={18} />
@@ -193,8 +201,10 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
           <button
             type="button"
             onClick={() => setActiveTab('appearance')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-150 font-medium text-sm ${
-              activeTab === 'appearance' ? 'bg-primary/10 text-primary font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-50'
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-150 font-medium text-sm cursor-pointer ${
+              activeTab === 'appearance' 
+                ? 'bg-[#111319] text-white font-semibold shadow-sm' 
+                : 'text-slate-600 hover:text-slate-900 hover:bg-[#F8FAFC]'
             }`}
           >
             <Palette size={18} />
@@ -203,11 +213,11 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
         </div>
 
         {/* Botón de Cierre de Sesión en el Menú */}
-        <div className="pt-6 mt-6 border-t border-slate-100">
+        <div className="pt-6 mt-6 border-t border-[#EEF0F4]">
           <button
             type="button"
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 transition-colors font-medium text-sm"
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl text-rose-600 hover:bg-[#FDEFEA] transition-colors font-medium text-sm cursor-pointer"
           >
             <LogOut size={18} />
             <span>Cerrar Sesión</span>
@@ -216,18 +226,18 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
       </div>
 
       {/* Área Principal de Contenido */}
-      <div className="flex-1 border-t md:border-t-0 md:border-l border-slate-100 pt-6 md:pt-0 md:pl-8">
+      <div className="flex-1 border-t md:border-t-0 md:border-l border-[#EEF0F4] pt-6 md:pt-0 md:pl-8">
         
         {/* 1. PERFIL DE USUARIO */}
         {activeTab === 'profile' && (
           <div className="space-y-6 max-w-xl">
             <div>
               <h3 className="text-lg font-bold text-slate-900 font-title">Perfil de Usuario</h3>
-              <p className="text-sm text-slate-500 mt-1">Información de tu cuenta autenticada.</p>
+              <p className="text-xs text-slate-400 mt-0.5">Información de tu cuenta autenticada.</p>
             </div>
 
-            <div className="flex items-center gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-100">
-              <div className="w-16 h-16 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center text-slate-500 font-bold text-xl flex-shrink-0">
+            <div className="flex items-center gap-4 p-5 rounded-2xl bg-[#F8FAFC] border border-[#EEF0F4]">
+              <div className="w-16 h-16 rounded-full bg-[#EEF2FF] text-[#6366F1] overflow-hidden flex items-center justify-center font-bold text-xl flex-shrink-0 border border-[#EEF0F4]">
                 {user?.photoURL ? (
                   <img src={user.photoURL} alt="Avatar" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                 ) : (
@@ -236,23 +246,25 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
               </div>
               <div className="min-w-0">
                 <p className="font-bold text-slate-900 text-base truncate">{user?.displayName || 'Usuario de Orbita'}</p>
-                <p className="text-sm text-slate-500 truncate">{user?.email || 'Sin correo asociado'}</p>
-                <p className="text-xs text-slate-400 font-mono mt-1">ID: {user?.uid}</p>
+                <p className="text-xs text-slate-500 truncate">{user?.email || 'Sin correo asociado'}</p>
+                <p className="text-[11px] text-slate-400 font-mono mt-1">ID: {user?.uid}</p>
               </div>
             </div>
-            <div className="p-4 rounded-xl border border-blue-100 bg-blue-50/50 text-xs text-blue-700">
-              <p className="font-semibold mb-1">Sesión Autenticada</p>
+
+            <div className="p-4 rounded-2xl border border-[#EEF0F4] bg-[#F8FAFC] text-xs text-slate-600 leading-relaxed">
+              <p className="font-semibold text-slate-900 mb-1">Sesión Autenticada</p>
               <p>Tu cuenta está gestionada a través del sistema de autenticación de Orbita. Las credenciales están protegidas y sincronizadas con tu hogar.</p>
             </div>
 
-            <p className="text-sm text-slate-500 italic">Nota: La edición del perfil desde la app aún no está disponible.</p>
-            <div className="pt-4 border-t border-slate-100">
+            <p className="text-xs text-slate-400 italic">Nota: La edición del perfil desde la app aún no está disponible.</p>
+            <div className="pt-4 border-t border-[#EEF0F4]">
               <button
                 type="button"
                 onClick={() => setActiveTab('household')}
-                className="text-sm font-semibold text-primary hover:underline flex items-center gap-1.5"
+                className="text-xs font-semibold text-slate-900 hover:text-[#6366F1] flex items-center gap-1.5 transition-colors cursor-pointer"
               >
-                <Users size={16} /> Administrar integrantes de mi hogar →
+                <Users size={15} /> 
+                <span>Administrar integrantes de mi hogar →</span>
               </button>
             </div>
           </div>
@@ -261,58 +273,58 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
         {/* 2. INTEGRANTES DEL HOGAR */}
         {activeTab === 'household' && (
           <div className="space-y-6 max-w-2xl">
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+            <div className="p-4 rounded-2xl bg-[#F8FAFC] border border-[#EEF0F4] flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-[#EEF2FF] text-[#6366F1] border border-[#EEF0F4] flex items-center justify-center">
                   <Building2 size={20} />
                 </div>
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Identificador del Hogar</p>
-                  <p className="text-sm font-mono font-bold text-slate-800">{houseId || 'Sin hogar asignado'}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Identificador del Hogar</p>
+                  <p className="text-xs font-mono font-bold text-slate-900 mt-0.5">{houseId || 'Sin hogar asignado'}</p>
                 </div>
               </div>
             </div>
 
             {/* Enlace de Invitación */}
-            <div className="p-5 rounded-2xl border border-indigo-100 bg-indigo-50/30 space-y-4">
+            <div className="p-6 rounded-3xl border border-[#EEF0F4] bg-[#F8FAFC] space-y-4">
               <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Share2 size={18} />
+                <div className="w-9 h-9 rounded-xl bg-[#111319] text-white flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Share2 size={16} />
                 </div>
                 <div>
                   <h4 className="font-bold text-sm text-slate-900">Invitar a un nuevo integrante</h4>
-                  <p className="text-xs text-slate-500 mt-0.5">Genera un enlace único para que tu pareja o familiar se una a este mismo hogar y gestionen juntos las finanzas.</p>
+                  <p className="text-xs text-slate-400 mt-0.5">Genera un enlace único para que tu pareja o familiar se una a este mismo hogar y gestionen juntos las finanzas.</p>
                 </div>
               </div>
 
               {inviteLink ? (
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 p-2.5 rounded-xl bg-white border border-indigo-200">
-                    <code className="text-xs text-indigo-600 break-all flex-1 font-mono">{inviteLink}</code>
+                  <div className="flex items-center gap-2 p-2.5 rounded-2xl bg-white border border-[#EEF0F4]">
+                    <code className="text-xs text-[#6366F1] break-all flex-1 font-mono">{inviteLink}</code>
                     <button
                       type="button"
                       onClick={handleCopyExistingLink}
-                      className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex-shrink-0"
+                      className="p-2 text-slate-500 hover:text-slate-900 hover:bg-[#F8FAFC] rounded-xl transition-colors flex-shrink-0 cursor-pointer"
                       title="Copiar enlace"
                     >
-                      {isCopied ? <Check size={16} className="text-emerald-600" /> : <Copy size={16} />}
+                      {isCopied ? <Check size={16} className="text-[#10B981]" /> : <Copy size={16} />}
                     </button>
                   </div>
                   {isCopied && (
-                    <p className="text-xs font-bold text-emerald-600 flex items-center gap-1">
+                    <p className="text-xs font-semibold text-[#10B981] flex items-center gap-1">
                       <Check size={14} /> Enlace copiado al portapapeles
                     </p>
                   )}
                 </div>
               ) : (
-                <Button
+                <button
                   type="button"
                   onClick={handleGenerateInvite}
                   disabled={isGeneratingInvite}
-                  className="w-full sm:w-auto"
+                  className="bg-[#111319] hover:bg-[#1A1D26] text-white rounded-full px-5 py-2.5 font-medium transition-colors duration-150 text-xs shadow-sm cursor-pointer disabled:opacity-50"
                 >
                   {isGeneratingInvite ? 'Generando...' : 'Generar Enlace de Invitación'}
-                </Button>
+                </button>
               )}
             </div>
 
@@ -326,16 +338,16 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
           <div className="space-y-6 max-w-xl">
             <div>
               <h3 className="text-lg font-bold text-slate-900 font-title">Periodo y Días de Corte</h3>
-              <p className="text-sm text-slate-500 mt-1">Configura el día de corte mensual independiente para finanzas del Hogar y finanzas Personales.</p>
+              <p className="text-xs text-slate-400 mt-0.5">Configura el día de corte mensual independiente para finanzas del Hogar y finanzas Personales.</p>
             </div>
 
             <form onSubmit={handleSaveCutoffs} className="space-y-6">
               {/* Corte Hogar */}
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100 space-y-3">
+              <div className="p-5 rounded-2xl bg-[#F8FAFC] border border-[#EEF0F4] space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <label htmlFor="cutoff-household" className="block text-sm font-bold text-slate-800">Día de Corte del Hogar</label>
-                    <p className="text-xs text-slate-500 mt-0.5">Aplica para gastos, presupuestos y balance compartido del hogar.</p>
+                    <label htmlFor="cutoff-household" className="block text-sm font-bold text-slate-900">Día de Corte del Hogar</label>
+                    <p className="text-xs text-slate-400 mt-0.5">Aplica para gastos, presupuestos y balance compartido del hogar.</p>
                   </div>
                   <div className="w-24">
                     <input
@@ -345,14 +357,14 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
                       max={31}
                       value={householdCutoffInput}
                       onChange={e => setHouseholdCutoffInput(Math.max(1, Math.min(31, parseInt(e.target.value, 10) || 1)))}
-                      className="w-full px-3 py-2 text-center font-bold text-slate-900 bg-white border border-slate-200 rounded-xl text-base focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="w-full px-3 py-2 text-center font-bold text-slate-900 bg-white border border-[#EEF0F4] focus:border-[#111319] focus:outline-none rounded-xl text-sm tabular-nums"
                     />
                   </div>
                 </div>
 
-                <div className="p-3 bg-white rounded-xl border border-slate-200/70 text-xs text-slate-600 flex items-center justify-between">
-                  <span className="font-medium text-slate-500">Ciclo activo calculado:</span>
-                  <span className="font-mono font-bold text-indigo-600">
+                <div className="p-3 bg-white rounded-xl border border-[#EEF0F4] text-xs text-slate-600 flex items-center justify-between">
+                  <span className="font-medium text-slate-400">Ciclo activo calculado:</span>
+                  <span className="font-mono font-bold text-slate-900 tabular-nums">
                     {calculateCutoffDateRange(householdCutoffInput).start} al {calculateCutoffDateRange(householdCutoffInput).end}
                   </span>
                 </div>
@@ -364,11 +376,11 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
               </div>
 
               {/* Corte Personal */}
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100 space-y-3">
+              <div className="p-5 rounded-2xl bg-[#F8FAFC] border border-[#EEF0F4] space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <label htmlFor="cutoff-personal" className="block text-sm font-bold text-slate-800">Día de Corte Personal</label>
-                    <p className="text-xs text-slate-500 mt-0.5">Aplica exclusivamente para tus movimientos y presupuestos personales.</p>
+                    <label htmlFor="cutoff-personal" className="block text-sm font-bold text-slate-900">Día de Corte Personal</label>
+                    <p className="text-xs text-slate-400 mt-0.5">Aplica exclusivamente para tus movimientos y presupuestos personales.</p>
                   </div>
                   <div className="w-24">
                     <input
@@ -378,14 +390,14 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
                       max={31}
                       value={personalCutoffInput}
                       onChange={e => setPersonalCutoffInput(Math.max(1, Math.min(31, parseInt(e.target.value, 10) || 1)))}
-                      className="w-full px-3 py-2 text-center font-bold text-slate-900 bg-white border border-slate-200 rounded-xl text-base focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="w-full px-3 py-2 text-center font-bold text-slate-900 bg-white border border-[#EEF0F4] focus:border-[#111319] focus:outline-none rounded-xl text-sm tabular-nums"
                     />
                   </div>
                 </div>
 
-                <div className="p-3 bg-white rounded-xl border border-slate-200/70 text-xs text-slate-600 flex items-center justify-between">
-                  <span className="font-medium text-slate-500">Ciclo activo calculado:</span>
-                  <span className="font-mono font-bold text-emerald-600">
+                <div className="p-3 bg-white rounded-xl border border-[#EEF0F4] text-xs text-slate-600 flex items-center justify-between">
+                  <span className="font-medium text-slate-400">Ciclo activo calculado:</span>
+                  <span className="font-mono font-bold text-slate-900 tabular-nums">
                     {calculateCutoffDateRange(personalCutoffInput).start} al {calculateCutoffDateRange(personalCutoffInput).end}
                   </span>
                 </div>
@@ -397,10 +409,15 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
               </div>
 
               <div className="flex items-center gap-3 pt-2">
-                <Button type="submit">Guardar Días de Corte</Button>
+                <button 
+                  type="submit"
+                  className="bg-[#111319] hover:bg-[#1A1D26] text-white rounded-full px-5 py-2.5 font-medium transition-colors duration-150 text-xs shadow-sm cursor-pointer"
+                >
+                  Guardar Días de Corte
+                </button>
                 {periodSaved && (
-                  <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
-                    <Check size={15} /> Guardado exitosamente
+                  <span className="text-xs font-semibold text-[#10B981] flex items-center gap-1">
+                    <Check size={14} /> Guardado exitosamente
                   </span>
                 )}
               </div>
@@ -413,16 +430,16 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
           <div className="space-y-6 max-w-xl">
             <div>
               <h3 className="text-lg font-bold text-slate-900 font-title">Moneda y Divisas</h3>
-              <p className="text-sm text-slate-500 mt-1">Configura la moneda base y la tasa de conversión para monedas extranjeras.</p>
+              <p className="text-xs text-slate-400 mt-0.5">Configura la moneda base y la tasa de conversión para monedas extranjeras.</p>
             </div>
 
             <form onSubmit={handleSaveCurrency} className="space-y-5">
               <div className="space-y-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">Moneda Base</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600">Moneda Base</label>
                 <select
                   value={defaultCurrency}
                   onChange={e => setDefaultCurrency(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white"
+                  className="w-full px-4 py-2.5 rounded-xl border border-[#EEF0F4] text-sm font-medium focus:outline-none focus:border-[#111319] bg-white text-slate-900"
                 >
                   <option value="MXN">MXN - Peso Mexicano ($)</option>
                   <option value="USD">USD - Dólar Estadounidense ($)</option>
@@ -432,7 +449,7 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">Tipo de Cambio (USD a MXN)</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600">Tipo de Cambio (USD a MXN)</label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-400 font-bold">$</span>
                   <input
@@ -441,7 +458,7 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
                     min="1"
                     value={exchangeRate}
                     onChange={e => setExchangeRate(e.target.value)}
-                    className="w-full pl-8 pr-4 py-3 rounded-xl border border-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-[#EEF0F4] text-sm font-medium focus:outline-none focus:border-[#111319] text-slate-900 tabular-nums"
                     placeholder="20.00"
                     required
                   />
@@ -450,10 +467,15 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
               </div>
 
               <div className="flex items-center gap-3 pt-2">
-                <Button type="submit">Guardar Configuración</Button>
+                <button 
+                  type="submit"
+                  className="bg-[#111319] hover:bg-[#1A1D26] text-white rounded-full px-5 py-2.5 font-medium transition-colors duration-150 text-xs shadow-sm cursor-pointer"
+                >
+                  Guardar Configuración
+                </button>
                 {exchangeSaved && (
-                  <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
-                    <Check size={15} /> Guardado exitosamente
+                  <span className="text-xs font-semibold text-[#10B981] flex items-center gap-1">
+                    <Check size={14} /> Guardado exitosamente
                   </span>
                 )}
               </div>
@@ -466,21 +488,21 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
           <div className="space-y-6 max-w-xl">
             <div>
               <h3 className="text-lg font-bold text-slate-900 font-title">Apariencia y Tema</h3>
-              <p className="text-sm text-slate-500 mt-1">Personaliza el aspecto visual y la paleta de colores de Orbita.</p>
+              <p className="text-xs text-slate-400 mt-0.5">Personaliza el aspecto visual y la paleta de colores de Orbita.</p>
             </div>
 
-            <div className="flex items-center gap-3 p-4 border border-slate-100 rounded-2xl bg-slate-50">
-              <div className="w-8 h-8 rounded-full bg-primary flex-shrink-0"></div>
+            <div className="flex items-center gap-3 p-4 border border-[#EEF0F4] rounded-2xl bg-[#F8FAFC]">
+              <div className="w-8 h-8 rounded-full bg-[#111319] flex-shrink-0"></div>
               <div>
-                <p className="font-bold text-slate-800 text-sm">Tema Claro (Predeterminado)</p>
-                <p className="text-xs text-slate-500">Diseñado con contraste optimizado para uso diario en escritorio y móvil.</p>
+                <p className="font-bold text-slate-900 text-sm">Fintech Bento Grid (Predeterminado)</p>
+                <p className="text-xs text-slate-400">Diseñado con contraste optimizado, estética obsidian y tonos pasteles sutiles.</p>
               </div>
             </div>
 
-            <div className="p-5 border border-slate-100 rounded-2xl bg-slate-50/70 space-y-3">
+            <div className="p-5 border border-[#EEF0F4] rounded-2xl bg-[#F8FAFC] space-y-3">
               <div>
-                <p className="font-bold text-slate-800 text-sm">Color Primario de la Aplicación</p>
-                <p className="text-xs text-slate-500">Acento principal para botones, pestañas activas y destacados.</p>
+                <p className="font-bold text-slate-900 text-sm">Color Primario de la Aplicación</p>
+                <p className="text-xs text-slate-400">Acento principal para botones, pestañas activas y destacados.</p>
               </div>
               <div className="flex flex-wrap gap-3 pt-1">
                 {primaryColors.map(color => {
@@ -495,8 +517,8 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
                         document.documentElement.style.setProperty('--primary-color', color);
                         setForceRender(prev => prev + 1);
                       }}
-                      className={`w-9 h-9 rounded-full transition-all duration-150 ${
-                        isActive ? 'ring-2 ring-offset-2 ring-slate-400 scale-110 shadow-sm' : 'hover:scale-105'
+                      className={`w-9 h-9 rounded-full transition-all duration-150 cursor-pointer ${
+                        isActive ? 'ring-2 ring-offset-2 ring-slate-900 scale-110 shadow-sm' : 'hover:scale-105'
                       }`}
                       style={{ backgroundColor: color }}
                       title={`Color ${color}`}
@@ -506,10 +528,10 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
               </div>
             </div>
 
-            <div className="p-5 border border-slate-100 rounded-2xl bg-slate-50/70 space-y-3">
+            <div className="p-5 border border-[#EEF0F4] rounded-2xl bg-[#F8FAFC] space-y-3">
               <div>
-                <p className="font-bold text-slate-800 text-sm">Color Secundario</p>
-                <p className="text-xs text-slate-500">Acento para etiquetas, insignias y elementos secundarios.</p>
+                <p className="font-bold text-slate-900 text-sm">Color Secundario</p>
+                <p className="text-xs text-slate-400">Acento para etiquetas, insignias y elementos secundarios.</p>
               </div>
               <div className="flex flex-wrap gap-3 pt-1">
                 {secondaryColors.map(color => {
@@ -524,8 +546,8 @@ export function SettingsView({ onLogout }: SettingsViewProps) {
                         document.documentElement.style.setProperty('--second-color', color);
                         setForceRender(prev => prev + 1);
                       }}
-                      className={`w-9 h-9 rounded-full transition-all duration-150 ${
-                        isActive ? 'ring-2 ring-offset-2 ring-slate-400 scale-110 shadow-sm' : 'hover:scale-105'
+                      className={`w-9 h-9 rounded-full transition-all duration-150 cursor-pointer ${
+                        isActive ? 'ring-2 ring-offset-2 ring-slate-900 scale-110 shadow-sm' : 'hover:scale-105'
                       }`}
                       style={{ backgroundColor: color }}
                       title={`Color ${color}`}

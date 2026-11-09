@@ -22,7 +22,6 @@ import {
 import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../store/useAppStore';
 import { useToastStore } from '../store/useToastStore';
-import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { BudgetForm } from '../components/forms/BudgetForm';
@@ -296,89 +295,87 @@ export function BudgetsView({
 
     return (
       <div className="space-y-6 animate-in fade-in duration-300">
-        {/* Cabecera con Breadcrumbs canónicos estilo ProjectsView */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm">
+        {/* Cabecera con Breadcrumbs canónicos estilo Bento */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-3xl border border-[#EEF0F4] shadow-bento">
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-500 flex-wrap">
             <button
               type="button"
               onClick={() => setSelectedBudgetId(null)}
-              className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 transition-colors font-bold cursor-pointer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
             >
-              <ChevronLeft size={18} />
+              <ChevronLeft size={16} />
               <span>Volver a Presupuestos</span>
             </button>
             <span className="text-slate-300">/</span>
-            <span className="text-slate-900 font-bold truncate max-w-[200px] sm:max-w-xs">
+            <span className="text-slate-900 font-bold truncate max-w-[200px] sm:max-w-xs text-sm">
               {selectedBudget.category}
             </span>
             {selectedBudget.isCumulative && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200/60 ml-1">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#E8F8F0] text-[#10B981] border border-[#10B981]/20 ml-1">
                 <PiggyBank size={11} className="stroke-[2.5]" />
                 Acumulativo
               </span>
             )}
             {selectedBudget.ownerType && selectedBudget.ownerType !== 'SHARED' && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#F1F5F9] text-slate-600">
                 Privado
               </span>
             )}
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
-            <Button
-              variant="outline"
-              size="sm"
+            <button
+              type="button"
               onClick={() => handleDelete(selectedBudget.id)}
-              className="flex items-center gap-1.5 text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-rose-600 hover:bg-[#FDEFEA] px-3.5 py-2 rounded-full transition-colors cursor-pointer border border-[#EEF0F4]"
             >
-              <Trash2 size={15} />
+              <Trash2 size={14} />
               <span>Eliminar</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
+            </button>
+            <button
+              type="button"
               onClick={() => handleOpenModal(selectedBudget)}
-              className="flex items-center gap-1.5"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 hover:bg-[#F8FAFC] px-4 py-2 rounded-full transition-colors cursor-pointer border border-[#EEF0F4]"
             >
-              <Edit2 size={15} />
+              <Edit2 size={14} />
               <span>Editar Presupuesto</span>
-            </Button>
-            <Button
-              size="sm"
+            </button>
+            <button
+              type="button"
               onClick={() => handleOpenFundingModal(selectedBudget)}
-              className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+              className="inline-flex items-center gap-1.5 bg-[#111319] hover:bg-[#1A1D26] text-white rounded-full px-5 py-2.5 font-medium transition-colors duration-150 text-xs shadow-sm cursor-pointer"
             >
-              <Plus size={16} />
+              <Plus size={15} />
               <span>+ Apartar Dinero</span>
-            </Button>
+            </button>
           </div>
         </div>
 
         {/* Tarjetas de Balance del Presupuesto (4 métricas) */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="p-5 rounded-3xl border border-slate-100 bg-white shadow-sm">
+          <div className="bg-white border border-[#EEF0F4] rounded-3xl p-5 shadow-bento">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Meta Asignada</span>
-              <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Meta Asignada</span>
+              <div className="p-2 bg-[#EEF2FF] text-[#6366F1] rounded-xl">
                 {selectedBudget.mode === 'PERCENTAGE' ? <Percent size={16} /> : <DollarSign size={16} />}
               </div>
             </div>
-            <p className="text-2xl font-black text-slate-800 tracking-tight">
+            <p className="text-2xl font-bold text-slate-900 tracking-tight tabular-nums">
               {FormatCurrency(assignedAmount)}
             </p>
             <span className="text-xs text-slate-400 mt-1 block">
               {selectedBudget.mode === 'PERCENTAGE' ? `${selectedBudget.percentage}% del Ingreso` : 'Meta mensual asignada'}
             </span>
-          </Card>
+          </div>
 
-          <Card className="p-5 rounded-3xl border border-slate-100 bg-white shadow-sm">
+          <div className="bg-white border border-[#EEF0F4] rounded-3xl p-5 shadow-bento">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Apartado de este Mes</span>
-              <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Apartado de este Mes</span>
+              <div className="p-2 bg-[#E8F8F0] text-[#10B981] rounded-xl">
                 <Wallet size={16} />
               </div>
             </div>
-            <p className="text-2xl font-black text-emerald-600 tracking-tight">
+            <p className="text-2xl font-bold text-[#10B981] tracking-tight tabular-nums">
               {FormatCurrency(cumulativeCalc.currentPeriodFunding)}
             </p>
             <span className="text-xs text-slate-400 mt-1 block">
@@ -386,89 +383,86 @@ export function BudgetsView({
                 ? 'Apartado al 100%' 
                 : (cumulativeCalc.currentPeriodFunding < assignedAmount ? 'Apartado Parcial' : 'Apartado Extra')}
             </span>
-          </Card>
+          </div>
 
-          <Card className="p-5 rounded-3xl border border-slate-100 bg-white shadow-sm">
+          <div className="bg-white border border-[#EEF0F4] rounded-3xl p-5 shadow-bento">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Gastos del Periodo</span>
-              <div className="p-2 bg-rose-50 text-rose-600 rounded-xl">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Gastos del Periodo</span>
+              <div className="p-2 bg-[#FDEFEA] text-[#F97316] rounded-xl">
                 <TrendingUp size={16} />
               </div>
             </div>
-            <p className="text-2xl font-black text-slate-800 tracking-tight">
+            <p className="text-2xl font-bold text-slate-900 tracking-tight tabular-nums">
               {FormatCurrency(actualSpent)}
             </p>
-            <span className="text-xs text-slate-400 mt-1 block">
+            <span className="text-xs text-slate-400 mt-1 block tabular-nums">
               {periodExpenses.length} {periodExpenses.length === 1 ? 'movimiento' : 'movimientos'}
             </span>
-          </Card>
+          </div>
 
-          <Card className="p-5 rounded-3xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 via-teal-500/10 to-indigo-500/10 shadow-sm">
+          <div className="bg-white border border-[#EEF0F4] rounded-3xl p-5 shadow-bento">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
                 {selectedBudget.isCumulative ? 'Saldo Acumulado Disponible' : 'Remanente Mes'}
               </span>
-              <div className="p-2 bg-emerald-500/20 text-emerald-700 rounded-xl">
+              <div className="p-2 bg-[#E8F8F0] text-[#10B981] rounded-xl">
                 <PiggyBank size={16} />
               </div>
             </div>
-            <p className="text-2xl font-black text-emerald-700 tracking-tight">
+            <p className="text-2xl font-bold text-[#10B981] tracking-tight tabular-nums">
               {FormatCurrency(selectedBudget.isCumulative ? cumulativeCalc.accumulatedBalance : Math.max(0, restante))}
             </p>
-            <span className="text-xs text-emerald-600/80 mt-1 block">
+            <span className="text-xs text-slate-400 mt-1 block">
               {selectedBudget.isCumulative 
-                ? `${cumulativeCalc.elapsedMonths} ${cumulativeCalc.elapsedMonths === 1 ? 'mes acumulado' : 'meses acumulados'} · Ahorro acumulado` 
+                ? `${cumulativeCalc.elapsedMonths} ${cumulativeCalc.elapsedMonths === 1 ? 'mes acumulado' : 'meses acumulados'} · Ahorro` 
                 : 'Disponible para gastar'}
             </span>
-          </Card>
+          </div>
         </div>
 
         {/* Barra de progreso de consumo del presupuesto */}
-        <Card className="p-6 rounded-3xl border border-slate-100 bg-white shadow-sm space-y-3">
-          <div className="flex justify-between items-center text-xs font-bold">
-            <span className="text-slate-600">
-              Consumido: {rawPorcentaje.toFixed(1)}% ({FormatCurrency(actualSpent)} de {FormatCurrency(cumulativeCalc.currentPeriodFunding)})
+        <div className="bg-white border border-[#EEF0F4] rounded-3xl p-6 shadow-bento space-y-3">
+          <div className="flex justify-between items-center text-xs font-semibold">
+            <span className="text-slate-600 tabular-nums">
+              Consumido: <span className="tabular-nums font-bold">{rawPorcentaje.toFixed(1)}%</span> ({FormatCurrency(actualSpent)} de {FormatCurrency(cumulativeCalc.currentPeriodFunding)})
             </span>
-            <span className={restante < 0 ? 'text-rose-600 font-black' : alertText}>
+            <span className={`tabular-nums font-bold ${restante < 0 ? 'text-[#F97316]' : 'text-slate-700'}`}>
               Restante: {FormatCurrency(restante)}
             </span>
           </div>
-          <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden shadow-inner relative">
+          <div className="w-full bg-[#EEF2FF] rounded-full h-2.5 overflow-hidden relative">
             <div 
-              className={`h-full transition-all duration-700 ease-out ${alertColor}`} 
+              className={`h-full transition-all duration-700 ease-out ${rawPorcentaje >= 100 ? 'bg-[#F97316]' : 'bg-[#10B981]'}`} 
               style={{ width: `${progressBarWidth}%` }}
             />
-            {rawPorcentaje >= 80 && (
-              <div className="absolute top-0 right-0 h-full w-full bg-rose-500/20 animate-pulse pointer-events-none" />
-            )}
           </div>
           {selectedBudget.isCumulative && (
             <p className="text-xs text-slate-400 mt-2 flex items-center gap-1.5">
-              <Info size={14} className="text-teal-600 shrink-0" />
+              <Info size={14} className="text-[#10B981] shrink-0" />
               <span>
                 Presupuesto acumulativo: el saldo no gastado se acumula de forma continua mes con mes como ahorro acumulado.
               </span>
             </p>
           )}
-        </Card>
+        </div>
 
         {/* Listado detallado de movimientos del periodo */}
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="bg-white border border-[#EEF0F4] rounded-3xl p-6 sm:p-8 shadow-bento space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-[#EEF0F4]">
             <div className="flex items-center gap-2">
-              <Receipt size={18} className="text-indigo-600" />
-              <h3 className="font-bold text-slate-800 text-base">
+              <Receipt size={18} className="text-slate-800" />
+              <h3 className="font-bold text-slate-900 text-base">
                 Movimientos del Periodo ({periodExpenses.length})
               </h3>
             </div>
-            <span className="text-xs text-slate-400 font-medium">
+            <span className="text-xs text-slate-400 font-medium tabular-nums">
               {activeDateRange?.start ? `${activeDateRange.start} al ${activeDateRange.end}` : derivedPeriod}
             </span>
           </div>
 
           {periodExpenses.length === 0 ? (
             <div className="text-center py-12">
-              <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 rounded-2xl bg-[#F8FAFC] border border-[#EEF0F4] text-slate-400 flex items-center justify-center mx-auto mb-3">
                 <Receipt size={24} />
               </div>
               <p className="text-sm font-bold text-slate-600">Sin movimientos en este periodo</p>
@@ -477,7 +471,7 @@ export function BudgetsView({
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-[#EEF0F4]">
               {periodExpenses.map((exp: any) => {
                 const payerUser = (data?.users || []).find((u: any) => u.id === (exp.ownerUid || exp.userId || exp.paidBy));
                 const payerName = payerUser?.displayName || payerUser?.name || 'Usuario';
@@ -486,9 +480,9 @@ export function BudgetsView({
                 const accountName = accountObj?.name || 'Cuenta no especificada';
 
                 return (
-                  <div key={exp.id} className="py-3.5 flex items-center justify-between gap-4 hover:bg-slate-50/60 px-2 rounded-2xl transition-colors">
+                  <div key={exp.id} className="py-3.5 flex items-center justify-between gap-4 hover:bg-[#F8FAFC] px-2 rounded-xl transition-colors">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden border border-slate-200">
+                      <div className="w-10 h-10 rounded-xl bg-[#FDEFEA] text-[#F97316] flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden border border-[#EEF0F4]">
                         {payerUser?.photoURL || payerUser?.photoUrl ? (
                           <img src={payerUser.photoURL || payerUser.photoUrl} alt={payerName} className="w-full h-full object-cover" />
                         ) : (
@@ -496,11 +490,11 @@ export function BudgetsView({
                         )}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-bold text-sm text-slate-800 truncate">
+                        <p className="font-semibold text-sm text-slate-900 truncate">
                           {exp.description || exp.category || 'Gasto'}
                         </p>
                         <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5 flex-wrap">
-                          <span>{formattedDate}</span>
+                          <span className="tabular-nums">{formattedDate}</span>
                           <span>•</span>
                           <span className="inline-flex items-center gap-1">
                             <Wallet size={11} />
@@ -512,7 +506,7 @@ export function BudgetsView({
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <span className="font-bold text-sm text-slate-900 block">
+                      <span className="font-bold text-sm text-slate-900 block tabular-nums">
                         {FormatCurrency(normalize(exp.amount, exp.currency))}
                       </span>
                       <span className="text-[10px] text-slate-400 font-semibold uppercase">
@@ -533,7 +527,7 @@ export function BudgetsView({
           title="Apartar Dinero al Presupuesto"
         >
           <form onSubmit={handleSaveFunding} className="space-y-4">
-            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 text-xs text-slate-600 space-y-1">
+            <div className="p-3.5 bg-[#F8FAFC] rounded-2xl border border-[#EEF0F4] text-xs text-slate-600 space-y-1">
               <div className="flex justify-between">
                 <span className="font-medium text-slate-500">Categoría:</span>
                 <span className="font-bold text-slate-800">{selectedBudget.category}</span>
@@ -544,7 +538,7 @@ export function BudgetsView({
               </div>
               <div className="flex justify-between">
                 <span className="font-medium text-slate-500">Meta Asignada:</span>
-                <span className="font-black text-indigo-600">{FormatCurrency(assignedAmount)}</span>
+                <span className="font-bold text-[#6366F1] tabular-nums">{FormatCurrency(assignedAmount)}</span>
               </div>
             </div>
 
@@ -615,51 +609,50 @@ export function BudgetsView({
 
             {/* Fila inferior: Botones de acción */}
             <div className="flex flex-wrap gap-2 w-full justify-start sm:justify-end">
-              <Button 
-                variant="outline" 
+              <button 
+                type="button"
                 onClick={() => setIsCategoriesModalOpen(true)}
-                className="flex-1 sm:flex-none whitespace-nowrap flex items-center gap-2 border-slate-200 hover:bg-slate-50 text-slate-700"
+                className="bg-white border border-[#EEF0F4] hover:bg-[#F8FAFC] text-slate-700 rounded-full px-4 py-2 font-medium transition-colors duration-150 text-sm shadow-xs flex items-center gap-2 cursor-pointer"
                 title="Gestionar Categorías y Etiquetas"
               >
-                <FolderPlus size={18} className="text-indigo-600" />
+                <FolderPlus size={16} className="text-slate-600" />
                 <span>Categorías / Tags</span>
-              </Button>
-              <Button 
-                variant="outline" 
+              </button>
+              <button 
+                type="button"
                 onClick={handleCopyPrevious} 
-                className="flex-1 sm:flex-none whitespace-nowrap"
+                className="bg-white border border-[#EEF0F4] hover:bg-[#F8FAFC] text-slate-700 rounded-full px-4 py-2 font-medium transition-colors duration-150 text-sm shadow-xs flex items-center gap-1.5 cursor-pointer"
               >
                 Copiar anterior
-              </Button>
-              <Button 
+              </button>
+              <button 
+                type="button"
                 onClick={() => handleOpenModal()} 
-                className="flex-1 sm:flex-none whitespace-nowrap"
+                className="bg-[#111319] hover:bg-[#1A1D26] text-white rounded-full px-5 py-2 font-medium transition-colors duration-150 shadow-sm text-sm flex items-center gap-1.5 cursor-pointer"
               >
-                <Plus size={18} className="mr-1.5" /> Nuevo
-              </Button>
+                <Plus size={16} /> Nuevo
+              </button>
             </div>
           </div>
 
           {/* Panel / Tarjeta de Resumen Ejecutivo de Ingresos del Periodo */}
-          <Card className="bg-gradient-to-br from-slate-900 via-slate-850 to-indigo-950 text-white p-6 rounded-3xl border border-slate-800/80 shadow-lg relative overflow-hidden">
-            <div className="absolute top-0 right-0 -mt-8 -mr-8 w-44 h-44 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
-            
+          <div className="bg-[#111319] border border-[#232733] rounded-3xl p-6 text-white shadow-bento relative overflow-hidden">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
               <div className="space-y-1">
-                <div className="flex items-center gap-2 text-indigo-300 text-xs font-bold uppercase tracking-wider">
-                  <TrendingUp size={15} className="text-indigo-400" />
+                <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                  <TrendingUp size={15} className="text-slate-400" />
                   <span>Resumen Ejecutivo de Ingresos ({selectedMonth.substring(0, 7)})</span>
                 </div>
                 <div className="flex items-baseline gap-2 pt-1">
-                  <span className="text-3xl md:text-4xl font-black tracking-tight text-white">
+                  <span className="text-3xl md:text-4xl font-bold tracking-tight text-white tabular-nums">
                     {FormatCurrency(incomeShares.totalIncome)}
                   </span>
-                  <span className="text-xs text-indigo-300 font-medium">ingresos totales</span>
+                  <span className="text-xs text-slate-400 font-medium">ingresos totales</span>
                 </div>
               </div>
 
               <div className="flex-1 lg:max-w-xl">
-                <div className="text-xs font-bold text-indigo-200 uppercase tracking-wider mb-2 flex items-center justify-between">
+                <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
                   <span>Desglose por Integrante</span>
                 </div>
                 
@@ -668,26 +661,26 @@ export function BudgetsView({
                     {incomeShares.userShares.map((user) => (
                       <div 
                         key={user.userId}
-                        className="bg-white/10 backdrop-blur-sm rounded-2xl p-3 border border-white/10 flex items-center justify-between shadow-xs"
+                        className="bg-white/5 rounded-2xl p-3 border border-white/10 flex items-center justify-between shadow-2xs"
                       >
                         <div className="truncate mr-2">
-                          <p className="text-xs font-medium text-indigo-200 truncate">{user.userName}</p>
-                          <p className="text-sm font-bold text-white">{FormatCurrency(user.income)}</p>
+                          <p className="text-xs font-medium text-slate-300 truncate">{user.userName}</p>
+                          <p className="text-sm font-bold text-white tabular-nums">{FormatCurrency(user.income)}</p>
                         </div>
-                        <span className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-black bg-indigo-500/30 text-indigo-100 border border-indigo-400/25 shrink-0">
+                        <span className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-bold bg-white/10 text-slate-200 border border-white/15 shrink-0 tabular-nums">
                           {user.percentage.toFixed(1)}%
                         </span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-indigo-200">No hay integrantes registrados en el hogar.</p>
+                  <p className="text-xs text-slate-400">No hay integrantes registrados en el hogar.</p>
                 )}
               </div>
             </div>
 
             {incomeShares.totalIncome === 0 && (
-              <div className="mt-4 pt-4 border-t border-white/10 flex items-center gap-2.5 text-xs text-amber-200 bg-amber-500/10 px-3.5 py-2.5 rounded-xl border border-amber-500/20">
+              <div className="mt-4 pt-4 border-t border-[#232733] flex items-center gap-2.5 text-xs text-amber-200 bg-amber-500/10 px-3.5 py-2.5 rounded-xl border border-amber-500/20">
                 <Info size={16} className="shrink-0 text-amber-400" />
                 <span>
                   {appContext === 'personal'
@@ -696,41 +689,42 @@ export function BudgetsView({
                 </span>
               </div>
             )}
-          </Card>
+          </div>
         </>
       ) : (
         /* Barra de acciones cuando la cabecera reside en PlanningView */
         <div className="flex flex-wrap gap-2 w-full justify-start sm:justify-end mb-2">
-          <Button 
-            variant="outline" 
+          <button 
+            type="button"
             onClick={() => setIsCategoriesModalOpen(true)}
-            className="flex-1 sm:flex-none whitespace-nowrap flex items-center gap-2 border-slate-200 hover:bg-slate-50 text-slate-700"
+            className="bg-white border border-[#EEF0F4] hover:bg-[#F8FAFC] text-slate-700 rounded-full px-4 py-2 font-medium transition-colors duration-150 text-sm shadow-xs flex items-center gap-2 cursor-pointer"
             title="Gestionar Categorías y Etiquetas"
           >
-            <FolderPlus size={18} className="text-indigo-600" />
+            <FolderPlus size={16} className="text-slate-600" />
             <span>Categorías / Tags</span>
-          </Button>
-          <Button 
-            variant="outline" 
+          </button>
+          <button 
+            type="button"
             onClick={handleCopyPrevious} 
-            className="flex-1 sm:flex-none whitespace-nowrap"
+            className="bg-white border border-[#EEF0F4] hover:bg-[#F8FAFC] text-slate-700 rounded-full px-4 py-2 font-medium transition-colors duration-150 text-sm shadow-xs flex items-center gap-1.5 cursor-pointer"
           >
             Copiar anterior
-          </Button>
-          <Button 
+          </button>
+          <button 
+            type="button"
             onClick={() => handleOpenModal()} 
-            className="flex-1 sm:flex-none whitespace-nowrap"
+            className="bg-[#111319] hover:bg-[#1A1D26] text-white rounded-full px-5 py-2 font-medium transition-colors duration-150 shadow-sm text-sm flex items-center gap-1.5 cursor-pointer"
           >
-            <Plus size={18} className="mr-1.5" /> Nuevo
-          </Button>
+            <Plus size={16} /> Nuevo
+          </button>
         </div>
       )}
 
       {/* 3. Tarjetas de Presupuesto Rediseñadas */}
       {(data?.budgets || []).length === 0 ? (
-        <Card className="text-center py-12 px-4 border-dashed border-2 border-slate-200 rounded-3xl">
+        <div className="text-center py-12 px-4 border border-[#EEF0F4] rounded-3xl bg-white shadow-bento">
           <div className="max-w-md mx-auto space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 mx-auto flex items-center justify-center">
+            <div className="w-12 h-12 rounded-2xl bg-[#F8FAFC] border border-[#EEF0F4] text-slate-600 mx-auto flex items-center justify-center">
               <FolderPlus size={24} />
             </div>
             <h3 className="font-bold text-slate-800 text-lg">No hay presupuestos para este periodo</h3>
@@ -738,13 +732,23 @@ export function BudgetsView({
               Crea un presupuesto para este mes o copia la estructura del mes anterior para comenzar.
             </p>
             <div className="flex justify-center gap-3 pt-2">
-              <Button variant="outline" onClick={handleCopyPrevious}>Copiar anterior</Button>
-              <Button onClick={() => handleOpenModal()}>
-                <Plus size={16} className="mr-1" /> Crear presupuesto
-              </Button>
+              <button 
+                type="button"
+                onClick={handleCopyPrevious}
+                className="bg-white border border-[#EEF0F4] hover:bg-[#F8FAFC] text-slate-700 rounded-full px-4 py-2 font-medium transition-colors duration-150 text-sm shadow-xs cursor-pointer"
+              >
+                Copiar anterior
+              </button>
+              <button 
+                type="button"
+                onClick={() => handleOpenModal()}
+                className="bg-[#111319] hover:bg-[#1A1D26] text-white rounded-full px-5 py-2 font-medium transition-colors duration-150 shadow-sm text-sm flex items-center gap-1.5 cursor-pointer"
+              >
+                <Plus size={16} /> Crear presupuesto
+              </button>
             </div>
           </div>
-        </Card>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {(data?.budgets || []).map(budget => {
@@ -810,29 +814,18 @@ export function BudgetsView({
               : (actualSpent > 0 ? 100 : 0);
             const progressBarWidth = Math.min(Math.max(rawPorcentaje, 0), 100);
 
-            // Semáforo de colores según porcentaje consumido (< 80% verde, 80-99% amarillo, >= 100% rojo)
-            let alertColor = 'bg-emerald-500';
-            let alertText = 'text-emerald-600';
-            if (rawPorcentaje >= 100) {
-              alertColor = 'bg-rose-600';
-              alertText = 'text-rose-600 font-black';
-            } else if (rawPorcentaje >= 80) {
-              alertColor = 'bg-amber-500';
-              alertText = 'text-amber-600 font-bold';
-            }
-
             return (
-              <Card 
+              <div 
                 key={budget.id} 
-                className="hover:border-indigo-200 transition-all duration-200 group cursor-default rounded-3xl p-5 shadow-sm border border-slate-100 bg-white space-y-4"
+                className="bg-white border border-[#EEF0F4] rounded-3xl p-6 shadow-bento hover:border-slate-300 transition-all flex flex-col justify-between"
               >
                 {/* BLOQUE 1 (CABECERA): Icono + Nombre a la izquierda, Editar/Eliminar a la derecha */}
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="text-xl bg-slate-50 p-2 rounded-xl group-hover:scale-105 group-hover:bg-indigo-50 transition-all duration-300 shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-[#F8FAFC] border border-[#EEF0F4] flex items-center justify-center text-lg shrink-0">
                       {resolveBudgetIcon(budget.icon, budget.category)}
                     </div>
-                    <h3 className="font-bold text-slate-800 text-base tracking-tight truncate">
+                    <h3 className="font-semibold text-slate-900 text-base tracking-tight truncate">
                       {budget.category}
                     </h3>
                   </div>
@@ -841,7 +834,7 @@ export function BudgetsView({
                     <button 
                       type="button"
                       onClick={() => handleOpenModal(budget)} 
-                      className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
+                      className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-[#F5F6FA] rounded-lg transition-colors cursor-pointer"
                       title="Editar presupuesto"
                     >
                       <Edit2 size={15} />
@@ -849,7 +842,7 @@ export function BudgetsView({
                     <button 
                       type="button"
                       onClick={() => handleDelete(budget.id)} 
-                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-[#FDEFEA] rounded-lg transition-colors cursor-pointer"
                       title="Eliminar presupuesto"
                     >
                       <Trash2 size={15} />
@@ -858,46 +851,46 @@ export function BudgetsView({
                 </div>
 
                 {/* BLOQUE 2 (HERO Y CONTEXTO DEL MES) */}
-                <div>
+                <div className="my-3">
                   <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">
                       {budget.isCumulative ? 'DISPONIBLE ACUMULADO' : 'DISPONIBLE ESTE MES'}
                     </span>
-                    <div className={`text-3xl font-extrabold tracking-tight mt-0.5 ${
+                    <div className={`text-3xl font-bold tracking-tight mt-0.5 tabular-nums ${
                       budget.isCumulative 
-                        ? 'text-emerald-600' 
-                        : (restante < 0 ? 'text-rose-600' : 'text-slate-900')
+                        ? 'text-[#10B981]' 
+                        : (restante < 0 ? 'text-[#F97316]' : 'text-slate-900')
                     }`}>
                       {FormatCurrency(budget.isCumulative ? cumulativeCalc.accumulatedBalance : Math.max(0, restante))}
                     </div>
                   </div>
 
-                  {/* Barra de progreso delgada y elegante */}
-                  <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden mt-3 relative">
+                  {/* Barra de progreso: Pista pastel suave */}
+                  <div className="h-2 w-full bg-[#EEF2FF] rounded-full overflow-hidden mt-3 relative">
                     <div 
-                      className={`h-full transition-all duration-500 ease-out ${alertColor}`} 
+                      className={`h-full transition-all duration-500 ease-out ${rawPorcentaje >= 100 ? 'bg-[#F97316]' : 'bg-[#10B981]'}`} 
                       style={{ width: `${progressBarWidth}%` }}
                     />
                   </div>
 
                   {/* Renglón sutil bajo la barra */}
-                  <div className="flex justify-between items-center text-xs text-slate-400 mt-1.5">
+                  <div className="flex justify-between items-center text-xs text-slate-500 mt-1.5 tabular-nums">
                     <span>
-                      Meta: <strong className="font-semibold text-slate-600">{FormatCurrency(assignedAmount)}{budget.isCumulative ? '/mes' : ''}</strong>
+                      Meta: <strong className="font-semibold text-slate-700 tabular-nums">{FormatCurrency(assignedAmount)}{budget.isCumulative ? '/mes' : ''}</strong>
                     </span>
                     <span>
-                      Gastado: <strong className="font-semibold text-slate-600">{FormatCurrency(actualSpent)}</strong>
+                      Gastado: <strong className="font-semibold text-slate-700 tabular-nums">{FormatCurrency(actualSpent)}</strong> ({rawPorcentaje.toFixed(0)}%)
                     </span>
                   </div>
                 </div>
 
-                {/* BLOQUE 3 (FOOTER UNIFICADO - UNA SOLA LÍNEA DIVISORIA) */}
-                <div className="border-t border-slate-100 mt-4 pt-3 flex items-center justify-between gap-3">
+                {/* BLOQUE 3 (FOOTER COLABORATIVO - DIVISOR SUTIL) */}
+                <div className="border-t border-[#EEF0F4] pt-3.5 mt-4 flex items-center justify-between gap-3">
                   {/* Izquierda: Aportación por integrante */}
                   <div className="flex items-center gap-3 min-w-0 flex-wrap">
                     {pendingContributions.map((member) => (
                       <div key={member.userId} className="flex items-center gap-1.5 text-xs font-medium text-slate-600">
-                        <div className="w-5 h-5 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center font-bold text-[9px] text-slate-700 shrink-0 border border-slate-300">
+                        <div className="w-5 h-5 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center font-bold text-[9px] text-slate-700 shrink-0 border-2 border-white shadow-2xs">
                           {member.photoURL ? (
                             <img
                               src={member.photoURL}
@@ -913,11 +906,11 @@ export function BudgetsView({
                           {member.userName.split(' ')[0]}:
                         </span>
                         {member.isFullyCovered ? (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#E8F8F0] text-[#10B981] tabular-nums">
                             $0
                           </span>
                         ) : (
-                          <span className="font-bold text-slate-800">
+                          <span className="font-bold text-slate-800 tabular-nums">
                             {FormatCurrency(member.pendingAmount)}
                           </span>
                         )}
@@ -932,17 +925,17 @@ export function BudgetsView({
                   <button
                     type="button"
                     onClick={() => setSelectedBudgetId(budget.id)}
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 transition-colors shrink-0 group cursor-pointer"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors shrink-0 group cursor-pointer"
                   >
                     <span className="hidden sm:inline">Movimientos del periodo</span>
                     <span className="sm:hidden">Movimientos</span>
-                    <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 group-hover:bg-indigo-50 group-hover:text-indigo-700 transition-colors">
+                    <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#F1F5F9] text-slate-600 group-hover:bg-[#EEF2FF] group-hover:text-[#6366F1] transition-colors tabular-nums">
                       {periodExpenses.length}
                     </span>
-                    <ChevronRight size={15} className="text-slate-400 group-hover:text-indigo-600 transition-colors" />
+                    <ChevronRight size={15} className="text-slate-400 group-hover:text-slate-900 transition-colors" />
                   </button>
                 </div>
-              </Card>
+              </div>
             );
           })}
         </div>
@@ -956,14 +949,14 @@ export function BudgetsView({
       >
         <div className="space-y-5">
           {/* Tabs */}
-          <div className="flex border-b border-slate-200">
+          <div className="flex border-b border-[#EEF0F4]">
             <button
               type="button"
               onClick={() => setActiveModalTab('categories')}
-              className={`flex items-center gap-2 pb-2.5 px-4 font-bold text-sm border-b-2 transition-colors ${
+              className={`flex items-center gap-2 pb-2.5 px-4 font-bold text-sm border-b-2 transition-colors cursor-pointer ${
                 activeModalTab === 'categories'
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                  ? 'border-[#111319] text-slate-900'
+                  : 'border-transparent text-slate-400 hover:text-slate-700'
               }`}
             >
               <Folder size={16} />
@@ -972,10 +965,10 @@ export function BudgetsView({
             <button
               type="button"
               onClick={() => setActiveModalTab('tags')}
-              className={`flex items-center gap-2 pb-2.5 px-4 font-bold text-sm border-b-2 transition-colors ${
+              className={`flex items-center gap-2 pb-2.5 px-4 font-bold text-sm border-b-2 transition-colors cursor-pointer ${
                 activeModalTab === 'tags'
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                  ? 'border-[#111319] text-slate-900'
+                  : 'border-transparent text-slate-400 hover:text-slate-700'
               }`}
             >
               <Tag size={16} />
@@ -986,57 +979,57 @@ export function BudgetsView({
           {/* Tab Categorías */}
           {activeModalTab === 'categories' && (
             <div className="space-y-4">
-              <form onSubmit={handleAddCategory} className="flex flex-col sm:flex-row gap-2.5 items-end p-3.5 border border-slate-100 rounded-2xl bg-slate-50">
+              <form onSubmit={handleAddCategory} className="flex flex-col sm:flex-row gap-2.5 items-end p-4 border border-[#EEF0F4] rounded-2xl bg-[#F8FAFC]">
                 <div className="flex-1 w-full">
-                  <label className="block text-xs font-bold text-slate-600 mb-1">Nombre</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Nombre</label>
                   <input 
                     required 
                     type="text" 
                     value={newCategoryName} 
                     onChange={e => setNewCategoryName(e.target.value)} 
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500" 
+                    className="w-full px-3.5 py-2.5 bg-white border border-[#EEF0F4] rounded-xl text-sm focus:border-[#111319] focus:ring-1 focus:ring-[#111319] transition-colors" 
                     placeholder="Ej. Despensa, Servicios..." 
                   />
                 </div>
                 <div className="w-full sm:w-28">
-                  <label className="block text-xs font-bold text-slate-600 mb-1">Tipo</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Tipo</label>
                   <select 
                     value={newCategoryType} 
                     onChange={e => setNewCategoryType(e.target.value as 'EXPENSE' | 'INCOME')} 
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3.5 py-2.5 bg-white border border-[#EEF0F4] rounded-xl text-sm focus:border-[#111319] focus:ring-1 focus:ring-[#111319] transition-colors"
                   >
                     <option value="EXPENSE">Gasto</option>
                     <option value="INCOME">Ingreso</option>
                   </select>
                 </div>
                 <div className="w-full sm:w-16">
-                  <label className="block text-xs font-bold text-slate-600 mb-1">Color</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Color</label>
                   <input 
                     type="color" 
                     value={newCategoryColor} 
                     onChange={e => setNewCategoryColor(e.target.value)} 
-                    className="w-full h-[38px] cursor-pointer bg-white border border-slate-200 rounded-xl p-1" 
+                    className="w-full h-[42px] cursor-pointer bg-white border border-[#EEF0F4] rounded-xl p-1" 
                   />
                 </div>
-                <Button type="submit" className="w-full sm:w-auto h-[38px] px-3">
+                <button type="submit" className="w-full sm:w-auto h-[42px] px-4 bg-[#111319] hover:bg-[#1A1D26] text-white rounded-xl font-medium transition-colors cursor-pointer flex items-center justify-center">
                   <Plus size={16} />
-                </Button>
+                </button>
               </form>
 
               <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                 {categories?.map(c => (
                   <div 
                     key={c.id} 
-                    className="flex items-center justify-between p-3 border border-slate-100 rounded-xl bg-white hover:bg-slate-50 transition-colors shadow-2xs"
+                    className="flex items-center justify-between p-3.5 border border-[#EEF0F4] rounded-xl bg-white hover:bg-slate-50 transition-colors shadow-2xs"
                   >
                     <div className="flex items-center gap-3">
                       <div 
-                        className="w-4 h-4 rounded-full shrink-0 shadow-xs" 
+                        className="w-3.5 h-3.5 rounded-full shrink-0 shadow-xs" 
                         style={{ backgroundColor: c.color || '#6366f1' }} 
                       />
                       <div>
                         <p className="font-bold text-sm text-slate-800">{c.name}</p>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                        <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
                           {c.type === 'EXPENSE' ? 'Gasto' : 'Ingreso'}
                         </p>
                       </div>
@@ -1044,7 +1037,7 @@ export function BudgetsView({
                     <button 
                       type="button"
                       onClick={() => deleteCategoryItem(c.id)} 
-                      className="text-slate-400 hover:text-rose-600 p-2 rounded-lg hover:bg-rose-50 transition-colors"
+                      className="text-slate-400 hover:text-rose-600 p-2 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
                       title="Eliminar categoría"
                     >
                       <Trash2 size={15} />
@@ -1067,24 +1060,24 @@ export function BudgetsView({
                   value={newTagName} 
                   onChange={e => setNewTagName(e.target.value)} 
                   placeholder="Nueva etiqueta (ej. #Vacaciones, #Mascota)" 
-                  className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="flex-1 px-4 py-2.5 bg-white border border-[#EEF0F4] rounded-xl text-sm focus:border-[#111319] focus:ring-1 focus:ring-[#111319] transition-colors"
                 />
-                <Button type="submit" className="whitespace-nowrap flex items-center gap-1.5">
+                <button type="submit" className="whitespace-nowrap flex items-center gap-1.5 bg-[#111319] hover:bg-[#1A1D26] text-white px-5 py-2.5 rounded-xl font-medium transition-colors cursor-pointer text-sm">
                   <Plus size={16} /> Agregar
-                </Button>
+                </button>
               </form>
 
               <div className="flex flex-wrap gap-2 max-h-64 overflow-y-auto p-1">
                 {tags?.map(t => (
                   <div 
                     key={t.id} 
-                    className="flex items-center gap-2 bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-full text-xs font-semibold border border-indigo-100 shadow-2xs"
+                    className="flex items-center gap-2 bg-[#EEF2FF] text-[#6366F1] px-3 py-1.5 rounded-full text-xs font-semibold border border-[#6366F1]/20 shadow-2xs"
                   >
                     <span>#{t.name.replace(/^#/, '')}</span>
                     <button 
                       type="button"
                       onClick={() => deleteTagItem(t.id)} 
-                      className="text-indigo-400 hover:text-rose-600 transition-colors ml-0.5"
+                      className="text-[#6366F1]/60 hover:text-rose-600 transition-colors ml-0.5 cursor-pointer"
                       title="Eliminar etiqueta"
                     >
                       <Trash2 size={13} />

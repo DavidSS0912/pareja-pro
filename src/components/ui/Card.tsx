@@ -7,7 +7,7 @@ export const Card = ({ children, className = '', ...props }: {
 }) => {
   return (
     <div
-      className={`bg-white rounded-3xl p-6 shadow-sm transition-all duration-200 ${className}`}
+      className={`bg-white rounded-3xl p-6 border border-[#EEF0F4] shadow-bento transition-all duration-200 ${className}`}
       {...props}
     >
       {children}

@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { Plus, Edit2, Trash2, Download, UserPlus, Check } from 'lucide-react';
-import { Card } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { MovementForm } from '../components/forms/MovementForm';
 import { FormatCurrency, exportToCSV } from '../utils';
@@ -108,40 +106,41 @@ export function SettlementView({ data, calc, methods }: { data?: any; calc?: any
 
   return (
     <div className="space-y-6 animate-in">
-      <div className="mb-8">
-        <h2 className="text-3xl font-black tracking-tight text-slate-800">Liquidador Interno</h2>
-        <p className="text-slate-600 mt-2 font-medium">Conciliación automática de gastos compartidos.</p>
+      <div className="mb-2">
+        <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">Liquidador Interno</h2>
+        <p className="text-slate-500 mt-1 font-medium text-sm">Conciliación automática de gastos compartidos en el hogar.</p>
       </div>
 
       {!hasMultipleUsers ? (
-        <Card className="p-8 sm:p-12 text-center bg-white border border-slate-200/80 shadow-sm rounded-3xl relative overflow-hidden">
+        <div className="bg-white border border-[#EEF0F4] rounded-3xl p-8 sm:p-12 text-center shadow-bento relative overflow-hidden">
           <div className="max-w-md mx-auto flex flex-col items-center">
-            <div className="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-6 shadow-inner">
+            <div className="w-16 h-16 rounded-2xl bg-[#EEF2FF] text-[#6366F1] flex items-center justify-center mb-6 border border-[#6366F1]/10">
               <UserPlus className="w-8 h-8" />
             </div>
-            <h3 className="text-2xl font-bold text-slate-800 mb-3 tracking-tight">Liquidación en Pareja</h3>
-            <p className="text-slate-600 font-medium mb-8 text-sm leading-relaxed">
+            <h3 className="text-2xl font-bold text-slate-900 mb-3 tracking-tight">Liquidación en Pareja</h3>
+            <p className="text-slate-500 font-medium mb-8 text-sm leading-relaxed">
               Para conciliar gastos compartidos y calcular automáticamente quién le debe a quién, necesitas al menos dos integrantes en tu casa.
             </p>
             
-            <Button 
+            <button 
+              type="button"
               onClick={handleInvite}
               disabled={isInviting}
-              className="w-full sm:w-auto px-8 py-3.5 text-base font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all flex items-center justify-center gap-2"
+              className="w-full sm:w-auto bg-[#111319] hover:bg-[#1A1D26] text-white rounded-full px-8 py-3.5 font-medium transition-colors duration-150 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
               <UserPlus size={18} />
-              {isInviting ? 'Generando invitación...' : 'Invitar a alguien a mi casa'}
-            </Button>
+              <span>{isInviting ? 'Generando invitación...' : 'Invitar a alguien a mi casa'}</span>
+            </button>
 
             {inviteCopied && (
-              <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-in fade-in">
-                <Check size={16} className="text-emerald-600 shrink-0" />
+              <div className="mt-4 p-3 bg-[#E8F8F0] border border-[#10B981]/20 text-[#10B981] text-xs font-semibold rounded-2xl flex items-center gap-2 animate-in fade-in">
+                <Check size={16} className="text-[#10B981] shrink-0" />
                 <span>¡Enlace copiado al portapapeles! Compártelo con tu pareja.</span>
               </div>
             )}
 
             {inviteLink && !inviteCopied && (
-              <div className="mt-4 w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 font-mono break-all flex items-center justify-between gap-2">
+              <div className="mt-4 w-full p-3 bg-[#F8FAFC] border border-[#EEF0F4] rounded-2xl text-xs text-slate-600 font-mono break-all flex items-center justify-between gap-2">
                 <span className="truncate">{inviteLink}</span>
                 <button 
                   type="button" 
@@ -154,40 +153,40 @@ export function SettlementView({ data, calc, methods }: { data?: any; calc?: any
                       console.error(e);
                     }
                   }} 
-                  className="text-primary hover:underline font-sans font-semibold shrink-0"
+                  className="text-slate-900 hover:text-[#6366F1] font-sans font-semibold shrink-0 cursor-pointer text-xs"
                 >
                   Copiar
                 </button>
               </div>
             )}
           </div>
-        </Card>
+        </div>
       ) : (
-        <Card className="bg-gradient-to-br from-slate-900 to-slate-800 text-white border-0 py-16 relative overflow-hidden shadow-2xl">
-          {/* Background decorative elements */}
-          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-700/50 via-transparent to-transparent pointer-events-none"></div>
-          <div className="absolute bottom-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="bg-[#111319] border border-[#232733] rounded-3xl p-6 sm:p-10 text-white shadow-bento relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-[#6366F1]/10 rounded-full blur-3xl pointer-events-none"></div>
 
           <div className="text-center relative z-10">
-            <p className="text-slate-300 font-bold mb-4 tracking-widest uppercase text-sm">Balance Neto Mensual</p>
-            <div className="text-7xl font-black mb-8 tracking-tighter text-white tabular-nums drop-shadow-lg">
+            <span className="inline-block text-slate-400 font-bold mb-3 tracking-widest uppercase text-xs">
+              Balance Neto Mensual
+            </span>
+            <div className="text-5xl sm:text-7xl font-black mb-8 tracking-tight text-white tabular-nums">
               {FormatCurrency(settlementAmount)}
             </div>
             
-            <div className="inline-flex items-center gap-3 sm:gap-4 bg-white/10 p-2.5 px-5 rounded-2xl border border-white/10 max-w-full">
+            <div className="inline-flex items-center gap-3 sm:gap-4 bg-[#1A1D26] p-2.5 px-5 rounded-2xl border border-[#232733] max-w-full">
               {netSettlement > 0 ? (
                  <>
-                   <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center font-black text-lg text-white shadow-inner border border-purple-300/30 shrink-0">
+                   <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full overflow-hidden bg-[#EEF2FF] text-[#6366F1] flex items-center justify-center font-bold text-base shadow-sm border border-[#232733] shrink-0">
                      {(userB?.photoURL || userB?.photoUrl) ? (
                        <img src={userB.photoURL || userB.photoUrl} alt={nameB} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                      ) : (
                        <span>{initialB}</span>
                      )}
                    </div> 
-                   <span className="font-bold text-base sm:text-lg tracking-tight">
-                     {nameB} <span className="text-slate-300 font-normal">transfiere a</span> {nameA}
+                   <span className="font-semibold text-sm sm:text-base tracking-tight">
+                     {nameB} <span className="text-slate-400 font-normal">transfiere a</span> {nameA}
                    </span>
-                   <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center font-black text-lg text-white shadow-inner border border-blue-300/30 shrink-0">
+                   <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full overflow-hidden bg-[#E8F8F0] text-[#10B981] flex items-center justify-center font-bold text-base shadow-sm border border-[#232733] shrink-0">
                      {(userA?.photoURL || userA?.photoUrl) ? (
                        <img src={userA.photoURL || userA.photoUrl} alt={nameA} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                      ) : (
@@ -197,17 +196,17 @@ export function SettlementView({ data, calc, methods }: { data?: any; calc?: any
                  </>
               ) : netSettlement < 0 ? (
                  <>
-                   <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center font-black text-lg text-white shadow-inner border border-blue-300/30 shrink-0">
+                   <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full overflow-hidden bg-[#E8F8F0] text-[#10B981] flex items-center justify-center font-bold text-base shadow-sm border border-[#232733] shrink-0">
                      {(userA?.photoURL || userA?.photoUrl) ? (
                        <img src={userA.photoURL || userA.photoUrl} alt={nameA} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                      ) : (
                        <span>{initialA}</span>
                      )}
                    </div> 
-                   <span className="font-bold text-base sm:text-lg tracking-tight">
-                     {nameA} <span className="text-slate-300 font-normal">transfiere a</span> {nameB}
+                   <span className="font-semibold text-sm sm:text-base tracking-tight">
+                     {nameA} <span className="text-slate-400 font-normal">transfiere a</span> {nameB}
                    </span>
-                   <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center font-black text-lg text-white shadow-inner border border-purple-300/30 shrink-0">
+                   <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full overflow-hidden bg-[#EEF2FF] text-[#6366F1] flex items-center justify-center font-bold text-base shadow-sm border border-[#232733] shrink-0">
                      {(userB?.photoURL || userB?.photoUrl) ? (
                        <img src={userB.photoURL || userB.photoUrl} alt={nameB} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                      ) : (
@@ -216,30 +215,43 @@ export function SettlementView({ data, calc, methods }: { data?: any; calc?: any
                    </div>
                  </>
               ) : (
-                <span className="px-6 py-2 font-bold text-lg tracking-tight">Cuentas Saldadas 🙌</span>
+                <span className="px-4 py-1.5 font-semibold text-sm tracking-tight text-white">Cuentas Saldadas 🙌</span>
               )}
             </div>
           </div>
-        </Card>
+        </div>
       )}
 
-      <Card>
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="font-bold text-xl text-slate-800">Historial de Gastos</h3>
-          <div className="flex gap-2">
-            <Button onClick={() => exportToCSV(data?.expenses || [], 'liquidacion_gastos')} size="sm" variant="secondary">
-              <Download size={16} className="mr-1" /> Exportar
-            </Button>
-            <Button onClick={() => handleOpenModal()} size="sm">
-              <Plus size={16} className="mr-1" /> Nuevo Gasto
-            </Button>
+      <div className="bg-white border border-[#EEF0F4] rounded-3xl p-6 sm:p-8 shadow-bento space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-[#EEF0F4]">
+          <div>
+            <h3 className="font-bold text-lg text-slate-900">Historial de Gastos</h3>
+            <p className="text-xs text-slate-400 mt-0.5 font-medium">Detalle de movimientos compartidos que impactan la liquidación</p>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <button 
+              type="button"
+              onClick={() => exportToCSV(data?.expenses || [], 'liquidacion_gastos')} 
+              className="bg-white border border-[#EEF0F4] hover:bg-slate-50 text-slate-700 rounded-full px-4 py-2 font-medium transition-colors text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-sm"
+            >
+              <Download size={15} /> 
+              <span>Exportar</span>
+            </button>
+            <button 
+              type="button"
+              onClick={() => handleOpenModal()} 
+              className="bg-[#111319] hover:bg-[#1A1D26] text-white rounded-full px-5 py-2 font-medium transition-colors duration-150 text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-sm"
+            >
+              <Plus size={15} /> 
+              <span>Nuevo Gasto</span>
+            </button>
           </div>
         </div>
         
         <div className="space-y-3">
           {(data?.expenses || []).length === 0 ? (
-            <div className="text-center py-12 text-slate-500 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
-              <p className="font-medium text-sm">No hay gastos compartidos registrados para este período.</p>
+            <div className="text-center py-12 text-slate-400 bg-[#F8FAFC] rounded-2xl border border-dashed border-[#EEF0F4]">
+              <p className="font-medium text-sm text-slate-500">No hay gastos compartidos registrados para este período.</p>
             </div>
           ) : (
             (data?.expenses || []).map((exp: any) => {
@@ -248,16 +260,16 @@ export function SettlementView({ data, calc, methods }: { data?: any; calc?: any
               const payerInitial = payerName.charAt(0).toUpperCase();
 
               return (
-                <div key={exp.id} className="flex justify-between items-center p-4 bg-rose-50/50 hover:bg-rose-50 rounded-2xl border border-rose-100/50 transition-colors group">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-full ${payer?.avatar || 'bg-slate-300'} flex items-center justify-center text-white font-bold overflow-hidden shrink-0`}>
+                <div key={exp.id} className="flex justify-between items-center p-4 bg-[#F8FAFC] hover:bg-[#F1F5F9] rounded-2xl border border-[#EEF0F4] transition-colors group">
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-[#EEF2FF] text-[#6366F1] border border-[#EEF0F4] flex items-center justify-center font-bold text-xs overflow-hidden shrink-0">
                       {(payer?.photoURL || payer?.photoUrl) ? (
                         <>
                           <img 
                             src={payer.photoURL || payer.photoUrl} 
                             alt={payerName} 
                             referrerPolicy="no-referrer"
-                            className="w-full h-full object-cover rounded-full" 
+                            className="w-full h-full object-cover" 
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
                               if (e.currentTarget.nextElementSibling) {
@@ -271,21 +283,41 @@ export function SettlementView({ data, calc, methods }: { data?: any; calc?: any
                         payerInitial
                       )}
                     </div>
-                    <div>
-                      <p className="font-bold text-slate-800">{exp.desc} {exp.isPrivate && <span className="text-xs ml-2 bg-slate-200 text-slate-600 px-2 py-1 rounded">Privado</span>}</p>
-                      <p className="text-xs font-medium text-slate-600 mt-1">
-                        Pagado por {payerName} • Fecha: {formatDateDDMMAAAA(exp.date)} • División: {getSplitLabel(exp)} • Moneda: {exp.currency || 'MXN'}
+                    <div className="min-w-0">
+                      <p className="font-semibold text-slate-900 text-sm truncate">
+                        {exp.desc} {exp.isPrivate && <span className="text-[10px] ml-1.5 bg-[#F1F5F9] text-slate-600 px-2 py-0.5 rounded-full font-medium">Privado</span>}
+                      </p>
+                      <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                        <span>Pagado por <strong className="text-slate-600 font-medium">{payerName}</strong></span>
+                        <span>•</span>
+                        <span className="tabular-nums">Fecha: {formatDateDDMMAAAA(exp.date)}</span>
+                        <span>•</span>
+                        <span>División: {getSplitLabel(exp)}</span>
+                        <span>•</span>
+                        <span>{exp.currency || 'MXN'}</span>
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-6">
-                    <span className="font-black text-slate-800 text-lg">{FormatCurrency(exp.amount)}</span>
-                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => handleOpenModal(exp)} className="p-2 text-slate-500 hover:text-blue-500 hover:bg-white rounded-lg transition-colors" title="Editar">
-                        <Edit2 size={16} />
+                  <div className="flex items-center gap-4 shrink-0">
+                    <span className="font-bold text-slate-900 text-base sm:text-lg tabular-nums">
+                      {FormatCurrency(exp.amount)}
+                    </span>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        type="button"
+                        onClick={() => handleOpenModal(exp)} 
+                        className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-white rounded-lg transition-colors border border-transparent hover:border-[#EEF0F4] cursor-pointer" 
+                        title="Editar"
+                      >
+                        <Edit2 size={15} />
                       </button>
-                      <button onClick={() => handleDelete(exp.id)} className="p-2 text-slate-500 hover:text-rose-500 hover:bg-white rounded-lg transition-colors" title="Eliminar">
-                        <Trash2 size={16} />
+                      <button 
+                        type="button"
+                        onClick={() => handleDelete(exp.id)} 
+                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-[#FDEFEA] rounded-lg transition-colors border border-transparent hover:border-rose-100 cursor-pointer" 
+                        title="Eliminar"
+                      >
+                        <Trash2 size={15} />
                       </button>
                     </div>
                   </div>
@@ -294,7 +326,7 @@ export function SettlementView({ data, calc, methods }: { data?: any; calc?: any
             })
           )}
         </div>
-      </Card>
+      </div>
 
       <Modal 
         isOpen={isModalOpen} 
@@ -313,7 +345,7 @@ export function SettlementView({ data, calc, methods }: { data?: any; calc?: any
         )}
       </Modal>
 
-      <div className="mt-8 text-xs text-slate-500 text-center px-4">
+      <div className="mt-8 text-xs text-slate-400 text-center px-4">
         <p><strong>Aviso:</strong> Este simulador y liquidador tienen fines informativos y de ayuda en la gestión. No constituyen asesoría contable ni legal. Verifica tus montos antes de realizar cualquier transferencia.</p>
       </div>
     </div>

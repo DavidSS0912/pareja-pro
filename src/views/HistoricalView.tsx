@@ -359,55 +359,56 @@ export function HistoricalView({ data, methods, appContext = 'household' }: any)
 
   return (
     <div className="space-y-6 animate-in">
-      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="mb-2 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-black tracking-tight text-slate-800">Histórico</h2>
-          <p className="text-slate-600 mt-2 font-medium">Comparativa de ingresos vs gastos por mes.</p>
+          <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">Histórico</h2>
+          <p className="text-slate-500 mt-1 font-medium text-sm">Comparativa de ingresos vs gastos y evolución financiera por periodo.</p>
         </div>
         
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-4 bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:block">Periodo:</span>
-            <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-full flex-1 md:flex-none">
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-3 bg-white p-2.5 rounded-full shadow-bento border border-[#EEF0F4] self-start md:self-auto">
+          <div className="flex items-center gap-2 pl-2">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider hidden md:block">Periodo:</span>
+            <div className="flex items-center gap-1.5 bg-[#F5F6FA] border border-[#EEF0F4] px-2 py-1 rounded-full flex-1 md:flex-none">
               <input 
                 type="date" 
                 value={methods?.dateRange?.start || ''} 
                 onChange={e => methods?.setDateRange?.(e.target.value, methods?.dateRange?.end || '')} 
-                className="px-3 py-2 bg-transparent text-sm font-medium text-slate-700 outline-none transition-all tabular-nums tracking-tight w-full" 
+                className="px-2 py-1 bg-transparent text-xs font-medium text-slate-900 outline-none tabular-nums tracking-tight w-full" 
                 aria-label="Fecha inicial" 
               />
-              <span className="text-slate-300 font-bold">-</span>
+              <span className="text-slate-400 font-bold text-xs">-</span>
               <input 
                 type="date" 
                 value={methods?.dateRange?.end || ''} 
                 onChange={e => methods?.setDateRange?.(methods?.dateRange?.start || '', e.target.value)} 
-                className="px-3 py-2 bg-transparent text-sm font-medium text-slate-700 outline-none transition-all tabular-nums tracking-tight w-full" 
+                className="px-2 py-1 bg-transparent text-xs font-medium text-slate-900 outline-none tabular-nums tracking-tight w-full" 
                 aria-label="Fecha final" 
               />
             </div>
           </div>
           <button
+            type="button"
             onClick={handleExportCSV}
-            className="flex items-center justify-center w-full md:w-auto gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+            className="flex items-center justify-center w-full md:w-auto gap-1.5 bg-[#111319] hover:bg-[#1A1D26] text-white rounded-full px-5 py-2 font-medium transition-colors duration-150 text-xs shadow-sm cursor-pointer"
           >
-            <Download className="w-4 h-4" />
-            Exportar CSV
+            <Download size={14} />
+            <span>Exportar CSV</span>
           </button>
         </div>
       </div>
 
       {/* Panel Superior de Controles y Filtros */}
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+      <div className="bg-white p-5 rounded-3xl shadow-bento border border-[#EEF0F4] space-y-4">
         {/* Fila superior: Selector rápido por tipo de movimiento y selector de vista */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl overflow-x-auto">
+          <div className="inline-flex bg-[#F5F6FA] border border-[#EEF0F4] rounded-full p-1.5 shadow-sm overflow-x-auto">
             <button
               type="button"
               onClick={() => setMovementFilter('all')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-bold whitespace-nowrap transition-all ${
+              className={`px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
                 movementFilter === 'all'
-                  ? 'bg-white text-indigo-600 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-800'
+                  ? 'bg-[#111319] text-white shadow-sm'
+                  : 'text-[#8C93A6] hover:text-slate-900'
               }`}
             >
               Todos
@@ -415,10 +416,10 @@ export function HistoricalView({ data, methods, appContext = 'household' }: any)
             <button
               type="button"
               onClick={() => setMovementFilter('incomes')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-bold whitespace-nowrap transition-all ${
+              className={`px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
                 movementFilter === 'incomes'
-                  ? 'bg-white text-emerald-600 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-800'
+                  ? 'bg-[#111319] text-white shadow-sm'
+                  : 'text-[#8C93A6] hover:text-slate-900'
               }`}
             >
               Ingresos
@@ -426,10 +427,10 @@ export function HistoricalView({ data, methods, appContext = 'household' }: any)
             <button
               type="button"
               onClick={() => setMovementFilter('expenses')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-bold whitespace-nowrap transition-all ${
+              className={`px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
                 movementFilter === 'expenses'
-                  ? 'bg-white text-rose-600 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-800'
+                  ? 'bg-[#111319] text-white shadow-sm'
+                  : 'text-[#8C93A6] hover:text-slate-900'
               }`}
             >
               Gastos
@@ -437,46 +438,50 @@ export function HistoricalView({ data, methods, appContext = 'household' }: any)
             <button
               type="button"
               onClick={() => setMovementFilter('transfers')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-bold whitespace-nowrap transition-all ${
+              className={`px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
                 movementFilter === 'transfers'
-                  ? 'bg-white text-indigo-600 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-800'
+                  ? 'bg-[#111319] text-white shadow-sm'
+                  : 'text-[#8C93A6] hover:text-slate-900'
               }`}
             >
               Transferencias / Pagos TDC
             </button>
           </div>
 
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl w-fit self-end sm:self-auto">
+          <div className="inline-flex bg-[#F5F6FA] border border-[#EEF0F4] rounded-full p-1.5 shadow-sm w-fit self-end sm:self-auto">
             <button
               type="button"
               onClick={() => setViewMode('graph')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all ${
-                viewMode === 'graph' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-700'
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer ${
+                viewMode === 'graph' 
+                  ? 'bg-[#111319] text-white shadow-sm' 
+                  : 'text-[#8C93A6] hover:text-slate-900'
               }`}
             >
-              <BarChart2 className="w-4 h-4" />
-              Gráfica
+              <BarChart2 size={14} />
+              <span>Gráfica</span>
             </button>
             <button
               type="button"
               onClick={() => setViewMode('table')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all ${
-                viewMode === 'table' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-700'
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer ${
+                viewMode === 'table' 
+                  ? 'bg-[#111319] text-white shadow-sm' 
+                  : 'text-[#8C93A6] hover:text-slate-900'
               }`}
             >
-              <TableIcon className="w-4 h-4" />
-              Tabla
+              <TableIcon size={14} />
+              <span>Tabla</span>
             </button>
           </div>
         </div>
 
         {/* Coexistencia armónica de Filtro por Usuarios y Filtro por Categorías arriba de la gráfica y tabla */}
         {(users.length > 0 || displayedCategories.length > 0) && (
-          <div className="pt-3 border-t border-slate-100 space-y-3">
+          <div className="pt-3 border-t border-[#EEF0F4] space-y-3">
             {users.length > 0 && (
               <div className="flex flex-wrap items-center gap-3">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Filtrar por Usuario:</span>
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Filtrar por Usuario:</span>
                 <div className="flex flex-wrap items-center gap-4">
                   {users.map((user: any) => (
                     <label key={user.id} className="flex items-center gap-2 cursor-pointer group">
@@ -484,9 +489,9 @@ export function HistoricalView({ data, methods, appContext = 'household' }: any)
                         type="checkbox"
                         checked={!deselectedUsers.has(user.id)}
                         onChange={() => toggleUser(user.id)}
-                        className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 transition-colors"
+                        className="w-4 h-4 rounded border-[#EEF0F4] text-[#111319] focus:ring-[#111319] transition-colors"
                       />
-                      <span className="text-sm font-medium text-slate-700 group-hover:text-slate-900 transition-colors">
+                      <span className="text-xs font-medium text-slate-700 group-hover:text-slate-900 transition-colors">
                         {user.name || 'Usuario sin nombre'}
                       </span>
                     </label>
@@ -496,8 +501,8 @@ export function HistoricalView({ data, methods, appContext = 'household' }: any)
             )}
 
             {displayedCategories.length > 0 && (
-              <div className={`flex flex-wrap items-center gap-3 ${users.length > 0 ? 'pt-3 border-t border-slate-50' : ''}`}>
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Filtrar por Categoría:</span>
+              <div className={`flex flex-wrap items-center gap-3 ${users.length > 0 ? 'pt-3 border-t border-[#EEF0F4]' : ''}`}>
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Filtrar por Categoría:</span>
                 <div className="flex flex-wrap items-center gap-2">
                   {displayedCategories.map((cat: string) => {
                     const isSelected = !deselectedCategories.has(cat);
@@ -507,14 +512,14 @@ export function HistoricalView({ data, methods, appContext = 'household' }: any)
                         key={cat}
                         type="button"
                         onClick={() => toggleCategory(cat)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border shadow-xs flex items-center gap-2 ${
+                        className={`px-3 py-1 rounded-full text-xs font-medium transition-all border flex items-center gap-1.5 cursor-pointer ${
                           isSelected
-                            ? 'bg-white border-slate-200 text-slate-700'
-                            : 'bg-slate-50 border-transparent text-slate-400 opacity-50 hover:opacity-100'
+                            ? 'bg-white border-[#EEF0F4] text-slate-900 shadow-sm'
+                            : 'bg-[#F8FAFC] border-transparent text-slate-400 opacity-60 hover:opacity-100'
                         }`}
                       >
                         <span className={`w-2 h-2 rounded-full ${colorClass}`}></span>
-                        {cat}
+                        <span>{cat}</span>
                       </button>
                     );
                   })}
@@ -525,7 +530,7 @@ export function HistoricalView({ data, methods, appContext = 'household' }: any)
         )}
       </div>
 
-      <Card className={viewMode === 'graph' ? "pt-10 pb-8" : "p-0 overflow-hidden"}>
+      <div className={viewMode === 'graph' ? "bg-white border border-[#EEF0F4] rounded-3xl p-6 sm:p-8 shadow-bento" : "bg-white border border-[#EEF0F4] rounded-3xl shadow-bento overflow-hidden"}>
         {viewMode === 'graph' ? (
           <>
             <div 
@@ -534,21 +539,21 @@ export function HistoricalView({ data, methods, appContext = 'household' }: any)
               onMouseLeave={handleMouseLeave}
               onMouseUp={handleMouseUp}
               onMouseMove={handleMouseMove}
-              className={`flex items-end gap-3 h-72 w-full border-b-2 border-slate-100 pb-3 overflow-x-auto scrollbar-hide px-4 select-none ${isDown ? 'cursor-grabbing' : 'cursor-grab'}`}
+              className={`flex items-end gap-3 h-72 w-full border-b border-[#EEF0F4] pb-3 overflow-x-auto scrollbar-hide px-4 select-none ${isDown ? 'cursor-grabbing' : 'cursor-grab'}`}
             >
               {snapshots.length === 0 ? (
-                <div className="w-full h-full flex items-center justify-center text-slate-500 font-medium">
-                  No hay datos para mostrar
+                <div className="w-full h-full flex items-center justify-center text-slate-400 font-medium text-xs">
+                  No hay datos para mostrar en este rango
                 </div>
               ) : (
                   snapshots.map((snap, idx) => {
                     return (
                       <div key={idx} className="flex-1 h-full flex flex-col justify-end items-center group min-w-[60px] relative">
-                        <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:-translate-y-2 text-xs mb-2 bg-slate-900 text-white p-3 rounded-xl whitespace-nowrap absolute bottom-full mb-4 z-10 pointer-events-none shadow-xl border border-slate-700">
-                          <div className="font-bold text-slate-300 mb-1 uppercase tracking-widest text-center">{snap.month}</div>
+                        <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:-translate-y-2 text-xs mb-2 bg-[#111319] text-white p-3.5 rounded-2xl whitespace-nowrap absolute bottom-full mb-4 z-10 pointer-events-none shadow-xl border border-[#232733]">
+                          <div className="font-bold text-slate-300 mb-1 uppercase tracking-widest text-center tabular-nums">{snap.month}</div>
                           
                           {Object.entries(snap.incomeByCategory).length > 0 && (
-                            <div className="mt-2 mb-1 text-[10px] uppercase text-emerald-400 font-bold border-b border-slate-700 pb-1">Ingresos</div>
+                            <div className="mt-2 mb-1 text-[10px] uppercase text-[#10B981] font-bold border-b border-[#232733] pb-1">Ingresos</div>
                           )}
                           {Object.entries(snap.incomeByCategory).map(([cat, amt]) => (
                             <div key={cat} className="flex justify-between gap-4 text-xs mt-1">
@@ -556,12 +561,12 @@ export function HistoricalView({ data, methods, appContext = 'household' }: any)
                                 <span className={`w-2 h-2 rounded-full ${categoryColorMap[cat] || 'bg-slate-500'}`}></span>
                                 <span className="text-slate-300">{cat}</span>
                               </div>
-                              <span className="font-mono text-white">{FormatCurrency(amt)}</span>
+                              <span className="font-mono text-white tabular-nums">{FormatCurrency(amt)}</span>
                             </div>
                           ))}
 
                           {Object.entries(snap.expenseByCategory).length > 0 && (
-                            <div className="mt-2 mb-1 text-[10px] uppercase text-rose-400 font-bold border-b border-slate-700 pb-1">Gastos</div>
+                            <div className="mt-2 mb-1 text-[10px] uppercase text-[#F97316] font-bold border-b border-[#232733] pb-1">Gastos</div>
                           )}
                           {Object.entries(snap.expenseByCategory).map(([cat, amt]) => (
                             <div key={cat} className="flex justify-between gap-4 text-xs mt-1">
@@ -569,12 +574,12 @@ export function HistoricalView({ data, methods, appContext = 'household' }: any)
                                 <span className={`w-2 h-2 rounded-full ${categoryColorMap[cat] || 'bg-slate-500'}`}></span>
                                 <span className="text-slate-300">{cat}</span>
                               </div>
-                              <span className="font-mono text-white">{FormatCurrency(amt)}</span>
+                              <span className="font-mono text-white tabular-nums">{FormatCurrency(amt)}</span>
                             </div>
                           ))}
 
                           {Object.entries(snap.transferByCategory).length > 0 && (
-                            <div className="mt-2 mb-1 text-[10px] uppercase text-indigo-400 font-bold border-b border-slate-700 pb-1">Transferencias</div>
+                            <div className="mt-2 mb-1 text-[10px] uppercase text-[#6366F1] font-bold border-b border-[#232733] pb-1">Transferencias</div>
                           )}
                           {Object.entries(snap.transferByCategory).map(([cat, amt]) => (
                             <div key={cat} className="flex justify-between gap-4 text-xs mt-1">
@@ -582,22 +587,22 @@ export function HistoricalView({ data, methods, appContext = 'household' }: any)
                                 <span className={`w-2 h-2 rounded-full ${categoryColorMap[cat] || 'bg-indigo-500'}`}></span>
                                 <span className="text-slate-300">{cat}</span>
                               </div>
-                              <span className="font-mono text-white">{FormatCurrency(amt)}</span>
+                              <span className="font-mono text-white tabular-nums">{FormatCurrency(amt)}</span>
                             </div>
                           ))}
 
                           {movementFilter === 'transfers' ? (
-                            <div className="mt-2 pt-2 border-t border-slate-700 flex justify-between gap-4 font-bold">
-                              <span className="text-indigo-400">Total:</span>
-                              <span className="font-mono text-white">{FormatCurrency(snap.transfer)}</span>
+                            <div className="mt-2 pt-2 border-t border-[#232733] flex justify-between gap-4 font-bold">
+                              <span className="text-[#6366F1]">Total:</span>
+                              <span className="font-mono text-white tabular-nums">{FormatCurrency(snap.transfer)}</span>
                             </div>
                           ) : (
-                            <div className="mt-2 pt-2 border-t border-slate-700 flex justify-between gap-4 font-bold">
-                              <span className={snap.balance >= 0 ? 'text-emerald-400' : 'text-rose-400'}>Bal:</span>
-                              <span className="font-mono text-white">{FormatCurrency(snap.balance)}</span>
+                            <div className="mt-2 pt-2 border-t border-[#232733] flex justify-between gap-4 font-bold">
+                              <span className={snap.balance >= 0 ? 'text-[#10B981]' : 'text-[#F97316]'}>Bal:</span>
+                              <span className="font-mono text-white tabular-nums">{FormatCurrency(snap.balance)}</span>
                             </div>
                           )}
-                          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900"></div>
+                          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#111319]"></div>
                         </div>
 
                         <div className="flex gap-1.5 w-full justify-center items-end h-full">
@@ -670,7 +675,7 @@ export function HistoricalView({ data, methods, appContext = 'household' }: any)
             {snapshots.length > 0 && (
               <div className="flex gap-3 w-full mt-4 px-4">
                 {snapshots.map((snap, idx) => (
-                  <div key={idx} className="flex-1 text-center text-sm font-bold text-slate-600 min-w-[60px]">
+                  <div key={idx} className="flex-1 text-center text-xs font-bold text-slate-500 min-w-[60px] tabular-nums">
                     {snap.month}
                   </div>
                 ))}
@@ -680,47 +685,53 @@ export function HistoricalView({ data, methods, appContext = 'household' }: any)
         ) : (
           <div className="flex flex-col">
             {selectedRecords.size > 0 && (
-              <div className="p-4 bg-indigo-50 border-b border-indigo-100 flex items-center gap-4">
-                <span className="text-sm font-bold text-indigo-800">{selectedRecords.size} seleccionado(s)</span>
-                {selectedRecords.size === 1 && (() => {
-                  const id = Array.from(selectedRecords)[0];
-                  const record = detailedRecords.find((r: any) => r.id === id);
-                  const canEdit = record && (
-                    (record.recordType === 'expense' && typeof methods?.handleOpenExpenseModal === 'function') ||
-                    (record.recordType === 'income' && typeof methods?.handleOpenIncomeModal === 'function') ||
-                    (record.recordType === 'transfer' && typeof methods?.handleOpenTransferModal === 'function')
-                  );
-                  if (!canEdit) return null;
-                  return (
-                    <button 
-                      onClick={() => {
-                        if (!record) return;
-                        if (record.recordType === 'expense') methods.handleOpenExpenseModal(record);
-                        else if (record.recordType === 'income') methods.handleOpenIncomeModal(record);
-                        else if (record.recordType === 'transfer') methods.handleOpenTransferModal(record);
-                      }}
-                      className="flex items-center gap-1 text-sm font-bold text-indigo-600 hover:text-indigo-800"
-                    >
-                      <Edit2 className="w-4 h-4" /> Editar
-                    </button>
-                  );
-                })()}
-                <button 
-                  onClick={() => setIsDeleteModalOpen(true)}
-                  className="flex items-center gap-1 text-sm font-bold text-rose-600 hover:text-rose-800"
-                >
-                  <Trash2 className="w-4 h-4" /> Eliminar
-                </button>
+              <div className="p-4 bg-[#EEF2FF] border-b border-[#EEF0F4] flex items-center justify-between gap-4">
+                <span className="text-xs font-bold text-[#6366F1] tabular-nums">{selectedRecords.size} seleccionado(s)</span>
+                <div className="flex items-center gap-3">
+                  {selectedRecords.size === 1 && (() => {
+                    const id = Array.from(selectedRecords)[0];
+                    const record = detailedRecords.find((r: any) => r.id === id);
+                    const canEdit = record && (
+                      (record.recordType === 'expense' && typeof methods?.handleOpenExpenseModal === 'function') ||
+                      (record.recordType === 'income' && typeof methods?.handleOpenIncomeModal === 'function') ||
+                      (record.recordType === 'transfer' && typeof methods?.handleOpenTransferModal === 'function')
+                    );
+                    if (!canEdit) return null;
+                    return (
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          if (!record) return;
+                          if (record.recordType === 'expense') methods.handleOpenExpenseModal(record);
+                          else if (record.recordType === 'income') methods.handleOpenIncomeModal(record);
+                          else if (record.recordType === 'transfer') methods.handleOpenTransferModal(record);
+                        }}
+                        className="flex items-center gap-1 text-xs font-semibold text-[#6366F1] hover:text-indigo-800 cursor-pointer"
+                      >
+                        <Edit2 size={14} /> 
+                        <span>Editar</span>
+                      </button>
+                    );
+                  })()}
+                  <button 
+                    type="button"
+                    onClick={() => setIsDeleteModalOpen(true)}
+                    className="flex items-center gap-1 text-xs font-semibold text-rose-600 hover:text-rose-800 cursor-pointer"
+                  >
+                    <Trash2 size={14} /> 
+                    <span>Eliminar</span>
+                  </button>
+                </div>
               </div>
             )}
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm text-slate-600">
-                <thead className="bg-slate-50 text-slate-600 text-xs uppercase font-bold">
+                <thead className="bg-[#F8FAFC] text-slate-400 text-xs uppercase font-semibold tracking-wider border-b border-[#EEF0F4]">
                   <tr>
-                    <th className="px-4 py-4 rounded-tl-xl w-10">
+                    <th className="px-4 py-3.5 w-10">
                       <input 
                         type="checkbox" 
-                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-600"
+                        className="rounded border-[#EEF0F4] text-[#111319] focus:ring-[#111319]"
                         ref={input => {
                           if (input) {
                             const isAll = detailedRecords.length > 0 && detailedRecords.every((r: any) => selectedRecords.has(r.id));
@@ -738,20 +749,20 @@ export function HistoricalView({ data, methods, appContext = 'household' }: any)
                         }}
                       />
                     </th>
-                    <th className="px-6 py-4">Fecha</th>
-                    <th className="px-6 py-4">Tipo</th>
-                    <th className="px-6 py-4">Categoría / Fuente</th>
-                    <th className="px-6 py-4">Descripción</th>
-                    <th className="px-6 py-4 text-right">Monto</th>
-                    <th className="px-6 py-4">Registrado por</th>
-                    <th className="px-6 py-4 text-right rounded-tr-xl">Acciones</th>
+                    <th className="px-5 py-3.5">Fecha</th>
+                    <th className="px-5 py-3.5">Tipo</th>
+                    <th className="px-5 py-3.5">Categoría / Fuente</th>
+                    <th className="px-5 py-3.5">Descripción</th>
+                    <th className="px-5 py-3.5 text-right">Monto</th>
+                    <th className="px-5 py-3.5">Registrado por</th>
+                    <th className="px-5 py-3.5 text-right">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#EEF0F4]">
                   {detailedRecords.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="px-6 py-8 text-center text-slate-500 font-medium">
-                        No hay datos para mostrar
+                      <td colSpan={8} className="px-5 py-8 text-center text-slate-400 font-medium text-xs">
+                        No hay datos para mostrar en este rango
                       </td>
                     </tr>
                   ) : (
@@ -783,40 +794,40 @@ export function HistoricalView({ data, methods, appContext = 'household' }: any)
                       const isSelected = selectedRecords.has(record.id);
 
                       let amountSign = '';
-                      let amountClass = 'text-slate-600';
+                      let amountClass = 'text-slate-900 font-bold';
                       if (record.recordType === 'income') {
                         amountSign = '+';
-                        amountClass = 'text-emerald-600';
+                        amountClass = 'text-[#10B981] font-bold';
                       } else if (isTransfer) {
                         if (appContext === 'personal') {
                           if (isReceiver && !isSender) {
                             amountSign = '+';
-                            amountClass = 'text-emerald-600 font-bold';
+                            amountClass = 'text-[#10B981] font-bold';
                           } else if (isSender && !isReceiver) {
                             amountSign = '-';
-                            amountClass = 'text-slate-600 font-bold';
+                            amountClass = 'text-slate-900 font-bold';
                           } else {
                             amountSign = '';
-                            amountClass = 'text-indigo-600 font-bold';
+                            amountClass = 'text-[#6366F1] font-bold';
                           }
                         } else {
                           amountSign = '';
-                          amountClass = 'text-indigo-600 font-bold';
+                          amountClass = 'text-[#6366F1] font-bold';
                         }
                       } else {
                         amountSign = '-';
-                        amountClass = 'text-slate-600';
+                        amountClass = 'text-[#F97316] font-bold';
                       }
 
                       const typeBadgeClass = record.recordType === 'income' 
-                        ? 'bg-emerald-100 text-emerald-700 border-emerald-200/50' 
+                        ? 'bg-[#E8F8F0] text-[#10B981] border border-[#10B981]/20' 
                         : isTransfer
                           ? record.type === 'CARD_PAYMENT'
-                            ? 'bg-purple-100 text-purple-700 border-purple-200/50'
+                            ? 'bg-[#EEF2FF] text-purple-700 border border-purple-200/50'
                             : (appContext === 'personal' && isReceiver && !isSender)
-                              ? 'bg-emerald-100 text-emerald-700 border-emerald-200/50'
-                              : 'bg-blue-100 text-blue-700 border-blue-200/50'
-                          : 'bg-rose-100 text-rose-700 border-rose-200/50';
+                              ? 'bg-[#E8F8F0] text-[#10B981] border border-[#10B981]/20'
+                              : 'bg-[#EEF2FF] text-[#6366F1] border border-[#6366F1]/20'
+                          : 'bg-[#FDEFEA] text-[#F97316] border border-[#F97316]/20';
 
                       const typeBadgeLabel = record.recordType === 'income'
                         ? 'Ingreso'
@@ -829,11 +840,11 @@ export function HistoricalView({ data, methods, appContext = 'household' }: any)
                           : 'Gasto';
 
                       return (
-                        <tr key={record.id} className={`transition-colors ${isSelected ? 'bg-indigo-50/50' : 'hover:bg-slate-50'}`}>
-                          <td className="px-4 py-4">
+                        <tr key={record.id} className={`transition-colors ${isSelected ? 'bg-[#EEF2FF]/40' : 'hover:bg-[#F8FAFC]'}`}>
+                          <td className="px-4 py-3.5">
                             <input 
                               type="checkbox" 
-                              className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-600"
+                              className="rounded border-[#EEF0F4] text-[#111319] focus:ring-[#111319]"
                               checked={isSelected}
                               onChange={() => {
                                 const newSet = new Set(selectedRecords);
@@ -843,40 +854,40 @@ export function HistoricalView({ data, methods, appContext = 'household' }: any)
                               }}
                             />
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-slate-700 font-medium">
+                          <td className="px-5 py-3.5 whitespace-nowrap text-slate-700 font-medium text-xs tabular-nums">
                             {record.date ? record.date.substring(0, 10) : '-'}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2.5 py-1 rounded-md text-xs font-bold border ${typeBadgeClass}`}>
+                          <td className="px-5 py-3.5 whitespace-nowrap">
+                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${typeBadgeClass}`}>
                               {typeBadgeLabel}
                             </span>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-5 py-3.5">
                             {record.recordType === 'transfer' ? (
-                              <span className="font-medium text-indigo-700 flex items-center gap-1.5">
-                                <ArrowLeftRight size={14} className="text-indigo-500 flex-shrink-0" />
+                              <span className="font-semibold text-xs text-[#6366F1] flex items-center gap-1.5">
+                                <ArrowLeftRight size={13} className="text-[#6366F1] flex-shrink-0" />
                                 <span>{record.sourceAccountName || 'Origen'} → {record.targetAccountName || 'Destino'}</span>
                               </span>
                             ) : (
-                              <span className="font-medium text-slate-700">
+                              <span className="font-semibold text-xs text-slate-900">
                                 {record.category || record.source || record.type || 'Otros'}
                               </span>
                             )}
                           </td>
-                          <td className="px-6 py-4 truncate max-w-xs text-slate-600" title={record.description}>
+                          <td className="px-5 py-3.5 truncate max-w-xs text-xs text-slate-500" title={record.description}>
                             {record.description || '-'}
                           </td>
-                          <td className="px-6 py-4 text-right font-mono font-medium whitespace-nowrap">
+                          <td className="px-5 py-3.5 text-right font-medium whitespace-nowrap text-sm tabular-nums">
                             <span className={amountClass}>
                               {amountSign}
                               {FormatCurrency(record.amount)}
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-slate-700 whitespace-nowrap">
+                          <td className="px-5 py-3.5 text-slate-600 text-xs whitespace-nowrap">
                             {userName}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right">
-                            <div className="flex items-center justify-end gap-1.5">
+                          <td className="px-5 py-3.5 whitespace-nowrap text-right">
+                            <div className="flex items-center justify-end gap-1">
                               <button
                                 type="button"
                                 data-testid={`edit-record-${record.id}`}
@@ -889,10 +900,10 @@ export function HistoricalView({ data, methods, appContext = 'household' }: any)
                                     methods.handleOpenTransferModal(record);
                                   }
                                 }}
-                                className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                                className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                                 title="Editar movimiento"
                               >
-                                <Edit2 size={15} />
+                                <Edit2 size={14} />
                               </button>
                               <button
                                 type="button"
@@ -901,10 +912,10 @@ export function HistoricalView({ data, methods, appContext = 'household' }: any)
                                   setSelectedRecords(new Set([record.id]));
                                   setIsDeleteModalOpen(true);
                                 }}
-                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-[#FDEFEA] rounded-lg transition-colors cursor-pointer"
                                 title="Eliminar movimiento"
                               >
-                                <Trash2 size={15} />
+                                <Trash2 size={14} />
                               </button>
                             </div>
                           </td>
@@ -917,28 +928,31 @@ export function HistoricalView({ data, methods, appContext = 'household' }: any)
             </div>
           </div>
         )}
-      </Card>
+      </div>
 
       {expensesByCategory.length > 0 && (
-        <Card className="p-6">
-          <h3 className="text-xl font-bold text-slate-800 mb-6">{categoryBreakdownTitle}</h3>
-          <div className="space-y-5">
+        <div className="bg-white border border-[#EEF0F4] rounded-3xl p-6 sm:p-8 shadow-bento space-y-6">
+          <div className="pb-3 border-b border-[#EEF0F4]">
+            <h3 className="text-lg font-bold text-slate-900">{categoryBreakdownTitle}</h3>
+            <p className="text-xs text-slate-400 font-medium mt-0.5">Distribución porcentual del periodo seleccionado</p>
+          </div>
+          <div className="space-y-4">
             {expensesByCategory.map((cat, idx) => (
-              <div key={idx}>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-semibold text-slate-700">{cat.name}</span>
-                  <span className="text-slate-600 font-mono text-sm">{FormatCurrency(cat.amount)} ({cat.percentage.toFixed(1)}%)</span>
+              <div key={idx} className="space-y-1.5">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-semibold text-slate-900">{cat.name}</span>
+                  <span className="text-slate-600 font-semibold tabular-nums">{FormatCurrency(cat.amount)} ({cat.percentage.toFixed(1)}%)</span>
                 </div>
-                <div className="w-full bg-slate-100 rounded-full h-3">
+                <div className="w-full bg-[#F5F6FA] border border-[#EEF0F4] rounded-full h-2.5 overflow-hidden">
                   <div 
-                    className={`${categoryColorMap[cat.name] || 'bg-emerald-500'} h-3 rounded-full transition-all duration-700`}
+                    className={`${categoryColorMap[cat.name] || 'bg-emerald-500'} h-2.5 rounded-full transition-all duration-700`}
                     style={{ width: `${Math.min(100, Math.max(0, cat.percentage))}%` }}
                   ></div>
                 </div>
               </div>
             ))}
           </div>
-        </Card>
+        </div>
       )}
 
       <Modal
@@ -947,26 +961,26 @@ export function HistoricalView({ data, methods, appContext = 'household' }: any)
         title="Confirmar eliminación"
       >
         <div className="flex flex-col items-center justify-center py-6 text-center">
-          <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mb-4">
+          <div className="w-12 h-12 bg-[#FDEFEA] text-[#F97316] rounded-2xl flex items-center justify-center mb-4 border border-[#F97316]/20">
             <AlertCircle size={24} />
           </div>
           <h3 className="text-lg font-bold text-slate-900 mb-2">
             ¿Eliminar {selectedRecords.size} {selectedRecords.size === 1 ? 'registro' : 'registros'}?
           </h3>
-          <p className="text-slate-600 mb-8 max-w-sm">
+          <p className="text-slate-500 text-xs sm:text-sm mb-6 max-w-sm leading-relaxed">
             Esta acción no se puede deshacer. Los registros seleccionados serán eliminados permanentemente de tu historial.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 w-full">
-            <Button
-              variant="outline"
-              className="flex-1"
+            <button
+              type="button"
+              className="bg-white border border-[#EEF0F4] hover:bg-slate-50 text-slate-700 rounded-full px-5 py-2.5 font-medium transition-colors text-xs flex-1 cursor-pointer"
               onClick={() => setIsDeleteModalOpen(false)}
             >
               Cancelar
-            </Button>
-            <Button
-              variant="danger"
-              className="flex-1"
+            </button>
+            <button
+              type="button"
+              className="bg-rose-600 hover:bg-rose-700 text-white rounded-full px-5 py-2.5 font-medium transition-colors text-xs flex-1 cursor-pointer shadow-sm"
               onClick={() => {
                 selectedRecords.forEach(id => {
                   const record = detailedRecords.find((r: any) => r.id === id);
@@ -985,7 +999,7 @@ export function HistoricalView({ data, methods, appContext = 'household' }: any)
               }}
             >
               Sí, eliminar
-            </Button>
+            </button>
           </div>
         </div>
       </Modal>

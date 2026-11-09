@@ -728,14 +728,14 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-gray-50 text-slate-900 font-sans pb-24 md:pb-0 md:pl-72 relative">
-      <nav className="fixed bottom-0 w-full bg-slate-900 text-white flex overflow-x-auto scrollbar-hide p-6 md:flex-col md:justify-start md:w-72 md:h-full md:left-0 md:top-0 md:p-8 z-50 transition-all">
-        <div className="hidden md:flex mb-12 items-center gap-3 px-2">
-          <OrbitaLogo size={44} />
-          <h1 className="text-2xl font-bold tracking-tight text-white font-title">Orbita2</h1>
+    <div className="min-h-[100dvh] bg-[#F5F6FA] text-slate-900 font-sans pb-24 md:pb-0 md:pl-64 relative">
+      <nav className="fixed bottom-0 w-full bg-[#111319] border-t border-[#232733] md:border-t-0 md:border-r md:border-[#232733] text-white flex overflow-x-auto scrollbar-hide p-3 md:flex-col md:justify-start md:w-64 md:h-full md:left-0 md:top-0 md:p-6 z-50 transition-all">
+        <div className="hidden md:flex mb-10 items-center gap-3 px-2">
+          <OrbitaLogo size={36} />
+          <h1 className="text-xl font-bold tracking-tight text-white font-title">Orbita2</h1>
         </div>
 
-        <div className="flex md:flex-col gap-4 w-full min-w-max">
+        <div className="flex md:flex-col gap-1.5 md:gap-2 w-full min-w-max">
           {navItems.map(item => {
             const isItemActive = activeTab === item.id ||
               (item.id === 'wallet' && ['cards', 'debts', 'wealth'].includes(activeTab)) ||
@@ -744,13 +744,13 @@ export default function App() {
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`flex flex-col md:flex-row items-center gap-1 md:gap-3 p-3 md:px-4 md:py-3 rounded-2xl transition-all duration-200 flex-1 md:flex-none relative group ${
+                className={`flex flex-col md:flex-row items-center gap-1 md:gap-3 h-11 px-4 py-2.5 rounded-xl transition-colors duration-150 flex-1 md:flex-none relative group ${
                   isItemActive
-                    ? 'text-white font-medium bg-primary shadow-md'
-                    : 'text-slate-400 font-normal hover:text-white hover:bg-slate-800'
+                    ? 'bg-[#1A1D26] text-white font-medium'
+                    : 'text-[#8C93A6] hover:bg-[#1A1D26] hover:text-white'
                 }`}
               >
-                <div className={`relative z-10 transition-transform duration-200 ${isItemActive ? 'scale-105' : 'group-hover:scale-105'}`}>
+                <div className="relative z-10">
                   {item.icon}
                 </div>
                 <span className="text-[10px] md:text-sm whitespace-nowrap relative z-10 tracking-tight">{item.label}</span>
@@ -758,16 +758,16 @@ export default function App() {
             );
           })}
           
-          <div className="hidden md:block mt-auto pt-8 border-t border-slate-800">
-            <button onClick={() => { setShowInviteModal(true); handleInvite(); }} className="w-full flex items-center gap-3 p-3 rounded-2xl text-primary hover:bg-slate-800 transition-colors font-medium">
-              <UserPlus size={18} />
+          <div className="hidden md:block mt-auto pt-6 border-t border-[#232733]">
+            <button onClick={() => { setShowInviteModal(true); handleInvite(); }} className="w-full flex items-center gap-3 h-11 px-4 py-2.5 rounded-xl text-primary hover:bg-[#1A1D26] transition-colors duration-150 font-medium">
+              <UserPlus size={20} />
               <span className="text-sm">Invitar integrante</span>
             </button>
-            <button onClick={() => authService.logout()} className="w-full mt-2 flex items-center gap-3 p-3 rounded-2xl text-slate-400 hover:text-red-400 hover:bg-slate-800 transition-colors">
-              <LogOut size={18} />
+            <button onClick={() => authService.logout()} className="w-full mt-1.5 flex items-center gap-3 h-11 px-4 py-2.5 rounded-xl text-[#8C93A6] hover:text-red-400 hover:bg-[#1A1D26] transition-colors duration-150">
+              <LogOut size={20} />
               <span className="text-sm">Cerrar sesión</span>
             </button>
-            <div className="mt-6 flex gap-4 justify-center text-xs text-slate-500">
+            <div className="mt-6 flex gap-4 justify-center text-xs text-[#8C93A6]">
               <button onClick={() => setActiveTab('terms')} className="hover:text-slate-300 transition-colors">Términos</button>
               <button onClick={() => setActiveTab('privacy')} className="hover:text-slate-300 transition-colors">Privacidad</button>
             </div>
@@ -790,17 +790,17 @@ export default function App() {
         </div>
 
         <div className="hidden md:flex justify-end items-center mb-2 -mt-4">
-           <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full border border-slate-200 shadow-sm">
-             <span className="text-sm font-bold text-slate-600">{appContext === 'personal' ? 'Personal' : 'Hogar'}</span>
+           <div className="flex items-center gap-3 bg-white border border-[#EEF0F4] rounded-full p-1.5 shadow-sm">
+             <span className="text-sm font-bold text-slate-600 pl-2">{appContext === 'personal' ? 'Personal' : 'Hogar'}</span>
              {renderContextToggle()}
            </div>
         </div>
 
         {activeTab !== 'settings' && activeTab !== 'historical' && activeTab !== 'terms' && activeTab !== 'privacy' && activeTab !== 'wallet' && activeTab !== 'cards' && activeTab !== 'debts' && activeTab !== 'wealth' && (
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-3 md:p-4 rounded-2xl border border-transparent shadow-sm">
+          <div className="bg-white border border-[#EEF0F4] rounded-3xl p-4 shadow-bento flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3 w-full md:w-1/2">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:block">Periodo:</span>
-              <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-full flex-1 md:flex-none">
+              <div className="flex items-center gap-2 bg-[#F1F5F9] p-1 rounded-full flex-1 md:flex-none border border-[#EEF0F4]">
                 <label htmlFor="startDate" className="sr-only">Fecha inicial</label>
                 <input id="startDate" type="date" value={dateRange?.start || ''} onChange={e => setDateRange(e.target.value, dateRange?.end || '')} className="px-3 py-2 bg-transparent text-sm font-medium text-slate-700 outline-none transition-all tabular-nums tracking-tight w-full" aria-label="Fecha inicial" />
                 <span className="text-slate-300 font-bold">-</span>
@@ -810,7 +810,7 @@ export default function App() {
             </div>
             
             <div className="flex gap-2 w-full md:w-1/2 justify-end">
-              <button onClick={() => { setEditingMovement(null); setIsMovementModalOpen(true); }} className="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm px-4 py-2.5 rounded-full text-sm font-bold flex items-center justify-center gap-2 transition-colors">
+              <button onClick={() => { setEditingMovement(null); setIsMovementModalOpen(true); }} className="flex-1 md:flex-none bg-[#111319] hover:bg-[#1A1D26] text-white rounded-full px-5 py-2.5 font-medium transition-colors duration-150 shadow-sm text-sm flex items-center justify-center gap-2">
                 <Plus size={16} /> Nuevo Movimiento
               </button>
             </div>
@@ -824,8 +824,8 @@ export default function App() {
 
       {/* Invite Modal */}
       {showInviteModal && (
-        <div className="fixed inset-0 bg-slate-900/60 z-[100] flex items-center justify-center p-4">
-          <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm max-w-md w-full relative">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white p-7 sm:p-8 rounded-3xl border border-[#EEF0F4] shadow-2xl max-w-md w-full relative">
             <h2 className="text-2xl font-bold text-slate-900 mb-2 font-title">Invitar a tu hogar</h2>
             <p className="text-slate-500 mb-6 text-sm">
               Comparte este enlace para que tu pareja se una a tu hogar y gestionen sus finanzas juntos.
@@ -833,26 +833,26 @@ export default function App() {
 
             {inviteLoading && (
               <div className="flex flex-col items-center justify-center py-6">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-2"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#111319] mb-2"></div>
                 <p className="text-xs text-slate-400">Generando enlace seguro...</p>
               </div>
             )}
 
             {inviteError && (
-              <div className="bg-amber-50 text-amber-800 p-4 rounded-lg border border-amber-200 text-sm mb-4">
+              <div className="bg-[#FDEFEA] text-[#F97316] p-4 rounded-2xl border border-[#FDEFEA] text-sm mb-4">
                 <p className="font-semibold">{inviteError}</p>
               </div>
             )}
 
             {inviteLink && !inviteLoading && (
-              <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 flex flex-col gap-3">
-                <div className="bg-white p-2.5 rounded border border-slate-200 font-mono text-xs text-slate-700 break-all select-all">
+              <div className="bg-[#F8FAFC] p-4 rounded-2xl border border-[#EEF0F4] flex flex-col gap-3">
+                <div className="bg-white p-2.5 rounded-xl border border-[#EEF0F4] font-mono text-xs text-slate-700 break-all select-all">
                   {inviteLink}
                 </div>
                 <button
                   type="button"
                   onClick={handleCopyLink}
-                  className="w-full bg-primary hover:bg-primary/90 text-white py-2 px-4 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2"
+                  className="w-full bg-[#111319] hover:bg-[#1A1D26] text-white py-3 px-5 rounded-full font-medium shadow-sm transition-colors flex items-center justify-center gap-2 text-sm"
                 >
                   <Copy size={16} />
                   {copiedLink ? '¡Enlace copiado!' : 'Copiar enlace'}
@@ -865,7 +865,7 @@ export default function App() {
 
             <button
               onClick={() => { setShowInviteModal(false); setInviteError(null); }}
-              className="mt-6 w-full bg-slate-100 hover:bg-slate-200 text-slate-700 p-3 rounded-lg font-bold text-sm transition-colors"
+              className="mt-6 w-full bg-white border border-[#EEF0F4] hover:bg-slate-50 text-slate-700 py-2.5 px-4 rounded-full font-medium transition-colors text-sm"
             >
               Cerrar
             </button>
@@ -875,26 +875,26 @@ export default function App() {
 
       {/* Join House Modal */}
       {joinHouseConfirm && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xl max-w-md w-full relative overflow-hidden text-center p-7 sm:p-8">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-[#EEF0F4] shadow-2xl max-w-md w-full relative overflow-hidden text-center p-7 sm:p-8">
             {/* Fondo sutil superior */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-gradient-to-b from-indigo-100/60 to-transparent rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-gradient-to-b from-[#EEF2FF] to-transparent rounded-full blur-2xl pointer-events-none" />
 
             {/* Encabezado: Logo de Orbita2 + Insignia de Hogar */}
             <div className="relative flex flex-col items-center mb-5">
               <div className="relative mb-3">
-                <OrbitaLogo size={52} className="shadow-md rounded-2xl" />
-                <div className="absolute -bottom-1 -right-1 bg-indigo-600 text-white p-1 rounded-full shadow border-2 border-white">
+                <OrbitaLogo size={52} className="shadow-sm rounded-2xl" />
+                <div className="absolute -bottom-1 -right-1 bg-[#111319] text-white p-1 rounded-full shadow border-2 border-white">
                   <Home size={12} />
                 </div>
               </div>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100/80 text-indigo-700 text-xs font-extrabold uppercase tracking-wider">
-                <Sparkles size={12} className="text-indigo-500" />
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EEF2FF] border border-[#6366F1]/20 text-[#6366F1] text-xs font-bold uppercase tracking-wider">
+                <Sparkles size={12} className="text-[#6366F1]" />
                 Invitación a Hogar
               </span>
             </div>
 
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2 font-title">
+            <h2 className="text-2xl font-bold text-slate-900 tracking-tight mb-2 font-title">
               ¡Te han invitado a formar un hogar en Orbita2!
             </h2>
             <p className="text-slate-500 text-xs sm:text-sm mb-6 leading-relaxed">
@@ -902,17 +902,17 @@ export default function App() {
             </p>
 
             {/* Identidad del Emisor y Hogar */}
-            <div className="bg-gradient-to-br from-slate-50 to-indigo-50/40 border border-indigo-100/70 rounded-2xl p-4 mb-6 text-left shadow-sm">
+            <div className="bg-[#F8FAFC] border border-[#EEF0F4] rounded-2xl p-4 mb-6 text-left shadow-sm">
               <div className="flex items-center gap-3.5">
                 {inviteModalData?.inviterPhotoUrl ? (
                   <img
                     src={inviteModalData.inviterPhotoUrl}
                     alt={inviteModalData?.inviterName || 'Pareja'}
-                    className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-md shrink-0"
+                    className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm shrink-0"
                     referrerPolicy="no-referrer"
                   />
                 ) : (
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-indigo-600 via-indigo-500 to-primary text-white flex items-center justify-center font-black text-base border-2 border-white shadow-md shrink-0 select-none">
+                  <div className="w-12 h-12 rounded-full bg-[#111319] text-white flex items-center justify-center font-bold text-base border-2 border-white shadow-sm shrink-0 select-none">
                     {(inviteModalData?.inviterName || 'P')
                       .trim()
                       .split(/\s+/)
@@ -923,10 +923,10 @@ export default function App() {
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <span className="block text-[11px] font-bold text-indigo-600 uppercase tracking-wider">
+                  <span className="block text-[11px] font-bold text-[#6366F1] uppercase tracking-wider">
                     Tu pareja te invita
                   </span>
-                  <p className="text-base font-black text-slate-900 truncate">
+                  <p className="text-base font-bold text-slate-900 truncate">
                     {inviteModalData?.inviterName || 'Tu pareja'}
                   </p>
                   <p className="text-xs text-slate-500 truncate mt-0.5 flex items-center gap-1">
@@ -938,7 +938,7 @@ export default function App() {
             </div>
 
             {joinError && (
-              <div className="bg-red-50 text-red-700 p-3 rounded-xl border border-red-200 text-xs font-medium mb-4 text-left">
+              <div className="bg-[#FDEFEA] text-[#F97316] p-3 rounded-2xl border border-[#FDEFEA] text-xs font-medium mb-4 text-left">
                 {joinError}
               </div>
             )}
@@ -948,7 +948,7 @@ export default function App() {
                 type="button"
                 disabled={joinLoading}
                 onClick={() => handleJoinHouse(true)}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white py-3.5 px-5 rounded-2xl font-bold text-sm transition-all shadow-md hover:shadow-lg shadow-indigo-600/20 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full bg-[#111319] hover:bg-[#1A1D26] active:scale-[0.99] text-white py-3.5 px-5 rounded-full font-medium text-sm transition-all shadow-sm disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
               >
                 {joinLoading ? (
                   <>
@@ -966,7 +966,7 @@ export default function App() {
                 type="button"
                 disabled={joinLoading}
                 onClick={() => handleJoinHouse(false)}
-                className="w-full bg-slate-100 hover:bg-slate-200 active:scale-[0.99] text-slate-600 hover:text-slate-800 py-3 px-5 rounded-2xl font-semibold text-xs sm:text-sm transition-all disabled:opacity-50 cursor-pointer"
+                className="w-full bg-white border border-[#EEF0F4] hover:bg-slate-50 active:scale-[0.99] text-slate-700 py-2.5 px-4 rounded-full font-medium text-xs sm:text-sm transition-all disabled:opacity-50 cursor-pointer"
               >
                 Permanecer en mi hogar actual
               </button>

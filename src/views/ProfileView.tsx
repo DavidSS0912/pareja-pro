@@ -134,18 +134,18 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ data: propData }) => {
   return (
     <div className="space-y-6 animate-in">
       {/* Integrantes del Hogar */}
-      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-100 shadow-sm">
-        <div className="flex items-center justify-between mb-6">
+      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#EEF0F4] shadow-bento space-y-6">
+        <div className="flex items-center justify-between pb-4 border-b border-[#EEF0F4]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-              <Users size={22} />
+            <div className="w-10 h-10 rounded-xl bg-[#EEF2FF] text-[#6366F1] border border-[#EEF0F4] flex items-center justify-center shrink-0">
+              <Users size={20} />
             </div>
             <div>
               <h2 className="text-xl font-bold font-title text-slate-900">Integrantes del Hogar</h2>
-              <p className="text-xs text-slate-500">Gestión de miembros y roles en el hogar compartido</p>
+              <p className="text-xs text-slate-400 font-medium">Gestión de miembros y roles en el hogar compartido</p>
             </div>
           </div>
-          <span className="text-xs font-bold px-3 py-1 bg-slate-100 text-slate-600 rounded-full">
+          <span className="text-xs font-semibold px-3 py-1 bg-[#F5F6FA] text-slate-600 rounded-full border border-[#EEF0F4] tabular-nums">
             {users.length} / 2 integrantes
           </span>
         </div>
@@ -157,10 +157,10 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ data: propData }) => {
             return (
               <div
                 key={u.id}
-                className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-slate-100 rounded-2xl bg-slate-50/70 hover:bg-slate-50 transition-colors gap-3"
+                className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-[#EEF0F4] rounded-2xl bg-[#F8FAFC] hover:bg-[#F1F5F9] transition-colors gap-3"
               >
                 <div className="flex items-center gap-3.5">
-                  <div className="w-11 h-11 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-base overflow-hidden border border-indigo-200">
+                  <div className="w-11 h-11 rounded-full bg-[#EEF2FF] text-[#6366F1] flex items-center justify-center font-bold text-base overflow-hidden border border-[#EEF0F4] shrink-0">
                     {(u.photoURL || u.photoUrl) ? (
                       <img
                         src={u.photoURL || u.photoUrl}
@@ -173,45 +173,49 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ data: propData }) => {
                     )}
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-bold text-slate-900 text-sm">
                         {u.displayName || u.name || (u.email ? u.email.split('@')[0] : 'Usuario')}
                       </p>
                       {isMe && (
-                        <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-[#111319] text-white px-2.5 py-0.5 rounded-full">
                           Tú
                         </span>
                       )}
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full flex items-center gap-1 ${
+                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full flex items-center gap-1 ${
                         isMemberA
-                          ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                          : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                          ? 'bg-[#FDEFEA] text-[#F97316] border border-[#F97316]/20'
+                          : 'bg-[#E8F8F0] text-[#10B981] border border-[#10B981]/20'
                       }`}>
                         <Shield size={10} />
                         {isMemberA ? 'Administrador' : 'Miembro'}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 mt-0.5">{u.email}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{u.email}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 self-end sm:self-center">
                   {users.length > 1 && isMe && (
                     <button
+                      type="button"
                       disabled={actionLoading}
                       onClick={handleLeaveHouse}
-                      className="text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-xl transition-colors font-medium text-xs flex items-center gap-1.5 border border-red-200 disabled:opacity-50"
+                      className="text-rose-600 hover:bg-[#FDEFEA] px-3.5 py-1.5 rounded-full transition-colors font-medium text-xs flex items-center gap-1.5 border border-rose-200 cursor-pointer disabled:opacity-50"
                     >
-                      <LogOut size={14} /> Abandonar hogar
+                      <LogOut size={14} /> 
+                      <span>Abandonar hogar</span>
                     </button>
                   )}
                   {users.length > 1 && !isMe && isCreator && (
                     <button
+                      type="button"
                       disabled={actionLoading}
                       onClick={() => handleRemoveMember(u.id, u.displayName || u.name)}
-                      className="text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-xl transition-colors font-medium text-xs flex items-center gap-1.5 border border-red-200 disabled:opacity-50"
+                      className="text-rose-600 hover:bg-[#FDEFEA] px-3.5 py-1.5 rounded-full transition-colors font-medium text-xs flex items-center gap-1.5 border border-rose-200 cursor-pointer disabled:opacity-50"
                     >
-                      <Trash2 size={14} /> Expulsar
+                      <Trash2 size={14} /> 
+                      <span>Expulsar</span>
                     </button>
                   )}
                 </div>
@@ -221,8 +225,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ data: propData }) => {
         </div>
 
         {users.length > 1 && (
-          <div className="mt-4 p-3 bg-amber-50/70 border border-amber-200/80 rounded-xl flex items-start gap-2.5 text-xs text-amber-800">
-            <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+          <div className="mt-4 p-4 bg-[#FDEFEA] border border-[#F97316]/20 rounded-2xl flex items-start gap-3 text-xs text-[#F97316] leading-relaxed">
+            <AlertTriangle size={16} className="text-[#F97316] shrink-0 mt-0.5" />
             <p>
               El historial de transacciones y presupuestos compartidos queda ligado al hogar.
               Si un integrante lo abandona o es expulsado, recibirá un nuevo hogar limpio y conservará únicamente las transacciones que realice a partir de ese momento.
@@ -232,33 +236,34 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ data: propData }) => {
       </div>
 
       {/* Invitaciones Pendientes */}
-      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-100 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#EEF0F4] shadow-bento space-y-6">
+        <div className="flex items-center justify-between pb-4 border-b border-[#EEF0F4]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
-              <Clock size={22} />
+            <div className="w-10 h-10 rounded-xl bg-[#FDEFEA] text-[#F97316] border border-[#EEF0F4] flex items-center justify-center shrink-0">
+              <Clock size={20} />
             </div>
             <div>
               <h2 className="text-xl font-bold font-title text-slate-900">Invitaciones Pendientes</h2>
-              <p className="text-xs text-slate-500">Enlaces de invitación activos emitidos para este hogar</p>
+              <p className="text-xs text-slate-400 font-medium">Enlaces de invitación activos emitidos para este hogar</p>
             </div>
           </div>
           <button
+            type="button"
             onClick={loadPendingInvitations}
             disabled={loadingInvites}
-            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-colors"
+            className="p-2 text-slate-400 hover:text-slate-700 hover:bg-[#F8FAFC] rounded-full transition-colors border border-[#EEF0F4] cursor-pointer"
             title="Recargar invitaciones"
           >
-            <RefreshCw size={16} className={loadingInvites ? 'animate-spin' : ''} />
+            <RefreshCw size={15} className={loadingInvites ? 'animate-spin' : ''} />
           </button>
         </div>
 
         {loadingInvites ? (
           <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-primary"></div>
+            <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-slate-900"></div>
           </div>
         ) : pendingInvites.length === 0 ? (
-          <p className="text-sm text-slate-500 py-4 text-center italic">
+          <p className="text-xs text-slate-400 py-6 text-center italic bg-[#F8FAFC] rounded-2xl border border-dashed border-[#EEF0F4]">
             No hay invitaciones pendientes emitidas para este hogar.
           </p>
         ) : (
@@ -266,21 +271,23 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ data: propData }) => {
             {pendingInvites.map((inv: any) => (
               <div
                 key={inv.id}
-                className="flex items-center justify-between p-3.5 border border-slate-100 rounded-xl bg-slate-50/60"
+                className="flex items-center justify-between p-4 border border-[#EEF0F4] rounded-2xl bg-[#F8FAFC]"
               >
                 <div>
-                  <p className="font-mono text-xs text-slate-800 font-semibold break-all">
+                  <p className="font-mono text-xs text-slate-900 font-semibold break-all">
                     Código: {inv.id}
                   </p>
-                  <p className="text-[11px] text-slate-500 mt-1">
+                  <p className="text-xs text-slate-400 mt-1 tabular-nums">
                     Caduca: {new Date(inv.expiresAt).toLocaleDateString()} a las {new Date(inv.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
                 <button
+                  type="button"
                   onClick={() => handleRevokeInvite(inv.id)}
-                  className="text-red-600 hover:bg-red-50 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1 border border-red-200"
+                  className="text-rose-600 hover:bg-[#FDEFEA] px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors flex items-center gap-1.5 border border-rose-200 cursor-pointer"
                 >
-                  <XCircle size={14} /> Revocar
+                  <XCircle size={14} /> 
+                  <span>Revocar</span>
                 </button>
               </div>
             ))}

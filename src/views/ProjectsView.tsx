@@ -24,7 +24,6 @@ import {
   Pause,
   Play
 } from 'lucide-react';
-import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { FormatCurrency } from '../utils';
@@ -519,48 +518,46 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
     return (
       <div className="space-y-6 animate-in fade-in duration-300">
         {/* Cabecera con Breadcrumbs */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-3xl border border-[#EEF0F4] shadow-bento">
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-500">
             <button
               onClick={() => setSelectedProjectId(null)}
-              className="inline-flex items-center gap-1.5 text-primary hover:text-primary/80 transition-colors font-bold cursor-pointer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
             >
-              <ChevronLeft size={18} />
+              <ChevronLeft size={16} />
               <span>Metas y Proyectos</span>
             </button>
             <span className="text-slate-300">/</span>
-            <span className="text-slate-900 font-bold truncate max-w-[200px] sm:max-w-xs">
+            <span className="text-slate-900 font-bold truncate max-w-[200px] sm:max-w-xs text-sm">
               {currentProject.name}
             </span>
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-            <Button
-              variant="outline"
-              size="sm"
+            <button
+              type="button"
               onClick={() => handleDeleteProject(currentProject)}
-              className="flex items-center gap-1.5 text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-rose-600 hover:bg-[#FDEFEA] px-3.5 py-2 rounded-full transition-colors cursor-pointer border border-[#EEF0F4]"
             >
-              <Trash2 size={15} />
+              <Trash2 size={14} />
               <span>Eliminar Meta</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
+            </button>
+            <button
+              type="button"
               onClick={() => handleOpenEditProject(currentProject)}
-              className="flex items-center gap-1.5"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 hover:bg-[#F8FAFC] px-4 py-2 rounded-full transition-colors cursor-pointer border border-[#EEF0F4]"
             >
-              <Edit2 size={15} />
+              <Edit2 size={14} />
               <span>Editar Meta</span>
-            </Button>
-            <Button
-              size="sm"
+            </button>
+            <button
+              type="button"
               onClick={() => handleOpenContribution(currentProject)}
-              className="flex items-center gap-1.5 shadow-sm"
+              className="inline-flex items-center gap-1.5 bg-[#111319] hover:bg-[#1A1D26] text-white rounded-full px-5 py-2.5 font-medium transition-colors duration-150 text-xs shadow-sm cursor-pointer"
             >
-              <Plus size={16} />
+              <Plus size={15} />
               <span>Aportar a Meta</span>
-            </Button>
+            </button>
           </div>
         </div>
 
@@ -568,18 +565,18 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
         {(() => {
           const isCurrentPaused = currentProject.status === 'paused' || currentProject.priority === 0 || currentProject.isPaused;
           return (
-            <div className="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-indigo-900/40 relative overflow-hidden">
+            <div className="bg-[#111319] border border-[#232733] rounded-3xl p-6 sm:p-8 text-white shadow-bento relative overflow-hidden">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <span
-                      className={`text-xs uppercase font-extrabold px-3 py-1 rounded-full tracking-wider border ${
+                      className={`text-xs uppercase font-bold px-3 py-1 rounded-full tracking-wider border ${
                         isCurrentPaused
-                          ? 'bg-amber-500/20 text-amber-300 border-amber-400/30'
+                          ? 'bg-[#FDEFEA]/20 text-[#F97316] border-[#F97316]/30'
                           : currentProject.status === 'active'
-                          ? 'bg-primary/20 text-indigo-300 border-primary/40'
+                          ? 'bg-[#E8F8F0]/20 text-[#10B981] border-[#10B981]/30'
                           : currentProject.status === 'completed'
-                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
+                          ? 'bg-[#E8F8F0]/20 text-[#10B981] border-[#10B981]/30'
                           : 'bg-white/10 text-slate-300 border-white/10'
                       }`}
                     >
@@ -592,43 +589,43 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
                         : 'En Cola / Prioridad #' + (currentProject.priority || 1)}
                     </span>
                     <span className="inline-flex items-center gap-1.5 bg-white/10 text-slate-200 text-xs px-3 py-1 rounded-full border border-white/10">
-                      <Wallet size={12} className="text-indigo-300" />
+                      <Wallet size={12} className="text-slate-300" />
                       <span>Apartado en {getAccountDisplayName(currentProject.targetAccountId || currentProject.targetAccount)}</span>
                     </span>
                   </div>
-                  <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                  <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
                     {currentProject.name}
                   </h2>
-                  <p className="text-indigo-200 text-sm mt-1.5 flex items-center gap-1.5 font-medium">
+                  <p className="text-slate-400 text-sm mt-1.5 flex items-center gap-1.5 font-medium">
                     <Calendar size={15} />
                     Meta estimada: <strong className="text-white">{getEstimatedDate(currentProject)}</strong>
                   </p>
                 </div>
 
                 <div className="text-left md:text-right bg-white/5 border border-white/10 rounded-2xl p-4 sm:px-6">
-                  <span className="text-xs uppercase tracking-wider font-bold text-indigo-300 block mb-1">
+                  <span className="text-xs uppercase tracking-wider font-semibold text-slate-400 block mb-1">
                     Progreso Acumulado
                   </span>
-                  <p className="text-3xl sm:text-4xl font-black text-white tabular-nums tracking-tight">
+                  <p className="text-3xl sm:text-4xl font-bold text-white tabular-nums tracking-tight">
                     {FormatCurrency(saved)}
                   </p>
-                  <p className="text-xs text-indigo-200 mt-0.5">
-                    de una meta de <strong className="text-white">{FormatCurrency(target)}</strong>
+                  <p className="text-xs text-slate-400 mt-0.5 tabular-nums">
+                    de una meta de <strong className="text-white tabular-nums">{FormatCurrency(target)}</strong>
                   </p>
                 </div>
               </div>
 
               {/* Barra de Progreso Grande */}
               <div className="space-y-2 mb-6">
-                <div className="flex justify-between items-center text-sm font-bold">
-                  <span className="text-emerald-400 text-base font-black">{pct}% Alcanzado</span>
-                  <span className="text-indigo-200 text-xs">
+                <div className="flex justify-between items-center text-sm font-semibold">
+                  <span className="text-[#10B981] text-base font-bold tabular-nums">{pct}% Alcanzado</span>
+                  <span className="text-slate-400 text-xs tabular-nums">
                     {remaining > 0 ? `Faltan ${FormatCurrency(remaining)}` : '¡Meta 100% alcanzada!'}
                   </span>
                 </div>
-                <div className="w-full bg-white/10 rounded-full h-4 overflow-hidden border border-white/10 relative">
+                <div className="w-full bg-white/10 rounded-full h-2.5 overflow-hidden border border-white/10 relative">
                   <div
-                    className="h-full bg-gradient-to-r from-indigo-500 via-primary to-emerald-400 rounded-full transition-all duration-1000 ease-out"
+                    className="h-full bg-[#10B981] rounded-full transition-all duration-700 ease-out"
                     style={{ width: `${pct}%` }}
                   />
                 </div>
@@ -640,7 +637,7 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
                   <button
                     type="button"
                     onClick={() => activateProject(currentProject)}
-                    className="px-4 py-2 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl transition-colors cursor-pointer"
+                    className="px-4 py-2 bg-[#10B981] hover:bg-[#059669] text-white font-medium rounded-xl transition-colors cursor-pointer"
                   >
                     Hacer esta mi Meta Activa
                   </button>
@@ -649,10 +646,10 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
                   <button
                     type="button"
                     onClick={() => handleTogglePause(currentProject)}
-                    className={`px-4 py-2 font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 ${
+                    className={`px-4 py-2 font-medium rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 ${
                       isCurrentPaused
-                        ? 'bg-amber-500 hover:bg-amber-600 text-white'
-                        : 'bg-white/15 hover:bg-white/25 text-white border border-white/20'
+                        ? 'bg-[#F97316] hover:bg-[#ea580c] text-white'
+                        : 'bg-white/10 hover:bg-white/20 text-white border border-white/15'
                     }`}
                   >
                     {isCurrentPaused ? <Play size={14} /> : <Pause size={14} />}
@@ -663,7 +660,7 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
                   <button
                     type="button"
                     onClick={() => completeProject(currentProject)}
-                    className="px-4 py-2 bg-emerald-600/80 hover:bg-emerald-600 text-white font-bold rounded-xl transition-colors cursor-pointer"
+                    className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl transition-colors cursor-pointer"
                   >
                     Marcar como Completada
                   </button>
@@ -671,7 +668,7 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
                   <button
                     type="button"
                     onClick={() => reactivateProject(currentProject)}
-                    className="px-4 py-2 bg-amber-600/80 hover:bg-amber-600 text-white font-bold rounded-xl transition-colors cursor-pointer"
+                    className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl transition-colors cursor-pointer"
                   >
                     Reactivar Meta / Proyecto
                   </button>
@@ -682,13 +679,13 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
         })()}
 
         {/* Cuota Mensual y Aportación Sugerida en Pareja */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="bg-white rounded-3xl p-6 border border-[#EEF0F4] shadow-bento space-y-4">
+          <div className="flex items-center justify-between border-b border-[#EEF0F4] pb-3">
             <div className="flex items-center gap-2">
-              <Info size={18} className="text-primary" />
-              <h3 className="font-bold text-slate-800 text-base">Aportación Sugerida de Pareja (Cuota Mensual)</h3>
+              <Info size={18} className="text-slate-800" />
+              <h3 className="font-bold text-slate-900 text-base">Aportación Sugerida de Pareja (Cuota Mensual)</h3>
             </div>
-            <span className="font-black text-slate-900 text-sm">
+            <span className="font-bold text-slate-900 text-sm tabular-nums">
               Cuota: {FormatCurrency(currentProject.monthlyQuota || 0)} / mes
             </span>
           </div>
@@ -703,22 +700,22 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
               return (
                 <div
                   key={u.id}
-                  className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between"
+                  className="p-4 bg-[#F8FAFC] border border-[#EEF0F4] rounded-2xl flex items-center justify-between"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-indigo-100 text-primary font-bold text-sm flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-[#EEF2FF] text-[#6366F1] font-bold text-sm flex items-center justify-center border-2 border-white shadow-2xs">
                       {u.name?.charAt(0)?.toUpperCase() || 'U'}
                     </div>
                     <div>
-                      <h4 className="font-bold text-slate-800 text-sm leading-tight">{u.name || u.email}</h4>
-                      <p className="text-xs text-slate-500 mt-0.5">
+                      <h4 className="font-semibold text-slate-900 text-sm leading-tight">{u.name || u.email}</h4>
+                      <p className="text-xs text-slate-400 mt-0.5 tabular-nums">
                         Ingresos: {FormatCurrency(userIncome)} ({Math.round(ratio * 100)}%)
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="text-[11px] font-bold text-slate-400 block uppercase">Sugerido</span>
-                    <span className="font-black text-slate-900 text-base tabular-nums">
+                    <span className="text-[11px] font-semibold text-slate-400 block uppercase tracking-wider">Sugerido</span>
+                    <span className="font-bold text-slate-900 text-base tabular-nums">
                       {FormatCurrency(suggestedAmount)}
                     </span>
                   </div>
@@ -729,19 +726,23 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
         </div>
 
         {/* Hitos y Tareas */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="bg-white rounded-3xl p-6 border border-[#EEF0F4] shadow-bento space-y-4">
+          <div className="flex items-center justify-between border-b border-[#EEF0F4] pb-3">
             <div className="flex items-center gap-2">
-              <Flag size={18} className="text-primary" />
-              <h3 className="font-bold text-slate-800 text-base">Hitos y Tareas del Proyecto</h3>
+              <Flag size={18} className="text-slate-800" />
+              <h3 className="font-bold text-slate-900 text-base">Hitos y Tareas del Proyecto</h3>
             </div>
-            <Button size="sm" variant="outline" onClick={handleOpenAddMilestone}>
+            <button 
+              type="button" 
+              onClick={handleOpenAddMilestone}
+              className="bg-white border border-[#EEF0F4] hover:bg-[#F8FAFC] text-slate-700 rounded-full px-4 py-1.5 font-medium transition-colors text-xs cursor-pointer shadow-2xs"
+            >
               + Añadir Hito
-            </Button>
+            </button>
           </div>
 
           {(!currentProject.milestones || currentProject.milestones.length === 0) ? (
-            <p className="text-sm text-slate-500 py-4 text-center">
+            <p className="text-sm text-slate-400 py-4 text-center">
               Aún no has registrado tareas o hitos para esta meta.
             </p>
           ) : (
@@ -753,38 +754,38 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
                     key={m.id}
                     className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all ${
                       m.isCompleted
-                        ? 'bg-slate-50/80 border-slate-200 text-slate-400'
+                        ? 'bg-[#F8FAFC] border-[#EEF0F4] text-slate-400'
                         : isReached
-                        ? 'bg-amber-50/60 border-amber-200 text-slate-800'
-                        : 'bg-white border-slate-200 text-slate-800'
+                        ? 'bg-[#E8F8F0]/40 border-[#10B981]/20 text-slate-800'
+                        : 'bg-white border-[#EEF0F4] text-slate-800'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <button
                         type="button"
                         onClick={() => toggleMilestone(currentProject, m.id, !m.isCompleted)}
-                        className="cursor-pointer text-primary shrink-0"
+                        className="cursor-pointer text-slate-400 hover:text-slate-700 shrink-0"
                       >
                         {m.isCompleted ? (
-                          <CheckCircle2 size={20} className="text-emerald-500" />
+                          <CheckCircle2 size={20} className="text-[#10B981]" />
                         ) : (
-                          <Circle size={20} className="text-slate-400 hover:text-primary" />
+                          <Circle size={20} className="text-slate-300 hover:text-slate-600" />
                         )}
                       </button>
                       <div>
-                        <p className={`text-sm font-bold ${m.isCompleted ? 'line-through text-slate-400' : 'text-slate-800'}`}>
+                        <p className={`text-sm font-semibold ${m.isCompleted ? 'line-through text-slate-400' : 'text-slate-900'}`}>
                           {m.title}
                         </p>
-                        <div className="flex items-center gap-3 text-xs text-slate-500 mt-0.5">
-                          {m.amountThreshold && <span>Disparador: {FormatCurrency(Number(m.amountThreshold))}</span>}
-                          {m.dateThreshold && <span>Fecha: {formatDateDDMMAAAA(m.dateThreshold)}</span>}
+                        <div className="flex items-center gap-3 text-xs text-slate-400 mt-0.5 tabular-nums">
+                          {m.amountThreshold && <span className="tabular-nums">Disparador: {FormatCurrency(Number(m.amountThreshold))}</span>}
+                          {m.dateThreshold && <span className="tabular-nums">Fecha: {formatDateDDMMAAAA(m.dateThreshold)}</span>}
                         </div>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2">
                       {isReached && !m.isCompleted && (
-                        <span className="text-[11px] font-bold text-amber-700 bg-amber-100/80 px-2.5 py-1 rounded-lg">
+                        <span className="text-[11px] font-semibold text-[#10B981] bg-[#E8F8F0] px-2.5 py-1 rounded-full border border-[#10B981]/20 tabular-nums">
                           ¡Monto alcanzado!
                         </span>
                       )}
@@ -800,17 +801,17 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
                           setShowMilestoneModal(true);
                         }}
                         title="Editar hito"
-                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                        className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-[#F8FAFC] rounded-lg transition-colors cursor-pointer"
                       >
-                        <Edit2 size={16} />
+                        <Edit2 size={15} />
                       </button>
                       <button
                         type="button"
                         onClick={() => handleDeleteMilestone(m.id)}
                         title="Eliminar hito"
-                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-[#FDEFEA] rounded-lg transition-colors cursor-pointer"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={15} />
                       </button>
                     </div>
                   </div>
@@ -821,19 +822,23 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
         </div>
 
         {/* Trazabilidad / Historial de Aportaciones */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="bg-white rounded-3xl p-6 border border-[#EEF0F4] shadow-bento space-y-4">
+          <div className="flex items-center justify-between border-b border-[#EEF0F4] pb-3">
             <div className="flex items-center gap-2">
-              <History size={18} className="text-primary" />
-              <h3 className="font-bold text-slate-800 text-base">Historial de Aportaciones</h3>
+              <History size={18} className="text-slate-800" />
+              <h3 className="font-bold text-slate-900 text-base">Historial de Aportaciones</h3>
             </div>
-            <Button size="sm" onClick={() => handleOpenContribution(currentProject)}>
+            <button
+              type="button"
+              onClick={() => handleOpenContribution(currentProject)}
+              className="bg-[#111319] hover:bg-[#1A1D26] text-white rounded-full px-4 py-2 font-medium transition-colors text-xs cursor-pointer shadow-2xs"
+            >
               + Registrar Aportación
-            </Button>
+            </button>
           </div>
 
           {projectContributions.length === 0 ? (
-            <p className="text-sm text-slate-500 py-4 text-center">
+            <p className="text-sm text-slate-400 py-4 text-center">
               No hay aportaciones registradas para este proyecto aún.
             </p>
           ) : (
@@ -854,7 +859,7 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
                   return (
                     <div
                       key={c.id}
-                      className="p-3.5 bg-slate-50 border border-slate-200/70 rounded-2xl flex items-center justify-between"
+                      className="p-3.5 bg-[#F8FAFC] border border-[#EEF0F4] rounded-2xl flex items-center justify-between"
                     >
                       <div className="flex items-center gap-3">
                         {userPhoto ? (
@@ -862,37 +867,37 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
                             src={userPhoto}
                             alt={userName}
                             referrerPolicy="no-referrer"
-                            className="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0"
+                            className="w-10 h-10 rounded-full object-cover border border-[#EEF0F4] shrink-0"
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-indigo-100 text-primary font-bold text-sm flex items-center justify-center shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-[#EEF2FF] text-[#6366F1] font-bold text-sm flex items-center justify-center shrink-0 border-2 border-white shadow-2xs">
                             {userName.charAt(0).toUpperCase()}
                           </div>
                         )}
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-bold text-slate-800 leading-tight">
+                            <span className="text-sm font-semibold text-slate-900 leading-tight">
                               {userName}
                             </span>
                             {c.isInternalPiggyBank && (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/50">
+                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#10B981] bg-[#E8F8F0] px-2 py-0.5 rounded-full border border-[#10B981]/20">
                                 <Sparkles size={11} />
                                 Apartado interno
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5 flex-wrap">
-                            <span className="font-semibold text-slate-700">{formattedDate}</span>
+                          <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                            <span className="font-semibold text-slate-600 tabular-nums">{formattedDate}</span>
                             {c.notes && (
                               <>
                                 <span>•</span>
-                                <span className="text-slate-600">{c.notes}</span>
+                                <span className="text-slate-500">{c.notes}</span>
                               </>
                             )}
                           </p>
                         </div>
                       </div>
-                      <span className="font-black text-emerald-600 text-sm tabular-nums shrink-0">
+                      <span className="font-bold text-[#10B981] text-sm tabular-nums shrink-0">
                         + {FormatCurrency(c.amount)}
                       </span>
                     </div>
@@ -1004,10 +1009,10 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Cabecera del Dashboard */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-3xl border border-[#EEF0F4] shadow-bento">
         <div>
-          <div className="flex items-center gap-2">
-            <div className="p-2.5 rounded-2xl bg-primary/10 text-primary">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-[#E8F8F0] text-[#10B981]">
               <Target size={24} />
             </div>
             <div>
@@ -1026,38 +1031,42 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
             <Button
               variant="outline"
               onClick={() => setShowCascadeModal(true)}
-              className="flex items-center gap-1.5"
+              className="flex items-center gap-1.5 rounded-full px-4 py-2 border-[#EEF0F4] hover:bg-slate-50 text-slate-700 font-medium transition-colors"
             >
               <Layers size={16} />
               <span>Distribuir Cascada</span>
             </Button>
           )}
-          <Button onClick={handleOpenNewProject} className="flex items-center gap-2 shadow-sm">
+          <button
+            type="button"
+            onClick={handleOpenNewProject}
+            className="flex items-center gap-2 bg-[#111319] hover:bg-[#1A1D26] text-white rounded-full px-5 py-2.5 font-medium transition-colors duration-150 shadow-sm cursor-pointer"
+          >
             <Plus size={18} />
             <span>Nuevo Proyecto</span>
-          </Button>
+          </button>
         </div>
       </div>
 
       {/* Resumen Ejecutivo Superior (KPIs) */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm">
-          <span className="text-xs uppercase font-extrabold text-slate-400 tracking-wider block mb-1">
+        <div className="bg-white p-5 rounded-3xl border border-[#EEF0F4] shadow-bento">
+          <span className="text-xs uppercase font-semibold text-slate-400 tracking-wider block mb-1">
             Total en Proyectos
           </span>
-          <p className="text-2xl font-black text-slate-900 tabular-nums">
+          <p className="text-2xl font-bold text-slate-900 tabular-nums">
             {FormatCurrency(totalSavedAllProjects)}
           </p>
           <span className="text-xs text-slate-500 mt-1 block">
-            de {FormatCurrency(totalTargetAllProjects)} total
+            de <span className="tabular-nums">{FormatCurrency(totalTargetAllProjects)}</span> total
           </span>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm">
-          <span className="text-xs uppercase font-extrabold text-slate-400 tracking-wider block mb-1">
+        <div className="bg-white p-5 rounded-3xl border border-[#EEF0F4] shadow-bento">
+          <span className="text-xs uppercase font-semibold text-slate-400 tracking-wider block mb-1">
             Meta Activa
           </span>
-          <p className="text-2xl font-black text-primary tabular-nums">
+          <p className="text-2xl font-bold text-[#10B981] tabular-nums">
             {activeProject ? '1 Activa' : '0'}
           </p>
           <span className="text-xs text-slate-500 mt-1 block truncate">
@@ -1065,31 +1074,31 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
           </span>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm">
-          <span className="text-xs uppercase font-extrabold text-slate-400 tracking-wider block mb-1">
+        <div className="bg-white p-5 rounded-3xl border border-[#EEF0F4] shadow-bento">
+          <span className="text-xs uppercase font-semibold text-slate-400 tracking-wider block mb-1">
             En Cola (Cascada)
           </span>
-          <p className="text-2xl font-black text-indigo-600 tabular-nums">
+          <p className="text-2xl font-bold text-[#6366F1] tabular-nums">
             {pendingProjects.length}
           </p>
           <span className="text-xs text-slate-500 mt-1 block">Metas pendientes</span>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm">
-          <span className="text-xs uppercase font-extrabold text-slate-400 tracking-wider block mb-1">
+        <div className="bg-white p-5 rounded-3xl border border-[#EEF0F4] shadow-bento">
+          <span className="text-xs uppercase font-semibold text-slate-400 tracking-wider block mb-1">
             Pausadas
           </span>
-          <p className="text-2xl font-black text-amber-600 tabular-nums">
+          <p className="text-2xl font-bold text-[#F97316] tabular-nums">
             {pausedProjects.length}
           </p>
           <span className="text-xs text-slate-500 mt-1 block">Sin cuota mensual</span>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm col-span-2 sm:col-span-1">
-          <span className="text-xs uppercase font-extrabold text-slate-400 tracking-wider block mb-1">
+        <div className="bg-white p-5 rounded-3xl border border-[#EEF0F4] shadow-bento col-span-2 sm:col-span-1">
+          <span className="text-xs uppercase font-semibold text-slate-400 tracking-wider block mb-1">
             Completadas
           </span>
-          <p className="text-2xl font-black text-emerald-600 tabular-nums">
+          <p className="text-2xl font-bold text-[#10B981] tabular-nums">
             {completedProjects.length}
           </p>
           <span className="text-xs text-slate-500 mt-1 block">Metas alcanzadas 🎉</span>
@@ -1098,36 +1107,36 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
 
       {/* Tarjeta Hero del Proyecto Activo Principal */}
       {activeProject ? (
-        <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-indigo-900/40 relative overflow-hidden group">
+        <div className="bg-[#111319] border border-[#232733] rounded-3xl p-6 sm:p-8 text-white shadow-bento relative overflow-hidden group">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <span className="bg-primary/25 text-indigo-300 text-xs font-extrabold px-3 py-1 rounded-full border border-primary/40 uppercase tracking-wider">
+                <span className="bg-[#E8F8F0]/15 text-[#10B981] text-xs font-semibold px-3 py-1 rounded-full border border-[#10B981]/30 uppercase tracking-wider">
                   Meta Activa Principal
                 </span>
                 <span className="inline-flex items-center gap-1.5 bg-white/10 text-slate-200 text-xs px-3 py-1 rounded-full border border-white/10">
-                  <Wallet size={12} className="text-indigo-300" />
+                  <Wallet size={12} className="text-[#10B981]" />
                   <span>Apartado en {getAccountDisplayName(activeProject.targetAccountId || activeProject.targetAccount)}</span>
                 </span>
               </div>
               <h3 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
                 {activeProject.name}
               </h3>
-              <p className="text-indigo-200 text-sm mt-1 flex items-center gap-1.5 font-medium">
+              <p className="text-slate-400 text-sm mt-1 flex items-center gap-1.5 font-medium">
                 <Calendar size={15} />
                 Meta estimada: <strong className="text-white">{getEstimatedDate(activeProject)}</strong>
               </p>
             </div>
 
             <div className="text-left md:text-right bg-white/5 border border-white/10 rounded-2xl p-4 sm:px-6">
-              <span className="text-xs uppercase tracking-wider font-bold text-indigo-300 block mb-1">
+              <span className="text-xs uppercase tracking-wider font-semibold text-slate-400 block mb-1">
                 Progreso Acumulado
               </span>
               <p className="text-3xl font-black text-white tabular-nums tracking-tight">
                 {FormatCurrency(Number(activeProject.savedAmount ?? activeProject.currentAmount ?? 0))}
               </p>
-              <p className="text-xs text-indigo-200 mt-0.5">
-                Meta: <strong className="text-white">{FormatCurrency(Number(activeProject.targetAmount || 0))}</strong>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Meta: <strong className="text-white tabular-nums">{FormatCurrency(Number(activeProject.targetAmount || 0))}</strong>
               </p>
             </div>
           </div>
@@ -1141,15 +1150,15 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
 
             return (
               <div className="space-y-2 mb-6">
-                <div className="flex justify-between items-center text-xs sm:text-sm font-bold">
-                  <span className="text-emerald-400 font-black">{pct}% Completado</span>
-                  <span className="text-indigo-200">
+                <div className="flex justify-between items-center text-xs sm:text-sm font-semibold">
+                  <span className="text-[#10B981] font-bold tabular-nums">{pct}% Completado</span>
+                  <span className="text-slate-400 tabular-nums">
                     {remaining > 0 ? `Restan ${FormatCurrency(remaining)}` : '¡Meta alcanzada!'}
                   </span>
                 </div>
-                <div className="w-full bg-white/10 rounded-full h-3.5 overflow-hidden border border-white/10 relative">
+                <div className="w-full bg-white/10 rounded-full h-2.5 overflow-hidden border border-white/10 relative">
                   <div
-                    className="h-full bg-gradient-to-r from-indigo-500 via-primary to-emerald-400 rounded-full transition-all duration-1000 ease-out"
+                    className="h-full bg-[#10B981] rounded-full transition-all duration-1000 ease-out"
                     style={{ width: `${pct}%` }}
                   />
                 </div>
@@ -1159,51 +1168,54 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
 
           {/* Desglose de Cuota Mensual y Botones */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-4 border-t border-white/10">
-            <div className="flex items-center gap-2 text-xs text-indigo-200">
-              <Info size={14} className="text-indigo-400" />
-              <span>Cuota mensual sugerida: <strong className="text-white">{FormatCurrency(activeProject.monthlyQuota || 0)}</strong></span>
+            <div className="flex items-center gap-2 text-xs text-slate-400">
+              <Info size={14} className="text-slate-400" />
+              <span>Cuota mensual sugerida: <strong className="text-white tabular-nums">{FormatCurrency(activeProject.monthlyQuota || 0)}</strong></span>
             </div>
 
             <div className="flex items-center gap-2.5 w-full sm:w-auto">
-              <Button
-                variant="secondary"
-                size="sm"
+              <button
+                type="button"
                 onClick={() => handleOpenEditProject(activeProject)}
-                className="flex items-center justify-center p-2 text-indigo-200 hover:text-white bg-white/10 hover:bg-white/20 border-white/10"
+                className="flex items-center justify-center p-2 text-slate-300 hover:text-white bg-white/10 hover:bg-white/20 border border-white/10 rounded-full transition-colors cursor-pointer"
                 title="Editar Proyecto"
               >
                 <Edit2 size={15} />
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
+              </button>
+              <button
+                type="button"
                 onClick={() => setSelectedProjectId(activeProject.id)}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/10 rounded-full px-4 py-2 text-xs font-medium transition-colors cursor-pointer"
               >
                 <span>Ver Detalle y Tareas</span>
                 <ArrowRight size={15} />
-              </Button>
-              <Button
-                size="sm"
+              </button>
+              <button
+                type="button"
                 onClick={() => handleOpenContribution(activeProject)}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white border-0 shadow-md"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-[#10B981] hover:bg-[#059669] text-white rounded-full px-4 py-2 text-xs font-semibold transition-colors shadow-sm cursor-pointer"
               >
                 <Plus size={16} />
                 <span>Aportar</span>
-              </Button>
+              </button>
             </div>
           </div>
         </div>
       ) : (
-        <div className="p-8 text-center bg-white rounded-3xl border border-slate-200 shadow-sm space-y-3">
+        <div className="p-8 text-center bg-white rounded-3xl border border-[#EEF0F4] shadow-bento space-y-3">
           <Target size={36} className="mx-auto text-slate-400" />
           <h3 className="text-lg font-bold text-slate-800">No tienes proyectos de ahorro activos</h3>
           <p className="text-sm text-slate-500 max-w-sm mx-auto">
             Crea tu primer proyecto para empezar a apartar dinero de forma inteligente.
           </p>
-          <Button onClick={handleOpenNewProject} className="mt-2">
-            Crear Primer Proyecto
-          </Button>
+          <button
+            type="button"
+            onClick={handleOpenNewProject}
+            className="mt-2 inline-flex items-center gap-2 bg-[#111319] hover:bg-[#1A1D26] text-white rounded-full px-5 py-2.5 font-medium transition-colors shadow-sm cursor-pointer"
+          >
+            <Plus size={16} />
+            <span>Crear Primer Proyecto</span>
+          </button>
         </div>
       )}
 
@@ -1212,7 +1224,9 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
         <div className="flex justify-between items-center px-1">
           <div>
             <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <Layers size={18} className="text-primary" />
+              <span className="p-1.5 rounded-lg bg-[#EEF2FF] text-[#6366F1]">
+                <Layers size={18} />
+              </span>
               <span>Cola de Proyectos (Efecto Cascada)</span>
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -1222,7 +1236,7 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
         </div>
 
         {pendingProjects.length === 0 ? (
-          <div className="p-6 bg-slate-50 border border-slate-200/80 rounded-3xl text-center text-xs text-slate-500 font-medium">
+          <div className="p-6 bg-slate-50 border border-[#EEF0F4] rounded-3xl text-center text-xs text-slate-500 font-medium">
             No hay metas en cola. Haz clic en "+ Nuevo Proyecto" para planificar tus próximas metas.
           </div>
         ) : (
@@ -1235,43 +1249,43 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
               return (
                 <div
                   key={p.id}
-                  className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm hover:border-indigo-200 transition-all flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 group"
+                  className="bg-white rounded-2xl p-4 sm:p-5 border border-[#EEF0F4] shadow-bento hover:border-slate-300 transition-all flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 group"
                 >
                   <div
                     className="flex-1 cursor-pointer w-full"
                     onClick={() => setSelectedProjectId(p.id)}
                   >
                     <div className="flex items-center gap-2.5 mb-1.5">
-                      <span className="text-xs font-black text-slate-400 bg-slate-100 px-2.5 py-0.5 rounded-md">
+                      <span className="text-xs font-semibold text-[#64748B] bg-[#F1F5F9] px-2.5 py-1 rounded-full">
                         #{index + 1}
                       </span>
-                      <h4 className="font-bold text-slate-900 text-base group-hover:text-primary transition-colors">
+                      <h4 className="font-bold text-slate-900 text-base group-hover:text-slate-700 transition-colors">
                         {p.name}
                       </h4>
-                      <span className="text-xs text-slate-400 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-full hidden sm:inline-block">
+                      <span className="text-xs text-slate-400 bg-slate-50 border border-[#EEF0F4] px-2 py-0.5 rounded-full hidden sm:inline-block">
                         {getAccountDisplayName(p.targetAccountId || p.targetAccount)}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-4 text-xs text-slate-500">
-                      <span>Meta: <strong className="text-slate-800">{FormatCurrency(target)}</strong></span>
-                      <span>Acumulado: <strong className="text-slate-800">{FormatCurrency(saved)}</strong> ({pct}%)</span>
-                      <span>Cuota: {FormatCurrency(p.monthlyQuota || 0)}/mes</span>
+                      <span>Meta: <strong className="text-slate-800 tabular-nums">{FormatCurrency(target)}</strong></span>
+                      <span>Acumulado: <strong className="text-slate-800 tabular-nums">{FormatCurrency(saved)}</strong> ({pct}%)</span>
+                      <span>Cuota: <span className="tabular-nums">{FormatCurrency(p.monthlyQuota || 0)}</span>/mes</span>
                     </div>
 
-                    <div className="w-full bg-slate-100 rounded-full h-2 mt-2.5 overflow-hidden">
-                      <div className="bg-primary h-full rounded-full" style={{ width: `${pct}%` }} />
+                    <div className="w-full bg-[#EEF2FF] rounded-full h-2 mt-2.5 overflow-hidden">
+                      <div className="bg-[#10B981] h-full rounded-full transition-all" style={{ width: `${pct}%` }} />
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 w-full sm:w-auto justify-end border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100">
                     {/* Botones de Reordenamiento */}
-                    <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl p-0.5">
+                    <div className="flex items-center bg-[#F8FAFC] border border-[#EEF0F4] rounded-xl p-0.5">
                       <button
                         type="button"
                         onClick={() => changePriority(p, 'up')}
                         disabled={index === 0}
-                        className="p-1.5 text-slate-500 hover:text-primary disabled:opacity-30 cursor-pointer"
+                        className="p-1.5 text-slate-400 hover:text-slate-900 disabled:opacity-30 cursor-pointer"
                         title="Subir prioridad"
                       >
                         <ArrowUp size={14} />
@@ -1280,7 +1294,7 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
                         type="button"
                         onClick={() => changePriority(p, 'down')}
                         disabled={index === pendingProjects.length - 1}
-                        className="p-1.5 text-slate-500 hover:text-primary disabled:opacity-30 cursor-pointer"
+                        className="p-1.5 text-slate-400 hover:text-slate-900 disabled:opacity-30 cursor-pointer"
                         title="Bajar prioridad"
                       >
                         <ArrowDown size={14} />
@@ -1290,7 +1304,7 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
                     <button
                       type="button"
                       onClick={() => handleTogglePause(p)}
-                      className="p-1.5 text-slate-400 hover:text-amber-600 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
+                      className="p-1.5 text-slate-400 hover:text-[#F97316] rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
                       title="Pausar meta"
                     >
                       <Pause size={15} />
@@ -1299,7 +1313,7 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
                     <button
                       type="button"
                       onClick={() => handleOpenEditProject(p)}
-                      className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
+                      className="p-1.5 text-slate-400 hover:text-slate-900 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
                       title="Editar Proyecto"
                     >
                       <Edit2 size={15} />
@@ -1308,7 +1322,7 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
                     <button
                       type="button"
                       onClick={() => activateProject(p)}
-                      className="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                      className="px-3 py-1.5 bg-[#EEF2FF] hover:bg-[#E0E7FF] text-[#6366F1] text-xs font-bold rounded-xl transition-colors cursor-pointer"
                     >
                       Activar
                     </button>
@@ -1316,7 +1330,7 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
                     <button
                       type="button"
                       onClick={() => setSelectedProjectId(p.id)}
-                      className="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-50 transition-colors"
+                      className="p-2 text-slate-400 hover:text-slate-900 rounded-xl hover:bg-slate-50 transition-colors"
                       title="Ver detalle"
                     >
                       <ArrowRight size={16} />
@@ -1331,11 +1345,13 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
 
       {/* Metas Pausadas */}
       {pausedProjects.length > 0 && (
-        <div className="space-y-3 pt-4 border-t border-slate-100">
+        <div className="space-y-3 pt-4 border-t border-[#EEF0F4]">
           <div className="flex items-center justify-between px-1">
             <div>
               <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                <Pause size={16} className="text-amber-500" />
+                <span className="p-1 rounded-md bg-[#FDEFEA] text-[#F97316]">
+                  <Pause size={16} />
+                </span>
                 <span>Metas Pausadas ({pausedProjects.length})</span>
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -1353,40 +1369,40 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
               return (
                 <div
                   key={p.id}
-                  className="bg-amber-50/40 rounded-2xl p-4 sm:p-5 border border-amber-200/70 shadow-sm transition-all flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 group"
+                  className="bg-[#FDEFEA]/40 rounded-2xl p-4 sm:p-5 border border-[#EEF0F4] shadow-bento transition-all flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 group"
                 >
                   <div
                     className="flex-1 cursor-pointer w-full"
                     onClick={() => setSelectedProjectId(p.id)}
                   >
                     <div className="flex items-center gap-2.5 mb-1.5">
-                      <span className="text-xs font-black text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-md uppercase tracking-wider">
+                      <span className="text-xs font-semibold text-[#F97316] bg-[#FDEFEA] px-2.5 py-1 rounded-full uppercase tracking-wider">
                         Pausada
                       </span>
-                      <h4 className="font-bold text-slate-900 text-base group-hover:text-primary transition-colors">
+                      <h4 className="font-bold text-slate-900 text-base group-hover:text-slate-700 transition-colors">
                         {p.name}
                       </h4>
-                      <span className="text-xs text-slate-400 bg-white border border-slate-200 px-2 py-0.5 rounded-full hidden sm:inline-block">
+                      <span className="text-xs text-slate-400 bg-white border border-[#EEF0F4] px-2 py-0.5 rounded-full hidden sm:inline-block">
                         {getAccountDisplayName(p.targetAccountId || p.targetAccount)}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-4 text-xs text-slate-500">
-                      <span>Meta: <strong className="text-slate-800">{FormatCurrency(target)}</strong></span>
-                      <span>Acumulado: <strong className="text-slate-800">{FormatCurrency(saved)}</strong> ({pct}%)</span>
-                      <span className="text-amber-700 font-semibold">Cuota pausada ({FormatCurrency(p.monthlyQuota || 0)}/mes)</span>
+                      <span>Meta: <strong className="text-slate-800 tabular-nums">{FormatCurrency(target)}</strong></span>
+                      <span>Acumulado: <strong className="text-slate-800 tabular-nums">{FormatCurrency(saved)}</strong> ({pct}%)</span>
+                      <span className="text-[#F97316] font-semibold">Cuota pausada (<span className="tabular-nums">{FormatCurrency(p.monthlyQuota || 0)}</span>/mes)</span>
                     </div>
 
                     <div className="w-full bg-slate-200/80 rounded-full h-2 mt-2.5 overflow-hidden">
-                      <div className="bg-amber-500 h-full rounded-full" style={{ width: `${pct}%` }} />
+                      <div className="bg-[#F97316] h-full rounded-full" style={{ width: `${pct}%` }} />
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end border-t sm:border-t-0 pt-2 sm:pt-0 border-amber-100">
+                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end border-t sm:border-t-0 pt-2 sm:pt-0 border-[#FDEFEA]">
                     <button
                       type="button"
                       onClick={() => handleTogglePause(p)}
-                      className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm"
+                      className="px-3.5 py-1.5 bg-[#F97316] hover:bg-[#ea580c] text-white text-xs font-semibold rounded-full transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm"
                     >
                       <Play size={13} />
                       <span>Reanudar</span>
@@ -1394,7 +1410,7 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
                     <button
                       type="button"
                       onClick={() => setSelectedProjectId(p.id)}
-                      className="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-white/80 transition-colors"
+                      className="p-2 text-slate-400 hover:text-slate-900 rounded-xl hover:bg-white/80 transition-colors"
                       title="Ver detalle"
                     >
                       <ArrowRight size={16} />
@@ -1409,9 +1425,9 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
 
       {/* Proyectos Completados */}
       {completedProjects.length > 0 && (
-        <div className="space-y-3 pt-4 border-t border-slate-100">
+        <div className="space-y-3 pt-4 border-t border-[#EEF0F4]">
           <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-            <CheckCircle size={16} className="text-emerald-500" />
+            <CheckCircle size={16} className="text-[#10B981]" />
             <span>Metas Alcanzadas ({completedProjects.length})</span>
           </h3>
 
@@ -1420,15 +1436,15 @@ export function ProjectsView({ data = {}, methods = {} }: ProjectsViewProps) {
               <div
                 key={p.id}
                 onClick={() => setSelectedProjectId(p.id)}
-                className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-4 cursor-pointer hover:shadow-sm transition-all flex items-center justify-between"
+                className="bg-[#E8F8F0]/50 border border-[#EEF0F4] rounded-2xl p-4 cursor-pointer hover:shadow-bento transition-all flex items-center justify-between"
               >
                 <div>
-                  <h4 className="font-bold text-emerald-900 text-sm">{p.name}</h4>
-                  <p className="text-xs text-emerald-700 mt-0.5">
-                    {FormatCurrency(Number(p.targetAmount || 0))} completados
+                  <h4 className="font-bold text-slate-900 text-sm">{p.name}</h4>
+                  <p className="text-xs text-slate-600 mt-0.5">
+                    <span className="tabular-nums">{FormatCurrency(Number(p.targetAmount || 0))}</span> completados
                   </p>
                 </div>
-                <div className="p-2 rounded-full bg-emerald-100 text-emerald-700">
+                <div className="p-2 rounded-full bg-[#E8F8F0] text-[#10B981]">
                   <CheckCircle2 size={16} />
                 </div>
               </div>

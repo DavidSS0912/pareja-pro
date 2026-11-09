@@ -45,7 +45,7 @@ export interface MovementFormProps {
 }
 
 const INPUT_CLASS =
-  'w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors';
+  'w-full rounded-xl border border-[#EEF0F4] bg-[#F5F6FA] focus:bg-white focus:border-[#111319] focus:ring-1 focus:ring-[#111319] text-slate-900 text-sm font-medium transition-colors px-3.5 py-2.5 placeholder:text-slate-400';
 
 const LABEL_CLASS = 'block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5';
 
@@ -409,7 +409,7 @@ export function MovementForm({
       return {
         kind: 'CARD_PAYMENT' as const,
         label: 'Pago de Tarjeta de Crédito',
-        badgeClass: 'bg-indigo-50 border-indigo-200 text-indigo-700'
+        badgeClass: 'bg-[#EEF2FF] border-[#C7D2FE] text-[#6366F1]'
       };
     }
     const srcOwner = selectedSourceAcc.ownerType;
@@ -421,14 +421,14 @@ export function MovementForm({
       return {
         kind: 'CROSS_USERS' as const,
         label: `Transferencia a pareja (${srcLabel} → ${tgtLabel})`,
-        badgeClass: 'bg-purple-50 border-purple-200 text-purple-700'
+        badgeClass: 'bg-[#EEF2FF] border-[#C7D2FE] text-[#6366F1]'
       };
     }
 
     return {
       kind: 'SAME_USER' as const,
       label: 'Traspaso entre cuentas propias',
-      badgeClass: 'bg-emerald-50 border-emerald-200 text-emerald-700'
+      badgeClass: 'bg-[#E8F8F0] border-[#A7F3D0] text-[#10B981]'
     };
   })();
 
@@ -688,14 +688,14 @@ export function MovementForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Selector de modalidad (Gasto, Ingreso, Transferencia) */}
-      <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-xl">
+      <div className="w-full bg-[#F5F6FA] border border-[#EEF0F4] rounded-full p-1.5 grid grid-cols-3 gap-1 items-center">
         <button
           type="button"
           onClick={() => handleTypeChange('EXPENSE')}
-          className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+          className={`py-1.5 px-3 rounded-full text-xs font-medium transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
             type === 'EXPENSE'
-              ? 'bg-white text-secondary shadow-sm'
-              : 'text-slate-600 hover:text-slate-900'
+              ? 'bg-[#111319] text-white shadow-sm'
+              : 'text-[#8C93A6] hover:text-slate-900'
           }`}
         >
           <ArrowDownLeft size={14} /> Gasto
@@ -703,10 +703,10 @@ export function MovementForm({
         <button
           type="button"
           onClick={() => handleTypeChange('INCOME')}
-          className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+          className={`py-1.5 px-3 rounded-full text-xs font-medium transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
             type === 'INCOME'
-              ? 'bg-white text-primary shadow-sm'
-              : 'text-slate-600 hover:text-slate-900'
+              ? 'bg-[#111319] text-white shadow-sm'
+              : 'text-[#8C93A6] hover:text-slate-900'
           }`}
         >
           <ArrowUpRight size={14} /> Ingreso
@@ -714,10 +714,10 @@ export function MovementForm({
         <button
           type="button"
           onClick={() => handleTypeChange('TRANSFER')}
-          className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+          className={`py-1.5 px-3 rounded-full text-xs font-medium transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
             type === 'TRANSFER'
-              ? 'bg-white text-indigo-600 shadow-sm'
-              : 'text-slate-600 hover:text-slate-900'
+              ? 'bg-[#111319] text-white shadow-sm'
+              : 'text-[#8C93A6] hover:text-slate-900'
           }`}
         >
           <ArrowLeftRight size={14} /> Transferir
@@ -726,14 +726,14 @@ export function MovementForm({
 
       {/* Alertas de bloqueo por estado vacío o falta de sesión */}
       {isAuthMissing && (
-        <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2 text-amber-800 text-xs">
+        <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2 text-amber-800 text-xs">
           <AlertCircle size={16} className="shrink-0 mt-0.5" />
           <span>No hay sesión de usuario activa. Inicia sesión para registrar movimientos.</span>
         </div>
       )}
 
       {isExpenseBlocked && (
-        <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2 text-amber-800 text-xs">
+        <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2 text-amber-800 text-xs">
           <AlertCircle size={16} className="shrink-0 mt-0.5" />
           <span>
             {expenseCategories.length === 0
@@ -744,7 +744,7 @@ export function MovementForm({
       )}
 
       {isIncomeBlocked && (
-        <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2 text-amber-800 text-xs">
+        <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2 text-amber-800 text-xs">
           <AlertCircle size={16} className="shrink-0 mt-0.5" />
           <span>
             {incomeCategories.length === 0
@@ -755,24 +755,24 @@ export function MovementForm({
       )}
 
       {isTransferBlocked && (
-        <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2 text-amber-800 text-xs">
+        <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2 text-amber-800 text-xs">
           <AlertCircle size={16} className="shrink-0 mt-0.5" />
           <span>Se necesitan al menos 2 cuentas para realizar una transferencia interna.</span>
         </div>
       )}
 
       {/* Monto, Moneda y Fecha */}
-      <div className="space-y-3">
+      <div className="bg-[#F8FAFC] border border-[#EEF0F4] rounded-2xl p-4 sm:p-5 space-y-3">
         <div className="flex items-center justify-between">
           <span className={LABEL_CLASS}>Moneda</span>
-          <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg text-xs font-bold">
+          <div className="bg-[#F5F6FA] border border-[#EEF0F4] rounded-full p-1 inline-flex items-center gap-1">
             <button
               type="button"
               onClick={() => setCurrency('BASE')}
-              className={`px-3 py-1 rounded-md transition-all ${
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
                 currency === 'BASE'
-                  ? 'bg-white text-primary shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-[#111319] text-white shadow-xs'
+                  : 'text-[#8C93A6] hover:text-slate-900'
               }`}
             >
               Moneda Base ({defaultCurrency})
@@ -780,10 +780,10 @@ export function MovementForm({
             <button
               type="button"
               onClick={() => setCurrency('USD')}
-              className={`px-3 py-1 rounded-md transition-all ${
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
                 currency === 'USD'
-                  ? 'bg-white text-emerald-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-[#111319] text-white shadow-xs'
+                  : 'text-[#8C93A6] hover:text-slate-900'
               }`}
             >
               USD ($)
@@ -807,7 +807,7 @@ export function MovementForm({
                 if (formError) setFormError(null);
               }}
               placeholder="0.00"
-              className={INPUT_CLASS}
+              className={`${INPUT_CLASS} tabular-nums`}
               required
               disabled={isFormBlocked}
             />
@@ -829,7 +829,7 @@ export function MovementForm({
                   if (formError) setFormError(null);
                 }}
                 placeholder="20.00"
-                className={INPUT_CLASS}
+                className={`${INPUT_CLASS} tabular-nums`}
                 required
                 disabled={isFormBlocked}
               />
@@ -853,9 +853,9 @@ export function MovementForm({
         </div>
 
         {currency === 'USD' && (
-          <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs text-emerald-900">
-            <span className="font-medium text-emerald-700">Equivalente contable en {defaultCurrency}:</span>
-            <span className="font-mono font-bold text-sm text-emerald-800">
+          <div className="p-3 bg-[#E8F8F0] border border-[#A7F3D0]/70 rounded-xl flex items-center justify-between text-xs text-[#065F46]">
+            <span className="font-medium text-[#047857]">Equivalente contable en {defaultCurrency}:</span>
+            <span className="font-mono font-bold text-sm text-[#065F46] tabular-nums">
               ${((parseFloat(amount) || 0) * (parseFloat(exchangeRateInput) || 0)).toLocaleString('en-US', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
@@ -990,7 +990,7 @@ export function MovementForm({
           </div>
 
           {/* Bloque visual: [Origen] → [Destino] */}
-          <div className="bg-slate-50/80 border border-slate-200 rounded-2xl p-4 space-y-4">
+          <div className="bg-[#F8FAFC] border border-[#EEF0F4] rounded-2xl p-4 sm:p-5 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-[1fr,auto,1fr] gap-3 items-center">
               {/* Origen */}
               <div className="space-y-1.5">
@@ -1006,7 +1006,7 @@ export function MovementForm({
                     setSourceTouched(true);
                     if (formError) setFormError(null);
                   }}
-                  className={INPUT_CLASS}
+                  className={`${INPUT_CLASS} tabular-nums`}
                   required
                   disabled={isFormBlocked}
                 >
@@ -1020,8 +1020,8 @@ export function MovementForm({
               </div>
 
               {/* Indicador de Flujo / Flecha */}
-              <div className="hidden md:flex flex-col items-center justify-center pt-5 text-indigo-500">
-                <div className="w-8 h-8 rounded-full bg-indigo-50 border border-indigo-200 flex items-center justify-center shadow-xs">
+              <div className="hidden md:flex flex-col items-center justify-center pt-5 text-slate-700">
+                <div className="w-8 h-8 rounded-full bg-white border border-[#EEF0F4] flex items-center justify-center shadow-xs">
                   <ArrowRight size={16} />
                 </div>
               </div>
@@ -1040,7 +1040,7 @@ export function MovementForm({
                     setTargetTouched(true);
                     if (formError) setFormError(null);
                   }}
-                  className={INPUT_CLASS}
+                  className={`${INPUT_CLASS} tabular-nums`}
                   required
                   disabled={isFormBlocked}
                 >
@@ -1055,7 +1055,7 @@ export function MovementForm({
             </div>
 
             {/* Panel informativo desacoplado debajo de los selectores */}
-            <div className="pt-3 border-t border-slate-200/70 flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center text-xs">
+            <div className="pt-3 border-t border-[#EEF0F4] flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center text-xs">
               {/* Disponibilidad en Origen */}
               {selectedSourceAcc &&
                 !isPartnerAccount(selectedSourceAcc, activeMemberSlot) &&
@@ -1068,7 +1068,7 @@ export function MovementForm({
                   : metrics.availableBalance;
                 const isOver = Boolean(amount && Number(amount) > available);
                 return (
-                  <div className="space-y-0.5">
+                  <div className="space-y-0.5 tabular-nums">
                     <span className="text-slate-600 font-medium">
                       Disponible en origen:{' '}
                       <strong className={`font-bold ${isOver ? 'text-red-600' : 'text-slate-800'}`}>
@@ -1087,8 +1087,8 @@ export function MovementForm({
 
               {/* Modo Destino Ciego / Badge para Destino */}
               {selectedTargetAcc && isPartnerAccount(selectedTargetAcc, activeMemberSlot) && (
-                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 border border-purple-200/80 rounded-xl font-medium">
-                  <ShieldCheck size={15} className="shrink-0 text-purple-600" />
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#EEF2FF] text-[#6366F1] border border-[#C7D2FE] rounded-xl font-medium">
+                  <ShieldCheck size={15} className="shrink-0 text-[#6366F1]" />
                   <span>Modo Destino Ciego: Tu pareja recibirá los fondos; no se revelan saldos ni movimientos.</span>
                 </div>
               )}
@@ -1127,14 +1127,14 @@ export function MovementForm({
             onClick={() => setIsOptionsOpen((prev) => !prev)}
             aria-expanded={isOptionsOpen}
             aria-controls="movement-advanced-options"
-            className="text-xs font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1.5 transition-colors focus:outline-none"
+            className="text-xs font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1.5 transition-colors focus:outline-none cursor-pointer"
           >
             <span>Más opciones</span>
             {isOptionsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
 
           {isOptionsOpen && (
-            <div id="movement-advanced-options" className="space-y-3 pt-2">
+            <div id="movement-advanced-options" className="bg-[#F8FAFC] border border-[#EEF0F4] rounded-2xl p-4 sm:p-5 space-y-4 mt-2">
               {appContext !== 'personal' && (
                 <>
                   <div>
@@ -1163,7 +1163,7 @@ export function MovementForm({
                         type="checkbox"
                         checked={isMsi}
                         onChange={(e) => setIsMsi(e.target.checked)}
-                        className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/50"
+                        className="h-4 w-4 rounded border-[#EEF0F4] text-[#111319] focus:ring-[#111319] cursor-pointer"
                         disabled={isFormBlocked}
                       />
                       <label
@@ -1188,7 +1188,7 @@ export function MovementForm({
                           onChange={(e) =>
                             setMsiCount(e.target.value === '' ? '' : Number(e.target.value))
                           }
-                          className={INPUT_CLASS}
+                          className={`${INPUT_CLASS} tabular-nums`}
                           disabled={isFormBlocked}
                         />
                       </div>
@@ -1216,10 +1216,10 @@ export function MovementForm({
                           type="button"
                           onClick={() => handleTagToggle(t.id)}
                           aria-pressed={isSelected}
-                          className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${
+                          className={`px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
                             isSelected
-                              ? 'bg-primary text-white shadow-xs'
-                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                              ? 'bg-[#111319] text-white shadow-xs'
+                              : 'bg-white border border-[#EEF0F4] text-slate-600 hover:text-slate-900'
                           }`}
                         >
                           {t.name}
@@ -1236,20 +1236,26 @@ export function MovementForm({
 
       {/* Error de validación o envío */}
       {formError && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-xs">
+        <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-xs font-medium">
           {formError}
         </div>
       )}
 
       {/* Botones de acción */}
-      <div className="flex gap-2 pt-2 justify-end">
-        <Button variant="outline" type="button" onClick={onCancel}>
+      <div className="flex gap-2.5 pt-3 justify-end items-center">
+        <Button
+          variant="outline"
+          type="button"
+          onClick={onCancel}
+          className="!bg-white !border !border-[#EEF0F4] hover:!bg-slate-50 !text-slate-700 !rounded-full px-5 py-2.5 font-medium transition-colors cursor-pointer shadow-none"
+        >
           Cancelar
         </Button>
         <Button
           variant="primary"
           type="submit"
           disabled={isFormBlocked || isSubmitting}
+          className="!bg-[#111319] hover:!bg-[#1A1D26] !text-white !rounded-full px-6 py-2.5 font-medium transition-colors duration-150 shadow-sm cursor-pointer disabled:opacity-50"
         >
           {isSubmitting
             ? 'Guardando...'

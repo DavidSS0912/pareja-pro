@@ -88,39 +88,39 @@ export function PaymentCalendar({ expenses = [], accounts = [] }: any) {
 
   return (
     <Card>
-      <h2 className="text-lg font-bold mb-6 flex items-center gap-3">
-        <div className="bg-blue-100 p-2 rounded-xl text-blue-600">
+      <h2 className="text-lg font-bold mb-6 flex items-center gap-3 text-slate-900">
+        <div className="p-2.5 rounded-2xl bg-[#EEF2FF] text-[#6366F1]">
           <Calendar size={20} />
         </div>
         Calendario de Pagos (Próximos 30 días)
       </h2>
       
-      <div className="space-y-4">
+      <div className="space-y-3">
         {upcoming.length === 0 ? (
-          <p className="text-sm text-slate-600">No hay pagos próximos registrados.</p>
+          <p className="text-sm text-slate-400">No hay pagos próximos registrados.</p>
         ) : (
           upcoming.map((payment) => (
-            <div key={payment.id} className="flex justify-between items-center p-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-4">
-                <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 flex flex-col items-center justify-center min-w-[60px]">
-                  <span className="text-xs text-slate-500 font-bold uppercase">
+            <div key={payment.id} className="p-3.5 bg-[#F8FAFC] border border-[#EEF0F4] rounded-2xl hover:border-slate-300 transition-all flex justify-between items-center">
+              <div className="flex items-center gap-3.5">
+                <div className="bg-white p-2 rounded-xl border border-[#EEF0F4] flex flex-col items-center justify-center min-w-[56px]">
+                  <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">
                     {payment.date.toLocaleString('es-MX', { month: 'short' })}
                   </span>
-                  <span className="text-lg text-slate-800 font-black">
+                  <span className="text-lg text-slate-900 font-bold tabular-nums leading-tight">
                     {payment.date.getDate()}
                   </span>
                 </div>
                 <div>
-                  <p className="font-bold text-slate-800">{payment.desc}</p>
-                  <p className="text-xs text-slate-600 font-medium text-indigo-600">{payment.type}</p>
+                  <p className="font-semibold text-slate-900 text-sm">{payment.desc}</p>
+                  <p className="text-xs font-medium text-[#6366F1]">{payment.type}</p>
                 </div>
               </div>
-              <span className="font-black text-slate-800 text-right">
+              <span className="font-bold text-slate-900 text-right tabular-nums text-sm">
                 {payment.isCreditCard ? (
-                  <span className="text-xs text-slate-500 font-normal">Revisar estado<br/>de cuenta</span>
+                  <span className="text-xs text-slate-400 font-normal">Revisar estado<br/>de cuenta</span>
                 ) : (
                   <>
-                    {FormatCurrency(payment.amount)} <span className="text-xs font-normal text-slate-600">{payment.currency}</span>
+                    {FormatCurrency(payment.amount)} <span className="text-xs font-normal text-slate-400">{payment.currency}</span>
                   </>
                 )}
               </span>

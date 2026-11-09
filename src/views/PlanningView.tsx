@@ -8,7 +8,6 @@ import {
   CheckCircle2, 
   AlertTriangle 
 } from 'lucide-react';
-import { Card } from '../components/ui/Card';
 import { FormatCurrency } from '../utils';
 import { calculateHouseholdIncomeShares, resolveBudgetPeriodFromDateRange, resolveContextUsers } from '../utils/budgetCalculations';
 import { useAppStore } from '../store/useAppStore';
@@ -111,51 +110,49 @@ export function PlanningView({
       {/* 1) TÍTULO SUPERIOR */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-black tracking-tight text-slate-800">Presupuestos</h2>
-          <p className="text-slate-600 mt-1 font-medium">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">Presupuestos</h2>
+          <p className="text-slate-500 mt-1 font-medium text-sm">
             Guía y plantillas de asignación de fondos.
           </p>
         </div>
       </div>
 
       {/* 2) RESUMEN EJECUTIVO DE INGRESOS Y TOTAL PRESUPUESTADO */}
-      <Card className="bg-gradient-to-br from-slate-900 via-slate-850 to-indigo-950 text-white p-6 rounded-3xl border border-slate-800/80 shadow-lg relative overflow-hidden">
-        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-48 h-48 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
-        
+      <div className="bg-[#111319] border border-[#232733] rounded-3xl p-6 text-white shadow-bento relative overflow-hidden">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
           <div className="flex-1 space-y-3 min-w-0">
-            <div className="flex items-center gap-2 text-indigo-300 text-xs font-bold uppercase tracking-wider">
-              <TrendingUp size={15} className="text-indigo-400" />
+            <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+              <TrendingUp size={15} className="text-slate-400" />
               <span>Resumen Ejecutivo de Ingresos ({selectedMonth.substring(0, 7)})</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
               {/* Total Ingresos */}
               <div>
-                <span className="text-xs text-indigo-300 font-medium block">Ingresos Totales</span>
-                <span className="text-2xl sm:text-3xl font-black tracking-tight text-white tabular-nums">
+                <span className="text-xs text-slate-400 font-medium block">Ingresos Totales</span>
+                <span className="text-2xl sm:text-3xl font-bold tracking-tight text-white tabular-nums">
                   {FormatCurrency(incomeShares.totalIncome)}
                 </span>
               </div>
 
               {/* Total Presupuestado (Presupuestos + Cuotas Metas) */}
-              <div className="border-t sm:border-t-0 sm:border-l border-white/10 pt-2 sm:pt-0 sm:pl-4">
-                <span className="text-xs text-indigo-300 font-medium block">Total Presupuestado</span>
-                <span className="text-2xl sm:text-3xl font-black tracking-tight text-emerald-300 tabular-nums">
+              <div className="border-t sm:border-t-0 sm:border-l border-[#232733] pt-2 sm:pt-0 sm:pl-4">
+                <span className="text-xs text-slate-400 font-medium block">Total Presupuestado</span>
+                <span className="text-2xl sm:text-3xl font-bold tracking-tight text-[#10B981] tabular-nums">
                   {FormatCurrency(totalPresupuestado)}
                 </span>
-                <span className="text-[11px] text-slate-300 block mt-0.5">
+                <span className="text-[11px] text-slate-400 block mt-0.5 tabular-nums">
                   Gastos: {FormatCurrency(totalBudgetsAssigned)} • Metas: {FormatCurrency(totalProjectsMonthlyQuota)}
                 </span>
               </div>
 
               {/* Remanente Disponible */}
-              <div className="border-t sm:border-t-0 sm:border-l border-white/10 pt-2 sm:pt-0 sm:pl-4">
-                <span className="text-xs text-indigo-300 font-medium block">Remanente Libre</span>
-                <span className={`text-2xl sm:text-3xl font-black tracking-tight tabular-nums ${remanente >= 0 ? 'text-white' : 'text-rose-400'}`}>
+              <div className="border-t sm:border-t-0 sm:border-l border-[#232733] pt-2 sm:pt-0 sm:pl-4">
+                <span className="text-xs text-slate-400 font-medium block">Remanente Libre</span>
+                <span className={`text-2xl sm:text-3xl font-bold tracking-tight tabular-nums ${remanente >= 0 ? 'text-white' : 'text-[#F97316]'}`}>
                   {FormatCurrency(remanente)}
                 </span>
-                <span className="text-[11px] text-slate-300 block mt-0.5">
+                <span className="text-[11px] text-slate-400 block mt-0.5">
                   {remanente >= 0 ? 'Disponible para ahorro' : 'Déficit presupuestado'}
                 </span>
               </div>
@@ -163,8 +160,8 @@ export function PlanningView({
           </div>
 
           {/* Desglose por Integrante */}
-          <div className="w-full lg:w-auto lg:min-w-[300px] xl:min-w-[320px] pt-4 lg:pt-0 border-t lg:border-t-0 lg:border-l border-white/10 lg:pl-6 shrink-0">
-            <div className="text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2.5">
+          <div className="w-full lg:w-auto lg:min-w-[300px] xl:min-w-[320px] pt-4 lg:pt-0 border-t lg:border-t-0 lg:border-l border-[#232733] lg:pl-6 shrink-0">
+            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2.5">
               <span>Aporte por Integrante</span>
             </div>
             
@@ -178,7 +175,7 @@ export function PlanningView({
                   return (
                     <div 
                       key={user.userId}
-                      className="flex items-center justify-between gap-3 p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                      className="flex items-center justify-between gap-3 p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
                     >
                       {/* Lado izquierdo: Avatar/inicial circular pequeño (24px) + Nombre completo legible */}
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -190,7 +187,7 @@ export function PlanningView({
                             referrerPolicy="no-referrer"
                           />
                         ) : (
-                          <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-500 to-primary text-white flex items-center justify-center text-[11px] font-black shrink-0 border border-white/20 select-none">
+                          <div className="w-6 h-6 rounded-full bg-slate-800 text-white flex items-center justify-center text-[11px] font-bold shrink-0 border border-white/20 select-none">
                             {initial}
                           </div>
                         )}
@@ -201,10 +198,10 @@ export function PlanningView({
 
                       {/* Lado derecho: Monto completo formateado con FormatCurrency + Badge de porcentaje */}
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="font-mono text-xs font-bold text-white whitespace-nowrap">
+                        <span className="font-mono text-xs font-bold text-white whitespace-nowrap tabular-nums">
                           {FormatCurrency(user.income)}
                         </span>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 whitespace-nowrap">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/10 text-slate-300 border border-white/15 whitespace-nowrap tabular-nums">
                           {user.percentage.toFixed(1)}%
                         </span>
                       </div>
@@ -213,13 +210,13 @@ export function PlanningView({
                 })}
               </div>
             ) : (
-              <p className="text-xs text-indigo-200">No hay integrantes registrados en el hogar.</p>
+              <p className="text-xs text-slate-400">No hay integrantes registrados en el hogar.</p>
             )}
           </div>
         </div>
 
         {incomeShares.totalIncome === 0 && (
-          <div className="mt-4 pt-3 border-t border-white/10 flex items-center gap-2 text-xs text-amber-200 bg-amber-500/10 px-3 py-2 rounded-xl border border-amber-500/20">
+          <div className="mt-4 pt-3 border-t border-[#232733] flex items-center gap-2 text-xs text-amber-200 bg-amber-500/10 px-3 py-2 rounded-xl border border-amber-500/20">
             <Info size={15} className="shrink-0 text-amber-400" />
             <span>
               {appContext === 'personal'
@@ -228,18 +225,18 @@ export function PlanningView({
             </span>
           </div>
         )}
-      </Card>
+      </div>
 
       {/* 3) PESTAÑAS DE NAVEGACIÓN */}
       <div className="flex items-center justify-center sm:justify-start">
-        <div className="bg-white p-1 rounded-2xl border border-slate-200/80 shadow-sm flex items-center w-full sm:w-auto">
+        <div className="bg-white border border-[#EEF0F4] rounded-full p-1.5 shadow-sm flex items-center w-full sm:w-auto">
           <button
             type="button"
             onClick={() => setActiveSubTab('budgets')}
-            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 py-2 px-6 rounded-xl text-sm font-bold transition-all duration-200 ${
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-full px-5 py-2 font-medium transition-colors duration-150 text-sm ${
               activeSubTab === 'budgets'
-                ? 'bg-primary text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                ? 'bg-[#111319] text-white shadow-xs'
+                : 'text-[#8C93A6] hover:text-slate-900'
             }`}
           >
             <PieChart size={17} />
@@ -248,10 +245,10 @@ export function PlanningView({
           <button
             type="button"
             onClick={() => setActiveSubTab('projects')}
-            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 py-2 px-6 rounded-xl text-sm font-bold transition-all duration-200 ${
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-full px-5 py-2 font-medium transition-colors duration-150 text-sm ${
               activeSubTab === 'projects'
-                ? 'bg-primary text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                ? 'bg-[#111319] text-white shadow-xs'
+                : 'text-[#8C93A6] hover:text-slate-900'
             }`}
           >
             <Target size={17} />

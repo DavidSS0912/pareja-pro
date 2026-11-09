@@ -13,23 +13,24 @@ export const AuthView = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA] relative overflow-hidden">
-      {/* Subtle static gradients — no blur */}
-      <div className="absolute top-0 right-0 w-[480px] h-[480px] bg-indigo-50 rounded-full opacity-60 pointer-events-none -translate-y-1/2 translate-x-1/3" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-slate-100 rounded-full opacity-50 pointer-events-none translate-y-1/2 -translate-x-1/3" />
+    <div className="min-h-screen flex items-center justify-center bg-[#F5F6FA] relative overflow-hidden p-4">
+      {/* Luces sutiles en pasteles bento */}
+      <div className="absolute top-0 right-0 w-[480px] h-[480px] bg-[#EEF2FF] rounded-full opacity-70 pointer-events-none -translate-y-1/2 translate-x-1/3" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#E8F8F0] rounded-full opacity-60 pointer-events-none translate-y-1/2 -translate-x-1/3" />
 
-      <div className="bg-white border border-slate-100 shadow-lg rounded-2xl p-10 md:p-16 w-full max-w-md text-center relative z-10 mx-4">
-        <div className="flex justify-center mb-8">
-          <OrbitaLogo size={72} />
+      <div className="bg-white border border-[#EEF0F4] rounded-3xl p-8 sm:p-12 w-full max-w-md text-center shadow-bento relative z-10">
+        <div className="flex justify-center mb-6">
+          <OrbitaLogo size={68} />
         </div>
-        <h1 className="text-4xl font-black tracking-tighter text-slate-900 mb-2">Orbita2</h1>
-        <p className="text-slate-600 font-medium mb-10 text-base">Finanzas en pareja, en órbita.</p>
+        <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 mb-2">Orbita2</h1>
+        <p className="text-slate-500 font-medium mb-8 text-sm sm:text-base">Finanzas en pareja, en órbita y en sincronía.</p>
 
         <button
+          type="button"
           onClick={handleLogin}
-          className="w-full flex items-center justify-center gap-3 bg-slate-900 hover:bg-slate-800 text-white p-4 rounded-lg font-semibold text-base transition-colors duration-200 active:scale-[0.98]"
+          className="w-full flex items-center justify-center gap-2.5 bg-[#111319] hover:bg-[#1A1D26] text-white py-3.5 px-6 rounded-full font-medium text-sm transition-colors duration-150 cursor-pointer shadow-sm active:scale-[0.99]"
         >
-          <LogIn size={20} />
+          <LogIn size={18} />
           <span>Ingresar con Google</span>
         </button>
       </div>

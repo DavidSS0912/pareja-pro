@@ -26,6 +26,11 @@ export interface AccountFormProps {
   appContext?: string;
 }
 
+const INPUT_CLASS =
+  'w-full rounded-xl border border-[#EEF0F4] bg-[#F5F6FA] focus:bg-white focus:border-[#111319] focus:ring-1 focus:ring-[#111319] text-slate-900 text-sm font-medium transition-colors px-3.5 py-2.5 placeholder:text-slate-400';
+
+const LABEL_CLASS = 'block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5';
+
 const defaultValues: AccountFormData = {
   name: '',
   type: 'LIABILITY',
@@ -117,26 +122,26 @@ export function AccountForm({
 
   return (
     <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-3">
         <div>
-          <label htmlFor="account-name" className="block text-sm font-bold text-slate-700 mb-1">Nombre</label>
+          <label htmlFor="account-name" className={LABEL_CLASS}>Nombre</label>
           <input 
             id="account-name"
             type="text" 
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+            className={INPUT_CLASS}
             placeholder="Ej. Nu Clásica"
             aria-invalid={!!errors.name}
             aria-describedby={errors.name ? "account-name-error" : undefined}
             {...register('name')}
           />
-          {errors.name && <p id="account-name-error" className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
+          {errors.name && <p id="account-name-error" className="text-red-500 text-xs mt-1 font-medium">{errors.name.message}</p>}
         </div>
         <div>
-          <label htmlFor="account-type" className="block text-sm font-bold text-slate-700 mb-1">Tipo</label>
+          <label htmlFor="account-type" className={LABEL_CLASS}>Tipo</label>
           <select 
             id="account-type"
             disabled={!!initialData}
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 disabled:opacity-60"
+            className={`${INPUT_CLASS} disabled:opacity-60`}
             aria-invalid={!!errors.type}
             aria-describedby={errors.type ? "account-type-error" : undefined}
             {...register('type')}
@@ -144,21 +149,21 @@ export function AccountForm({
             <option value="ASSET">Débito / Efectivo</option>
             <option value="LIABILITY">Tarjeta de Crédito</option>
           </select>
-          {errors.type && <p id="account-type-error" className="text-red-500 text-xs mt-1">{errors.type.message}</p>}
+          {errors.type && <p id="account-type-error" className="text-red-500 text-xs mt-1 font-medium">{errors.type.message}</p>}
         </div>
       </div>
 
       {!initialData && (
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 gap-3">
           <div>
-            <label htmlFor="account-initialBalance" className="block text-sm font-bold text-slate-700 mb-1">
+            <label htmlFor="account-initialBalance" className={LABEL_CLASS}>
               {selectedType === 'ASSET' ? 'Saldo Inicial ($)' : 'Deuda Inicial ($)'}
             </label>
             <input 
               id="account-initialBalance"
               type="number"
               step="any"
-              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+              className={`${INPUT_CLASS} tabular-nums`}
               placeholder="0"
               aria-invalid={!!errors.initialBalance}
               aria-describedby={errors.initialBalance ? "account-initialBalance-error" : undefined}
@@ -172,17 +177,17 @@ export function AccountForm({
                 ? 'Saldo de apertura con el que arranca esta cuenta de débito/efectivo.'
                 : 'Monto de deuda actual acumulada al día de hoy en la tarjeta.'}
             </p>
-            {errors.initialBalance && <p id="account-initialBalance-error" className="text-red-500 text-xs mt-1">{errors.initialBalance.message}</p>}
+            {errors.initialBalance && <p id="account-initialBalance-error" className="text-red-500 text-xs mt-1 font-medium">{errors.initialBalance.message}</p>}
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4">
+      <div className="grid grid-cols-1 gap-3">
         <div>
-          <label htmlFor="account-color" className="block text-sm font-bold text-slate-700 mb-1">Color/Tema</label>
+          <label htmlFor="account-color" className={LABEL_CLASS}>Color/Tema</label>
           <select 
             id="account-color"
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+            className={INPUT_CLASS}
             aria-invalid={!!errors.color}
             aria-describedby={errors.color ? "account-color-error" : undefined}
             {...register('color')}
@@ -195,66 +200,66 @@ export function AccountForm({
             <option value="bg-gradient-to-br from-amber-500 to-yellow-700">Oro (Gold)</option>
             <option value="bg-gradient-to-br from-slate-300 to-slate-500">Plata (Silver)</option>
           </select>
-          {errors.color && <p id="account-color-error" className="text-red-500 text-xs mt-1">{errors.color.message}</p>}
+          {errors.color && <p id="account-color-error" className="text-red-500 text-xs mt-1 font-medium">{errors.color.message}</p>}
         </div>
       </div>
 
       {selectedType === 'LIABILITY' && (
-        <div className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-4 mt-2">
+        <div className="bg-[#F8FAFC] border border-[#EEF0F4] rounded-2xl p-4 sm:p-5 grid grid-cols-3 gap-3">
           <div>
-            <label htmlFor="account-limit" className="block text-sm font-bold text-slate-700 mb-1">Límite</label>
+            <label htmlFor="account-limit" className={LABEL_CLASS}>Límite</label>
             <input 
               id="account-limit"
               type="number" 
-              className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+              className={`${INPUT_CLASS} tabular-nums`}
               aria-invalid={!!errors.creditLimit}
               aria-describedby={errors.creditLimit ? "account-limit-error" : undefined}
               {...register('creditLimit', { valueAsNumber: true })}
             />
-            {errors.creditLimit && <p id="account-limit-error" className="text-red-500 text-xs mt-1">{errors.creditLimit.message}</p>}
+            {errors.creditLimit && <p id="account-limit-error" className="text-red-500 text-xs mt-1 font-medium">{errors.creditLimit.message}</p>}
           </div>
           <div>
-            <label htmlFor="account-cutDay" className="block text-sm font-bold text-slate-700 mb-1">Día Corte</label>
+            <label htmlFor="account-cutDay" className={LABEL_CLASS}>Día Corte</label>
             <input 
               id="account-cutDay"
               type="number" 
-              className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+              className={`${INPUT_CLASS} tabular-nums`}
               aria-invalid={!!errors.cutDay}
               aria-describedby={errors.cutDay ? "account-cutDay-error" : undefined}
               {...register('cutDay', { valueAsNumber: true })}
             />
-            {errors.cutDay && <p id="account-cutDay-error" className="text-red-500 text-xs mt-1">{errors.cutDay.message}</p>}
+            {errors.cutDay && <p id="account-cutDay-error" className="text-red-500 text-xs mt-1 font-medium">{errors.cutDay.message}</p>}
           </div>
           <div>
-            <label htmlFor="account-paymentDay" className="block text-sm font-bold text-slate-700 mb-1">Día Pago</label>
+            <label htmlFor="account-paymentDay" className={LABEL_CLASS}>Día Pago</label>
             <input 
               id="account-paymentDay"
               type="number" 
-              className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+              className={`${INPUT_CLASS} tabular-nums`}
               aria-invalid={!!errors.paymentDay}
               aria-describedby={errors.paymentDay ? "account-paymentDay-error" : undefined}
               {...register('paymentDay', { valueAsNumber: true })}
             />
-            {errors.paymentDay && <p id="account-paymentDay-error" className="text-red-500 text-xs mt-1">{errors.paymentDay.message}</p>}
+            {errors.paymentDay && <p id="account-paymentDay-error" className="text-red-500 text-xs mt-1 font-medium">{errors.paymentDay.message}</p>}
           </div>
         </div>
       )}
 
       {isPersonalAccount && (
-        <div className="p-3.5 bg-indigo-50/70 border border-indigo-100 rounded-2xl">
+        <div className="p-4 sm:p-5 bg-[#EEF2FF] border border-[#C7D2FE] rounded-2xl">
           <label className="flex items-start gap-3 cursor-pointer">
             <input
               type="checkbox"
               id="account-allowPartnerTransfers"
               data-testid="account-allowPartnerTransfers"
-              className="mt-1 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+              className="mt-1 h-4 w-4 rounded border-[#C7D2FE] text-[#111319] focus:ring-[#111319] cursor-pointer"
               {...register('allowPartnerTransfers')}
             />
             <div className="select-none">
               <span className="block text-sm font-bold text-slate-800">
                 Permitir que mi pareja me transfiera a esta cuenta
               </span>
-              <span className="block text-xs text-slate-500 mt-0.5 leading-relaxed">
+              <span className="block text-xs text-slate-600 mt-0.5 leading-relaxed">
                 Destino Ciego: solo verá nombre y titular para enviarte fondos, sin revelar jamás tu saldo disponible ni movimientos.
               </span>
             </div>
@@ -262,9 +267,21 @@ export function AccountForm({
         </div>
       )}
 
-      <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
-        <Button variant="secondary" onClick={onCancel} type="button">Cancelar</Button>
-        <Button type="submit">Guardar Cuenta</Button>
+      <div className="flex justify-end gap-2.5 pt-3 border-t border-[#EEF0F4] items-center">
+        <Button
+          variant="secondary"
+          onClick={onCancel}
+          type="button"
+          className="!bg-white !border !border-[#EEF0F4] hover:!bg-slate-50 !text-slate-700 !rounded-full px-5 py-2.5 font-medium transition-colors cursor-pointer shadow-none"
+        >
+          Cancelar
+        </Button>
+        <Button
+          type="submit"
+          className="!bg-[#111319] hover:!bg-[#1A1D26] !text-white !rounded-full px-6 py-2.5 font-medium transition-colors duration-150 shadow-sm cursor-pointer"
+        >
+          Guardar Cuenta
+        </Button>
       </div>
     </form>
   );

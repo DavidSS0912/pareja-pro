@@ -68,6 +68,11 @@ export interface BudgetFormProps {
   appContext?: string;
 }
 
+const INPUT_CLASS =
+  'w-full rounded-xl border border-[#EEF0F4] bg-[#F5F6FA] focus:bg-white focus:border-[#111319] focus:ring-1 focus:ring-[#111319] text-slate-900 text-sm font-medium transition-colors px-3.5 py-2.5 placeholder:text-slate-400';
+
+const LABEL_CLASS = 'block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5';
+
 export function BudgetForm({
   initialData,
   users,
@@ -216,13 +221,13 @@ export function BudgetForm({
       {/* Ícono y Categoría */}
       <div className="flex gap-3">
         <div className="w-20">
-          <label htmlFor="budget-icon" className="block text-sm font-bold text-slate-700 mb-1">
+          <label htmlFor="budget-icon" className={LABEL_CLASS}>
             Ícono
           </label>
           <input 
             id="budget-icon"
             type="text"
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-center text-xl focus:ring-2 focus:ring-indigo-500"
+            className={`${INPUT_CLASS} text-center text-xl`}
             aria-invalid={!!errors.icon}
             aria-describedby={errors.icon ? "budget-icon-error" : undefined}
             {...register('icon')}
@@ -234,12 +239,12 @@ export function BudgetForm({
           )}
         </div>
         <div className="flex-1">
-          <label htmlFor="budget-categoryId" className="block text-sm font-bold text-slate-700 mb-1">
+          <label htmlFor="budget-categoryId" className={LABEL_CLASS}>
             Categoría
           </label>
           <select 
             id="budget-categoryId"
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+            className={INPUT_CLASS}
             aria-invalid={!!errors.categoryId}
             aria-describedby={errors.categoryId ? "budget-categoryId-error" : undefined}
             {...register('categoryId', {
@@ -268,17 +273,19 @@ export function BudgetForm({
 
       {/* Selector visual rápido de emojis comunes */}
       <div>
-        <span className="block text-xs font-semibold text-slate-500 mb-1.5">
-          Sugerencias rápidas de ícono:
+        <span className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wider">
+          Sugerencias de ícono
         </span>
-        <div className="flex flex-wrap gap-1 p-2 bg-slate-50 border border-slate-200 rounded-xl max-h-24 overflow-y-auto">
+        <div className="flex flex-wrap gap-1.5 p-2.5 bg-[#F8FAFC] border border-[#EEF0F4] rounded-2xl max-h-24 overflow-y-auto">
           {POPULAR_BUDGET_ICONS.map((emoji) => (
             <button
               key={emoji}
               type="button"
               onClick={() => setValue('icon', emoji, { shouldValidate: true, shouldDirty: true })}
-              className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg hover:bg-white hover:shadow-xs transition-all active:scale-95 ${
-                currentIcon === emoji ? 'bg-indigo-100 ring-2 ring-indigo-500 scale-105' : 'bg-transparent'
+              className={`w-8 h-8 rounded-xl flex items-center justify-center text-lg transition-all cursor-pointer ${
+                currentIcon === emoji
+                  ? 'bg-[#111319] text-white shadow-sm scale-105'
+                  : 'bg-white border border-[#EEF0F4] hover:bg-slate-100'
               }`}
               title={`Seleccionar ${emoji}`}
             >
@@ -290,7 +297,7 @@ export function BudgetForm({
 
       {/* Meta Fija Mensual ($) */}
       <div>
-        <label htmlFor="budget-base" className="block text-sm font-bold text-slate-700 mb-1">
+        <label htmlFor="budget-base" className={LABEL_CLASS}>
           Meta Fija Mensual ($)
         </label>
         <div className="relative">
@@ -300,7 +307,7 @@ export function BudgetForm({
             step="0.01"
             min="0"
             placeholder="0.00"
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm"
+            className={`${INPUT_CLASS} tabular-nums`}
             aria-invalid={!!errors.base}
             aria-describedby={errors.base ? "budget-base-error" : undefined}
             {...register('base', { 
@@ -313,25 +320,25 @@ export function BudgetForm({
           />
         </div>
         {errors.base && (
-          <p id="budget-base-error" className="text-red-500 text-xs mt-1">
+          <p id="budget-base-error" className="text-red-500 text-xs mt-1 font-medium">
             {errors.base.message}
           </p>
         )}
       </div>
 
       {/* Opción Presupuesto Acumulativo / Sinking Fund */}
-      <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl">
+      <div className="bg-[#F8FAFC] border border-[#EEF0F4] rounded-2xl p-4 sm:p-5">
         <label className="flex items-start gap-3 cursor-pointer">
           <input
             type="checkbox"
-            className="w-4 h-4 mt-0.5 text-indigo-600 bg-white border-slate-300 rounded focus:ring-indigo-500"
+            className="w-4 h-4 mt-0.5 text-[#111319] bg-white border-[#EEF0F4] rounded focus:ring-[#111319] cursor-pointer"
             {...register('isCumulative')}
           />
           <div>
             <span className="block text-sm font-bold text-slate-800">
               Presupuesto Acumulativo (Sinking Fund)
             </span>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
               Acumula el saldo no gastado mes a mes a favor de este fondo (ideal para viajes, seguros, regalos o gastos no mensuales).
             </p>
           </div>
@@ -340,13 +347,13 @@ export function BudgetForm({
 
       {/* Configuración de Aportación de Pareja */}
       {showCoupleConfig && (
-        <div className="pt-3 border-t border-slate-100 space-y-3">
+        <div className="pt-3 border-t border-[#EEF0F4] space-y-3">
           <div className="space-y-1.5">
-            <label className="block text-sm font-bold text-slate-700">
+            <label className={LABEL_CLASS}>
               Equidad de Aportación de Pareja
             </label>
             <div 
-              className="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-xl"
+              className="w-full bg-[#F5F6FA] border border-[#EEF0F4] rounded-full p-1.5 grid grid-cols-2 gap-1 items-center"
               role="radiogroup" 
               aria-label="Equidad de aportación de pareja"
             >
@@ -355,23 +362,23 @@ export function BudgetForm({
                 role="radio"
                 aria-checked={currentSplitType === 'PROPORTIONAL'}
                 onClick={() => handleSplitTypeChange('PROPORTIONAL')}
-                className={`py-2 px-3 text-xs sm:text-sm font-semibold rounded-lg transition-all ${
+                className={`py-1.5 px-4 text-xs sm:text-sm font-medium rounded-full transition-colors cursor-pointer ${
                   currentSplitType === 'PROPORTIONAL'
-                    ? 'bg-white text-indigo-600 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+                    ? 'bg-[#111319] text-white shadow-sm'
+                    : 'text-[#8C93A6] hover:text-slate-900'
                 }`}
               >
-                Proporcional a ingresos del mes
+                Proporcional a ingresos
               </button>
               <button
                 type="button"
                 role="radio"
                 aria-checked={currentSplitType === 'CUSTOM'}
                 onClick={() => handleSplitTypeChange('CUSTOM')}
-                className={`py-2 px-3 text-xs sm:text-sm font-semibold rounded-lg transition-all ${
+                className={`py-1.5 px-4 text-xs sm:text-sm font-medium rounded-full transition-colors cursor-pointer ${
                   currentSplitType === 'CUSTOM'
-                    ? 'bg-white text-indigo-600 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+                    ? 'bg-[#111319] text-white shadow-sm'
+                    : 'text-[#8C93A6] hover:text-slate-900'
                 }`}
               >
                 Aportación personalizada
@@ -385,14 +392,14 @@ export function BudgetForm({
           </div>
 
           {currentSplitType === 'CUSTOM' && (
-            <div className="p-3 bg-indigo-50/60 rounded-xl border border-indigo-100/80 space-y-3">
+            <div className="bg-[#F8FAFC] border border-[#EEF0F4] rounded-2xl p-4 sm:p-5 space-y-3">
               <div>
-                <label htmlFor="budget-customUserId" className="block text-sm font-bold text-slate-700 mb-1">
+                <label htmlFor="budget-customUserId" className={LABEL_CLASS}>
                   Integrante que fija su monto
                 </label>
                 <select
                   id="budget-customUserId"
-                  className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                  className={INPUT_CLASS}
                   aria-invalid={!!errors.customUserId}
                   aria-describedby={errors.customUserId ? "budget-customUserId-error" : undefined}
                   {...register('customUserId')}
@@ -404,14 +411,14 @@ export function BudgetForm({
                   ))}
                 </select>
                 {errors.customUserId && (
-                  <p id="budget-customUserId-error" className="text-red-500 text-xs mt-1">
+                  <p id="budget-customUserId-error" className="text-red-500 text-xs mt-1 font-medium">
                     {errors.customUserId.message}
                   </p>
                 )}
               </div>
 
               <div>
-                <label htmlFor="budget-customUserAmount" className="block text-sm font-bold text-slate-700 mb-1">
+                <label htmlFor="budget-customUserAmount" className={LABEL_CLASS}>
                   Monto Fijo Aportado ($)
                 </label>
                 <input
@@ -420,16 +427,16 @@ export function BudgetForm({
                   step="0.01"
                   min="0"
                   placeholder="0.00"
-                  className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm"
+                  className={`${INPUT_CLASS} tabular-nums`}
                   aria-invalid={!!errors.customUserAmount}
                   aria-describedby={errors.customUserAmount ? "budget-customUserAmount-error budget-customUserAmount-hint" : "budget-customUserAmount-hint"}
                   {...register('customUserAmount', { valueAsNumber: true })}
                 />
-                <p id="budget-customUserAmount-hint" className="text-xs text-indigo-700 mt-1.5 font-medium">
+                <p id="budget-customUserAmount-hint" className="p-2.5 bg-[#EEF2FF] border border-[#C7D2FE] rounded-xl text-xs text-[#6366F1] font-medium mt-2">
                   El segundo integrante cubrirá automáticamente el remanente del presupuesto asignado.
                 </p>
                 {errors.customUserAmount && (
-                  <p id="budget-customUserAmount-error" className="text-red-500 text-xs mt-1">
+                  <p id="budget-customUserAmount-error" className="text-red-500 text-xs mt-1 font-medium">
                     {errors.customUserAmount.message}
                   </p>
                 )}
@@ -440,11 +447,19 @@ export function BudgetForm({
       )}
 
       {/* Botones de Acción */}
-      <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
-        <Button variant="secondary" onClick={onCancel} type="button">
+      <div className="flex justify-end gap-2.5 pt-3 border-t border-[#EEF0F4] items-center">
+        <Button
+          variant="secondary"
+          onClick={onCancel}
+          type="button"
+          className="!bg-white !border !border-[#EEF0F4] hover:!bg-slate-50 !text-slate-700 !rounded-full px-5 py-2.5 font-medium transition-colors cursor-pointer shadow-none"
+        >
           Cancelar
         </Button>
-        <Button type="submit">
+        <Button
+          type="submit"
+          className="!bg-[#111319] hover:!bg-[#1A1D26] !text-white !rounded-full px-6 py-2.5 font-medium transition-colors duration-150 shadow-sm cursor-pointer"
+        >
           Guardar Presupuesto
         </Button>
       </div>

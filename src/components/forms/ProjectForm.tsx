@@ -21,6 +21,11 @@ export interface ProjectFormProps {
   onCancel: () => void;
 }
 
+const INPUT_CLASS =
+  'w-full rounded-xl border border-[#EEF0F4] bg-[#F5F6FA] focus:bg-white focus:border-[#111319] focus:ring-1 focus:ring-[#111319] text-slate-900 text-sm font-medium transition-colors px-3.5 py-2.5 placeholder:text-slate-400';
+
+const LABEL_CLASS = 'block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5';
+
 export function ProjectForm({
   initialData,
   accounts = [],
@@ -133,8 +138,8 @@ export function ProjectForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Nombre */}
       <div>
-        <label htmlFor="project-name" className="block text-sm font-bold text-slate-700 mb-1 flex items-center gap-1.5">
-          <Target size={16} className="text-primary" />
+        <label htmlFor="project-name" className={`${LABEL_CLASS} flex items-center gap-1.5`}>
+          <Target size={14} className="text-slate-700" />
           Nombre del Proyecto o Meta
         </label>
         <input
@@ -144,14 +149,14 @@ export function ProjectForm({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Ej. Vacaciones Europa, Enganche Casa, Fondo Emergencia"
-          className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary font-medium text-slate-800 text-sm"
+          className={INPUT_CLASS}
         />
       </div>
 
       {/* Montos */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-3">
         <div>
-          <label htmlFor="project-targetAmount" className="block text-sm font-bold text-slate-700 mb-1">
+          <label htmlFor="project-targetAmount" className={LABEL_CLASS}>
             Monto Meta ($)
           </label>
           <input
@@ -163,11 +168,11 @@ export function ProjectForm({
             value={targetAmount}
             onChange={(e) => setTargetAmount(e.target.value === '' ? '' : Number(e.target.value))}
             placeholder="50000"
-            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary font-medium text-slate-800 text-sm"
+            className={`${INPUT_CLASS} tabular-nums`}
           />
         </div>
         <div>
-          <label htmlFor="project-monthlyQuota" className="block text-sm font-bold text-slate-700 mb-1">
+          <label htmlFor="project-monthlyQuota" className={LABEL_CLASS}>
             Cuota Mensual ($)
           </label>
           <input
@@ -178,15 +183,15 @@ export function ProjectForm({
             value={monthlyQuota}
             onChange={(e) => setMonthlyQuota(e.target.value === '' ? '' : Number(e.target.value))}
             placeholder="3000"
-            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary font-medium text-slate-800 text-sm"
+            className={`${INPUT_CLASS} tabular-nums`}
           />
         </div>
       </div>
 
       {/* Cuenta Destino Vinculada */}
       <div>
-        <label htmlFor="project-targetAccountId" className="block text-sm font-bold text-slate-700 mb-1 flex items-center gap-1.5">
-          <Wallet size={16} className="text-slate-500" />
+        <label htmlFor="project-targetAccountId" className={`${LABEL_CLASS} flex items-center gap-1.5`}>
+          <Wallet size={14} className="text-slate-700" />
           Cuenta Destino (Billetera / Banco)
         </label>
         {validAssetAccounts.length === 0 ? (
@@ -198,7 +203,7 @@ export function ProjectForm({
             id="project-targetAccountId"
             value={targetAccountId}
             onChange={(e) => setTargetAccountId(e.target.value)}
-            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary font-medium text-slate-800 text-sm"
+            className={`${INPUT_CLASS} tabular-nums`}
           >
             {validAssetAccounts.map((acc) => (
               <option key={acc.id} value={acc.id}>
@@ -207,26 +212,36 @@ export function ProjectForm({
             ))}
           </select>
         )}
-        <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-          <Sparkles size={12} className="text-primary shrink-0" />
+        <p className="text-xs text-[#6366F1] bg-[#EEF2FF] border border-[#C7D2FE] p-2.5 rounded-xl mt-2 flex items-center gap-1.5 font-medium">
+          <Sparkles size={13} className="text-[#6366F1] shrink-0" />
           Las aportaciones a esta meta se gestionarán como apartados protegidos dentro de esta cuenta.
         </p>
       </div>
 
       {/* Mensaje de error */}
       {errorMessage && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center gap-2">
+        <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center gap-2 font-medium">
           <AlertCircle size={16} className="shrink-0" />
           <span>{errorMessage}</span>
         </div>
       )}
 
       {/* Botones de acción */}
-      <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
-        <Button variant="secondary" onClick={onCancel} disabled={isSubmitting} type="button">
+      <div className="flex justify-end gap-2.5 pt-3 border-t border-[#EEF0F4] items-center">
+        <Button
+          variant="secondary"
+          onClick={onCancel}
+          disabled={isSubmitting}
+          type="button"
+          className="!bg-white !border !border-[#EEF0F4] hover:!bg-slate-50 !text-slate-700 !rounded-full px-5 py-2.5 font-medium transition-colors cursor-pointer shadow-none"
+        >
           Cancelar
         </Button>
-        <Button type="submit" disabled={isSubmitting || validAssetAccounts.length === 0}>
+        <Button
+          type="submit"
+          disabled={isSubmitting || validAssetAccounts.length === 0}
+          className="!bg-[#111319] hover:!bg-[#1A1D26] !text-white !rounded-full px-6 py-2.5 font-medium transition-colors duration-150 shadow-sm cursor-pointer disabled:opacity-50"
+        >
           {isSubmitting ? 'Guardando...' : initialData ? 'Guardar Cambios' : 'Crear Proyecto'}
         </Button>
       </div>
