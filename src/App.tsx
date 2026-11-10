@@ -797,7 +797,7 @@ export default function App() {
         </div>
 
         {activeTab !== 'settings' && activeTab !== 'historical' && activeTab !== 'terms' && activeTab !== 'privacy' && activeTab !== 'wallet' && activeTab !== 'cards' && activeTab !== 'debts' && activeTab !== 'wealth' && (
-          <div className="bg-white border border-[#EEF0F4] rounded-3xl p-4 shadow-bento flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="bg-white border border-[#EEF0F4] rounded-3xl p-4 sm:p-5 shadow-bento flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3 w-full md:w-1/2">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:block">Periodo:</span>
               <div className="flex items-center gap-2 bg-[#F1F5F9] p-1 rounded-full flex-1 md:flex-none border border-[#EEF0F4] w-full sm:w-auto">

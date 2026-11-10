@@ -365,31 +365,29 @@ export function HistoricalView({ data, methods, appContext = 'household' }: any)
           <p className="text-slate-500 mt-1 font-medium text-sm">Comparativa de ingresos vs gastos y evolución financiera por periodo.</p>
         </div>
         
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-3 bg-white p-2.5 rounded-full shadow-bento border border-[#EEF0F4] self-start md:self-auto">
-          <div className="flex items-center gap-2 pl-2">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider hidden md:block">Periodo:</span>
-            <div className="flex items-center gap-1.5 bg-[#F5F6FA] border border-[#EEF0F4] px-2 py-1 rounded-full flex-1 md:flex-none">
-              <input 
-                type="date" 
-                value={methods?.dateRange?.start || ''} 
-                onChange={e => methods?.setDateRange?.(e.target.value, methods?.dateRange?.end || '')} 
-                className="px-2 py-1 bg-transparent text-xs font-medium text-slate-900 outline-none tabular-nums tracking-tight w-full" 
-                aria-label="Fecha inicial" 
-              />
-              <span className="text-slate-400 font-bold text-xs">-</span>
-              <input 
-                type="date" 
-                value={methods?.dateRange?.end || ''} 
-                onChange={e => methods?.setDateRange?.(methods?.dateRange?.start || '', e.target.value)} 
-                className="px-2 py-1 bg-transparent text-xs font-medium text-slate-900 outline-none tabular-nums tracking-tight w-full" 
-                aria-label="Fecha final" 
-              />
-            </div>
+        <div className="bg-white border border-[#EEF0F4] rounded-3xl p-4 sm:p-5 shadow-bento flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="flex items-center justify-center gap-2 bg-[#F8FAFC] border border-[#EEF0F4] rounded-2xl sm:rounded-full px-3 py-2 w-full sm:w-auto">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider hidden md:block mr-1">Periodo:</span>
+            <input 
+              type="date" 
+              value={methods?.dateRange?.start || ''} 
+              onChange={e => methods?.setDateRange?.(e.target.value, methods?.dateRange?.end || '')} 
+              className="bg-transparent text-xs sm:text-sm font-medium text-slate-800 tabular-nums focus:outline-none" 
+              aria-label="Fecha inicial" 
+            />
+            <span className="text-slate-400 font-bold">-</span>
+            <input 
+              type="date" 
+              value={methods?.dateRange?.end || ''} 
+              onChange={e => methods?.setDateRange?.(methods?.dateRange?.start || '', e.target.value)} 
+              className="bg-transparent text-xs sm:text-sm font-medium text-slate-800 tabular-nums focus:outline-none" 
+              aria-label="Fecha final" 
+            />
           </div>
           <button
             type="button"
             onClick={handleExportCSV}
-            className="flex items-center justify-center w-full md:w-auto gap-1.5 bg-[#111319] hover:bg-[#1A1D26] text-white rounded-full px-5 py-2 font-medium transition-colors duration-150 text-xs shadow-sm cursor-pointer"
+            className="inline-flex items-center justify-center gap-2 bg-[#111319] hover:bg-[#1A1D26] text-white rounded-full px-5 py-2.5 text-xs sm:text-sm font-medium transition-colors w-full sm:w-auto shadow-sm"
           >
             <Download size={14} />
             <span>Exportar CSV</span>
