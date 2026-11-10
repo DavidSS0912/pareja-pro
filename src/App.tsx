@@ -800,12 +800,12 @@ export default function App() {
           <div className="bg-white border border-[#EEF0F4] rounded-3xl p-4 shadow-bento flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3 w-full md:w-1/2">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:block">Periodo:</span>
-              <div className="flex items-center gap-2 bg-[#F1F5F9] p-1 rounded-full flex-1 md:flex-none border border-[#EEF0F4]">
+              <div className="flex items-center gap-2 bg-[#F1F5F9] p-1 rounded-full flex-1 md:flex-none border border-[#EEF0F4] w-full sm:w-auto">
                 <label htmlFor="startDate" className="sr-only">Fecha inicial</label>
-                <input id="startDate" type="date" value={dateRange?.start || ''} onChange={e => setDateRange(e.target.value, dateRange?.end || '')} className="px-3 py-2 bg-transparent text-sm font-medium text-slate-700 outline-none transition-all tabular-nums tracking-tight w-full" aria-label="Fecha inicial" />
+                <input id="startDate" type="date" value={dateRange?.start || ''} onChange={e => setDateRange(e.target.value, dateRange?.end || '')} className="px-2 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm bg-transparent font-medium text-slate-700 outline-none transition-all tabular-nums tracking-tight w-full sm:w-auto" aria-label="Fecha inicial" />
                 <span className="text-slate-300 font-bold">-</span>
                 <label htmlFor="endDate" className="sr-only">Fecha final</label>
-                <input id="endDate" type="date" value={dateRange?.end || ''} onChange={e => setDateRange(dateRange?.start || '', e.target.value)} className="px-3 py-2 bg-transparent text-sm font-medium text-slate-700 outline-none transition-all tabular-nums tracking-tight w-full" aria-label="Fecha final" />
+                <input id="endDate" type="date" value={dateRange?.end || ''} onChange={e => setDateRange(dateRange?.start || '', e.target.value)} className="px-2 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm bg-transparent font-medium text-slate-700 outline-none transition-all tabular-nums tracking-tight w-full sm:w-auto" aria-label="Fecha final" />
               </div>
             </div>
             

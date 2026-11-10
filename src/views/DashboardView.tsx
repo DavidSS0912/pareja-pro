@@ -211,7 +211,7 @@ export function DashboardView({ data, calc, methods, appContext = 'household' }:
       {/* Bento Grid Principal: 12 Columnas */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
         {/* Hero: Presupuesto Base Cero (md:col-span-6) */}
-        <div className="md:col-span-6 bg-[#111319] border border-[#232733] rounded-3xl p-6 text-white shadow-bento relative overflow-hidden flex flex-col justify-between min-h-[170px]">
+        <div className="col-span-1 md:col-span-6 bg-[#111319] border border-[#232733] rounded-3xl p-6 text-white shadow-bento relative overflow-hidden flex flex-col justify-between min-h-[170px]">
           <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
             <PieChart size={130} className="text-white" />
           </div>
@@ -233,7 +233,7 @@ export function DashboardView({ data, calc, methods, appContext = 'household' }:
         </div>
 
         {/* KPI: Ingresos Totales (md:col-span-3) */}
-        <div className="md:col-span-3 bg-white border border-[#EEF0F4] rounded-3xl p-6 shadow-bento flex flex-col justify-between min-h-[170px]">
+        <div className="col-span-1 md:col-span-3 bg-white border border-[#EEF0F4] rounded-3xl p-6 shadow-bento flex flex-col justify-between min-h-[170px]">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">Ingresos Totales</h3>
             <div className="p-2 bg-[#E8F8F0] text-[#10B981] rounded-full">
@@ -248,7 +248,7 @@ export function DashboardView({ data, calc, methods, appContext = 'household' }:
         </div>
 
         {/* KPI: Gastos Totales (md:col-span-3) */}
-        <div className="md:col-span-3 bg-white border border-[#EEF0F4] rounded-3xl p-6 shadow-bento flex flex-col justify-between min-h-[170px]">
+        <div className="col-span-1 md:col-span-3 bg-white border border-[#EEF0F4] rounded-3xl p-6 shadow-bento flex flex-col justify-between min-h-[170px]">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">Gastos Totales</h3>
             <div className="p-2 bg-[#FDEFEA] text-[#F97316] rounded-full">
@@ -270,7 +270,7 @@ export function DashboardView({ data, calc, methods, appContext = 'household' }:
         </div>
 
         {/* Mi Casa y Liquidación (col-span-12 lg:col-span-7) */}
-        <div className="col-span-12 lg:col-span-7 bg-white border border-[#EEF0F4] rounded-3xl p-6 shadow-bento flex flex-col justify-between">
+        <div className="col-span-1 md:col-span-12 lg:col-span-7 bg-white border border-[#EEF0F4] rounded-3xl p-6 shadow-bento flex flex-col justify-between">
           <div>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
@@ -331,7 +331,7 @@ export function DashboardView({ data, calc, methods, appContext = 'household' }:
         </div>
 
         {/* Gráfica Donut y Metas (col-span-12 lg:col-span-5) */}
-        <div className="col-span-12 lg:col-span-5 bg-white border border-[#EEF0F4] rounded-3xl p-6 shadow-bento flex flex-col justify-between">
+        <div className="col-span-1 md:col-span-12 lg:col-span-5 bg-white border border-[#EEF0F4] rounded-3xl p-6 shadow-bento flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between gap-2 mb-4">
               <h2 className="text-base font-bold text-slate-900">
@@ -422,7 +422,7 @@ export function DashboardView({ data, calc, methods, appContext = 'household' }:
         </div>
 
         {/* Desglose de Movimientos (col-span-12) */}
-        <div className="col-span-12 bg-white border border-[#EEF0F4] rounded-3xl p-6 shadow-bento flex flex-col">
+        <div className="col-span-1 md:col-span-12 bg-white border border-[#EEF0F4] rounded-3xl p-6 shadow-bento flex flex-col">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
             <h2 className="text-base font-bold text-slate-900">Desglose de Movimientos</h2>
             
@@ -556,7 +556,7 @@ export function DashboardView({ data, calc, methods, appContext = 'household' }:
         </div>
 
         {/* Calendario de Pagos (col-span-12) */}
-        <div className="col-span-12 bg-white border border-[#EEF0F4] rounded-3xl p-6 shadow-bento">
+        <div className="col-span-1 md:col-span-12 bg-white border border-[#EEF0F4] rounded-3xl p-6 shadow-bento">
           <PaymentCalendar expenses={relevantExpenses} accounts={calendarAccounts} />
         </div>
       </div>
