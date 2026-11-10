@@ -729,13 +729,13 @@ export default function App() {
 
   return (
     <div className="min-h-[100dvh] bg-[#F5F6FA] text-slate-900 font-sans pb-24 md:pb-0 md:pl-64 relative">
-      <nav className="fixed bottom-0 w-full bg-[#111319] border-t border-[#232733] md:border-t-0 md:border-r md:border-[#232733] text-white flex overflow-x-auto scrollbar-hide p-3 md:flex-col md:justify-start md:w-64 md:h-full md:left-0 md:top-0 md:p-6 z-50 transition-all">
+      <nav className="fixed bottom-0 w-full bg-[#111319] border-t border-[#232733] md:border-t-0 md:border-r md:border-[#232733] text-white flex overflow-x-auto scrollbar-hide p-3 md:flex-col md:justify-between md:w-64 md:h-full md:left-0 md:top-0 md:p-6 z-50 transition-all">
         <div className="hidden md:flex mb-10 items-center gap-3 px-2">
           <OrbitaLogo size={36} />
           <h1 className="text-xl font-bold tracking-tight text-white font-title">Orbita2</h1>
         </div>
 
-        <div className="flex md:flex-col gap-1.5 md:gap-2 w-full min-w-max">
+        <div className="flex md:flex-col md:flex-1 md:min-w-0 gap-1.5 md:gap-2 w-full min-w-max">
           {navItems.map(item => {
             const isItemActive = activeTab === item.id ||
               (item.id === 'wallet' && ['cards', 'debts', 'wealth'].includes(activeTab)) ||
