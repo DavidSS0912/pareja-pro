@@ -444,30 +444,30 @@ export function AccountsView({ data = {}, methods = {}, appContext = 'household'
                   return (
                     <div
                       key={account.id}
-                      className="bg-white border border-[#EEF0F4] rounded-3xl p-6 shadow-bento hover:border-slate-300 transition-all flex flex-col justify-between group"
+                      className="bg-white border border-[#EEF0F4] rounded-2xl p-4 sm:p-5 shadow-bento hover:border-slate-300 transition-all flex flex-col justify-between group"
                     >
                       <div>
                         {/* Cabecera de la cuenta */}
-                        <div className="flex items-start justify-between gap-3 mb-5">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-[#F8FAFC] border border-[#EEF0F4] flex items-center justify-center text-slate-700 shrink-0">
-                              <Wallet size={18} />
+                        <div className="flex items-start justify-between gap-3 mb-4">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-8 h-8 rounded-lg bg-[#F8FAFC] border border-[#EEF0F4] flex items-center justify-center text-slate-700 shrink-0">
+                              <Wallet size={15} />
                             </div>
                             <div className="min-w-0">
                               <h4 className="text-base font-bold text-slate-900 truncate">
                                 {account.name}
                               </h4>
-                              <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                                <span className="text-[10px] bg-[#E8F8F0] text-[#10B981] px-2.5 py-0.5 rounded-full font-semibold uppercase tracking-wider">
+                              <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                                <span className="text-[10px] bg-[#E8F8F0] text-[#10B981] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider">
                                   {account.ownerType === 'SHARED' ? 'Compartido' : 'Individual'}
                                 </span>
-                                <span className="text-[10px] bg-[#F1F5F9] text-[#64748B] px-2.5 py-0.5 rounded-full font-semibold uppercase tracking-wider">
+                                <span className="text-[10px] bg-[#F1F5F9] text-[#64748B] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider">
                                   Débito
                                 </span>
                                 {account.ownerType !== 'SHARED' && (
                                   <span
                                     data-testid={`account-partner-status-${account.id}`}
-                                    className={`text-[10px] px-2.5 py-0.5 rounded-full font-semibold uppercase tracking-wider ${
+                                    className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider ${
                                       account.allowPartnerTransfers
                                         ? 'bg-[#E8F8F0] text-[#10B981]'
                                         : 'bg-[#F1F5F9] text-slate-400'
@@ -481,14 +481,14 @@ export function AccountsView({ data = {}, methods = {}, appContext = 'household'
                           </div>
 
                           {/* Acciones */}
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                             <button
                               type="button"
                               onClick={() => handleOpenModal(account)}
                               className="p-1.5 text-slate-400 hover:text-slate-900 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
                               title="Editar cuenta"
                             >
-                              <Edit2 size={14} />
+                              <Edit2 size={13} />
                             </button>
                             {!account.systemKey && (
                               <button
@@ -497,28 +497,28 @@ export function AccountsView({ data = {}, methods = {}, appContext = 'household'
                                 className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
                                 title="Eliminar cuenta"
                               >
-                                <Trash2 size={14} />
+                                <Trash2 size={13} />
                               </button>
                             )}
                           </div>
                         </div>
 
                         {/* Saldo Disponible */}
-                        <div className="mb-4">
-                          <p className="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">
+                        <div className="mb-3">
+                          <p className="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-0.5">
                             Saldo Disponible
                           </p>
-                          <p className="text-3xl font-extrabold text-slate-900 tracking-tight tabular-nums">
+                          <p className="text-2xl font-bold text-slate-900 tracking-tight tabular-nums">
                             {FormatCurrency(availableBalance)}
                           </p>
                         </div>
 
                         {/* En Apartados / Cajitas */}
                         {allocatedBalance > 0 && (
-                          <div className="mb-4 bg-[#EEF2FF] border border-[#6366F1]/10 rounded-2xl p-3.5 text-[#6366F1] font-medium text-xs flex items-center justify-between">
+                          <div className="mb-3 bg-[#EEF2FF] border border-[#6366F1]/10 rounded-xl p-2.5 text-[#6366F1] font-medium text-xs flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <PiggyBank size={16} className="text-[#6366F1] shrink-0" />
-                              <span>En Apartados / Proyectos:</span>
+                              <PiggyBank size={15} className="text-[#6366F1] shrink-0" />
+                              <span>En Apartados:</span>
                             </div>
                             <span className="font-bold tabular-nums">
                               {FormatCurrency(allocatedBalance)}
@@ -527,13 +527,15 @@ export function AccountsView({ data = {}, methods = {}, appContext = 'household'
                         )}
                       </div>
 
-                      {/* Saldo Total Contable en Pie */}
-                      <div className="flex justify-between items-center border-t border-[#EEF0F4] pt-3 text-xs text-slate-400">
-                        <span className="font-medium">Saldo Total Contable:</span>
-                        <span className="font-bold text-slate-700 tabular-nums text-sm">
-                          {FormatCurrency(ledgerBalance)}
-                        </span>
-                      </div>
+                      {/* Saldo Total Contable en Pie: Solo si hay apartados activos */}
+                      {allocatedBalance > 0 && (
+                        <div className="flex justify-between items-center border-t border-[#EEF0F4] pt-2.5 text-xs text-slate-400">
+                          <span className="font-medium">Saldo Total Contable:</span>
+                          <span className="font-bold text-slate-700 tabular-nums text-sm">
+                            {FormatCurrency(ledgerBalance)}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -583,180 +585,130 @@ export function AccountsView({ data = {}, methods = {}, appContext = 'household'
                     calculateCreditCardMetrics(account);
                   const colorConfig = getUtilizationColor(utilizationPercentage);
                   const rawBalance = Number(account?.balance) || 0;
-                  const maskedLast4 = account.id ? String(account.id).slice(-4) : '7865';
+                  const hasDates = account.cutDay != null || account.paymentDay != null;
 
                   return (
                     <div
                       key={account.id}
-                      className="bg-gradient-to-br from-[#1C1F28] to-[#101217] border border-[#232733] rounded-3xl p-6 sm:p-7 text-white shadow-bento relative overflow-hidden flex flex-col justify-between min-h-[220px] group hover:border-slate-700 transition-all duration-200"
+                      className="bg-[#111319] border border-[#232733] rounded-2xl p-4 sm:p-5 text-white shadow-bento flex flex-col justify-between gap-3 group hover:border-slate-700 transition-all duration-200"
                     >
-                      {/* Cabecera de la Tarjeta Virtual: Logo / Red y Chip SIM */}
-                      <div>
-                        <div className="flex items-start justify-between gap-4 mb-4">
-                          <div className="flex items-center gap-3">
-                            {/* Logotipo minimalista de red procesadora (doble esfera) */}
-                            <div className="flex -space-x-2 shrink-0">
-                              <div className="w-6 h-6 rounded-full bg-white/25 backdrop-blur-xs" />
-                              <div className="w-6 h-6 rounded-full bg-white/15 backdrop-blur-xs" />
-                            </div>
-                            <div className="min-w-0">
-                              <h4 className="text-lg font-bold text-white tracking-tight truncate">
-                                {account.name}
-                              </h4>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                <span className="text-[10px] bg-white/10 text-slate-300 px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider">
-                                  {account.ownerType === 'SHARED' ? 'Compartida' : 'Individual'}
-                                </span>
-                                {account.ownerType !== 'SHARED' && (
-                                  <span
-                                    data-testid={`account-partner-status-${account.id}`}
-                                    className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider ${
-                                      account.allowPartnerTransfers
-                                        ? 'bg-[#10B981]/20 text-[#10B981]'
-                                        : 'bg-white/10 text-slate-400'
-                                    }`}
-                                  >
-                                    {account.allowPartnerTransfers ? 'Transferible' : 'Privada'}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            {/* Botones de acción discretos */}
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button
-                                type="button"
-                                onClick={() => handleOpenModal(account)}
-                                className="p-1.5 text-slate-400 hover:text-white rounded-lg bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
-                                title="Editar tarjeta"
+                      {/* Cabecera */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h4 className="font-semibold text-base text-white truncate">
+                            {account.name}
+                          </h4>
+                          <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                            <span className="bg-white/10 text-slate-300 text-[10px] rounded-full px-2 py-0.5 font-semibold uppercase tracking-wider">
+                              {account.ownerType === 'SHARED' ? 'Compartida' : 'Individual'}
+                            </span>
+                            {account.ownerType !== 'SHARED' && (
+                              <span
+                                data-testid={`account-partner-status-${account.id}`}
+                                className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider ${
+                                  account.allowPartnerTransfers
+                                    ? 'bg-[#10B981]/20 text-[#10B981]'
+                                    : 'bg-white/10 text-slate-400'
+                                }`}
                               >
-                                <Edit2 size={13} />
-                              </button>
-                              {!account.systemKey && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleDelete(account.id)}
-                                  className="p-1.5 text-slate-400 hover:text-rose-400 rounded-lg bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
-                                  title="Eliminar tarjeta"
-                                >
-                                  <Trash2 size={13} />
-                                </button>
-                              )}
-                            </div>
-
-                            {/* Micro-chip de contacto simulado (Sección 5.2 de DESIGN.md) */}
-                            <div className="w-10 h-8 rounded-lg bg-gradient-to-br from-amber-200 to-amber-400 border border-amber-300/60 p-1 flex flex-col justify-between opacity-90 shadow-sm shrink-0">
-                              <div className="flex justify-between border-b border-amber-500/30 pb-0.5">
-                                <div className="w-2.5 h-1 border-r border-amber-500/30" />
-                                <div className="w-2.5 h-1 border-l border-amber-500/30" />
-                              </div>
-                              <div className="w-full h-1.5 border border-amber-500/30 rounded-xs" />
-                              <div className="flex justify-between border-t border-amber-500/30 pt-0.5">
-                                <div className="w-2.5 h-1 border-r border-amber-500/30" />
-                                <div className="w-2.5 h-1 border-l border-amber-500/30" />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Enmascaramiento de tarjeta: •••• •••• •••• XXXX */}
-                        <div className="tracking-widest font-mono text-sm sm:text-base text-slate-300 my-4 flex items-center gap-3">
-                          <span className="text-slate-500">••••</span>
-                          <span className="text-slate-500">••••</span>
-                          <span className="text-slate-500">••••</span>
-                          <span className="text-white font-bold tabular-nums">{maskedLast4}</span>
-                        </div>
-
-                        {/* Datos de Titular y Fechas en micro-tipografía */}
-                        <div className="flex items-center justify-between text-xs text-slate-400 font-medium mb-4">
-                          <div>
-                            <span className="text-[10px] uppercase font-semibold text-slate-500 tracking-wider block">
-                              Titular
-                            </span>
-                            <span className="text-slate-200 font-semibold truncate max-w-[150px] block">
-                              {account.name}
-                            </span>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-[10px] uppercase font-semibold text-slate-500 tracking-wider block">
-                              Corte / Pago
-                            </span>
-                            <span className="text-slate-200 font-semibold tabular-nums">
-                              Día {account.cutDay ?? '—'} / Día {account.paymentDay ?? '—'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Sub-tarjeta de Salud Crediticia y Métricas */}
-                      <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3.5 mt-2">
-                        {/* Deuda Actual vs Crédito Disponible */}
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <p className="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">
-                              Deuda Actual
-                            </p>
-                            {rawBalance > 0 ? (
-                              <p className="text-2xl sm:text-3xl font-black tracking-tight text-white tabular-nums">
-                                {FormatCurrency(currentDebt)}
-                              </p>
-                            ) : rawBalance < 0 ? (
-                              <div className="inline-flex items-center gap-1.5 bg-[#E8F8F0]/20 text-[#10B981] border border-[#10B981]/30 px-3 py-1 rounded-xl text-xs font-bold tabular-nums">
-                                <CheckCircle2 size={14} className="shrink-0" />
-                                <span>Saldo a favor: {FormatCurrency(positiveBalance)}</span>
-                              </div>
-                            ) : (
-                              <div>
-                                <p className="text-2xl sm:text-3xl font-black tracking-tight text-white tabular-nums">
-                                  {FormatCurrency(0)}
-                                </p>
-                                <p className="text-[11px] text-[#10B981] font-medium mt-0.5">
-                                  Al corriente • Sin deuda
-                                </p>
-                              </div>
+                                {account.allowPartnerTransfers ? 'Transferible' : 'Privada'}
+                              </span>
+                            )}
+                            {hasDates && (
+                              <span className="text-[10px] text-slate-400 font-medium tabular-nums">
+                                Corte: d.{account.cutDay ?? '—'} • Pago: d.{account.paymentDay ?? '—'}
+                              </span>
                             )}
                           </div>
-
-                          <div className="text-right">
-                            <p className="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">
-                              Crédito Disponible
-                            </p>
-                            <p className="text-xl sm:text-2xl font-bold tracking-tight text-white tabular-nums">
-                              {FormatCurrency(creditAvailable)}
-                            </p>
-                          </div>
                         </div>
 
-                        {/* Barra de utilización crediticia */}
-                        <div className="space-y-1.5 pt-2 border-t border-white/10">
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="text-slate-400">
-                              Límite: <strong className="text-slate-200 tabular-nums">{FormatCurrency(account.creditLimit || 0)}</strong>
-                            </span>
-                            <span className={`font-bold tabular-nums ${colorConfig.text}`}>
-                              Utilización: {utilizationPercentage.toFixed(0)}%
-                            </span>
-                          </div>
-                          <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden border border-white/5 relative">
-                            <div
-                              className={`h-full ${colorConfig.bar} rounded-full transition-all duration-500`}
-                              style={{ width: `${Math.min(100, Math.max(0, utilizationPercentage))}%` }}
-                            />
-                          </div>
+                        {/* Botones de acción discretos */}
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenModal(account)}
+                            className="p-1.5 text-slate-400 hover:text-white rounded-lg bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+                            title="Editar tarjeta"
+                          >
+                            <Edit2 size={13} />
+                          </button>
+                          {!account.systemKey && (
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(account.id)}
+                              className="p-1.5 text-slate-400 hover:text-rose-400 rounded-lg bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+                              title="Eliminar tarjeta"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
                         </div>
-
-                        {/* Botón de acción rápida: Pagar Tarjeta */}
-                        <button
-                          type="button"
-                          onClick={() => setSelectedCardForPayment(account)}
-                          className="w-full mt-1 flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 border border-white/15 text-white py-2 px-4 rounded-full text-xs font-semibold transition-colors cursor-pointer"
-                        >
-                          <CreditCard size={15} />
-                          <span>Pagar Tarjeta</span>
-                        </button>
                       </div>
+
+                      {/* Bloque Métrico: Fila simple con Deuda Actual y Crédito Disponible */}
+                      <div className="flex items-end justify-between gap-4 pt-1">
+                        <div>
+                          <p className="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-0.5">
+                            Deuda Actual
+                          </p>
+                          {rawBalance > 0 ? (
+                            <p className="text-2xl font-bold tabular-nums text-white">
+                              {FormatCurrency(currentDebt)}
+                            </p>
+                          ) : rawBalance < 0 ? (
+                            <div className="inline-flex items-center gap-1.5 bg-[#E8F8F0]/20 text-[#10B981] border border-[#10B981]/30 px-2.5 py-0.5 rounded-lg text-xs font-bold tabular-nums">
+                              <CheckCircle2 size={13} className="shrink-0" />
+                              <span>Saldo a favor: {FormatCurrency(positiveBalance)}</span>
+                            </div>
+                          ) : (
+                            <div>
+                              <p className="text-2xl font-bold tabular-nums text-white">
+                                {FormatCurrency(0)}
+                              </p>
+                              <p className="text-[11px] text-[#10B981] font-medium mt-0.5">
+                                Al corriente • Sin deuda
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="text-right">
+                          <p className="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-0.5">
+                            Crédito Disponible
+                          </p>
+                          <p className="text-base font-semibold tabular-nums text-slate-300">
+                            {FormatCurrency(creditAvailable)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Barra de Utilización */}
+                      <div className="space-y-1.5 pt-2 border-t border-white/10">
+                        <div className="text-xs text-slate-400 tabular-nums flex justify-between">
+                          <span>
+                            Límite: <strong className="text-slate-200">{FormatCurrency(account.creditLimit || 0)}</strong>
+                          </span>
+                          <span className={`font-semibold ${colorConfig.text}`}>
+                            Utilización: {utilizationPercentage.toFixed(0)}%
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full ${colorConfig.bar} rounded-full transition-all duration-500`}
+                            style={{ width: `${Math.min(100, Math.max(0, utilizationPercentage))}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Botón Pagar Tarjeta */}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCardForPayment(account)}
+                        className="bg-white/10 hover:bg-white/20 border border-white/15 text-white rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors w-full sm:w-auto self-end mt-1 cursor-pointer flex items-center justify-center gap-1.5"
+                      >
+                        <CreditCard size={13} />
+                        <span>Pagar Tarjeta</span>
+                      </button>
                     </div>
                   );
                 })}
